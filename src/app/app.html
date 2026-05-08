@@ -1,0 +1,28 @@
+<div class="app" 
+     [class.app--sb-right]="store.tweaks.sidebar() === 'right'" 
+     [class.font-lora]="store.tweaks.bookFont() === 'lora'"
+     [class.font-spectral]="store.tweaks.bookFont() === 'spectral'"
+     [attr.data-screen-label]="'Libria — Editor'">
+  <app-topbar></app-topbar>
+  
+  <div class="layout" [class.layout--empty]="!store.book()">
+    @if (store.book()) {
+      @if (store.tweaks.sidebar() === 'left') {
+        <app-sidebar></app-sidebar>
+      }
+      
+      <app-editor></app-editor>
+      <app-preview></app-preview>
+      
+      @if (store.tweaks.sidebar() === 'right') {
+        <app-sidebar></app-sidebar>
+      }
+    } @else {
+      <app-welcome></app-welcome>
+    }
+  </div>
+
+  @if (store.book()) {
+    <app-tweaks-panel title="Tweaks" *ngIf="store.ui.showTweaks()"></app-tweaks-panel>
+  }
+</div>

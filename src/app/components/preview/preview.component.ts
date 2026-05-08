@@ -1,0 +1,512 @@
+import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
+import { BookStore } from '../../store/book.store';
+import { CommonModule } from '@angular/common';
+import { Chapter } from '../../models/book.models';
+
+@Component({
+  selector: 'app-preview',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <style [innerHTML]="printStyles()"></style>
+
+    <section class="pv" [class.app--sb-right]="store.tweaks.sidebar() === 'right'">
+      <div class="pv__head">
+        <div class="pv__tabs">
+          <button class="pv__tab" [class.pv__tab--on]="mode() === 'kindle'" (click)="mode.set('kindle')">Kindle</button>
+          <button class="pv__tab" [class.pv__tab--on]="mode() === 'iphone'" (click)="mode.set('iphone')">iPhone</button>
+          <button class="pv__tab" [class.pv__tab--on]="mode() === 'print'" (click)="mode.set('print')">Papel</button>
+        </div>
+        
+        <div class="pv__zoom" *ngIf="mode() === 'print'">
+          <button (click)="zoomOut()">－</button>
+          <span (click)="resetZoom()" style="cursor:pointer" title="Reiniciar zoom">{{ (printZoom() * 100) | number:'1.0-0' }}%</span>
+          <button (click)="zoomIn()">＋</button>
+        </div>
+        
+        <div class="pv__zoom" *ngIf="mode() === 'kindle' || mode() === 'iphone'">
+          <button (click)="decreaseFontSize()" style="font-size:12px;">A</button>
+          <span (click)="resetFontSize()" style="cursor:pointer" title="Reiniciar tamaño">Aa</span>
+          <button (click)="increaseFontSize()" style="font-size:16px;">A</button>
+        </div>
+      </div>
+
+      <div class="pv__stage" [style.align-items]="mode() === 'print' ? 'flex-start' : 'center'">
+        @if (mode() !== 'full-print') {
+          <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
+          <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
+        }
+
+        <!-- FULL PRINT VIEW (Vertical PDF generator) -->
+        @if (mode() === 'full-print') {
+          <div class="print print--full" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h">
+            @for (chapter of store.chapters(); track chapter.id; let idx = $index) {
+              <!-- Blank page for parity if needed -->
+              @if (shouldInsertBlankPage(idx)) {
+                <div class="print__page print__page--blank" style="background: #fdfdfd; display: flex; align-items:center; justify-content:center; border: 1px dashed #eee;">
+                  <span style="color: #ccc; font-style: italic; font-size: 11px;">Página en blanco (paridad)</span>
+                </div>
+              }
+              
+              <div class="print__page"
+                [style.padding-top.mm]="store.tweaks.marginTop()"
+                [style.padding-bottom.mm]="store.tweaks.marginBottom()"
+                [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
+                [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
+                
+                <div class="print__header">
+                  <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+                </div>
+
+                <div class="print__content">
+                   <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: store.tweaks.fontSize() }"></ng-container>
+                </div>
+
+                <div class="print__footer">
+                  @if (store.tweaks.showPageNumbers()) {
+                    <span>Pág. {{ chapterStartPage(idx) }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
+          <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h" 
+               [style.zoom]="mode() === 'print' ? printZoom() : 1">
+            
+            <div [class]="mode() + '__bezel'" *ngIf="mode() !== 'print'">
+              <div [class]="mode() + '__screen'">
+                @if (mode() === 'kindle') {
+                  <div class="kindle__statusbar">
+                    <div class="kindle__bookname">{{ store.book()?.title }}</div>
+                    <div class="kindle__icons">
+                      <svg viewBox="0 0 24 12" width="22" height="10"><rect x="0.5" y="0.5" width="20" height="11" rx="1.5" fill="none" stroke="currentColor"/><rect x="21.5" y="3.5" width="2" height="5" fill="currentColor"/><rect x="2" y="2" width="13" height="8" fill="currentColor"/></svg>
+                    </div>
+                  </div>
+                } @else if (mode() === 'iphone') {
+                  <div class="iphone__notch"></div>
+                  <div class="iphone__statusbar">
+                    <span>9:41</span>
+                    <span>
+                      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z" fill="currentColor"/></svg>
+                    </span>
+                  </div>
+                }
+
+                <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
+
+                @if (mode() === 'kindle') {
+                  <div class="kindle__footer">
+                    <span>Pos. {{ globalPage() + 1 }}</span>
+                    <div class="kindle__progress">
+                      <span class="kindle__pfill" [style.width.%]="(globalPage() + 1) / (measuredTotalPages() || 1) * 100"></span>
+                    </div>
+                    <span>{{ ((globalPage() + 1) / (measuredTotalPages() || 1) * 100) | number:'1.0-0' }}%</span>
+                  </div>
+                } @else if (mode() === 'iphone') {
+                  <div class="iphone__footer">Página {{ globalPage() + 1 }} de {{ measuredTotalPages() }}</div>
+                  <div class="iphone__homebar"></div>
+                }
+              </div>
+              
+              @if (mode() === 'kindle') {
+                <div class="kindle__chinrow">
+                  <div class="kindle__pageBtn" (click)="prevPage()" style="cursor:pointer"></div>
+                  <div class="kindle__home"></div>
+                  <div class="kindle__pageBtn" (click)="nextPage()" style="cursor:pointer"></div>
+                </div>
+              }
+            </div>
+
+            <!-- THE PAPEL (Single Page Preview) -->
+            <div class="print__page" *ngIf="mode() === 'print'"
+              [style.width]="'var(--pw)'"
+              [style.height]="'var(--ph)'"
+              [style.padding-top.mm]="store.tweaks.marginTop()"
+              [style.padding-bottom.mm]="store.tweaks.marginBottom()"
+              [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
+              [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
+              
+              <div class="print__header">
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              </div>
+
+              <div class="print__content" style="flex: 1; position: relative;">
+                <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
+              </div>
+
+              <div class="print__footer">
+                @if (store.tweaks.showPageNumbers()) {
+                  <span>{{ globalPage() + 1 }}</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="pv__foot">
+        <div class="pv__metric">
+          <div class="pv__mN">{{ measuredTotalPages() }}</div>
+          <div class="pv__mL">páginas</div>
+        </div>
+        <div class="pv__metric">
+          <div class="pv__mN">{{ store.book()?.paperSize || '5×8″' }}</div>
+          <div class="pv__mL">formato</div>
+        </div>
+        <!-- <button class="pv__exp" (click)="mode.set('full-print')">Vista completa (PDF)</button> -->
+      </div>
+
+      <!-- PAGINATED CONTENT TEMPLATE -->
+      <ng-template #paginatedTpl>
+        <div [class]="mode() === 'print' ? 'pv-page-inner' : (mode() + '__page')">
+          <div class="kp-wrapper" style="flex: 1; min-height: 0; position: relative;">
+            <div class="kp-slider" [style.--page-index]="globalPage()">
+              <div class="kp-flow" #kpFlow>
+                @for (c of store.chapters(); track c.id; let idx = $index) {
+                  @if (shouldInsertBlankPage(idx)) {
+                    <div class="kp kp--blank" style="break-before: column; color: transparent;">_</div>
+                  }
+                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id">
+                    <ng-container *ngTemplateOutlet="contentTpl; context: { 
+                      $implicit: c, 
+                      showNotes: false,
+                      fsOverride: (mode() === 'kindle' || mode() === 'iphone') ? (store.tweaks.fontSize() + deviceFontSizeOffset()) : store.tweaks.fontSize()
+                    }"></ng-container>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- CHAPTER CONTENT RENDERER -->
+      <ng-template #contentTpl let-chapter let-showNotes="showNotes" let-fsOverride="fsOverride">
+        <div class="kp-content"
+          [style.font-family]="store.bookFontFamily()"
+          [style.font-size.px]="fsOverride || store.tweaks.fontSize()"
+          [style.line-height]="store.tweaks.lineHeight()"
+          [style.--p-gap.em]="store.tweaks.paragraphSpacing()"
+          [style.--drop-lines]="store.tweaks.dropCapLines()"
+          [class.kp--indent]="store.tweaks.indentFirstLine()"
+          [class.kp--no-indent]="!store.tweaks.indentFirstLine()"
+          [class.kp--justify]="store.tweaks.justifyText()"
+          [class.kp-content--hyphen]="store.tweaks.hyphenation()">
+          
+          @for (b of chapter.body; track $index) {
+            @let bIdx = $index;
+            @switch (b.type) {
+              @case ('halftitle') { <h1 class="kp-halftitle"
+                [style.font-family]="store.titleFontFamily()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                [style.text-align]="store.tweaks.titleAlignment()">{{ b.text }}</h1> }
+              @case ('title') { <h1 class="kp-title"
+                [style.font-family]="store.titleFontFamily()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                [style.text-align]="store.tweaks.titleAlignment()">{{ b.text }}</h1> }
+              @case ('subtitle') { <div class="kp-sub">{{ b.text }}</div> }
+              @case ('author') { <div class="kp-author">{{ b.text }}</div> }
+              @case ('publisher') { <div class="kp-pub">{{ b.text }}</div> }
+              @case ('dedication') { 
+                <div class="kp-ded">
+                  @for (line of b.text?.split('\\n'); track $index) {
+                    <div>{{ line }}</div>
+                  }
+                </div> 
+              }
+              @case ('chapter-num') { <div class="kp-chnum" 
+                [style.font-family]="store.titleFontFamily()"
+                [style.font-size.px]="store.tweaks.titleFontSize() * 0.8"
+                [style.text-align]="store.tweaks.titleAlignment()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</div> }
+              @case ('chapter-title') { <h2 class="kp-chtitle" 
+                [style.font-family]="store.titleFontFamily()"
+                [style.font-size.px]="store.tweaks.titleFontSize()"
+                [style.text-align]="store.tweaks.titleAlignment()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
+              @case ('h1') { <h2 class="kp-h1" 
+                [style.font-family]="store.titleFontFamily()"
+                [style.text-align]="store.tweaks.titleAlignment()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
+              @case ('first-p') { 
+                <p class="kp-first" [class.has-dropcap]="store.tweaks.dropCap()">
+                  @if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
+                </p> 
+              }
+              @case ('p') { <p class="kp-p">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
+              @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
+              @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
+              @case ('page-break') { <div class="kp-page-break"><span></span></div> }
+            }
+          }
+
+          @if (showNotes) {
+            @let cNotes = chapterNotes(chapter.id);
+            @if (cNotes.length > 0) {
+              <div class="kp-notes">
+                <hr class="kp-notes-rule">
+                @for (n of cNotes; track n.id) {
+                  <div class="kp-note">
+                    <p><strong>[*] {{ n.authorName }}:</strong> {{ n.content }}</p>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #noteRefTpl let-chapter="chapter" let-bIdx="bIdx" let-showNotes="showNotes">
+        @if (showNotes) {
+          @for (n of blockNotes(chapter.id, bIdx); track n.id) {
+            <span class="kp-note-ref">[*]</span>
+          }
+        }
+      </ng-template>
+    </section>
+  `,
+})
+export class PreviewComponent implements AfterViewInit, OnDestroy {
+  readonly store = inject(BookStore);
+  readonly mode = signal<'kindle' | 'iphone' | 'print' | 'full-print'>('kindle');
+
+  @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
+  private resizeObserver?: ResizeObserver;
+  private measureTimeout?: any;
+
+  measuredTotalPages = signal(1);
+  realPageOffsets = signal<Record<string, number>>({});
+
+  readonly bookLayout = computed(() => {
+    const chapters = this.store.chapters();
+    const layout: Record<string, { startPage: number, pages: number, hasBlankBefore: boolean }> = {};
+    let currentP = 1;
+
+    for (let i = 0; i < chapters.length; i++) {
+      const ch = chapters[i];
+      const pages = this.estimateChapterPages(ch);
+      let blank = false;
+
+      // Force Odd: if current page is even (2, 4, 6...), add a blank
+      if (ch.forceOddPage && currentP % 2 === 0) {
+        blank = true;
+        currentP++;
+      }
+
+      layout[ch.id] = {
+        startPage: currentP,
+        pages: pages,
+        hasBlankBefore: blank
+      };
+
+      currentP += pages;
+    }
+    return { chapters: layout, total: currentP - 1 };
+  });
+
+  readonly pageSize = computed(() => {
+    const s = this.store.pageSize().split(' ');
+    return { w: s[0], h: s[1] };
+  });
+
+  readonly chapterNotes = (id: string) => this.store.notes().filter(n => n.chapterId === id);
+  readonly blockNotes = (id: string, idx: number) => this.store.notes().filter(n => n.chapterId === id && n.blockIndex === idx);
+
+  readonly printStyles = computed(() => `@media print { @page { size: ${this.store.pageSize()}; margin: 0; } }`);
+
+  printZoom = signal(0.8);
+  deviceFontSizeOffset = signal(0);
+
+  zoomIn() { this.printZoom.update(z => Math.min(z + 0.1, 2)); }
+  zoomOut() { this.printZoom.update(z => Math.max(z - 0.1, 0.3)); }
+  resetZoom() { this.printZoom.set(0.8); }
+
+  increaseFontSize() { this.deviceFontSizeOffset.update(v => v + 1); }
+  decreaseFontSize() { this.deviceFontSizeOffset.update(v => v - 1); }
+  resetFontSize() { this.deviceFontSizeOffset.set(0); }
+
+  constructor() {
+    effect(() => {
+      const id = this.store.activeChapterId();
+      const m = this.mode();
+      untracked(() => {
+        if (m !== 'full-print') {
+          // Sync Preview globalPage when ActiveChapterId changes externally
+          const realOffset = this.realPageOffsets()[id];
+          if (realOffset !== undefined) {
+            this.globalPage.set(realOffset);
+          } else {
+            const layout = this.bookLayout().chapters[id];
+            if (layout) this.globalPage.set(layout.startPage - 1);
+          }
+        }
+      });
+    });
+    
+    effect(() => {
+      const nav = this.store.ui.activeNav();
+      untracked(() => {
+        if (nav === 'layout') this.mode.set('print');
+        if (nav === 'export') this.mode.set('full-print');
+        this.scheduleMeasure();
+      });
+    });
+
+    effect(() => {
+      const max = (this.mode() === 'full-print') ? this.bookLayout().total : this.measuredTotalPages();
+      if (this.globalPage() > max - 1 && max > 0) {
+        untracked(() => this.globalPage.set(max - 1));
+      }
+    });
+
+    effect(() => {
+      this.store.chapters();
+      this.store.tweaks();
+      this.scheduleMeasure();
+    });
+  }
+
+  ngAfterViewInit() {
+    this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
+    if (this.kpFlowEl) {
+      this.resizeObserver.observe(this.kpFlowEl.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.resizeObserver) this.resizeObserver.disconnect();
+    clearTimeout(this.measureTimeout);
+  }
+
+  scheduleMeasure() {
+    if (this.mode() === 'full-print') return;
+    clearTimeout(this.measureTimeout);
+    this.measureTimeout = setTimeout(() => {
+      if (!this.kpFlowEl) {
+        const el = document.querySelector('.kp-flow') as HTMLElement;
+        if (el) {
+          this.kpFlowEl = new ElementRef(el);
+          this.resizeObserver?.observe(el);
+        }
+      }
+      this.measureDOM();
+    }, 150);
+  }
+
+  measureDOM() {
+    if (!this.kpFlowEl) return;
+    const flow = this.kpFlowEl.nativeElement;
+    const style = getComputedStyle(flow);
+    const gap = parseFloat(style.columnGap) || 0;
+    const cw = flow.clientWidth + gap;
+    if (cw <= 0) return;
+
+    const elements = Array.from(flow.querySelectorAll('.kp:not(.kp--blank)')) as HTMLElement[];
+    const offsets: Record<string, number> = {};
+    
+    elements.forEach((el) => {
+      const id = el.getAttribute('data-chapter');
+      if (id) {
+        const left = el.offsetLeft - flow.offsetLeft;
+        offsets[id] = Math.round(left / cw);
+      }
+    });
+
+    this.realPageOffsets.set(offsets);
+    this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
+  }
+
+  readonly sceneBreakGlyph = computed(() => {
+    const t = this.store.tweaks.sceneBreakType();
+    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
+  });
+
+  isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
+
+  private estimateChapterPages(c: Chapter): number {
+    const m = this.mode();
+    const paperSize = this.store.book()?.paperSize || '5x8';
+    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 : (paperSize === '6x9' ? 350 : paperSize === 'A4' ? 500 : 250);
+    const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
+    const fsFactor = 16 / fs;
+    const wpp = wppBase * fsFactor;
+    const wordPages = Math.ceil((c.words || 1) / wpp);
+    const pageBreaks = c.body.filter(b => b.type === 'page-break').length;
+    return Math.max(1, wordPages, pageBreaks + 1);
+  }
+
+  shouldInsertBlankPage(chapterIdx: number): boolean {
+    const ch = this.store.chapters()[chapterIdx];
+    if (!ch) return false;
+    return this.bookLayout().chapters[ch.id]?.hasBlankBefore || false;
+  }
+
+  isChapterEven(chapterIdx: number): boolean {
+    const ch = this.store.chapters()[chapterIdx];
+    if (!ch) return false;
+    return this.bookLayout().chapters[ch.id]?.startPage % 2 === 0;
+  }
+
+  chapterStartPage(chapterIdx: number): number {
+    const ch = this.store.chapters()[chapterIdx];
+    return this.bookLayout().chapters[ch?.id]?.startPage || 1;
+  }
+
+  globalPage = signal(0);
+  nextPage() { 
+    const max = (this.mode() === 'full-print') ? this.bookLayout().total : this.measuredTotalPages();
+    if (this.globalPage() < max - 1) { 
+      this.globalPage.update(p => p + 1); 
+      this.syncActiveChapter(); 
+    } 
+  }
+  prevPage() { 
+    if (this.globalPage() > 0) { 
+      this.globalPage.update(p => p - 1); 
+      this.syncActiveChapter(); 
+    } 
+  }
+
+  private syncActiveChapter() {
+    const p = this.globalPage();
+    const offsets = (this.mode() !== 'full-print') ? this.realPageOffsets() : {};
+    
+    let activeId = '';
+    
+    if (this.mode() === 'full-print') {
+      const layout = this.bookLayout().chapters;
+      let maxStart = -1;
+      for (const [id, info] of Object.entries(layout)) {
+        const offset = info.startPage - 1;
+        if (offset <= p && offset > maxStart) {
+          maxStart = offset;
+          activeId = id;
+        }
+      }
+    } else {
+      let maxStartCol = -1;
+      for (const [id, startCol] of Object.entries(offsets)) {
+        if (startCol <= p && startCol > maxStartCol) {
+          maxStartCol = startCol;
+          activeId = id;
+        }
+      }
+    }
+    
+    if (activeId && this.store.activeChapterId() !== activeId) {
+      untracked(() => this.store.setActiveChapter(activeId));
+    }
+  }
+}
