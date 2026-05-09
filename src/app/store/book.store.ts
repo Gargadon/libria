@@ -1,6 +1,8 @@
-import { computed } from '@angular/core';
-import { signalStore, withState, withMethods, withComputed, patchState } from '@ngrx/signals';
+import { computed, effect, inject } from '@angular/core';
+import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
 import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig } from '../models/book.models';
+import { PersonalConfigService } from '../services/personal-config.service';
+import { environment } from '../../environments/environment';
 
 export interface BookState {
   book: Book | null;
@@ -79,7 +81,7 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '' }
+  personalConfig: { avatar: '', userName: '' }
 };
 
 function calculateWords(body: { text?: string }[]): number {
@@ -123,6 +125,7 @@ export const BookStore = signalStore(
       switch (size) {
         case '5x8': return '5in 8in';
         case '6x9': return '6in 9in';
+        case 'Letter': return '8.5in 11in';
         case 'A5': return '148mm 210mm';
         case 'A4': return '210mm 297mm';
         default: return '5in 8in';
@@ -209,11 +212,12 @@ export const BookStore = signalStore(
       });
     },
     createNewProject() {
+      const author = store.personalConfig().userName;
       const newBook: Book = {
         title: 'Nuevo Libro',
         subtitle: '',
-        author: '',
-        authors: [],
+        author: author,
+        authors: author ? [author] : [],
         editors: [],
         publisher: '',
         year: new Date().getFullYear(),
@@ -625,5 +629,20 @@ export const BookStore = signalStore(
         isDirty: true
       });
     }
-  }))
+  })),
+  withHooks({
+    onInit(store) {
+      const personalConfigService = inject(PersonalConfigService);
+      
+      // Load initial personal config
+      const saved = personalConfigService.load();
+      patchState(store, { personalConfig: saved });
+
+      // Effect to save personal config whenever it changes
+      effect(() => {
+        const config = store.personalConfig();
+        personalConfigService.save(config);
+      });
+    }
+  })
 );

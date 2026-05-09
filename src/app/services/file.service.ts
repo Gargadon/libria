@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { LibriaDocument } from '../models/book.models';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class FileService {
@@ -13,7 +14,7 @@ export class FileService {
 
   private buildDoc(): LibriaDocument {
     return {
-      libriaVersion: '1.0.0',
+      libriaVersion: environment.version,
       metadata: this.store.book(),
       preferences: this.store.tweaks(),
       session: {

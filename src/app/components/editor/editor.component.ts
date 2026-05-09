@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ContenteditableDirective } from './contenteditable.directive';
 import { NoteRole, NoteStatus } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-editor',
@@ -173,7 +174,7 @@ import { FormsModule } from '@angular/forms';
           <span class="ed__dot2"></span>
           <span>autoguardado activo</span>
           <span style="flex: 1"></span>
-          <span>Maquetación · Libria 2.4</span>
+          <span>Maquetación · Libria {{environment.version}}</span>
         </div>
       </main>
     }
@@ -215,6 +216,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class EditorComponent {
   readonly store = inject(BookStore);
+  readonly environment = environment;
 
   readonly status = computed(() => {
     const chapter = this.store.activeChapter();
@@ -223,12 +225,12 @@ export class EditorComponent {
 
   readonly statusLabel = computed(() => {
     const s = this.status();
-    return { 
-      ok: "Revisado", 
-      draft: "Borrador", 
-      outline: "Esbozo", 
-      front: "Preliminar", 
-      back: "Posliminar" 
+    return {
+      ok: "Revisado",
+      draft: "Borrador",
+      outline: "Esbozo",
+      front: "Preliminar",
+      back: "Posliminar"
     }[s!] || "";
   });
 
@@ -279,18 +281,18 @@ export class EditorComponent {
   }
 
   statusIcon(status: NoteStatus): string {
-    return { 
-      'unresolved': '○', 
-      'resolved': '●', 
-      'not-applicable': '×' 
+    return {
+      'unresolved': '○',
+      'resolved': '●',
+      'not-applicable': '×'
     }[status];
   }
 
   statusTitle(status: NoteStatus): string {
-    return { 
-      'unresolved': 'Pendiente', 
-      'resolved': 'Resuelto', 
-      'not-applicable': 'No aplica' 
+    return {
+      'unresolved': 'Pendiente',
+      'resolved': 'Resuelto',
+      'not-applicable': 'No aplica'
     }[status];
   }
 
@@ -324,7 +326,7 @@ export class EditorComponent {
     const element = event.target as HTMLElement;
     const text = element.innerText.replace(/\n$/, '');
     const html = element.innerHTML;
-    
+
     if (!this._inputTimeout) {
       this.store.saveSnapshot();
     }
@@ -365,6 +367,28 @@ export class EditorComponent {
 
     switch (event.key) {
 
+      // ── Hyphen: convert -- to — ──────────────────────────────────────────
+      case '-': {
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed) return;
+
+        const offset = this._getCaretOffset(el);
+        const text = el.innerText.replace(/\n$/, '');
+
+        // If previous character was also a hyphen, replace it with em dash
+        if (offset > 0 && text.charAt(offset - 1) === '-') {
+          event.preventDefault();
+
+          // Remove the first hyphen and insert em dash
+          document.execCommand('delete', false);
+          document.execCommand('insertText', false, '—');
+
+          // Sync with store
+          this.onInput(chapterId, blockIndex, event);
+        }
+        break;
+      }
+
       // ── Enter: split block ────────────────────────────────────────────────
       case 'Enter': {
         event.preventDefault();
@@ -382,7 +406,7 @@ export class EditorComponent {
         const cursor = preRange.toString().length;
 
         const textBefore = currentText.substring(0, cursor);
-        const textAfter  = currentText.substring(cursor);
+        const textAfter = currentText.substring(cursor);
 
         // SYNC DOM MUTATION to prevent race condition before Angular re-renders
         el.textContent = textBefore;
@@ -427,12 +451,12 @@ export class EditorComponent {
             if (cur) { cur.focus(); this._placeCursorAt(cur, 0); }
           }, 16);
         } else {
-          const prevText    = prevData?.text ?? '';
-          const curText     = chapter?.body[blockIndex]?.text ?? '';
-          const mergedText  = prevText + curText;
+          const prevText = prevData?.text ?? '';
+          const curText = chapter?.body[blockIndex]?.text ?? '';
+          const mergedText = prevText + curText;
 
           // SYNC DOM MUTATION to prevent ghosting or rapid double-backspace cascade
-          el.textContent = ''; 
+          el.textContent = '';
 
           this._suppressInput = true;
           this.store.mergeWithPrevious(chapterId, blockIndex);
@@ -458,7 +482,7 @@ export class EditorComponent {
         const textLen = el.textContent?.length ?? 0;
         if (this._getCaretOffset(el) < textLen) return; // not at end
 
-        const chapter  = this.store.chapters().find(c => c.id === chapterId);
+        const chapter = this.store.chapters().find(c => c.id === chapterId);
         const nextData = chapter?.body[blockIndex + 1];
         if (!nextData) return;
 
@@ -475,8 +499,8 @@ export class EditorComponent {
             if (cur) { cur.focus(); this._placeCursorAt(cur, textLen); }
           }, 16);
         } else {
-          const curText    = el.innerText.replace(/\n$/, '');
-          const nextText   = nextData.text ?? '';
+          const curText = el.innerText.replace(/\n$/, '');
+          const nextText = nextData.text ?? '';
           const mergedText = curText + nextText;
 
           // SYNC DOM MUTATION to prevent cascade if multiple deletes are fired

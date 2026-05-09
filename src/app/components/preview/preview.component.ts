@@ -11,6 +11,33 @@ import { Chapter } from '../../models/book.models';
     <style [innerHTML]="printStyles()"></style>
 
     <section class="pv" [class.app--sb-right]="store.tweaks.sidebar() === 'right'">
+      <!-- PROFESSIONAL PDF GENERATOR (Hidden on screen, visible on print) -->
+      <div class="print-generator" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h">
+        @for (chapter of store.chapters(); track chapter.id; let idx = $index) {
+          @if (shouldInsertBlankPage(idx)) {
+            <div class="print__page print__page--blank"></div>
+          }
+          <div class="print__page"
+            [style.padding-top.mm]="store.tweaks.marginTop()"
+            [style.padding-bottom.mm]="store.tweaks.marginBottom()"
+            [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
+            [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
+            
+            <div class="print__header">
+              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+            </div>
+            <div class="print__content">
+                <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: store.tweaks.fontSize() }"></ng-container>
+            </div>
+            <div class="print__footer">
+              @if (store.tweaks.showPageNumbers()) {
+                <span>Pág. {{ chapterStartPage(idx) }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
       <div class="pv__head">
         <div class="pv__tabs">
           <button class="pv__tab" [class.pv__tab--on]="mode() === 'kindle'" (click)="mode.set('kindle')">Kindle</button>
@@ -31,119 +58,82 @@ import { Chapter } from '../../models/book.models';
         </div>
       </div>
 
-      <div class="pv__stage" [style.align-items]="mode() === 'print' ? 'flex-start' : 'center'">
-        @if (mode() !== 'full-print') {
-          <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
-          <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
-        }
+      <div class="pv__stage" #pvStage [style.align-items]="mode() === 'print' ? 'flex-start' : 'center'">
+        <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
+        <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
-        <!-- FULL PRINT VIEW (Vertical PDF generator) -->
-        @if (mode() === 'full-print') {
-          <div class="print print--full" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h">
-            @for (chapter of store.chapters(); track chapter.id; let idx = $index) {
-              <!-- Blank page for parity if needed -->
-              @if (shouldInsertBlankPage(idx)) {
-                <div class="print__page print__page--blank" style="background: #fdfdfd; display: flex; align-items:center; justify-content:center; border: 1px dashed #eee;">
-                  <span style="color: #ccc; font-style: italic; font-size: 11px;">Página en blanco (paridad)</span>
+        <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
+        <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h" 
+             [style.zoom]="mode() === 'print' ? printZoom() : 1">
+          
+          <div [class]="mode() + '__bezel'" *ngIf="mode() !== 'print'">
+            <div [class]="mode() + '__screen'">
+              @if (mode() === 'kindle') {
+                <div class="kindle__statusbar">
+                  <div class="kindle__bookname">{{ store.book()?.title }}</div>
+                  <div class="kindle__icons">
+                    <svg viewBox="0 0 24 12" width="22" height="10"><rect x="0.5" y="0.5" width="20" height="11" rx="1.5" fill="none" stroke="currentColor"/><rect x="21.5" y="3.5" width="2" height="5" fill="currentColor"/><rect x="2" y="2" width="13" height="8" fill="currentColor"/></svg>
+                  </div>
+                </div>
+              } @else if (mode() === 'iphone') {
+                <div class="iphone__notch"></div>
+                <div class="iphone__statusbar">
+                  <span>9:41</span>
+                  <span>
+                    <svg viewBox="0 0 24 24" width="14" height="14"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z" fill="currentColor"/></svg>
+                  </span>
                 </div>
               }
-              
-              <div class="print__page"
-                [style.padding-top.mm]="store.tweaks.marginTop()"
-                [style.padding-bottom.mm]="store.tweaks.marginBottom()"
-                [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
-                [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
-                
-                <div class="print__header">
-                  <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-                </div>
 
-                <div class="print__content">
-                   <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: store.tweaks.fontSize() }"></ng-container>
-                </div>
+              <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
 
-                <div class="print__footer">
-                  @if (store.tweaks.showPageNumbers()) {
-                    <span>Pág. {{ chapterStartPage(idx) }}</span>
-                  }
+              @if (mode() === 'kindle') {
+                <div class="kindle__footer">
+                  <span>Pos. {{ globalPage() + 1 }}</span>
+                  <div class="kindle__progress">
+                    <span class="kindle__pfill" [style.width.%]="(globalPage() + 1) / (measuredTotalPages() || 1) * 100"></span>
+                  </div>
+                  <span>{{ ((globalPage() + 1) / (measuredTotalPages() || 1) * 100) | number:'1.0-0' }}%</span>
                 </div>
+              } @else if (mode() === 'iphone') {
+                <div class="iphone__footer">Página {{ globalPage() + 1 }} de {{ measuredTotalPages() }}</div>
+                <div class="iphone__homebar"></div>
+              }
+            </div>
+            
+            @if (mode() === 'kindle') {
+              <div class="kindle__chinrow">
+                <div class="kindle__pageBtn" (click)="prevPage()" style="cursor:pointer"></div>
+                <div class="kindle__home"></div>
+                <div class="kindle__pageBtn" (click)="nextPage()" style="cursor:pointer"></div>
               </div>
             }
           </div>
-        } @else {
-          <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
-          <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h" 
-               [style.zoom]="mode() === 'print' ? printZoom() : 1">
+
+          <!-- THE PAPEL (Single Page Preview) -->
+          <div class="print__page" *ngIf="mode() === 'print'"
+            [style.width]="'var(--pw)'"
+            [style.height]="'var(--ph)'"
+            [style.padding-top.mm]="store.tweaks.marginTop()"
+            [style.padding-bottom.mm]="store.tweaks.marginBottom()"
+            [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
+            [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            <div [class]="mode() + '__bezel'" *ngIf="mode() !== 'print'">
-              <div [class]="mode() + '__screen'">
-                @if (mode() === 'kindle') {
-                  <div class="kindle__statusbar">
-                    <div class="kindle__bookname">{{ store.book()?.title }}</div>
-                    <div class="kindle__icons">
-                      <svg viewBox="0 0 24 12" width="22" height="10"><rect x="0.5" y="0.5" width="20" height="11" rx="1.5" fill="none" stroke="currentColor"/><rect x="21.5" y="3.5" width="2" height="5" fill="currentColor"/><rect x="2" y="2" width="13" height="8" fill="currentColor"/></svg>
-                    </div>
-                  </div>
-                } @else if (mode() === 'iphone') {
-                  <div class="iphone__notch"></div>
-                  <div class="iphone__statusbar">
-                    <span>9:41</span>
-                    <span>
-                      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z" fill="currentColor"/></svg>
-                    </span>
-                  </div>
-                }
+            <div class="print__header">
+              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+            </div>
 
-                <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
+            <div class="print__content" style="flex: 1; position: relative;">
+              <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
+            </div>
 
-                @if (mode() === 'kindle') {
-                  <div class="kindle__footer">
-                    <span>Pos. {{ globalPage() + 1 }}</span>
-                    <div class="kindle__progress">
-                      <span class="kindle__pfill" [style.width.%]="(globalPage() + 1) / (measuredTotalPages() || 1) * 100"></span>
-                    </div>
-                    <span>{{ ((globalPage() + 1) / (measuredTotalPages() || 1) * 100) | number:'1.0-0' }}%</span>
-                  </div>
-                } @else if (mode() === 'iphone') {
-                  <div class="iphone__footer">Página {{ globalPage() + 1 }} de {{ measuredTotalPages() }}</div>
-                  <div class="iphone__homebar"></div>
-                }
-              </div>
-              
-              @if (mode() === 'kindle') {
-                <div class="kindle__chinrow">
-                  <div class="kindle__pageBtn" (click)="prevPage()" style="cursor:pointer"></div>
-                  <div class="kindle__home"></div>
-                  <div class="kindle__pageBtn" (click)="nextPage()" style="cursor:pointer"></div>
-                </div>
+            <div class="print__footer">
+              @if (store.tweaks.showPageNumbers()) {
+                <span>{{ globalPage() + 1 }}</span>
               }
             </div>
-
-            <!-- THE PAPEL (Single Page Preview) -->
-            <div class="print__page" *ngIf="mode() === 'print'"
-              [style.width]="'var(--pw)'"
-              [style.height]="'var(--ph)'"
-              [style.padding-top.mm]="store.tweaks.marginTop()"
-              [style.padding-bottom.mm]="store.tweaks.marginBottom()"
-              [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
-              [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
-              
-              <div class="print__header">
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-              </div>
-
-              <div class="print__content" style="flex: 1; position: relative;">
-                <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
-              </div>
-
-              <div class="print__footer">
-                @if (store.tweaks.showPageNumbers()) {
-                  <span>{{ globalPage() + 1 }}</span>
-                }
-              </div>
-            </div>
           </div>
-        }
+        </div>
       </div>
 
       <div class="pv__foot">
@@ -155,7 +145,6 @@ import { Chapter } from '../../models/book.models';
           <div class="pv__mN">{{ store.book()?.paperSize || '5×8″' }}</div>
           <div class="pv__mL">formato</div>
         </div>
-        <!-- <button class="pv__exp" (click)="mode.set('full-print')">Vista completa (PDF)</button> -->
       </div>
 
       <!-- PAGINATED CONTENT TEMPLATE -->
@@ -280,9 +269,11 @@ import { Chapter } from '../../models/book.models';
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
-  readonly mode = signal<'kindle' | 'iphone' | 'print' | 'full-print'>('kindle');
+  readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
+  @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
+
   private resizeObserver?: ResizeObserver;
   private measureTimeout?: any;
 
@@ -331,7 +322,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   zoomIn() { this.printZoom.update(z => Math.min(z + 0.1, 2)); }
   zoomOut() { this.printZoom.update(z => Math.max(z - 0.1, 0.3)); }
-  resetZoom() { this.printZoom.set(0.8); }
+  resetZoom() { this.autoZoom(); }
 
   increaseFontSize() { this.deviceFontSizeOffset.update(v => v + 1); }
   decreaseFontSize() { this.deviceFontSizeOffset.update(v => v - 1); }
@@ -342,30 +333,28 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const id = this.store.activeChapterId();
       const m = this.mode();
       untracked(() => {
-        if (m !== 'full-print') {
-          // Sync Preview globalPage when ActiveChapterId changes externally
-          const realOffset = this.realPageOffsets()[id];
-          if (realOffset !== undefined) {
-            this.globalPage.set(realOffset);
-          } else {
-            const layout = this.bookLayout().chapters[id];
-            if (layout) this.globalPage.set(layout.startPage - 1);
-          }
+        // Sync Preview globalPage when ActiveChapterId changes externally
+        const realOffset = this.realPageOffsets()[id];
+        if (realOffset !== undefined) {
+          this.globalPage.set(realOffset);
+        } else {
+          const layout = this.bookLayout().chapters[id];
+          if (layout) this.globalPage.set(layout.startPage - 1);
         }
       });
     });
-    
+
     effect(() => {
       const nav = this.store.ui.activeNav();
       untracked(() => {
         if (nav === 'layout') this.mode.set('print');
-        if (nav === 'export') this.mode.set('full-print');
+        // 'export' tab no longer forces a mode switch
         this.scheduleMeasure();
       });
     });
 
     effect(() => {
-      const max = (this.mode() === 'full-print') ? this.bookLayout().total : this.measuredTotalPages();
+      const max = this.measuredTotalPages();
       if (this.globalPage() > max - 1 && max > 0) {
         untracked(() => this.globalPage.set(max - 1));
       }
@@ -376,12 +365,30 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.store.tweaks();
       this.scheduleMeasure();
     });
+
+    // Auto-zoom effect
+    effect(() => {
+      const m = this.mode();
+      this.pageSize();
+      untracked(() => {
+        if (m === 'print') {
+          setTimeout(() => this.autoZoom(), 50);
+        }
+      });
+    });
   }
 
   ngAfterViewInit() {
-    this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
+    this.resizeObserver = new ResizeObserver(() => {
+      this.scheduleMeasure();
+      if (this.mode() === 'print') this.autoZoom();
+    });
+
     if (this.kpFlowEl) {
       this.resizeObserver.observe(this.kpFlowEl.nativeElement);
+    }
+    if (this.pvStageEl) {
+      this.resizeObserver.observe(this.pvStageEl.nativeElement);
     }
   }
 
@@ -390,8 +397,31 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     clearTimeout(this.measureTimeout);
   }
 
+  private toPixels(value: string): number {
+    const num = parseFloat(value);
+    const unit = value.replace(/[0-9.]/g, '');
+    if (unit === 'in') return num * 96;
+    if (unit === 'mm') return (num * 96) / 25.4;
+    return num;
+  }
+
+  autoZoom() {
+    if (this.mode() !== 'print' || !this.pvStageEl) return;
+
+    const stage = this.pvStageEl.nativeElement;
+    const availW = stage.clientWidth - 60; // padding
+    const availH = stage.clientHeight - 60;
+
+    if (availW <= 0 || availH <= 0) return;
+
+    const pageW = this.toPixels(this.pageSize().w);
+    const pageH = this.toPixels(this.pageSize().h);
+
+    const zoom = Math.min(availW / pageW, availH / pageH);
+    this.printZoom.set(Math.floor(zoom * 100) / 100);
+  }
+
   scheduleMeasure() {
-    if (this.mode() === 'full-print') return;
     clearTimeout(this.measureTimeout);
     this.measureTimeout = setTimeout(() => {
       if (!this.kpFlowEl) {
@@ -404,6 +434,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.measureDOM();
     }, 150);
   }
+
 
   measureDOM() {
     if (!this.kpFlowEl) return;
@@ -438,7 +469,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private estimateChapterPages(c: Chapter): number {
     const m = this.mode();
     const paperSize = this.store.book()?.paperSize || '5x8';
-    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 : (paperSize === '6x9' ? 350 : paperSize === 'A4' ? 500 : 250);
+    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 : 
+                    (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
     const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
     const fsFactor = 16 / fs;
     const wpp = wppBase * fsFactor;
@@ -466,7 +498,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   globalPage = signal(0);
   nextPage() { 
-    const max = (this.mode() === 'full-print') ? this.bookLayout().total : this.measuredTotalPages();
+    const max = this.measuredTotalPages();
     if (this.globalPage() < max - 1) { 
       this.globalPage.update(p => p + 1); 
       this.syncActiveChapter(); 
@@ -481,27 +513,15 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   private syncActiveChapter() {
     const p = this.globalPage();
-    const offsets = (this.mode() !== 'full-print') ? this.realPageOffsets() : {};
+    const offsets = this.realPageOffsets();
     
     let activeId = '';
     
-    if (this.mode() === 'full-print') {
-      const layout = this.bookLayout().chapters;
-      let maxStart = -1;
-      for (const [id, info] of Object.entries(layout)) {
-        const offset = info.startPage - 1;
-        if (offset <= p && offset > maxStart) {
-          maxStart = offset;
-          activeId = id;
-        }
-      }
-    } else {
-      let maxStartCol = -1;
-      for (const [id, startCol] of Object.entries(offsets)) {
-        if (startCol <= p && startCol > maxStartCol) {
-          maxStartCol = startCol;
-          activeId = id;
-        }
+    let maxStartCol = -1;
+    for (const [id, startCol] of Object.entries(offsets)) {
+      if (startCol <= p && startCol > maxStartCol) {
+        maxStartCol = startCol;
+        activeId = id;
       }
     }
     

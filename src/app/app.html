@@ -22,7 +22,7 @@
     }
   </div>
 
-  @if (store.book()) {
-    <app-tweaks-panel title="Tweaks" *ngIf="store.ui.showTweaks()"></app-tweaks-panel>
+  @if (store.book() && store.ui.showTweaks()) {
+    <app-tweaks-panel title="Tweaks"></app-tweaks-panel>
   }
 </div>

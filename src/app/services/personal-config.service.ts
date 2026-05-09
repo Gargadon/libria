@@ -4,7 +4,8 @@ import { PersonalConfig } from '../models/book.models';
 const STORAGE_KEY = 'libria-personal-config';
 
 const defaults: PersonalConfig = {
-  avatar: ''
+  avatar: '',
+  userName: ''
 };
 
 @Injectable({ providedIn: 'root' })

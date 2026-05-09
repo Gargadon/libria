@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "main.js",
   "author": {
     "name": "David Kantun",
@@ -63,15 +63,22 @@
       "output": "release"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "icon": "build/icon.png"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "build/icon.png"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "build/icon.ico"
     }
   }

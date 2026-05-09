@@ -2,16 +2,18 @@
   "libriaVersion": "1.0.0",
   "metadata": {
     "title": "El Principito",
-    "author": "Antoine de Saint-Exupéry",
     "subtitle": "Un clásico moderno",
     "publisher": "Reynal & Hitchcock",
     "year": 1943,
     "isbn": "978-0156012195",
-    "paperSize": "5x8",
-    "editors": [],
+    "paperSize": "6x9",
+    "editors": [
+      "Libria Sample Editors"
+    ],
     "authors": [
       "Antoine de Saint-Exupéry"
-    ]
+    ],
+    "author": "Antoine de Saint-Exupéry"
   },
   "preferences": {
     "sidebar": "right",
@@ -43,7 +45,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-1"
+    "lastActiveChapterId": "ch-2"
   },
   "chapters": [
     {
@@ -89,7 +91,7 @@
       "label": "I",
       "title": "I",
       "status": "ok",
-      "words": 217,
+      "words": 422,
       "forceOddPage": true,
       "body": [
         {
@@ -98,8 +100,7 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en un libro sobre la selva virgen que se titulaba \"Historias vividas\", una magnífica lámina. Representaba una serpiente boa que se tragaba a una fiera. Esta es la copia del dibujo.",
-          "html": "Cuando yo tenía seis años vi en un libro sobre la selva virgen que se titulaba \"Historias <i>vividas\", un</i>a magnífica lámina. Representaba una serpiente boa que se tragaba a una fiera. Esta es la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "p",
@@ -131,10 +132,31 @@
         {
           "type": "p",
           "text": "Las personas mayores me aconsejaron abandonar el dibujo de serpientes boas, ya fueran abiertas o cerradas, y poner más interés en la geografía, la historia, el cálculo y la gramática. De esta manera a la edad de seis años abandoné una magnífica carrera de pintor."
+        },
+        {
+          "type": "p",
+          "text": "Había quedado desilusionado por el fracaso de mis dibujos número 1 y número 2."
+        },
+        {
+          "type": "p",
+          "text": "Las personas mayores son incapaces de comprender algo por sí solas y es muy fastidioso para los niños darles explicaciones una y otra vez."
+        },
+        {
+          "type": "p",
+          "text": "Así, tuve que elegir otro oficio y aprendí a pilotear aviones. He volado un poco por todo el mundo y, en efecto, la geografía me ha servido mucho; al primer vistazo puedo distinguir perfectamente China de Arizona. Esto es muy útil, sobre todo si se pierde uno durante la noche. "
+        },
+        {
+          "type": "p",
+          "text": "A lo largo de mi vida he tenido multitud de contactos con multitud de gente seria. Viví mucho con personas mayores y las he conocido muy de cerca; pero esto no ha mejorado mi opinión sobre ellas."
+        },
+        {
+          "type": "p",
+          "text": "Cuando me he encontrado con alguien que parecía lúcido, he ensayado la experiencia de mostrar mi dibujo número 1 que he conservado siempre. Quería saber si era verdaderamente un ser comprensivo pero siempre contestaban: \"Es un sombrero\". Me abstenía entonces de hablarles de la serpiente boa, de la selva virgen y de las estrellas. Poniéndome a su altura, les hablaba de su mundo: del bridge, del golf, de política y de corbatas. Y la persona mayor quedaba contentísima de conocer a un hombre tan razonable. ",
+          "html": "Cuando me he encontrado con alguien que parecía lúcido,\nhe ensayado la experiencia de mostrar mi dibujo número 1\nque he conservado siempre. Quería saber si era\nverdaderamente un ser comprensivo pero siempre\ncontestaban: \"Es un sombrero\". Me abstenía entonces de\nhablarles de la serpiente boa, de la selva virgen y de las\nestrellas. Poniéndome a su altura, les hablaba de su&nbsp;mundo: del bridge, del golf, de política y de corbatas. Y la\npersona mayor quedaba contentísima de conocer a un\nhombre tan razonable.&nbsp;"
         }
       ],
       "number": 1,
-      "readMin": 2
+      "readMin": 3
     },
     {
       "id": "ch-2",
@@ -142,7 +164,7 @@
       "label": "II",
       "title": "II",
       "status": "ok",
-      "words": 109,
+      "words": 572,
       "forceOddPage": true,
       "body": [
         {
@@ -160,11 +182,131 @@
         },
         {
           "type": "p",
-          "text": "—¡Por favor..., dibújame un cordero!"
+          "text": "—¡Por favor..., dibújame un cordero!",
+          "html": "—¡Por favor..., dibújame un cordero!"
+        },
+        {
+          "type": "p",
+          "text": "—¿Eh?",
+          "html": "—¿Eh?"
+        },
+        {
+          "type": "p",
+          "text": "—¡Píntame un cordero!",
+          "html": "—¡Píntame un cordero! "
+        },
+        {
+          "type": "p",
+          "text": "Me puse en pie de un brinco y frotándome los ojos miré a mí alrededor. Descubrí a un extraordinario muchachito que me observaba gravemente. Ahí tienen el mejor retrato que más tarde logré hacer de él, aunque reconozco que mi dibujo no es tan encantador como el original. La culpa no es mía, las personas mayores me desanimaron de mi carrera de pintor a la edad de seis años, cuando sólo había aprendido a dibujar boas cerradas y boas abiertas."
+        },
+        {
+          "type": "p",
+          "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
+        },
+        {
+          "type": "p",
+          "text": "—Pero… ¿qué haces tú aquí?",
+          "html": "—Pero… ¿qué haces tú aquí?"
+        },
+        {
+          "type": "p",
+          "text": "Y él repitió suave y lentamente, como algo muy importante:"
+        },
+        {
+          "type": "p",
+          "text": "—¡Por favor… píntame un cordero!",
+          "html": "—¡Por favor… píntame un cordero!"
+        },
+        {
+          "type": "p",
+          "text": "Cuando el misterio es tan impresionante, uno no se atreve a contravenir. Por absurdo que aquello pareciera, a mil millas de distancia de algún lugar habitado y en peligro de muerte, saqué del bolsillo una hoja de papel y una pluma fuente. Recordé que yo había estudiado geografía, historia, cálculo y gramática y le dije al muchachito (algo malhumorado) que no sabía dibujar. "
+        },
+        {
+          "type": "p",
+          "text": "—No importa, ¡Píntame un cordero!",
+          "html": "—No importa, ¡Píntame un cordero!"
+        },
+        {
+          "type": "p",
+          "text": "Como nunca había dibujado un cordero, repetí uno de los dos únicos dibujos que era capaz de realizar: el de la boa cerrada. Y quedé absorto al oírle decir:"
+        },
+        {
+          "type": "p",
+          "text": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!",
+          "html": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!"
+        },
+        {
+          "type": "p",
+          "text": "Dibujé un cordero. Lo miró atentamente y dijo:"
+        },
+        {
+          "type": "p",
+          "text": "—Éste está muy enfermo. Por favor haz otro.",
+          "html": "—Éste está muy enfermo. Por favor haz otro."
+        },
+        {
+          "type": "p",
+          "text": "Volví a dibujar. "
+        },
+        {
+          "type": "p",
+          "text": "Mi amigo sonrió gentilmente, con indulgencia, y dijo:"
+        },
+        {
+          "type": "p",
+          "text": "–¿Ves? Esto no es un cordero, es un carnero. Tiene cuernos…"
+        },
+        {
+          "type": "p",
+          "text": "Realicé nuevamente otro dibujo y también fue rechazado como los anteriores."
+        },
+        {
+          "type": "p",
+          "text": "–Es demasiado viejo. Quiero un cordero que viva mucho tiempo."
+        },
+        {
+          "type": "p",
+          "text": "Ya impaciente y deseoso de comenzar a desmontar el motor, tracé rápidamente este dibujo, se lo enseñé, y dije:"
+        },
+        {
+          "type": "p",
+          "text": "—Esta es la caja. El cordero que quieres está adentro."
+        },
+        {
+          "type": "p",
+          "text": "Me sorprendí al ver iluminado el rostro de mi joven juez:"
+        },
+        {
+          "type": "p",
+          "text": "—¡Oh, es exactamente como yo lo quería! ¿Crees que se necesite mucha hierba para este cordero?"
+        },
+        {
+          "type": "p",
+          "text": "—¿Por qué?"
+        },
+        {
+          "type": "p",
+          "text": "—Porque en mi tierra todo es muy pequeño…"
+        },
+        {
+          "type": "p",
+          "text": "—Será suficiente. El corderito que te he dado también es pequeño."
+        },
+        {
+          "type": "p",
+          "text": "Se inclinó hacia el dibujo y exclamó:"
+        },
+        {
+          "type": "p",
+          "text": "—¡Bueno, no tanto…! ¡Ah, se ha quedado dormido!"
+        },
+        {
+          "type": "p",
+          "text": "Y así fue como conocí al principito. "
         }
       ],
       "number": 2,
-      "readMin": 1
+      "readMin": 3
     }
   ],
   "notes": [],

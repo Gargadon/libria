@@ -1,4 +1,5 @@
 import { Component, inject, effect } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { BookStore } from './store/book.store';
 import { FileService } from './services/file.service';
 import { PersonalConfigService } from './services/personal-config.service';
@@ -13,6 +14,7 @@ import { WelcomeComponent } from './components/welcome/welcome.component';
   selector: 'app-root',
   standalone: true,
   imports: [
+    CommonModule,
     TopbarComponent,
     SidebarComponent,
     EditorComponent,
@@ -26,16 +28,8 @@ import { WelcomeComponent } from './components/welcome/welcome.component';
 export class App {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
-  readonly personalConfig = inject(PersonalConfigService);
 
   constructor() {
-    const saved = this.personalConfig.load();
-    this.store.setPersonalConfig(saved);
-
-    effect(() => {
-      this.personalConfig.save(this.store.personalConfig());
-    });
-
     effect(() => {
       const book = this.store.book();
       if (!book) {
@@ -46,7 +40,7 @@ export class App {
         ? this.fileService.currentPath.split(/[/\\]/).pop()!
         : (book.title.replace(/\s+/g, '_') + '.libria');
       const prefix = this.store.isDirty() ? '* ' : '';
-      document.title = prefix + fileName;
+      document.title = 'Libria - ' + prefix + fileName;
     });
   }
 }

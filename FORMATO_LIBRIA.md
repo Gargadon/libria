@@ -21,7 +21,7 @@ Información bibliográfica básica. Basado en la interfaz `Book`.
 - `publisher` (string, opcional): Editorial.
 - `year` (number, opcional): Año de publicación.
 - `isbn` (string, opcional): ISBN-13 o similar.
-- `paperSize` (string): Formato de página (`"5x8"`, `"6x9"`, `"A5"`, `"A4"`).
+- `paperSize` (string): Formato de página (`"5x8"`, `"6x9"`, `"Letter"`, `"A5"`, `"A4"`).
 
 ### 3. `preferences` (object)
 
@@ -105,7 +105,7 @@ Este esquema puede utilizarse para validar la integridad de cualquier archivo `.
         "publisher": { "type": "string" },
         "year": { "type": "integer" },
         "isbn": { "type": "string" },
-        "paperSize": { "enum": ["5x8", "6x9", "A5", "A4"] }
+        "paperSize": { "enum": ["5x8", "6x9", "Letter", "A5", "A4"] }
       }
     },
     "preferences": {

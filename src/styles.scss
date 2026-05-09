@@ -1,5 +1,5 @@
 /* ===== Libria — book formatting app ===== */
-@import 'material-symbols';
+@use 'material-symbols';
 
 :root {
   --paper: #f5efe4;
@@ -1376,7 +1376,8 @@ app-preview {
 
 .ed__block-actions {
   position: absolute;
-  left: -90px;
+  right: 100%;
+  margin-right: 12px;
   top: 0;
   display: none;
   background: var(--paper);
@@ -1384,6 +1385,7 @@ app-preview {
   border-radius: 4px;
   padding: 2px;
   z-index: 10;
+  white-space: nowrap;
 }
 
 .ed__block-actions::after {
@@ -2981,24 +2983,40 @@ app-preview {
 }
 
 
-/* ===== Export & Print ===== */
+/* ===== Export & Print Profiles ===== */
+
+body.print-physical, body.print-digital {
+  background: white !important;
+  overflow: visible !important;
+}
+
+.print-physical {
+  /* Mirrored margins for physical book printing */
+  .print__page:nth-child(even) {
+    padding-left: calc(var(--outer-gap, 15mm) + var(--gutter, 5mm)) !important;
+    padding-right: var(--inner-gap, 25mm) !important;
+  }
+  .print__page:nth-child(odd) {
+    padding-left: var(--inner-gap, 25mm) !important;
+    padding-right: calc(var(--outer-gap, 15mm) + var(--gutter, 5mm)) !important;
+  }
+}
+
+.print-generator {
+  display: none;
+}
+
 @media print {
   @page {
     margin: 0;
   }
 
-  body {
-    background: white;
+  .tb, .sb, .ed, .pv__head, .pv__foot, .pv__zoom, .pv-click-zone, .ed__statbar, .pv__stage > .mode-ui, .pv__nav-btn {
+    display: none !important;
   }
 
-  .tb,
-  .sb,
-  .ed,
-  .pv__head,
-  .pv__foot,
-  .pv__zoom,
-  .pv-click-zone,
-  .ed__statbar {
+  /* Force UI container to be invisible for print */
+  .pv__stage > div:not(.print-generator) {
     display: none !important;
   }
 
@@ -3007,34 +3025,33 @@ app-preview {
     padding: 0 !important;
   }
 
-  .pv {
-    border: 0 !important;
-    background: white !important;
+  .pv, .pv__stage {
+    display: block !important;
     padding: 0 !important;
     margin: 0 !important;
+    border: 0 !important;
     width: 100% !important;
     height: auto !important;
-    display: block !important;
+    overflow: visible !important;
   }
 
-  .pv__stage {
+  .print-generator {
     display: block !important;
     padding: 0 !important;
     margin: 0 !important;
-  }
-
-  .print {
-    zoom: 1 !important;
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
+    background: white !important;
   }
 
   .print__page {
     margin: 0 !important;
     box-shadow: none !important;
-    page-break-after: always;
+    page-break-after: always !important;
+    /* Physical dimensions are set via --pw and --ph in template */
+    width: var(--pw) !important;
+    height: var(--ph) !important;
+    background: white !important;
+    position: relative;
+    overflow: hidden;
   }
 }
 
@@ -3044,6 +3061,7 @@ app-preview {
   gap: 20px;
   align-items: center;
   padding: 40px 0;
+  --gutter: 5mm; /* Default gutter */
 }
 
 @media screen {

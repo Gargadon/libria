@@ -2,6 +2,7 @@ import { Component, inject, signal, computed, HostListener } from '@angular/core
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-topbar',
@@ -20,7 +21,7 @@ import { CommonModule } from '@angular/common';
         </div>
         <div class="tb__brand">
           <div class="tb__brandN">Libria</div>
-          <div class="tb__brandV">2.4 · Atelier</div>
+          <div class="tb__brandV">{{ environment.version }} · Atelier</div>
         </div>
         
         @if (store.book(); as book) {
@@ -70,12 +71,12 @@ import { CommonModule } from '@angular/common';
           </div>
           <span class="tb__sep"></span>
           <button class="tb__icon" title="Buscar" (click)="store.search(''); store.setNav('search')">
-            <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span class="material-symbols-outlined">search</span>
           </button>
           <button class="tb__icon" title="Ajustes" (click)="store.setNav('settings')">
             <span class="material-symbols-outlined">settings</span>
           </button>
-          <!-- <button class="tb__cta" (click)="store.setNav('export')">Generar libro</button> -->
+          <button class="tb__cta" (click)="store.setNav('export')">Generar libro</button>
         }
         <div class="tb__avatar">
           @if (store.personalConfig().avatar; as avatar) {
@@ -105,14 +106,15 @@ import { CommonModule } from '@angular/common';
 export class TopbarComponent {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly environment = environment;
 
   readonly displayAuthors = computed(() => {
     const book = this.store.book();
     if (!book) return '';
-    
+
     const list = (book.authors && book.authors.length > 0) ? book.authors : [book.author];
     const filtered = list.filter(a => !!a && a.trim() !== '');
-    
+
     if (filtered.length === 0) return 'Sin autor';
     if (filtered.length === 1) return filtered[0];
     return `${filtered[0]} et al.`;
@@ -197,7 +199,7 @@ export class TopbarComponent {
     const action = this.pendingAction();
     this.showExitModal.set(false);
     this.pendingAction.set(null);
-    
+
     if (action === 'new') this.fileService.newProject();
     if (action === 'open') this.fileService.openLibriaFile();
   }

@@ -7,6 +7,8 @@ import { ExportService } from '../../services/export.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
 
+import { environment } from '../../../environments/environment';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
@@ -353,6 +355,7 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
               <select class="sb__select" [(ngModel)]="localMetadata.paperSize" (change)="syncMetadata()">
                 <option value="5x8">Pocket (5 x 8 pulg)</option>
                 <option value="6x9">Trade Paperback (6 x 9 pulg)</option>
+                <option value="Letter">Carta US (8.5 x 11 pulg)</option>
                 <option value="A5">A5 (148 x 210 mm)</option>
                 <option value="A4">A4 (210 x 297 mm)</option>
               </select>
@@ -360,31 +363,50 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
           </div>
         }
 
-        <!-- EXPORT VIEW (HIDDEN) -->
-        <!-- 
+        <!-- EXPORT VIEW -->
         @case ('export') {
           <div class="sb__head">
             <div class="sb__title">Generar Libro</div>
-            <div class="sb__author">Exportar a formatos de lectura</div>
+            <div class="sb__author">Exportar a formatos profesionales</div>
           </div>
           <div class="sb__content sb__content--padding">
-            <div class="sb__section">Formatos Disponibles</div>
+            <div class="sb__section">Documento PDF</div>
 
             <div class="sb__export-card">
-              <div class="sb__export-icon">PDF</div>
+              <div class="sb__export-icon">DIG</div>
               <div class="sb__export-info">
-                <div class="sb__export-name">Documento PDF</div>
-                <div class="sb__export-desc">Ideal para impresión o lectura en pantalla con maquetación fija.</div>
-                <button class="sb__btn-primary" (click)="exportPdf()">Generar PDF</button>
+                <div class="sb__export-name">PDF Digital</div>
+                <div class="sb__export-desc">Márgenes simétricos, ideal para lectura en pantalla y e-mail.</div>
+                <button class="sb__btn-primary" (click)="exportService.exportPdfDigital()">Generar PDF</button>
               </div>
             </div>
+
+            <div class="sb__export-card">
+              <div class="sb__export-icon">PRN</div>
+              <div class="sb__export-info">
+                <div class="sb__export-name">PDF de Impresión</div>
+                <div class="sb__export-desc">Márgenes reflejados y margen de lomo. Listo para imprenta.</div>
+                <button class="sb__btn-primary" (click)="exportService.exportPdfPhysical()">Generar PDF</button>
+              </div>
+            </div>
+
+            <div class="sb__section">Otros Formatos</div>
 
             <div class="sb__export-card">
               <div class="sb__export-icon">EPUB</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">Libro Electrónico</div>
-                <div class="sb__export-desc">Formato estándar para Kindle, Apple Books y la mayoría de e-readers.</div>
-                <button class="sb__btn-primary" (click)="exportEpub()">Generar EPUB</button>
+                <div class="sb__export-desc">Formato estándar compatible con Kindle y Apple Books.</div>
+                <button class="sb__btn-primary" (click)="exportService.exportEpub()">Generar EPUB</button>
+              </div>
+            </div>
+
+            <div class="sb__export-card">
+              <div class="sb__export-icon">MOBI</div>
+              <div class="sb__export-info">
+                <div class="sb__export-name">Kindle Legacy (MOBI)</div>
+                <div class="sb__export-desc">Formato antiguo. Nota: Amazon recomienda usar EPUB actualmente.</div>
+                <button class="sb__btn-primary" (click)="exportService.exportEpub()">Generar MOBI</button>
               </div>
             </div>
 
@@ -392,8 +414,8 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
               <div class="sb__export-icon">DOCX</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">Microsoft Word</div>
-                <div class="sb__export-desc">Para enviar a editores o correctores externos.</div>
-                <button class="sb__btn-primary" (click)="exportDocx()">Generar DOCX</button>
+                <div class="sb__export-desc">Para revisiones externas o editores tradicionales.</div>
+                <button class="sb__btn-primary" (click)="exportService.exportDocx()">Generar DOCX</button>
               </div>
             </div>
 
@@ -412,16 +434,8 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
                 <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: false })">no</button>
               </div>
             </div>
-            <div class="sb__row">
-              <div class="sb__label">Tabla de Contenidos (TOC)</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.includeTOC()" (click)="store.updateExportPrefs({ includeTOC: true })">sí</button>
-                <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeTOC()" (click)="store.updateExportPrefs({ includeTOC: false })">no</button>
-              </div>
-            </div>
           </div>
         }
-        -->
         
         <!-- SEARCH VIEW -->
         @case ('search') {
@@ -485,6 +499,8 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
                 <div class="sb__avatar-preview">
                   <img [src]="store.personalConfig().avatar" alt="Avatar">
                   <button class="sb__avatar-del" (click)="removeAvatar()">×</button>
+                  <div class="sb__help">No se usará en el documento, solo personaliza tu instancia de Libria.</div>
+
                 </div>
               } @else {
                 <label class="sb__avatar-upload">
@@ -493,6 +509,14 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
                   <div class="sb__avatar-text">Subir foto</div>
                 </label>
               }
+            </div>
+
+            <div class="sb__section">Perfil</div>
+            <div class="sb__row sb__row--col">
+              <label class="sb__label">Nombre del Autor</label>
+              <input class="sb__input" type="text" placeholder="Tu nombre..."
+                [ngModel]="store.personalConfig().userName" (ngModelChange)="updateUserName($event)">
+              <div class="sb__help">Este nombre se usará por defecto en los nuevos documentos.</div>
             </div>
 
             <div class="sb__section">Disposición</div>
@@ -601,7 +625,7 @@ export class SidebarComponent implements OnInit {
   // Modal states
   showInputModal = signal(false);
   showConfirmModal = signal(false);
-  
+
   modalTitle = signal('');
   modalLabel = signal('');
   modalValue = signal<string | number>('');
@@ -622,7 +646,8 @@ export class SidebarComponent implements OnInit {
   initLocalMetadata() {
     const current = this.store.book();
     if (current) {
-      this.localMetadata = { ...current, 
+      this.localMetadata = {
+        ...current,
         authors: current.authors ? [...current.authors] : [],
         editors: current.editors ? [...current.editors] : []
       };
@@ -670,15 +695,46 @@ export class SidebarComponent implements OnInit {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        const config = { ...this.store.personalConfig(), avatar: e.target.result };
-        this.store.setPersonalConfig(config);
+        this._resizeImage(e.target.result, 200, 200).then(resizedBase64 => {
+          const config = { ...this.store.personalConfig(), avatar: resizedBase64 };
+          this.store.setPersonalConfig(config);
+        });
       };
       reader.readAsDataURL(file);
     }
   }
 
+  private _resizeImage(base64: string, width: number, height: number): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+          // Calculate object-fit: cover equivalent
+          const scale = Math.max(width / img.width, height / img.height);
+          const x = (width / 2) - (img.width / 2) * scale;
+          const y = (height / 2) - (img.height / 2) * scale;
+
+          ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        }
+
+        resolve(canvas.toDataURL('image/webp', 0.8));
+      };
+      img.src = base64;
+    });
+  }
+
   removeAvatar() {
     const config = { ...this.store.personalConfig(), avatar: '' };
+    this.store.setPersonalConfig(config);
+  }
+
+  updateUserName(name: string) {
+    const config = { ...this.store.personalConfig(), userName: name };
     this.store.setPersonalConfig(config);
   }
 
@@ -697,20 +753,20 @@ export class SidebarComponent implements OnInit {
     this.showAddMenu.set(false);
   }
 
-  readonly frontChapters = computed(() => 
+  readonly frontChapters = computed(() =>
     this.store.chapters().filter(c => c.kind === 'front')
   );
-  readonly mainChapters = computed(() => 
+  readonly mainChapters = computed(() =>
     this.store.chapters().filter(c => c.kind === 'chapter')
   );
-  readonly backChapters = computed(() => 
+  readonly backChapters = computed(() =>
     this.store.chapters().filter(c => c.kind === 'back')
   );
 
   editNumber(chapter: any, event: Event) {
     event.stopPropagation();
     if (chapter.kind !== 'chapter') return;
-    
+
     this.modalTitle.set('Editar número');
     this.modalLabel.set('Número de capítulo');
     this.modalValue.set(chapter.number || 0);
@@ -722,7 +778,7 @@ export class SidebarComponent implements OnInit {
 
   editTitle(chapter: any, event: Event) {
     event.stopPropagation();
-    
+
     this.modalTitle.set('Editar título');
     this.modalLabel.set('Título');
     this.modalValue.set(chapter.title);
@@ -763,13 +819,17 @@ export class SidebarComponent implements OnInit {
 
   searchFrag(r: any): string {
     const before = r.before.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const match  = r.match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const after  = r.after.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const match = r.match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const after = r.after.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return (r.before ? '…' : '') + before + '<mark>' + match + '</mark>' + after + (r.after.length >= 40 ? '…' : '');
   }
 
-  exportPdf() {
-    this.exportService.exportPdf();
+  exportPdfDigital() {
+    this.exportService.exportPdfDigital();
+  }
+
+  exportPdfPhysical() {
+    this.exportService.exportPdfPhysical();
   }
 
   exportEpub() {

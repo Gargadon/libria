@@ -29,7 +29,7 @@ export interface Book {
   publisher: string;
   year: number;
   isbn: string;
-  paperSize: '5x8' | '6x9' | 'A5' | 'A4';
+  paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'Letter';
 }
 
 export interface Tweaks {
@@ -104,6 +104,7 @@ export interface SearchResult {
 
 export interface PersonalConfig {
   avatar: string;
+  userName: string;
 }
 
 export interface LibriaDocument {
