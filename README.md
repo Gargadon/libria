@@ -1,59 +1,102 @@
 # Libria
 
-**Libria** es un editor de manuscritos profesional para autores. Combina un editor de texto enriquecido con herramientas de maquetación, previsualización de páginas y exportación a formatos de publicación estándar (PDF, EPUB, DOCX).
+![Libria Banner](libria-banner.webp)
 
-## Funcionalidades
+**Libria** es un entorno de escritura profesional diseñado para autores que buscan el control total sobre su obra, desde el primer borrador hasta la maquetación final. Reúne en una única aplicación de escritorio las herramientas de edición, diseño tipográfico, revisión editorial y exportación que normalmente requieren múltiples plataformas.
 
-- **Editor de texto enriquecido** — negrita, cursiva, subrayado, citas, letra capital
-- **Organización por capítulos** — preliminares, cuerpo de la obra y posliminares
-- **Maquetación profesional** — márgenes, tamaño de página, tipografía, interlineado, números de página, encabezados, saltos de escena
-- **Vista previa paginada** — simulación de página física con modos Kindle, iPhone e impresión
-- **Exportación** — genera PDF, EPUB y DOCX con portada, tabla de contenidos y notas marginales
-- **Buscar y reemplazar** — búsqueda en todo el manuscrito con fragmentos contextuales
-- **Metadatos del libro** — título, subtítulo, autores, editores, editorial, ISBN, portada
-- **Personalización** — avatar de usuario, ubicación de la barra lateral, corrector ortográfico
-- **Autoguardado** — integración con Electron para guardar/abrir archivos `.libria` en el sistema de archivos
+---
 
-## Tecnologías
+## ✨ Características Principales
 
-- **Frontend**: Angular 21, señales reactivas (@ngrx/signals)
-- **Escritorio**: Electron (Chromium + Node.js)
-- **Exportación**: docx (DOCX), jszip (EPUB), impresión nativa (PDF)
+### ✍️ Edición por Bloques y Organización
 
-## Requisitos
+Libria abandona el concepto de "página en blanco" tradicional por un sistema de **edición basado en bloques** (contenteditable), permitiendo una estructura semántica clara:
 
-- Node.js 18+
-- npm 11+
+- **Secciones especializadas:** Preliminares, cuerpo de la obra y posliminares.
+- **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo).
+- **Métricas en tiempo real:** Recuento de palabras y tiempo de lectura estimado por capítulo y total.
+- **Bloques enriquecidos:** Saltos de escena, saltos de página, citas y títulos decorativos.
 
-## Desarrollo
+### 🎨 Maquetación Tipográfica de Alto Nivel
+
+Un panel de control con más de **40 parámetros ajustables** para ver cómo quedará tu libro mientras lo escribes:
+
+- **Tipografía seleccionada:** Spectral, Lora, EB Garamond, Crimson Pro, Inter y Montserrat.
+- **Control absoluto:** Márgenes internos/externos, interlineado, espaciado de párrafos, sangrías y justificación.
+- **Detalles "Pro":** Letras capitulares (drop caps), guionización automática (hyphenation) y decoraciones de escena personalizables.
+- **Paginación Dinámica:** Previsualiza tu obra en formatos estándar (5x8, 6x9, A5, A4) o simulando dispositivos como Kindle o iPhone.
+
+### 🤝 Flujo Editorial y Revisión
+
+Diseñado para el trabajo colaborativo entre autores y editores:
+
+- **Notas Marginales:** Comenta fragmentos específicos del texto.
+- **Roles Definidos:** Autor, Editor, Corrector y Editorial.
+- **Hilos de Conversación:** Respuestas anidadas para discutir cambios estilísticos o estructurales.
+- **Control de Estado:** Marca notas como resueltas o no aplicables.
+
+### 📦 Exportación Lista para Publicar
+
+Genera archivos finales sin necesidad de herramientas externas:
+
+- **EPUB 3.0:** Estándar de la industria para distribución digital.
+- **DOCX:** Compatible con editores tradicionales, incluyendo metadatos y notas.
+- **PDF:** Formato de impresión nativo con maquetación y estilos aplicados.
+
+---
+
+## 🛠️ Especificaciones Técnicas
+
+Libria está construida con las tecnologías más modernas para garantizar fluidez y seguridad:
+
+| Componente | Tecnología |
+| :--- | :--- |
+| **Framework** | [Angular 21](https://angular.dev/) |
+| **Gestión de Estado** | [NgRx Signals Store](https://ngrx.io/guide/signals) |
+| **Entorno de Escritorio** | [Electron 42](https://www.electronjs.org/) |
+| **Persistencia** | Formato Open-Source `.libria` (JSON) |
+| **Testing** | [Vitest](https://vitest.dev/) |
+| **Estilos** | SCSS (Sass) |
+| **Lenguaje** | TypeScript 5.9 (Modo Estricto) |
+
+---
+
+## 🚀 Para Desarrolladores
+
+### Requisitos Previos
+
+- **Node.js**: 18.0 o superior
+- **npm**: 11.0 o superior
+
+### Instalación y Ejecución
 
 ```bash
-# Instalar dependencias
+# 1. Clonar el repositorio
+git clone https://github.com/gargadon/libria.git
+
+# 2. Instalar dependencias
 npm install
 
-# Servidor de desarrollo (Angular)
-npm run dev
-
-# Electron + Angular en modo desarrollo
+# 3. Iniciar en modo desarrollo (Angular + Electron)
 npm run electron:dev
-```
 
-## Producción
-
-```bash
-# Build de Angular
-npm run build
-
-# Empaquetar para distribución
+# 4. Construir para producción
 npm run electron:build
 ```
 
-Los ejecutables se generan en `release/`.
+### Arquitectura de Datos
 
-## Formato de archivo
+El estado de la aplicación se gestiona mediante un **Signals Store** altamente optimizado que incluye:
 
-Libria utiliza el formato `.libria` (JSON) para almacenar proyectos. Incluye metadatos, preferencias de maquetación, capítulos, notas y recursos como la portada.
+- **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
+- **Búsqueda Global:** Motor de búsqueda indexado que muestra contexto antes y después de cada coincidencia.
+- **Sistema de Activos:** Portada y otros recursos embebidos directamente en el archivo `.libria`.
+- **Especificación del Formato:** Consulta [FORMATO_LIBRIA.md](FORMATO_LIBRIA.md) para ver el esquema detallado y el JSON Schema oficial.
 
-## Licencia
+---
 
-MIT
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+---
