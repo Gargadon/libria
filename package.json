@@ -1,12 +1,13 @@
 {
   "name": "libria",
   "version": "1.0.0",
+  "description": "Libria - Document management application",
   "main": "main.js",
   "author": {
     "name": "David Kantun",
     "email": "dkantun@gmail.com"
   },
-  "homepage": "https://github.com/gargadon/libria",
+  "homepage": "https://github.com/Gargadon/libria",
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -15,8 +16,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "electron:dev": "concurrently --kill-others \"npm run dev\" \"wait-on http://localhost:4200 && electron . --dev\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:dev": "concurrently --kill-others \"npm run dev\" \"wait-on http://localhost:4200 && electron . --dev --ozone-platform=x11\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
@@ -70,8 +72,11 @@
       "output": "release"
     },
     "linux": {
-      "artifactName": "${name}-${version}-${target}-${arch}.${ext}",
-      "compression": "maximum",
+      "artifactName": "${name}-${version}-linux-${arch}.${ext}",
+      "category": "Office",
+      "executableArgs": [
+        "--ozone-platform=x11"
+      ],
       "target": [
         "AppImage",
         "deb",

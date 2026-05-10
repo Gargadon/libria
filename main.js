@@ -25,6 +25,7 @@ function createWindow() {
     height: 768,
     title: 'Libria',
     icon: path.join(__dirname, 'build', 'icon.png'),
+    autoHideMenuBar: false, // Ensure menu bar is always visible on Linux/Windows
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -98,7 +99,9 @@ function buildMenu() {
     },
   ];
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+  return menu;
 }
 
 app.whenReady().then(() => {

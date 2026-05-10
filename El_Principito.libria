@@ -21,10 +21,11 @@
     "bookFont": "lora",
     "spellcheck": true,
     "spellcheckLang": "es",
-    "fontSize": 16,
-    "lineHeight": 1.6,
-    "paragraphSpacing": 1.2,
+    "fontSize": 14,
+    "lineHeight": 1.5,
+    "paragraphSpacing": 8,
     "indentFirstLine": true,
+    "indentSize": 0.5,
     "justifyText": true,
     "marginTop": 20,
     "marginBottom": 20,
@@ -45,7 +46,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-2"
+    "lastActiveChapterId": "ch-1"
   },
   "chapters": [
     {
