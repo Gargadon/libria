@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuAction: (callback) => ipcRenderer.on('menu:action', (_event, action) => callback(action)),
   onCloseRequested: (callback) => ipcRenderer.on('app:close-requested', () => callback()),
   confirmClose: () => ipcRenderer.send('app:confirm-close'),
+  onFileOpen: (callback) => ipcRenderer.on('file:open', (_event, filePath) => callback(filePath)),
 });

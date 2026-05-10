@@ -41,6 +41,11 @@ export class App {
         if (action === 'about') this.showAbout.set(true);
       });
     }
+    if (api?.onFileOpen) {
+      api.onFileOpen((filePath: string) => {
+        this.fileService.openLibriaFileByPath(filePath);
+      });
+    }
 
     effect(() => {
       const book = this.store.book();

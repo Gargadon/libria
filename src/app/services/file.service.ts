@@ -85,6 +85,18 @@ export class FileService {
     }
   }
 
+  async openLibriaFileByPath(path: string) {
+    if (!this.isElectron) return;
+    try {
+      const api = window.electronAPI!;
+      const text = await api.readFile(path);
+      this.store.loadDocument(JSON.parse(text));
+      this.currentPath = path;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async openLibriaFile() {
     if (this.isElectron) {
       try {

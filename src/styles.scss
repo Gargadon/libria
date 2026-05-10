@@ -1283,7 +1283,10 @@ app-welcome {
 
 /* ===== Editor ===== */
 .ed {
+  flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   background:
     repeating-linear-gradient(90deg, transparent 0 119px, rgba(26, 22, 18, .015) 119px 120px),
     var(--paper-2);
@@ -1416,7 +1419,7 @@ app-welcome {
 
 .ed__sheet {
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
@@ -1424,19 +1427,7 @@ app-welcome {
 }
 
 .ed__marg {
-  display: none
-}
-
-@media (min-width: 1500px) {
-  .ed__sheet {
-    max-width: 960px;
-    grid-template-columns: minmax(0, 1fr) 220px;
-    gap: 30px;
-  }
-
-  .ed__marg {
-    display: block
-  }
+  display: none;
 }
 
 .ed__doc {

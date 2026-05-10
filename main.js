@@ -3,6 +3,21 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
+let fileToOpen = null;
+
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+  if (mainWindow) {
+    mainWindow.webContents.send('file:open', filePath);
+  } else {
+    fileToOpen = filePath;
+  }
+});
+
+function getFileArgument() {
+  const args = process.argv.slice(app.isPackaged ? 1 : 2);
+  return args.find((a) => a.endsWith('.libria')) ?? null;
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -30,6 +45,14 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
   }
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    const filePath = fileToOpen ?? getFileArgument();
+    if (filePath) {
+      mainWindow.webContents.send('file:open', filePath);
+      fileToOpen = null;
+    }
+  });
 }
 
 ipcMain.on('app:confirm-close', () => {
@@ -50,6 +73,8 @@ function buildMenu() {
         { label: 'Abrir', accelerator: 'CmdOrCtrl+O', click: () => send('open') },
         { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
         { label: 'Guardar como', accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+        { type: 'separator' },
+        { label: 'Salir', accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
       ],
     },
     {

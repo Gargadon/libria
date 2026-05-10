@@ -70,9 +70,13 @@
       "output": "release"
     },
     "linux": {
+      "artifactName": "${name}-${version}-${target}-${arch}.${ext}",
+      "compression": "maximum",
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "rpm",
+        "pacman"
       ],
       "icon": "build/icon.png"
     },
@@ -83,10 +87,32 @@
       "icon": "build/icon.png"
     },
     "win": {
+      "compression": "maximum",
       "target": [
         "nsis"
       ],
       "icon": "build/icon.ico"
-    }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${name}-${version}-win-${arch}.${ext}"
+    },
+    "fileAssociations": [
+      {
+        "ext": "libria",
+        "name": "Documento Libria",
+        "description": "Archivo de proyecto Libria",
+        "mimeType": "application/x-libria",
+        "icon": "build/icon",
+        "role": "Editor"
+      }
+    ],
+    "electronLanguages": [
+      "es",
+      "es-MX",
+      "en",
+      "en-US"
+    ]
   }
 }
