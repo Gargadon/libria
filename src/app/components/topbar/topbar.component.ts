@@ -23,7 +23,7 @@ import { environment } from '../../../environments/environment';
           <div class="tb__brandN">Libria</div>
           <div class="tb__brandV">{{ environment.version }} · Atelier</div>
         </div>
-        
+
         @if (store.book(); as book) {
           <div class="tb__bookchip">
             <span class="tb__chipBadge">{{ titleInitials() }}</span>
@@ -34,9 +34,10 @@ import { environment } from '../../../environments/environment';
         }
       </div>
 
+      <!-- NAV FULL (≥1360px) -->
       @if (store.book()) {
-        <nav class="tb__nav">
-          <button class="tb__nav__b" 
+        <nav class="tb__nav tb__nav--full">
+          <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'manuscript'"
             (click)="store.setNav('manuscript')">Manuscrito</button>
           <button class="tb__nav__b"
@@ -48,27 +49,83 @@ import { environment } from '../../../environments/environment';
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'metadata'"
             (click)="store.setNav('metadata')">Propiedades</button>
-          <!-- 
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'export'"
-            (click)="store.setNav('export')">Generar</button>
-          -->
         </nav>
       }
 
       <div class="tb__right">
         @if (store.book()) {
-          <div class="tb__actions">
+
+          <!-- FILE ACTIONS FULL (≥1360px) -->
+          <div class="tb__actions tb__actions--full">
             <button class="tb__action" title="Nuevo" (click)="newDoc()"><span class="material-symbols-outlined">note_add</span></button>
             <button class="tb__action" title="Abrir" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
             <button class="tb__action" title="Guardar" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>
             <button class="tb__action" title="Guardar como" (click)="saveDocAs()"><span class="material-symbols-outlined">save_as</span></button>
           </div>
-          <span class="tb__sep"></span>
-          <div class="tb__actions">
+          <span class="tb__sep tb__sep--full"></span>
+
+          <!-- UNDO/REDO FULL (≥1360px) -->
+          <div class="tb__actions tb__actions--full">
             <button class="tb__action" title="Deshacer (Ctrl+Z)" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
             <button class="tb__action" title="Rehacer (Ctrl+Y)" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
           </div>
+          <span class="tb__sep tb__sep--full"></span>
+
+          <!-- NAV COMPACT (<1360px) -->
+          <div class="tb__compact-menu tb__compact-menu--nav">
+            <button class="tb__action" title="Vista" (click)="toggleMenu('nav', $event)">
+              <span class="material-symbols-outlined">menu_book</span>
+            </button>
+            @if (openMenu() === 'nav') {
+              <div class="tb__compact-dropdown">
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'manuscript'" (click)="store.setNav('manuscript'); closeMenus()">Manuscrito</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'styles'" (click)="store.setNav('styles'); closeMenus()">Estilos</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">Maquetar</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">Propiedades</button>
+              </div>
+            }
+          </div>
+
+          <!-- FILE COMPACT (<1360px) -->
+          <div class="tb__compact-menu tb__compact-menu--file">
+            <button class="tb__action" title="Archivo" (click)="toggleMenu('file', $event)">
+              <span class="material-symbols-outlined">folder_open</span>
+            </button>
+            @if (openMenu() === 'file') {
+              <div class="tb__compact-dropdown">
+                <button class="tb__compact-item" (click)="newDoc(); closeMenus()">
+                  <span class="material-symbols-outlined">note_add</span> Nuevo
+                </button>
+                <button class="tb__compact-item" (click)="openDoc(); closeMenus()">
+                  <span class="material-symbols-outlined">folder_open</span> Abrir
+                </button>
+                <button class="tb__compact-item" (click)="saveDoc(); closeMenus()">
+                  <span class="material-symbols-outlined">save</span> Guardar
+                </button>
+                <button class="tb__compact-item" (click)="saveDocAs(); closeMenus()">
+                  <span class="material-symbols-outlined">save_as</span> Guardar como…
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- UNDO/REDO COMPACT (<1360px) -->
+          <div class="tb__compact-menu tb__compact-menu--edit">
+            <button class="tb__action" title="Edición" (click)="toggleMenu('edit', $event)">
+              <span class="material-symbols-outlined">history</span>
+            </button>
+            @if (openMenu() === 'edit') {
+              <div class="tb__compact-dropdown">
+                <button class="tb__compact-item" (click)="store.undo(); closeMenus()">
+                  <span class="material-symbols-outlined">undo</span> Deshacer
+                </button>
+                <button class="tb__compact-item" (click)="store.redo(); closeMenus()">
+                  <span class="material-symbols-outlined">redo</span> Rehacer
+                </button>
+              </div>
+            }
+          </div>
+
           <span class="tb__sep"></span>
           <button class="tb__icon" title="Buscar" (click)="store.search(''); store.setNav('search')">
             <span class="material-symbols-outlined">search</span>
@@ -78,7 +135,8 @@ import { environment } from '../../../environments/environment';
           </button>
           <button class="tb__cta" (click)="store.setNav('export')">Generar libro</button>
         }
-        <div class="tb__avatar">
+
+        <div class="tb__avatar tb__avatar--hideable">
           @if (store.personalConfig().avatar; as avatar) {
             <img [src]="avatar" alt="Avatar">
           } @else {
@@ -128,6 +186,7 @@ export class TopbarComponent {
 
   @HostListener('document:click')
   onDocumentClick() {
+    this.closeMenus();
   }
 
   newDoc() {
@@ -158,19 +217,31 @@ export class TopbarComponent {
     this.fileService.saveLibriaFile(true);
   }
 
-  @HostListener('window:keydown', ['$event'])
-  onGlobalKeyDown(event: KeyboardEvent) {
-    const ctrl = event.ctrlKey || event.metaKey;
-    const key = event.key.toLowerCase();
+  constructor() {
+    const api = (window as any).electronAPI;
+    if (api?.onMenuAction) {
+      api.onMenuAction((action: string) => {
+        switch (action) {
+          case 'new':    this.newDoc(); break;
+          case 'open':   this.openDoc(); break;
+          case 'save':   this.saveDoc(); break;
+          case 'saveAs': this.saveDocAs(); break;
+          case 'undo':   this.store.undo(); break;
+          case 'redo':   this.store.redo(); break;
+          case 'search': this.store.search(''); this.store.setNav('search'); break;
+        }
+      });
+    }
 
-    if (ctrl && key === 's') {
-      event.preventDefault();
-      if (event.shiftKey) {
-        this.saveDocAs();
-      } else {
-        this.saveDoc();
-      }
-      return;
+    if (api?.onCloseRequested) {
+      api.onCloseRequested(() => {
+        if (this.store.isDirty()) {
+          this.pendingAction.set('close');
+          this.showExitModal.set(true);
+        } else {
+          api.confirmClose();
+        }
+      });
     }
   }
 
@@ -178,9 +249,21 @@ export class TopbarComponent {
     this.store.setNav('metadata');
   }
 
+  // --- COMPACT MENUS ---
+  openMenu = signal<'nav' | 'file' | 'edit' | null>(null);
+
+  toggleMenu(menu: 'nav' | 'file' | 'edit', event: MouseEvent) {
+    event.stopPropagation();
+    this.openMenu.update(current => current === menu ? null : menu);
+  }
+
+  closeMenus() {
+    this.openMenu.set(null);
+  }
+
   // --- DATA LOSS GUARD LOGIC ---
   showExitModal = signal(false);
-  pendingAction = signal<'new' | 'open' | null>(null);
+  pendingAction = signal<'new' | 'open' | 'close' | null>(null);
 
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification($event: BeforeUnloadEvent) {
@@ -200,8 +283,10 @@ export class TopbarComponent {
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 
+    const api = (window as any).electronAPI;
     if (action === 'new') this.fileService.newProject();
-    if (action === 'open') this.fileService.openLibriaFile();
+    else if (action === 'open') this.fileService.openLibriaFile();
+    else if (action === 'close') api?.confirmClose();
   }
 
   async saveAndExit() {
@@ -210,7 +295,9 @@ export class TopbarComponent {
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 
+    const api = (window as any).electronAPI;
     if (action === 'new') this.fileService.newProject();
-    if (action === 'open') this.fileService.openLibriaFile();
+    else if (action === 'open') this.fileService.openLibriaFile();
+    else if (action === 'close') api?.confirmClose();
   }
 }

@@ -10,12 +10,18 @@
   <app-topbar></app-topbar>
   
   <div class="layout" [class.layout--empty]="!store.book()"
+       [class.layout--sb-closed]="!store.ui.sidebarOpen()"
        [style.--pv-width.px]="store.personalConfig().previewWidth">
     @if (store.book()) {
-      <div class="layout__side" *ngIf="store.tweaks.sidebar() === 'left'">
-        <app-sidebar></app-sidebar>
-      </div>
-      
+      @if (store.tweaks.sidebar() === 'left') {
+        <div class="layout__side">
+          <app-sidebar></app-sidebar>
+          <button class="sb__close-tab" (click)="store.closeSidebar()" title="Cerrar panel">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      }
+
       <div class="layout__ed">
         <app-editor></app-editor>
       </div>
@@ -25,10 +31,12 @@
       <div class="layout__pv">
         <app-preview></app-preview>
       </div>
-      
-      <div class="layout__side" *ngIf="store.tweaks.sidebar() === 'right'">
-        <app-sidebar></app-sidebar>
-      </div>
+
+      @if (store.tweaks.sidebar() === 'right') {
+        <div class="layout__side">
+          <app-sidebar></app-sidebar>
+        </div>
+      }
     } @else {
       <app-welcome></app-welcome>
     }
@@ -36,5 +44,9 @@
 
   @if (store.book() && store.ui.showTweaks()) {
     <app-tweaks-panel title="Tweaks"></app-tweaks-panel>
+  }
+
+  @if (showAbout()) {
+    <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
   }
 </div>

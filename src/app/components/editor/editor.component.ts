@@ -5,11 +5,12 @@ import { ContenteditableDirective } from './contenteditable.directive';
 import { NoteRole, NoteStatus } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
+import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
 
 @Component({
   selector: 'app-editor',
   standalone: true,
-  imports: [CommonModule, ContenteditableDirective, FormsModule],
+  imports: [CommonModule, ContenteditableDirective, FormsModule, NotesChatModalComponent],
   host: {
     'style': 'display: flex; flex-direction: column; min-height: 0; flex: 1;'
   },
@@ -43,14 +44,22 @@ import { environment } from '../../../environments/environment';
           <div class="ed__sheet">
             <article class="ed__doc" 
               [style.font-family]="store.bookFontFamily()"
-              [style.font-size.px]="store.tweaks.fontSize()"
+              [style.font-size.px]="ptToPx(store.tweaks.fontSize())"
               [style.line-height]="store.tweaks.lineHeight()"
-              [style.--p-gap.em]="store.tweaks.paragraphSpacing()"
+              [style.--p-gap.px]="ptToPx(store.tweaks.paragraphSpacing())"
+              [style.--indent-size]="store.tweaks.indentSize() + 'cm'"
               [class.ed__doc--indent]="store.tweaks.indentFirstLine()"
               [class.ed__doc--justify]="store.tweaks.justifyText()">
-              @for (b of chapter.body; track $index) {                <div class="ed__block-container" [class.ed__block-container--has-note]="hasNote($index)">
+              @for (b of chapter.body; track $index) {
+                <div class="ed__block-container" [class.ed__block-container--has-note]="hasNote($index)">
+                  @if (hasNote($index)) {
+                    <button class="ed__note-indicator" (click)="addNoteToBlock(chapter.id, $index)" title="Ver notas">
+                      <span class="material-symbols-outlined">chat_bubble</span>
+                      <span class="ed__note-count">{{ noteCount($index) }}</span>
+                    </button>
+                  }
                   <div class="ed__block-actions">
-                    <button class="ed__block-btn" (click)="addNoteToBlock(chapter.id, $index)" title="Añadir nota">💬</button>
+                    <button class="ed__block-btn" (click)="addNoteToBlock(chapter.id, $index)" title="Añadir nota"><span class="material-symbols-outlined">chat_bubble</span></button>
                     <select (change)="onTypeChange(chapter.id, $index, $event)" [value]="b.type">
                       <option value="p">Párrafo</option>
                       <option value="first-p">Capitular</option>
@@ -83,14 +92,14 @@ import { environment } from '../../../environments/environment';
                     @case ('chapter-num') { 
                       <div class="bk-chnum" 
                         [style.font-family]="store.titleFontFamily()"
-                        [style.font-size.px]="store.tweaks.titleFontSize() * 0.8"
+                        [style.font-size.px]="ptToPx(store.tweaks.titleFontSize()) * 0.8"
                         [style.text-align]="store.tweaks.titleAlignment()"
                         contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.tweaks.spellcheckLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)"></div> 
                     }
                     @case ('chapter-title') { 
                       <h2 class="bk-chtitle" 
                         [style.font-family]="store.titleFontFamily()"
-                        [style.font-size.px]="store.tweaks.titleFontSize()"
+                        [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
                         [style.text-align]="store.tweaks.titleAlignment()"
                         contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.tweaks.spellcheckLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)"></h2> 
                     }                    @case ('h1') { 
@@ -115,53 +124,6 @@ import { environment } from '../../../environments/environment';
               <div class="ed__end">— fin del fragmento —</div>
             </article>
 
-            <div class="ed__marg ed__marg--r">
-              <div class="mg mg--right">
-                <div class="mg__kind">Marginalia</div>
-                @if (store.activeNotes().length === 0) {
-                  <div class="mg__hint">Añade notas a los párrafos usando el icono de burbuja que aparece al pasar el ratón.</div>
-                } @else {
-                  @for (n of store.activeNotes(); track n.id) {
-                    <div class="note" [class]="'note--' + n.role" [class.note--resolved]="n.status === 'resolved'" [class.note--na]="n.status === 'not-applicable'">
-                      <div class="note__head">
-                        <span class="note__role">{{ n.role === 'author' ? 'Autor' : n.role === 'editor' ? 'Editor' : n.role === 'corrector' ? 'Corrector' : 'Publicador' }}</span>
-                        <div class="note__actions">
-                          <button class="note__status-btn" (click)="toggleStatus(n)" [title]="statusTitle(n.status)">
-                            {{ statusIcon(n.status) }}
-                          </button>
-                          <button class="note__del" (click)="store.deleteNote(n.id)" title="Eliminar nota">×</button>
-                        </div>
-                      </div>
-                      <div class="note__b">{{ n.content }}</div>
-                      <div class="note__by">— {{ n.authorName }} · {{ n.date }}</div>
-
-                      @if (n.replies.length > 0) {
-                        <div class="note__replies">
-                          @for (r of n.replies; track r.id) {
-                            <div class="reply">
-                              <div class="reply__b">{{ r.content }}</div>
-                              <div class="reply__by">{{ r.authorName }} ({{ r.role }}) · {{ r.date }}</div>
-                            </div>
-                          }
-                        </div>
-                      }
-
-                      <div class="note__reply-box">
-                        @if (replyTargetId() === n.id) {
-                          <textarea [(ngModel)]="replyContent" placeholder="Escribe tu respuesta..." rows="2"></textarea>
-                          <div class="note__reply-actions">
-                            <button class="btn btn--xs" (click)="replyTargetId.set('')">Cancelar</button>
-                            <button class="btn btn--xs btn--primary" (click)="saveReply(n.id)">Responder</button>
-                          </div>
-                        } @else {
-                          <button class="note__reply-btn" (click)="startReply(n.id)">Responder...</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-            </div>
           </div>
         </div>
 
@@ -180,43 +142,19 @@ import { environment } from '../../../environments/environment';
     }
 
     @if (showNoteDialog()) {
-      <div class="note-dialog-backdrop" (click)="closeNoteDialog()">
-        <div class="note-dialog" (click)="$event.stopPropagation()">
-          <h3>Nueva Marginalia</h3>
-          <p>Añadiendo nota al párrafo {{ (noteTargetIndex() || 0) + 1 }}</p>
-          
-          <div class="form-group">
-            <label>Tu nombre</label>
-            <input type="text" [(ngModel)]="noteAuthor" placeholder="Ej: Marina Cifuentes">
-          </div>
-
-          <div class="form-group">
-            <label>Rol</label>
-            <select [(ngModel)]="noteRole">
-              <option value="author">Autor</option>
-              <option value="editor">Editor</option>
-              <option value="corrector">Corrector</option>
-              <option value="publisher">Publicador</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Contenido</label>
-            <textarea [(ngModel)]="noteContent" rows="4" placeholder="Escribe aquí tu anotación..."></textarea>
-          </div>
-
-          <div class="note-dialog__actions">
-            <button class="btn" (click)="closeNoteDialog()">Cancelar</button>
-            <button class="btn btn--primary" (click)="saveNote()">Guardar nota</button>
-          </div>
-        </div>
-      </div>
+      <app-notes-chat-modal
+        [blockIndex]="noteTargetIndex()!"
+        [chapterId]="noteTargetChapterId()"
+        (close)="closeNoteDialog()">
+      </app-notes-chat-modal>
     }
   `
 })
 export class EditorComponent {
   readonly store = inject(BookStore);
   readonly environment = environment;
+
+  ptToPx(pt: number): number { return pt * 96 / 72; }
 
   readonly status = computed(() => {
     const chapter = this.store.activeChapter();
@@ -236,6 +174,10 @@ export class EditorComponent {
 
   hasNote(blockIndex: number): boolean {
     return this.store.activeNotes().some(n => n.blockIndex === blockIndex);
+  }
+
+  noteCount(blockIndex: number): number {
+    return this.store.activeNotes().filter(n => n.blockIndex === blockIndex).length;
   }
 
   // --- Note Dialog ---

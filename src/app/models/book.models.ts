@@ -43,6 +43,7 @@ export interface Tweaks {
   lineHeight: number;
   paragraphSpacing: number;
   indentFirstLine: boolean;
+  indentSize: number;
   justifyText: boolean;
   // Layout styles
   marginTop: number;

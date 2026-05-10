@@ -17,6 +17,7 @@ export interface BookState {
   ui: {
     showStyles: boolean;
     showTweaks: boolean;
+    sidebarOpen: boolean;
     activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings';
   };
   exportPrefs: {
@@ -41,10 +42,11 @@ const initialState: BookState = {
     bookFont: 'lora',
     spellcheck: true,
     spellcheckLang: 'es',
-    fontSize: 16,
+    fontSize: 12,
     lineHeight: 1.6,
-    paragraphSpacing: 1.2,
+    paragraphSpacing: 4,
     indentFirstLine: true,
+    indentSize: 0.5,
     justifyText: false,
     marginTop: 20,
     marginBottom: 20,
@@ -54,7 +56,7 @@ const initialState: BookState = {
     headerText: '',
     sceneBreakType: 'asterisks',
     titleAlignment: 'center',
-    titleFontSize: 24,
+    titleFontSize: 16,
     titleFont: 'spectral',
     titleBold: true,
     titleItalic: false,
@@ -71,6 +73,7 @@ const initialState: BookState = {
   ui: {
     showStyles: false,
     showTweaks: false,
+    sidebarOpen: true,
     activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
   },
   exportPrefs: {
@@ -250,8 +253,11 @@ export const BookStore = signalStore(
     },
     setNav(nav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings') {
       patchState(store, (state) => ({
-        ui: { ...state.ui, activeNav: nav, showStyles: nav === 'styles' }
+        ui: { ...state.ui, activeNav: nav, showStyles: nav === 'styles', sidebarOpen: true }
       }));
+    },
+    closeSidebar() {
+      patchState(store, (state) => ({ ui: { ...state.ui, sidebarOpen: false } }));
     },
     updateUi(ui: Partial<BookState['ui']>) {
       patchState(store, (state) => ({

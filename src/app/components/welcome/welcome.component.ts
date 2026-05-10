@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-welcome',
@@ -19,11 +20,11 @@ import { CommonModule } from '@angular/common';
           </svg>
         </div>
         <h1 class="welcome__title">Libria</h1>
-        <p class="welcome__tagline">Tu espacio para escribir grandes historias.</p>
+        <p class="welcome__tagline">Tu próxima gran historia empieza aquí.</p>
         
         <div class="welcome__actions">
           <button class="welcome__btn welcome__btn--primary" (click)="store.createNewProject()">
-            <span class="welcome__btn-icon">＋</span>
+            <span class="material-symbols-outlined">add</span>
             <div class="welcome__btn-text">
               <strong>Crear nuevo proyecto</strong>
               <span>Empieza un nuevo libro desde cero</span>
@@ -31,16 +32,16 @@ import { CommonModule } from '@angular/common';
           </button>
           
           <button class="welcome__btn" (click)="fileService.openLibriaFile()">
-            <span class="welcome__btn-icon">📂</span>
+            <span class="material-symbols-outlined">file_open</span>
             <div class="welcome__btn-text">
               <strong>Abrir proyecto existente</strong>
-              <span>Carga un archivo .libria desde tu dispositivo</span>
+              <span>Carga un archivo .libria desde tu computadora</span>
             </div>
           </button>
         </div>
         
         <div class="welcome__footer">
-          Versión 1.0.0 · Maquetación profesional para autores
+          Versión {{ version }}
         </div>
       </div>
     </div>
@@ -50,6 +51,7 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 100%;
       height: 100%;
       background: var(--bg-paper, #f9f7f2);
       color: #333;
@@ -134,4 +136,5 @@ import { CommonModule } from '@angular/common';
 export class WelcomeComponent {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly version = environment.version;
 }

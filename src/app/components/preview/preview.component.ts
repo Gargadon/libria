@@ -28,7 +28,7 @@ import * as htmlToImage from 'html-to-image';
               <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
             </div>
             <div class="print__content">
-                <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: store.tweaks.fontSize() }"></ng-container>
+                <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: ptToPx(store.tweaks.fontSize()) }"></ng-container>
             </div>
             <div class="print__footer">
               @if (store.tweaks.showPageNumbers()) {
@@ -165,7 +165,7 @@ import * as htmlToImage from 'html-to-image';
                     <ng-container *ngTemplateOutlet="contentTpl; context: { 
                       $implicit: c, 
                       showNotes: false,
-                      fsOverride: (mode() === 'kindle' || mode() === 'iphone') ? (store.tweaks.fontSize() + deviceFontSizeOffset()) : store.tweaks.fontSize()
+                      fsOverride: ptToPx((mode() === 'kindle' || mode() === 'iphone') ? (store.tweaks.fontSize() + deviceFontSizeOffset()) : store.tweaks.fontSize())
                     }"></ng-container>
                   </div>
                 }
@@ -181,7 +181,8 @@ import * as htmlToImage from 'html-to-image';
           [style.font-family]="store.bookFontFamily()"
           [style.font-size.px]="fsOverride || store.tweaks.fontSize()"
           [style.line-height]="store.tweaks.lineHeight()"
-          [style.--p-gap.em]="store.tweaks.paragraphSpacing()"
+          [style.--p-gap.px]="ptToPx(store.tweaks.paragraphSpacing())"
+          [style.--indent-size]="store.tweaks.indentSize() + 'cm'"
           [style.--drop-lines]="store.tweaks.dropCapLines()"
           [class.kp--indent]="store.tweaks.indentFirstLine()"
           [class.kp--no-indent]="!store.tweaks.indentFirstLine()"
@@ -215,14 +216,14 @@ import * as htmlToImage from 'html-to-image';
               }
               @case ('chapter-num') { <div class="kp-chnum" 
                 [style.font-family]="store.titleFontFamily()"
-                [style.font-size.px]="store.tweaks.titleFontSize() * 0.8"
+                [style.font-size.px]="ptToPx(store.tweaks.titleFontSize()) * 0.8"
                 [style.text-align]="store.tweaks.titleAlignment()"
                 [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                 [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                 [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</div> }
               @case ('chapter-title') { <h2 class="kp-chtitle" 
                 [style.font-family]="store.titleFontFamily()"
-                [style.font-size.px]="store.tweaks.titleFontSize()"
+                [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
                 [style.text-align]="store.tweaks.titleAlignment()"
                 [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                 [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
@@ -526,7 +527,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 : 
                     (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
     const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
-    const fsFactor = 16 / fs;
+    const fsFactor = 12 / fs;
     const wpp = wppBase * fsFactor;
     const wordPages = Math.ceil((c.words || 1) / wpp);
     const pageBreaks = c.body.filter(b => b.type === 'page-break').length;
@@ -583,4 +584,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       untracked(() => this.store.setActiveChapter(activeId));
     }
   }
+
+  ptToPx(pt: number): number { return pt * 96 / 72; }
 }

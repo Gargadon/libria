@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -6,8 +6,8 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1360,
+    height: 768,
     title: 'Libria',
     icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: {
@@ -15,6 +15,12 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  mainWindow.on('close', (e) => {
+    if (mainWindow._forceClose) return;
+    e.preventDefault();
+    mainWindow.webContents.send('app:close-requested');
   });
 
   const isDev = process.argv.includes('--dev');
@@ -26,7 +32,54 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+ipcMain.on('app:confirm-close', () => {
+  mainWindow._forceClose = true;
+  mainWindow.close();
+});
+
+function send(action) {
+  mainWindow?.webContents.send('menu:action', action);
+}
+
+function buildMenu() {
+  const template = [
+    {
+      label: 'Archivo',
+      submenu: [
+        { label: 'Nuevo', accelerator: 'CmdOrCtrl+N', click: () => send('new') },
+        { label: 'Abrir', accelerator: 'CmdOrCtrl+O', click: () => send('open') },
+        { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
+        { label: 'Guardar como', accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+      ],
+    },
+    {
+      label: 'Editar',
+      submenu: [
+        { label: 'Deshacer', accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
+        { label: 'Rehacer', accelerator: 'CmdOrCtrl+Y', click: () => send('redo') },
+      ],
+    },
+    {
+      label: 'Ver',
+      submenu: [
+        { label: 'Buscar', accelerator: 'CmdOrCtrl+F', click: () => send('search') },
+      ],
+    },
+    {
+      label: 'Ayuda',
+      submenu: [
+        { label: 'Acerca de Libria…', click: () => send('about') },
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+app.whenReady().then(() => {
+  buildMenu();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

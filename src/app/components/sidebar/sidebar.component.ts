@@ -15,9 +15,13 @@ import { environment } from '../../../environments/environment';
   imports: [CommonModule, FormsModule, InputModalComponent, ConfirmModalComponent],
   template: `
     <aside class="sb" [class.sb--left]="store.tweaks.sidebar() === 'left'" [class.sb--right]="store.tweaks.sidebar() === 'right'">
-      
+
+      <button class="sb__close" (click)="store.closeSidebar()" title="Cerrar panel">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+
       @switch (store.ui.activeNav()) {
-        
+
         <!-- MANUSCRIPT VIEW -->
         @case ('manuscript') {
           <div class="sb__head">
@@ -26,7 +30,7 @@ import { environment } from '../../../environments/environment';
               <span>Biblioteca / Manuscritos</span>
             </div>
             <div class="sb__title">{{ store.book()?.title }}</div>
-            <div class="sb__author">por {{ store.book()?.author }}</div>
+            <div class="sb__author">por {{ store.book()?.authors?.[0] ?? 'Sin autor' }}</div>
 
             <div class="sb__stats">
               <div class="sb__stat">
@@ -109,8 +113,8 @@ import { environment } from '../../../environments/environment';
 
             <div class="sb__section">Párrafo</div>
             <div class="sb__row sb__row--col">
-              <div class="sb__label">Tamaño ({{ store.tweaks.fontSize() }}px)</div>
-              <input type="range" min="12" max="24" step="1" 
+              <div class="sb__label">Tamaño ({{ store.tweaks.fontSize() }}pt)</div>
+              <input type="range" min="8" max="16" step="0.5"
                      [ngModel]="store.tweaks.fontSize()" 
                      (ngModelChange)="store.updateTweak('fontSize', $event)">
             </div>
@@ -123,8 +127,8 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <div class="sb__row sb__row--col">
-              <div class="sb__label">Espaciado ({{ store.tweaks.paragraphSpacing() }}em)</div>
-              <input type="range" min="0" max="3" step="0.1" 
+              <div class="sb__label">Espaciado ({{ store.tweaks.paragraphSpacing() }}pt)</div>
+              <input type="range" min="0" max="24" step="0.5"
                      [ngModel]="store.tweaks.paragraphSpacing()" 
                      (ngModelChange)="store.updateTweak('paragraphSpacing', $event)">
             </div>
@@ -137,6 +141,15 @@ import { environment } from '../../../environments/environment';
                 <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.indentFirstLine()" (click)="store.updateTweak('indentFirstLine', false)">no</button>
               </div>
             </div>
+
+            @if (store.tweaks.indentFirstLine()) {
+              <div class="sb__row sb__row--col">
+                <div class="sb__label">Tamaño sangría ({{ store.tweaks.indentSize() }}cm)</div>
+                <input type="range" min="0.1" max="2" step="0.1"
+                       [ngModel]="store.tweaks.indentSize()"
+                       (ngModelChange)="store.updateTweak('indentSize', $event)">
+              </div>
+            }
 
             <div class="sb__row">
               <div class="sb__label">Justificar texto</div>
@@ -218,8 +231,8 @@ import { environment } from '../../../environments/environment';
               </select>
             </div>
             <div class="sb__row sb__row--col">
-              <div class="sb__label">Tamaño ({{ store.tweaks.titleFontSize() }}px)</div>
-              <input type="range" min="18" max="48" step="1" [ngModel]="store.tweaks.titleFontSize()" (ngModelChange)="store.updateTweak('titleFontSize', $event)">
+              <div class="sb__label">Tamaño ({{ store.tweaks.titleFontSize() }}pt)</div>
+              <input type="range" min="12" max="36" step="0.5" [ngModel]="store.tweaks.titleFontSize()" (ngModelChange)="store.updateTweak('titleFontSize', $event)">
             </div>
             <div class="sb__row">
               <div class="sb__label">Alineación</div>
