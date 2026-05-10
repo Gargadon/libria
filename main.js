@@ -59,3 +59,72 @@ ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
   return fs.readFileSync(filePath, 'utf-8');
 });
+
+ipcMain.handle('pdf:printToPDF', async (_event, options) => {
+  // Apply inline styles directly — they override any stylesheet rule (no @media print needed)
+  await mainWindow.webContents.executeJavaScript(`
+    window.__libriaState = [];
+    const _save = (el, props) => {
+      const entry = { el, orig: {} };
+      props.forEach(p => { entry.orig[p] = el.style[p]; });
+      window.__libriaState.push(entry);
+    };
+
+    const pg = document.querySelector('.print-generator');
+    if (pg) {
+      // Unlock every ancestor
+      let el = pg.parentElement;
+      while (el && el !== document.documentElement) {
+        _save(el, ['overflow', 'overflowY', 'height', 'maxHeight', 'flex']);
+        el.style.overflow  = 'visible';
+        el.style.overflowY = 'visible';
+        el.style.height    = 'auto';
+        el.style.maxHeight = 'none';
+        el.style.flex      = 'none';
+        el = el.parentElement;
+      }
+      // Unlock print-generator itself
+      _save(pg, ['position', 'height', 'overflow', 'visibility', 'zIndex']);
+      pg.style.position   = 'static';
+      pg.style.height     = 'auto';
+      pg.style.overflow   = 'visible';
+      pg.style.visibility = 'visible';
+      pg.style.zIndex     = 'auto';
+
+      // Unlock print__content (container-type:size clips content)
+      pg.querySelectorAll('.print__content').forEach(c => {
+        _save(c, ['overflow', 'height', 'flex']);
+        c.style.overflow = 'visible';
+        c.style.height   = 'auto';
+        c.style.flex     = 'none';
+      });
+
+      // Remove inline padding from each chapter page so @page :left/:right margins
+      // are the ONLY margin source (prevents double-margin and wrong odd/even margins).
+      pg.querySelectorAll('.print__page').forEach(page => {
+        _save(page, ['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight']);
+        page.style.paddingTop    = '0';
+        page.style.paddingBottom = '0';
+        page.style.paddingLeft   = '0';
+        page.style.paddingRight  = '0';
+      });
+    }
+  `);
+
+  try {
+    const pdf = await mainWindow.webContents.printToPDF(options);
+    return pdf;
+  } catch (err) {
+    console.error('[printToPDF] Error:', err);
+    throw err;
+  } finally {
+    await mainWindow.webContents.executeJavaScript(`
+      if (window.__libriaState) {
+        window.__libriaState.forEach(({ el, orig }) => {
+          Object.entries(orig).forEach(([p, v]) => { el.style[p] = v; });
+        });
+        delete window.__libriaState;
+      }
+    `);
+  }
+});

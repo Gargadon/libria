@@ -5,7 +5,8 @@ const STORAGE_KEY = 'libria-personal-config';
 
 const defaults: PersonalConfig = {
   avatar: '',
-  userName: ''
+  userName: '',
+  previewWidth: 460
 };
 
 @Injectable({ providedIn: 'root' })

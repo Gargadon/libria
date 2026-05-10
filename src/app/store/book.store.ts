@@ -71,7 +71,7 @@ const initialState: BookState = {
   ui: {
     showStyles: false,
     showTweaks: false,
-    activeNav: 'manuscript'
+    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
   },
   exportPrefs: {
     includeCover: true,
@@ -81,7 +81,7 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '', userName: '' }
+  personalConfig: { avatar: '', userName: '', previewWidth: 460 }
 };
 
 function calculateWords(body: { text?: string }[]): number {

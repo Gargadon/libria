@@ -370,43 +370,12 @@ import { environment } from '../../../environments/environment';
             <div class="sb__author">Exportar a formatos profesionales</div>
           </div>
           <div class="sb__content sb__content--padding">
-            <div class="sb__section">Documento PDF</div>
-
-            <div class="sb__export-card">
-              <div class="sb__export-icon">DIG</div>
-              <div class="sb__export-info">
-                <div class="sb__export-name">PDF Digital</div>
-                <div class="sb__export-desc">Márgenes simétricos, ideal para lectura en pantalla y e-mail.</div>
-                <button class="sb__btn-primary" (click)="exportService.exportPdfDigital()">Generar PDF</button>
-              </div>
-            </div>
-
-            <div class="sb__export-card">
-              <div class="sb__export-icon">PRN</div>
-              <div class="sb__export-info">
-                <div class="sb__export-name">PDF de Impresión</div>
-                <div class="sb__export-desc">Márgenes reflejados y margen de lomo. Listo para imprenta.</div>
-                <button class="sb__btn-primary" (click)="exportService.exportPdfPhysical()">Generar PDF</button>
-              </div>
-            </div>
-
-            <div class="sb__section">Otros Formatos</div>
-
             <div class="sb__export-card">
               <div class="sb__export-icon">EPUB</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">Libro Electrónico</div>
                 <div class="sb__export-desc">Formato estándar compatible con Kindle y Apple Books.</div>
                 <button class="sb__btn-primary" (click)="exportService.exportEpub()">Generar EPUB</button>
-              </div>
-            </div>
-
-            <div class="sb__export-card">
-              <div class="sb__export-icon">MOBI</div>
-              <div class="sb__export-info">
-                <div class="sb__export-name">Kindle Legacy (MOBI)</div>
-                <div class="sb__export-desc">Formato antiguo. Nota: Amazon recomienda usar EPUB actualmente.</div>
-                <button class="sb__btn-primary" (click)="exportService.exportEpub()">Generar MOBI</button>
               </div>
             </div>
 
@@ -822,14 +791,6 @@ export class SidebarComponent implements OnInit {
     const match = r.match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const after = r.after.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return (r.before ? '…' : '') + before + '<mark>' + match + '</mark>' + after + (r.after.length >= 40 ? '…' : '');
-  }
-
-  exportPdfDigital() {
-    this.exportService.exportPdfDigital();
-  }
-
-  exportPdfPhysical() {
-    this.exportService.exportPdfPhysical();
   }
 
   exportEpub() {

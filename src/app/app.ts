@@ -29,6 +29,8 @@ export class App {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
 
+  isResizing = false;
+
   constructor() {
     effect(() => {
       const book = this.store.book();
@@ -43,4 +45,34 @@ export class App {
       document.title = 'Libria - ' + prefix + fileName;
     });
   }
+
+  startResizing(event: MouseEvent) {
+    this.isResizing = true;
+    event.preventDefault();
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.stopResizing);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }
+
+  onMouseMove = (event: MouseEvent) => {
+    if (!this.isResizing) return;
+    
+    // Preview width is from the right edge of the screen
+    const newWidth = window.innerWidth - event.clientX;
+    
+    // Constraints
+    if (newWidth > 320 && newWidth < window.innerWidth * 0.7) {
+      const config = { ...this.store.personalConfig(), previewWidth: newWidth };
+      this.store.setPersonalConfig(config);
+    }
+  };
+
+  stopResizing = () => {
+    this.isResizing = false;
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.stopResizing);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
 }

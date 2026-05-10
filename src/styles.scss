@@ -36,6 +36,22 @@
   --serif: "Spectral", serif;
 }
 
+.font-eb-garamond {
+  --serif: "EB Garamond", serif;
+}
+
+.font-inter {
+  --serif: "Inter", sans-serif;
+}
+
+.font-montserrat {
+  --serif: "Montserrat", sans-serif;
+}
+
+.font-crimson-pro {
+  --serif: "Crimson Pro", serif;
+}
+
 * {
   box-sizing: border-box
 }
@@ -80,15 +96,64 @@ button {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr) 460px;
+  grid-template-columns: 300px minmax(0, 1fr) 6px var(--pv-width, 460px);
   grid-template-rows: 100%;
   gap: 0;
   border-top: 1px solid var(--rule);
   overflow: hidden;
 }
 
+.layout__side { grid-column: 1; }
+.layout__ed { grid-column: 2; }
+.resizer { grid-column: 3; }
+.layout__pv { grid-column: 4; }
+
 .app--sb-right .layout {
-  grid-template-columns: minmax(0, 1fr) 460px 300px;
+  grid-template-columns: minmax(0, 1fr) 6px var(--pv-width, 460px) 300px;
+}
+
+.app--sb-right .layout__ed { grid-column: 1; }
+.app--sb-right .resizer { grid-column: 2; }
+.app--sb-right .layout__pv { grid-column: 3; }
+.app--sb-right .layout__side { grid-column: 4; }
+
+.layout__side,
+.layout__ed,
+.layout__pv {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.resizer {
+  grid-row: 1 / -1;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.2s;
+  z-index: 100;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--rule-soft);
+    transform: translateX(-50%);
+  }
+
+  &:hover, &:active {
+    background: rgba(168, 98, 61, 0.1);
+    &::after {
+      background: var(--terra);
+      width: 2px;
+    }
+  }
 }
 
 .layout--empty,
@@ -2359,6 +2424,7 @@ app-preview {
   color: #555;
   margin-bottom: 20px;
   font-style: italic;
+  font-family: var(--serif);
 }
 
 .print__footer {
@@ -2366,6 +2432,7 @@ app-preview {
   font-size: 10px;
   color: #000;
   margin-top: 20px;
+  font-family: var(--serif);
 }
 
 /* Print preview inner content area (replaces nested print__page in paginatedTpl) */
@@ -3003,29 +3070,25 @@ body.print-physical, body.print-digital {
 }
 
 .print-generator {
-  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1000;
 }
 
 @media print {
-  @page {
-    margin: 0;
-  }
+  /* No default @page size/margin here, it's set dynamically in the component */
 
-  .tb, .sb, .ed, .pv__head, .pv__foot, .pv__zoom, .pv-click-zone, .ed__statbar, .pv__stage > .mode-ui, .pv__nav-btn {
+  .tb, .sb, .ed, .pv__head, .pv__foot, .pv__zoom, .pv-click-zone, .ed__statbar, .pv__stage > div:not(.print-generator), .pv__nav-btn {
     display: none !important;
   }
 
-  /* Force UI container to be invisible for print */
-  .pv__stage > div:not(.print-generator) {
-    display: none !important;
-  }
-
-  .layout {
-    display: block !important;
-    padding: 0 !important;
-  }
-
-  .pv, .pv__stage {
+  .app, .layout, .pv, .pv__stage {
     display: block !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -3035,23 +3098,45 @@ body.print-physical, body.print-digital {
     overflow: visible !important;
   }
 
-  .print-generator {
+  app-sidebar, app-editor, app-preview {
     display: block !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .print-generator {
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+    z-index: auto !important;
     background: white !important;
   }
 
   .print__page {
     margin: 0 !important;
     box-shadow: none !important;
-    page-break-after: always !important;
-    /* Physical dimensions are set via --pw and --ph in template */
     width: var(--pw) !important;
-    height: var(--ph) !important;
+    min-height: var(--ph);
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     position: relative;
-    overflow: hidden;
+    page-break-after: always !important;
+    display: block !important;
+  }
+
+  .print__content {
+    overflow: visible !important;
+    height: auto !important;
+    flex: none !important;
+    container-type: normal !important;
+  }
+
+  .print__header,
+  .print__footer {
+    display: block !important;
   }
 }
 

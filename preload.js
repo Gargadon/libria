@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openDialog: () => ipcRenderer.invoke('dialog:open'),
   writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
+  printToPDF: (options) => ipcRenderer.invoke('pdf:printToPDF', options),
 });

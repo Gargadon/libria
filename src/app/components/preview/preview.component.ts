@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, effect, untracked, ElementRef, Vie
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { Chapter } from '../../models/book.models';
+import * as htmlToImage from 'html-to-image';
 
 @Component({
   selector: 'app-preview',
@@ -49,6 +50,9 @@ import { Chapter } from '../../models/book.models';
           <button (click)="zoomOut()">－</button>
           <span (click)="resetZoom()" style="cursor:pointer" title="Reiniciar zoom">{{ (printZoom() * 100) | number:'1.0-0' }}%</span>
           <button (click)="zoomIn()">＋</button>
+          <button class="pv__snapshot-btn" (click)="takeSnapshot()" title="Capturar instantánea (PNG)">
+            <span class="material-symbols-outlined">photo_camera</span>
+          </button>
         </div>
         
         <div class="pv__zoom" *ngIf="mode() === 'kindle' || mode() === 'iphone'">
@@ -111,7 +115,7 @@ import { Chapter } from '../../models/book.models';
           </div>
 
           <!-- THE PAPEL (Single Page Preview) -->
-          <div class="print__page" *ngIf="mode() === 'print'"
+          <div class="print__page" *ngIf="mode() === 'print'" #snapshotPage
             [style.width]="'var(--pw)'"
             [style.height]="'var(--ph)'"
             [style.padding-top.mm]="store.tweaks.marginTop()"
@@ -273,9 +277,44 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
+  @ViewChild('snapshotPage', { static: false }) snapshotPageEl?: ElementRef<HTMLElement>;
 
   private resizeObserver?: ResizeObserver;
   private measureTimeout?: any;
+
+  isCapturing = signal(false);
+
+  async takeSnapshot() {
+    if (!this.snapshotPageEl) return;
+    
+    this.isCapturing.set(true);
+    
+    try {
+      const node = this.snapshotPageEl.nativeElement;
+      
+      // Capture options
+      const options = {
+        backgroundColor: '#ffffff',
+        width: this.toPixels(this.pageSize().w),
+        height: this.toPixels(this.pageSize().h),
+        style: {
+          transform: 'scale(1)', // Force real size
+          margin: '0',
+          boxShadow: 'none'
+        }
+      };
+
+      const dataUrl = await htmlToImage.toPng(node, options);
+      const link = document.createElement('a');
+      link.download = `Libria_Snapshot_${this.store.book()?.title || 'Book'}_Page_${this.globalPage() + 1}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Snapshot failed', error);
+    } finally {
+      this.isCapturing.set(false);
+    }
+  }
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
@@ -315,7 +354,23 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly chapterNotes = (id: string) => this.store.notes().filter(n => n.chapterId === id);
   readonly blockNotes = (id: string, idx: number) => this.store.notes().filter(n => n.chapterId === id && n.blockIndex === idx);
 
-  readonly printStyles = computed(() => `@media print { @page { size: ${this.store.pageSize()}; margin: 0; } }`);
+  readonly printStyles = computed(() => {
+    const size = this.store.pageSize();
+    const t = this.store.tweaks;
+    let css = `@media print { @page { size: ${size}; margin: 0; } `;
+
+    css += `
+      @page {
+        margin-top: ${t.marginTop()}mm;
+        margin-bottom: ${t.marginBottom()}mm;
+        margin-left: ${t.marginInner()}mm;
+        margin-right: ${t.marginInner()}mm;
+      }
+    `;
+
+    css += ` }`;
+    return css;
+  });
 
   printZoom = signal(0.8);
   deviceFontSizeOffset = signal(0);
@@ -348,7 +403,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const nav = this.store.ui.activeNav();
       untracked(() => {
         if (nav === 'layout') this.mode.set('print');
-        // 'export' tab no longer forces a mode switch
         this.scheduleMeasure();
       });
     });

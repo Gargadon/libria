@@ -105,6 +105,7 @@ export interface SearchResult {
 export interface PersonalConfig {
   avatar: string;
   userName: string;
+  previewWidth: number;
 }
 
 export interface LibriaDocument {

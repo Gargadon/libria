@@ -2,21 +2,33 @@
      [class.app--sb-right]="store.tweaks.sidebar() === 'right'" 
      [class.font-lora]="store.tweaks.bookFont() === 'lora'"
      [class.font-spectral]="store.tweaks.bookFont() === 'spectral'"
+     [class.font-eb-garamond]="store.tweaks.bookFont() === 'eb-garamond'"
+     [class.font-inter]="store.tweaks.bookFont() === 'inter'"
+     [class.font-montserrat]="store.tweaks.bookFont() === 'montserrat'"
+     [class.font-crimson-pro]="store.tweaks.bookFont() === 'crimson-pro'"
      [attr.data-screen-label]="'Libria — Editor'">
   <app-topbar></app-topbar>
   
-  <div class="layout" [class.layout--empty]="!store.book()">
+  <div class="layout" [class.layout--empty]="!store.book()"
+       [style.--pv-width.px]="store.personalConfig().previewWidth">
     @if (store.book()) {
-      @if (store.tweaks.sidebar() === 'left') {
+      <div class="layout__side" *ngIf="store.tweaks.sidebar() === 'left'">
         <app-sidebar></app-sidebar>
-      }
+      </div>
       
-      <app-editor></app-editor>
-      <app-preview></app-preview>
+      <div class="layout__ed">
+        <app-editor></app-editor>
+      </div>
+
+      <div class="resizer" (mousedown)="startResizing($event)"></div>
+
+      <div class="layout__pv">
+        <app-preview></app-preview>
+      </div>
       
-      @if (store.tweaks.sidebar() === 'right') {
+      <div class="layout__side" *ngIf="store.tweaks.sidebar() === 'right'">
         <app-sidebar></app-sidebar>
-      }
+      </div>
     } @else {
       <app-welcome></app-welcome>
     }

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>Libria</title>
@@ -7,9 +8,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="libria.svg">
   <link rel="stylesheet" href="fonts.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script>
+    // Early Polyfills for PDFKit and legacy modules
+    window.process = {
+      env: { DEBUG: undefined },
+      version: '',
+      nextTick: (fn, ...args) => setTimeout(() => fn(...args), 0),
+      binding: (name) => ({}),
+      cwd: () => '/'
+    };
+    window.global = window;
+    window.fs = {
+      readFileSync: () => { throw new Error("fs.readFileSync is not available in browser. Use registered fonts."); }
+    };
+    window.util = {
+      inherits: function (ctor, superCtor) {
+        if (superCtor) {
+          ctor.super_ = superCtor;
+          ctor.prototype = Object.create(superCtor.prototype, {
+            constructor: { value: ctor, enumerable: false, writable: true, configurable: true }
+          });
+        }
+      }
+    };
+  </script>
 </head>
+
 <body>
   <app-root></app-root>
 </body>
+
 </html>

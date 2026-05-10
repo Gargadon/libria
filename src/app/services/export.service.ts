@@ -1,14 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import JSZip from 'jszip';
-import { 
-  Document, 
-  Packer, 
-  Paragraph, 
-  TextRun, 
-  HeadingLevel, 
-  AlignmentType,
-  PageBreak
+import {
+  Document,
+  Packer,
+  Paragraph,
+  HeadingLevel,
 } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -18,9 +15,6 @@ import { saveAs } from 'file-saver';
 export class ExportService {
   private readonly store = inject(BookStore);
 
-  /**
-   * Generates an EPUB 3.0 file.
-   */
   async exportEpub() {
     const zip = new JSZip();
     const book = this.store.book();
@@ -31,10 +25,7 @@ export class ExportService {
 
     if (!book) return;
 
-    // 1. Mimetype
     zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
-
-    // 2. META-INF/container.xml
     zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
@@ -42,7 +33,6 @@ export class ExportService {
   </rootfiles>
 </container>`);
 
-    // 3. Assets
     let coverManifest = '';
     let coverSpine = '';
     if (prefs.includeCover && assets['cover']) {
@@ -62,7 +52,6 @@ export class ExportService {
 </html>`);
     }
 
-    // 4. content.opf
     let manifest = '';
     let spine = '';
     chapters.forEach((c, i) => {
@@ -95,7 +84,6 @@ ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
 </package>`;
     zip.file('OEBPS/content.opf', opf);
 
-    // 5. styles.css
     const dropCapStyles = tweaks.dropCap ? `.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }` : '';
     zip.file('OEBPS/styles.css', `body { font-family: serif; padding: 5%; line-height: 1.5; }
 h1, h2 { text-align: center; }
@@ -103,7 +91,6 @@ p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .first-p { text-indent: 0; }
 ${dropCapStyles}`);
 
-    // 6. Chapters & Navigation
     let navLinks = '';
     chapters.forEach((c, i) => {
       navLinks += `<li><a href="chapters/${c.id}.xhtml">${c.title}</a></li>`;
@@ -128,9 +115,6 @@ ${dropCapStyles}`);
     this.downloadFile(content, `${book.title}.epub`);
   }
 
-  /**
-   * Generates a DOCX file.
-   */
   async exportDocx() {
     const book = this.store.book();
     const chapters = this.store.chapters();
@@ -147,28 +131,6 @@ ${dropCapStyles}`);
 
     const blob = await Packer.toBlob(doc);
     this.downloadFile(blob, `${book.title}.docx`);
-  }
-
-  /**
-   * Digital PDF
-   */
-  async exportPdfDigital() {
-    document.body.classList.add('print-digital');
-    setTimeout(() => {
-      window.print();
-      document.body.classList.remove('print-digital');
-    }, 500);
-  }
-
-  /**
-   * Physical PDF
-   */
-  async exportPdfPhysical() {
-    document.body.classList.add('print-physical');
-    setTimeout(() => {
-      window.print();
-      document.body.classList.remove('print-physical');
-    }, 500);
   }
 
   private downloadFile(blob: Blob, filename: string) {
