@@ -13,6 +13,7 @@
   "topbar.open": "Open",
   "topbar.save": "Save",
   "topbar.saveAs": "Save As",
+  "topbar.closeDoc": "Close document",
   "topbar.undo": "Undo (Ctrl+Z)",
   "topbar.redo": "Redo (Ctrl+Y)",
   "topbar.search": "Search",

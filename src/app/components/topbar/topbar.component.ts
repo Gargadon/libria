@@ -62,6 +62,7 @@ import { environment } from '../../../environments/environment';
             <button class="tb__action" [attr.title]="'topbar.open' | translate" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
             <button class="tb__action" [attr.title]="'topbar.save' | translate" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>
             <button class="tb__action" [attr.title]="'topbar.saveAs' | translate" (click)="saveDocAs()"><span class="material-symbols-outlined">save_as</span></button>
+            <button class="tb__action" [attr.title]="'topbar.closeDoc' | translate" (click)="closeDoc()"><span class="material-symbols-outlined">close_fullscreen</span></button>
           </div>
           <span class="tb__sep tb__sep--full"></span>
 
@@ -105,6 +106,9 @@ import { environment } from '../../../environments/environment';
                 </button>
                 <button class="tb__compact-item" (click)="saveDocAs(); closeMenus()">
                   <span class="material-symbols-outlined">save_as</span> {{ 'topbar.saveAs' | translate }}
+                </button>
+                <button class="tb__compact-item" (click)="closeDoc(); closeMenus()">
+                  <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
                 </button>
               </div>
             }
@@ -218,6 +222,15 @@ export class TopbarComponent {
     this.fileService.saveLibriaFile(true);
   }
 
+  closeDoc() {
+    if (this.store.isDirty()) {
+      this.pendingAction.set('close-doc');
+      this.showExitModal.set(true);
+    } else {
+      this.fileService.closeProject();
+    }
+  }
+
   constructor() {
     const api = (window as any).electronAPI;
     if (api?.onMenuAction) {
@@ -227,6 +240,7 @@ export class TopbarComponent {
           case 'open': this.openDoc(); break;
           case 'save': this.saveDoc(); break;
           case 'saveAs': this.saveDocAs(); break;
+          case 'close': this.closeDoc(); break;
           case 'undo': this.store.undo(); break;
           case 'redo': this.store.redo(); break;
           case 'search': this.store.search(''); this.store.setNav('search'); break;
@@ -264,7 +278,7 @@ export class TopbarComponent {
 
   // --- DATA LOSS GUARD LOGIC ---
   showExitModal = signal(false);
-  pendingAction = signal<'new' | 'open' | 'close' | null>(null);
+  pendingAction = signal<'new' | 'open' | 'close' | 'close-doc' | null>(null);
 
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification($event: BeforeUnloadEvent) {
@@ -288,6 +302,7 @@ export class TopbarComponent {
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();
+    else if (action === 'close-doc') this.fileService.closeProject();
   }
 
   async saveAndExit() {
@@ -300,5 +315,6 @@ export class TopbarComponent {
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();
+    else if (action === 'close-doc') this.fileService.closeProject();
   }
 }

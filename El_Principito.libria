@@ -14,7 +14,7 @@
       "Antoine de Saint-Exupéry"
     ],
     "author": "Antoine de Saint-Exupéry",
-    "lang": "es-MX"
+    "lang": "es-ES"
   },
   "preferences": {
     "sidebar": "right",
@@ -47,7 +47,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-2"
+    "lastActiveChapterId": "ch-1"
   },
   "chapters": [
     {
@@ -93,7 +93,7 @@
       "label": "I",
       "title": "I",
       "status": "ok",
-      "words": 422,
+      "words": 425,
       "forceOddPage": true,
       "body": [
         {
@@ -102,7 +102,8 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "p",
@@ -111,7 +112,8 @@
         },
         {
           "type": "p",
-          "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:"
+          "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
+          "html": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:"
         },
         {
           "type": "scene-break"
@@ -122,7 +124,8 @@
         },
         {
           "type": "p",
-          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron."
+          "text": "—¿Por qué habría de asustar un sombrero? —me respondiseron.",
+          "html": "—¿Por qué habría de asustar un sombrero? —me respondiseron."
         },
         {
           "type": "p",

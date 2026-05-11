@@ -49,4 +49,9 @@
   @if (showAbout()) {
     <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
   }
+
+  <!-- Subtle saving indicator -->
+  <div class="subtle-loader" [class.subtle-loader--on]="store.isSaving()">
+    <div class="subtle-loader__bar"></div>
+  </div>
 </div>

@@ -146,13 +146,13 @@ function send(action) {
 
 const menuLabels = {
   es: {
-    file: 'Archivo', fileNew: 'Nuevo', fileOpen: 'Abrir', fileSave: 'Guardar', fileSaveAs: 'Guardar como', fileQuit: 'Salir',
+    file: 'Archivo', fileNew: 'Nuevo', fileOpen: 'Abrir', fileSave: 'Guardar', fileSaveAs: 'Guardar como', fileClose: 'Cerrar documento', fileQuit: 'Salir',
     edit: 'Editar', editUndo: 'Deshacer', editRedo: 'Rehacer',
     view: 'Ver', viewSearch: 'Buscar',
     help: 'Ayuda', helpAbout: 'Acerca de Libria…',
   },
   en: {
-    file: 'File', fileNew: 'New', fileOpen: 'Open', fileSave: 'Save', fileSaveAs: 'Save As', fileQuit: 'Quit',
+    file: 'File', fileNew: 'New', fileOpen: 'Open', fileSave: 'Save', fileSaveAs: 'Save As', fileClose: 'Close Document', fileQuit: 'Quit',
     edit: 'Edit', editUndo: 'Undo', editRedo: 'Redo',
     view: 'View', viewSearch: 'Search',
     help: 'Help', helpAbout: 'About Libria…',
@@ -169,6 +169,7 @@ function buildMenu(lang = 'es') {
         { label: labels.fileOpen, accelerator: 'CmdOrCtrl+O', click: () => send('open') },
         { label: labels.fileSave, accelerator: 'CmdOrCtrl+S', click: () => send('save') },
         { label: labels.fileSaveAs, accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+        { label: labels.fileClose, accelerator: 'CmdOrCtrl+W', click: () => send('close') },
         { type: 'separator' },
         { label: labels.fileQuit, accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
       ],
@@ -199,7 +200,44 @@ function buildMenu(lang = 'es') {
   return menu;
 }
 
+function setupHyphenation() {
+  try {
+    const userDataPath = app.getPath('userData');
+    const hyphenDataPath = path.join(userDataPath, 'hyphen-data');
+    if (!fs.existsSync(hyphenDataPath)) {
+      fs.mkdirSync(hyphenDataPath, { recursive: true });
+    }
+
+    const dicts = ['hyph-es.hyb', 'hyph-en-us.hyb', 'hyph-en-gb.hyb', 'hyph-fr.hyb', 'hyph-it.hyb'];
+    const isDev = process.argv.includes('--dev');
+    const sourceDir = isDev 
+      ? path.join(__dirname, 'public', 'dictionaries') 
+      : path.join(__dirname, 'dist', 'libria', 'browser', 'dictionaries');
+    
+    // In some packaged structures, the public folder might end up somewhere else. Fallback:
+    const fallbackSourceDir = path.join(process.resourcesPath || __dirname, 'dictionaries');
+
+    let actualSource = null;
+    if (fs.existsSync(sourceDir)) actualSource = sourceDir;
+    else if (fs.existsSync(fallbackSourceDir)) actualSource = fallbackSourceDir;
+    else actualSource = path.join(__dirname, 'public', 'dictionaries');
+
+    if (fs.existsSync(actualSource)) {
+      for (const dict of dicts) {
+        const sourceFile = path.join(actualSource, dict);
+        const destFile = path.join(hyphenDataPath, dict);
+        if (fs.existsSync(sourceFile) && !fs.existsSync(destFile)) {
+          fs.copyFileSync(sourceFile, destFile);
+        }
+      }
+    }
+  } catch (e) {
+    // Fail silently
+  }
+}
+
 app.whenReady().then(() => {
+  setupHyphenation();
   buildMenu();
   createWindow();
 });

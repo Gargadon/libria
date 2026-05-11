@@ -30,6 +30,7 @@ export interface BookState {
   searchResults: SearchResult[];
   replaceQuery: string;
   personalConfig: PersonalConfig;
+  isSaving: boolean;
 }
 
 const initialState: BookState = {
@@ -85,7 +86,8 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' }
+  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' },
+  isSaving: false
 };
 
 function calculateWords(body: { text?: string }[]): number {
@@ -158,7 +160,14 @@ export const BookStore = signalStore(
         default: return "serif";
       }
     }),
-    documentLang: computed(() => state.book()?.lang || 'es-MX')
+    documentLang: computed(() => state.book()?.lang || 'es-MX'),
+    domLang: computed(() => {
+      const lang = state.book()?.lang || 'es-MX';
+      if (lang.startsWith('es-')) return 'es';
+      if (lang.startsWith('fr-')) return 'fr';
+      if (lang.startsWith('it-')) return 'it';
+      return lang;
+    })
   })),
   withMethods((store) => ({
     saveSnapshot() {
@@ -318,6 +327,19 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
+    closeDocument() {
+      patchState(store, {
+        book: null,
+        chapters: [],
+        notes: [],
+        activeChapterId: '',
+        isDirty: false,
+        past: [],
+        future: [],
+        assets: {},
+        ui: { ...initialState.ui, activeNav: 'manuscript' }
+      });
+    },
     deleteChapter(chapterId: string) {
       patchState(store, (state) => {
         const newChapters = state.chapters.filter(c => c.id !== chapterId);
@@ -342,6 +364,9 @@ export const BookStore = signalStore(
     },
     markAsSaved() {
       patchState(store, { isDirty: false });
+    },
+    setIsSaving(isSaving: boolean) {
+      patchState(store, { isSaving });
     },
     addChapter(kind: ChapterKind = 'chapter') {
       patchState(store, (state) => {
@@ -662,6 +687,11 @@ export const BookStore = signalStore(
         if (spellCheckService.isAvailable) {
           spellCheckService.setLanguage(lang);
         }
+      });
+
+      // Sync HTML lang attribute for CSS hyphenation
+      effect(() => {
+        document.documentElement.lang = store.domLang();
       });
     }
   })
