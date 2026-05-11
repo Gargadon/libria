@@ -182,6 +182,7 @@ import * as htmlToImage from 'html-to-image';
       <!-- CHAPTER CONTENT RENDERER -->
       <ng-template #contentTpl let-chapter let-showNotes="showNotes" let-fsOverride="fsOverride">
         <div class="kp-content"
+          [attr.lang]="store.documentLang()"
           [style.font-family]="store.bookFontFamily()"
           [style.font-size.px]="fsOverride || store.tweaks.fontSize()"
           [style.line-height]="store.tweaks.lineHeight()"
@@ -239,11 +240,11 @@ import * as htmlToImage from 'html-to-image';
                 [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                 [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
               @case ('first-p') { 
-                <p class="kp-first" [class.has-dropcap]="store.tweaks.dropCap()">
+                <p class="kp-first" [attr.lang]="store.documentLang()" [class.has-dropcap]="store.tweaks.dropCap()">
                   @if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
                 </p> 
               }
-              @case ('p') { <p class="kp-p">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
+              @case ('p') { <p class="kp-p" [attr.lang]="store.documentLang()">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
               @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }

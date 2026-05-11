@@ -144,36 +144,52 @@ function send(action) {
   mainWindow?.webContents.send('menu:action', action);
 }
 
-function buildMenu() {
+const menuLabels = {
+  es: {
+    file: 'Archivo', fileNew: 'Nuevo', fileOpen: 'Abrir', fileSave: 'Guardar', fileSaveAs: 'Guardar como', fileQuit: 'Salir',
+    edit: 'Editar', editUndo: 'Deshacer', editRedo: 'Rehacer',
+    view: 'Ver', viewSearch: 'Buscar',
+    help: 'Ayuda', helpAbout: 'Acerca de Libria…',
+  },
+  en: {
+    file: 'File', fileNew: 'New', fileOpen: 'Open', fileSave: 'Save', fileSaveAs: 'Save As', fileQuit: 'Quit',
+    edit: 'Edit', editUndo: 'Undo', editRedo: 'Redo',
+    view: 'View', viewSearch: 'Search',
+    help: 'Help', helpAbout: 'About Libria…',
+  }
+};
+
+function buildMenu(lang = 'es') {
+  const labels = menuLabels[lang] || menuLabels.es;
   const template = [
     {
-      label: 'Archivo',
+      label: labels.file,
       submenu: [
-        { label: 'Nuevo', accelerator: 'CmdOrCtrl+N', click: () => send('new') },
-        { label: 'Abrir', accelerator: 'CmdOrCtrl+O', click: () => send('open') },
-        { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
-        { label: 'Guardar como', accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+        { label: labels.fileNew, accelerator: 'CmdOrCtrl+N', click: () => send('new') },
+        { label: labels.fileOpen, accelerator: 'CmdOrCtrl+O', click: () => send('open') },
+        { label: labels.fileSave, accelerator: 'CmdOrCtrl+S', click: () => send('save') },
+        { label: labels.fileSaveAs, accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
         { type: 'separator' },
-        { label: 'Salir', accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
+        { label: labels.fileQuit, accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
       ],
     },
     {
-      label: 'Editar',
+      label: labels.edit,
       submenu: [
-        { label: 'Deshacer', accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
-        { label: 'Rehacer', accelerator: 'CmdOrCtrl+Y', click: () => send('redo') },
+        { label: labels.editUndo, accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
+        { label: labels.editRedo, accelerator: 'CmdOrCtrl+Y', click: () => send('redo') },
       ],
     },
     {
-      label: 'Ver',
+      label: labels.view,
       submenu: [
-        { label: 'Buscar', accelerator: 'CmdOrCtrl+F', click: () => send('search') },
+        { label: labels.viewSearch, accelerator: 'CmdOrCtrl+F', click: () => send('search') },
       ],
     },
     {
-      label: 'Ayuda',
+      label: labels.help,
       submenu: [
-        { label: 'Acerca de Libria…', click: () => send('about') },
+        { label: labels.helpAbout, click: () => send('about') },
       ],
     },
   ];
@@ -218,6 +234,12 @@ ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
 
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
   return fs.readFileSync(filePath, 'utf-8');
+});
+
+// ─── Language IPC (rebuild native menu) ────────────────────────────────────────
+
+ipcMain.on('app:set-language', (_event, lang) => {
+  buildMenu(lang);
 });
 
 // ─── Spell checker IPC ──────────────────────────────────────────────────────────

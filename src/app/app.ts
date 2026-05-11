@@ -1,5 +1,6 @@
 import { Component, inject, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
 import { FileService } from './services/file.service';
 import { PersonalConfigService } from './services/personal-config.service';
@@ -16,6 +17,7 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
   standalone: true,
   imports: [
     CommonModule,
+    TranslateModule,
     TopbarComponent,
     SidebarComponent,
     EditorComponent,
@@ -30,11 +32,25 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
 export class App {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly translate = inject(TranslateService);
 
   isResizing = false;
   showAbout = signal(false);
 
   constructor() {
+    this.translate.addLangs(['es', 'en']);
+    const savedLang = this.store.personalConfig().language || 'es';
+    this.translate.use(savedLang);
+
+    effect(() => {
+      const lang = this.store.personalConfig().language;
+      if (lang) {
+        this.translate.use(lang);
+        const api = (window as any).electronAPI;
+        if (api?.setLanguage) api.setLanguage(lang);
+      }
+    });
+
     const api = (window as any).electronAPI;
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {

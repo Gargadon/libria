@@ -2,12 +2,13 @@ import { Component, inject } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
     <div class="welcome">
       <div class="welcome__card">
@@ -20,28 +21,28 @@ import { environment } from '../../../environments/environment';
           </svg>
         </div>
         <h1 class="welcome__title">Libria</h1>
-        <p class="welcome__tagline">Tu próxima gran historia empieza aquí.</p>
+        <p class="welcome__tagline">{{ 'welcome.tagline' | translate }}</p>
         
         <div class="welcome__actions">
           <button class="welcome__btn welcome__btn--primary" (click)="store.createNewProject()">
             <span class="material-symbols-outlined">add</span>
             <div class="welcome__btn-text">
-              <strong>Crear nuevo proyecto</strong>
-              <span>Empieza un nuevo libro desde cero</span>
+              <strong>{{ 'welcome.newProject' | translate }}</strong>
+              <span>{{ 'welcome.newProjectDesc' | translate }}</span>
             </div>
           </button>
           
           <button class="welcome__btn" (click)="fileService.openLibriaFile()">
             <span class="material-symbols-outlined">file_open</span>
             <div class="welcome__btn-text">
-              <strong>Abrir proyecto existente</strong>
-              <span>Carga un archivo .libria desde tu computadora</span>
+              <strong>{{ 'welcome.openProject' | translate }}</strong>
+              <span>{{ 'welcome.openProjectDesc' | translate }}</span>
             </div>
           </button>
         </div>
         
         <div class="welcome__footer">
-          Versión {{ version }}
+          {{ 'welcome.version' | translate:{ version: version } }}
         </div>
       </div>
     </div>

@@ -1,11 +1,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { TranslateModule } from '@ngx-translate/core';
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [
+        App,
+        TranslateModule.forRoot({
+          loader: provideTranslateHttpLoader({
+            prefix: './assets/i18n/',
+            suffix: '.json'
+          }),
+          defaultLanguage: 'es'
+        })
+      ],
+      providers: [
+        provideHttpClient()
+      ]
     }).compileComponents();
   });
 

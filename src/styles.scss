@@ -2897,14 +2897,10 @@ app-welcome {
 .kp-p {
   margin: 0;
   text-indent: 0;
-  hyphens: none
 }
 
 .kp-content--hyphen .kp-p,
-.kp-content--hyphen .kp-first {
-  hyphens: auto;
-}
-
+.kp-content--hyphen .kp-first,
 .ed__doc--hyphen .bk-p,
 .ed__doc--hyphen .bk-first {
   hyphens: auto;

@@ -2,11 +2,12 @@ import { Component, inject, input } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-tweaks-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="tp">
       <div class="tp__h">
@@ -14,9 +15,9 @@ import { FormsModule } from '@angular/forms';
         <button class="tp__close" (click)="store.updateUi({ showTweaks: false })">×</button>
       </div>
       <div class="tp__body">
-        <div class="tp__section">Disposición</div>
+        <div class="tp__section">{{ 'tweaks.layout' | translate }}</div>
         <div class="tp__row">
-          <div class="tp__label">Barra lateral</div>
+          <div class="tp__label">{{ 'tweaks.sidebar' | translate }}</div>
           <div class="tp__radio">
             <button 
               class="tp__opt" 
@@ -31,9 +32,9 @@ import { FormsModule } from '@angular/forms';
           </div>
         </div>
 
-        <div class="tp__section">Tipografía</div>
+        <div class="tp__section">{{ 'tweaks.typography' | translate }}</div>
         <div class="tp__row">
-          <div class="tp__label">Cuerpo</div>
+          <div class="tp__label">{{ 'tweaks.body' | translate }}</div>
           <div class="tp__radio">
             <button 
               class="tp__opt" 
@@ -48,36 +49,24 @@ import { FormsModule } from '@angular/forms';
           </div>
         </div>
 
-        <div class="tp__section">Ortografía</div>
+        <div class="tp__section">{{ 'sidebar.spelling' | translate }}</div>
         <div class="tp__row">
-          <div class="tp__label">Revisión</div>
+          <div class="tp__label">{{ 'sidebar.checker' | translate }}</div>
           <div class="tp__radio">
-            <button 
-              class="tp__opt" 
+            <button
+              class="tp__opt"
               [class.tp__opt--on]="store.tweaks.spellcheck()"
               (click)="store.updateTweak('spellcheck', true)"
-            >sí</button>
-            <button 
-              class="tp__opt" 
+            >{{ 'sidebar.yes' | translate }}</button>
+            <button
+              class="tp__opt"
               [class.tp__opt--on]="!store.tweaks.spellcheck()"
               (click)="store.updateTweak('spellcheck', false)"
-            >no</button>
+            >{{ 'sidebar.no' | translate }}</button>
           </div>
         </div>
-        <div class="tp__row" [style.opacity]="store.tweaks.spellcheck() ? '1' : '0.5'" [style.pointer-events]="store.tweaks.spellcheck() ? 'auto' : 'none'">
-          <div class="tp__label">Idioma</div>
-          <select class="tp__select" [ngModel]="store.tweaks.spellcheckLang()" (ngModelChange)="store.updateTweak('spellcheckLang', $event)">
-            <option value="es-MX">Español (México)</option>
-            <option value="es-ES">Español (España)</option>
-            <option value="en-US">English (US)</option>
-            <option value="en-GB">English (UK)</option>
-            <option value="fr">Français</option>
-            <option value="it">Italiano</option>
-          </select>
         </div>
-      </div>
-    </div>
-  `
+        </div>  `
 })
 export class TweaksPanelComponent {
   readonly store = inject(BookStore);

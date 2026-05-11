@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, input, output, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { NoteRole, NoteStatus } from '../../models/book.models';
@@ -8,7 +9,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
 @Component({
   selector: 'app-notes-chat-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="ncm-backdrop" (click)="close.emit()">
       <div class="ncm" (click)="$event.stopPropagation()">
@@ -18,8 +19,8 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
           <div class="ncm__head-left">
             <span class="material-symbols-outlined ncm__head-icon">chat_bubble</span>
             <div>
-              <div class="ncm__title">Marginalia</div>
-              <div class="ncm__sub">Párrafo {{ blockIndex() + 1 }}</div>
+              <div class="ncm__title">{{ 'notes.title' | translate }}</div>
+              <div class="ncm__sub">{{ 'notes.paragraph' | translate:{ index: blockIndex() + 1 } }}</div>
             </div>
           </div>
           <button class="ncm__x" (click)="close.emit()">
@@ -32,7 +33,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
           @if (blockNotes().length === 0) {
             <div class="ncm__empty">
               <span class="material-symbols-outlined ncm__empty-icon">chat_bubble_outline</span>
-              <p>Sin anotaciones en este párrafo.<br>Sé el primero en comentar.</p>
+              <p>{{ 'notes.empty' | translate }}</p>
             </div>
           }
 
@@ -53,7 +54,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
                           [title]="statusTitle(note.status)">
                     <span class="material-symbols-outlined">{{ statusIcon(note.status) }}</span>
                   </button>
-                  <button class="ncm__del-btn" (click)="store.deleteNote(note.id)" title="Eliminar">
+                  <button class="ncm__del-btn" (click)="store.deleteNote(note.id)" [attr.title]="'notes.delete' | translate">
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>
@@ -84,11 +85,11 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
               @if (replyingTo() === note.id) {
                 <div class="ncm__reply-form">
                   <textarea class="ncm__reply-input" [(ngModel)]="replyContent"
-                            placeholder="Escribe tu respuesta…" rows="2"
+                            [attr.placeholder]="'notes.replyPlaceholder' | translate" rows="2"
                             (keydown.enter)="$any($event).shiftKey ? null : saveReply(note.id, $any($event))">
                   </textarea>
                   <div class="ncm__reply-row">
-                    <button class="ncm__cancel-btn" (click)="replyingTo.set('')">Cancelar</button>
+                    <button class="ncm__cancel-btn" (click)="replyingTo.set('')">{{ 'notes.cancel' | translate }}</button>
                     <button class="ncm__send-btn ncm__send-btn--sm"
                             [disabled]="!replyContent.trim()"
                             (click)="saveReply(note.id)">
@@ -98,7 +99,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
                 </div>
               } @else {
                 <button class="ncm__reply-btn" (click)="replyingTo.set(note.id)">
-                  <span class="material-symbols-outlined">reply</span> Responder
+                  <span class="material-symbols-outlined">reply</span> {{ 'notes.reply' | translate }}
                 </button>
               }
 
@@ -110,17 +111,17 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
         <div class="ncm__composer">
           <div class="ncm__composer-meta">
             <input class="ncm__input-name" [(ngModel)]="authorName"
-                   placeholder="Tu nombre" autocomplete="off">
+                   [attr.placeholder]="'notes.namePlaceholder' | translate" autocomplete="off">
             <select class="ncm__select-role" [(ngModel)]="authorRole">
-              <option value="author">Autor</option>
-              <option value="editor">Editor</option>
-              <option value="corrector">Corrector</option>
-              <option value="publisher">Publicador</option>
+              <option value="author">{{ 'notes.roleAuthor' | translate }}</option>
+              <option value="editor">{{ 'notes.roleEditor' | translate }}</option>
+              <option value="corrector">{{ 'notes.roleCorrector' | translate }}</option>
+              <option value="publisher">{{ 'notes.rolePublisher' | translate }}</option>
             </select>
           </div>
           <div class="ncm__composer-body">
             <textarea class="ncm__textarea" [(ngModel)]="noteContent"
-                      placeholder="Añadir anotación…" rows="3"
+                      [attr.placeholder]="'notes.notePlaceholder' | translate" rows="3"
                       (keydown.enter)="$any($event).shiftKey ? null : sendNote($any($event))">
             </textarea>
             <button class="ncm__send-btn" [disabled]="!canSend()" (click)="sendNote()">
@@ -530,6 +531,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
 export class NotesChatModalComponent implements OnInit {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly translate = inject(TranslateService);
 
   blockIndex = input.required<number>();
   chapterId  = input.required<string>();
@@ -587,10 +589,21 @@ export class NotesChatModalComponent implements OnInit {
   }
 
   statusTitle(status: NoteStatus): string {
-    return { unresolved: 'Sin resolver', resolved: 'Resuelto', 'not-applicable': 'No aplica' }[status];
+    const map: Record<string, string> = {
+      unresolved: 'notes.statusUnresolved',
+      resolved: 'notes.statusResolved',
+      'not-applicable': 'notes.statusNotApplicable'
+    };
+    return this.translate.instant(map[status] || '');
   }
 
   roleLabel(role: NoteRole): string {
-    return { author: 'Autor', editor: 'Editor', corrector: 'Corrector', publisher: 'Publicador' }[role];
+    const map: Record<string, string> = {
+      author: 'notes.roleAuthor',
+      editor: 'notes.roleEditor',
+      corrector: 'notes.roleCorrector',
+      publisher: 'notes.rolePublisher'
+    };
+    return this.translate.instant(map[role] || '');
   }
 }

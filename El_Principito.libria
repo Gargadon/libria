@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.0.0",
+  "libriaVersion": "1.0.1",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -13,14 +13,14 @@
     "authors": [
       "Antoine de Saint-Exupéry"
     ],
-    "author": "Antoine de Saint-Exupéry"
+    "author": "Antoine de Saint-Exupéry",
+    "lang": "es-MX"
   },
   "preferences": {
     "sidebar": "right",
     "mode": "light",
     "bookFont": "lora",
     "spellcheck": true,
-    "spellcheckLang": "es",
     "fontSize": 14,
     "lineHeight": 1.5,
     "paragraphSpacing": 8,
@@ -32,6 +32,7 @@
     "marginInner": 25,
     "marginOuter": 15,
     "showPageNumbers": true,
+    "showHeader": true,
     "headerText": "El Principito",
     "sceneBreakType": "asterisks",
     "titleAlignment": "center",
@@ -46,7 +47,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-1"
+    "lastActiveChapterId": "ch-2"
   },
   "chapters": [
     {
@@ -202,7 +203,8 @@
         },
         {
           "type": "p",
-          "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
+          "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
+          "html": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
         },
         {
           "type": "p",

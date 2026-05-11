@@ -1,8 +1,11 @@
-import { Component, output } from '@angular/core';
+import { Component, output, inject } from '@angular/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-about-modal',
   standalone: true,
+  imports: [CommonModule, TranslateModule],
   template: `
     <div class="about-backdrop" (click)="close.emit()">
       <div class="about" (click)="$event.stopPropagation()">
@@ -20,25 +23,25 @@ import { Component, output } from '@angular/core';
           </div>
 
           <h1 class="about__name">Libria</h1>
-          <p class="about__edition">Atelier Edition</p>
+          <p class="about__edition">{{ 'about.edition' | translate }}</p>
 
           <div class="about__rule"></div>
 
           <dl class="about__meta">
             <div class="about__row">
-              <dt>Versión</dt>
+              <dt>{{ 'about.version' | translate }}</dt>
               <dd>1.0.0</dd>
             </div>
             <div class="about__row">
-              <dt>Entorno</dt>
+              <dt>{{ 'about.environment' | translate }}</dt>
               <dd>Electron</dd>
             </div>
             <div class="about__row">
-              <dt>Plataforma</dt>
-              <dd>Windows</dd>
+              <dt>{{ 'about.platform' | translate }}</dt>
+              <dd>{{ platform }}</dd>
             </div>
             <div class="about__row">
-              <dt>Licencia</dt>
+              <dt>{{ 'about.license' | translate }}</dt>
               <dd>MIT</dd>
             </div>
           </dl>
@@ -46,12 +49,12 @@ import { Component, output } from '@angular/core';
           <div class="about__rule"></div>
 
           <p class="about__tagline">
-            Tu próxima gran historia empieza aquí.
+            {{ 'about.tagline' | translate }}
           </p>
 
-          <p class="about__copy">© 2026 David Kantún. Todos los derechos reservados.</p>
+          <p class="about__copy">{{ 'about.copyright' | translate }}</p>
 
-          <button class="about__close" (click)="close.emit()">Cerrar</button>
+          <button class="about__close" (click)="close.emit()">{{ 'about.close' | translate }}</button>
         </div>
 
       </div>
@@ -213,4 +216,6 @@ import { Component, output } from '@angular/core';
 })
 export class AboutModalComponent {
   close = output<void>();
+  readonly translate = inject(TranslateService);
+  readonly platform = 'Electron';
 }

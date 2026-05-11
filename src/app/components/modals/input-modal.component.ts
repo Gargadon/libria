@@ -1,11 +1,12 @@
 import { Component, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-input-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
       <div class="modal" (click)="$event.stopPropagation()">
@@ -29,8 +30,8 @@ import { FormsModule } from '@angular/forms';
         </div>
 
         <div class="modal__foot">
-          <button class="btn" (click)="close.emit()">Cancelar</button>
-          <button class="btn btn--primary" (click)="save()">Aceptar</button>
+          <button class="btn" (click)="close.emit()">{{ 'input.cancel' | translate }}</button>
+          <button class="btn btn--primary" (click)="save()">{{ 'input.accept' | translate }}</button>
         </div>
       </div>
     </div>
