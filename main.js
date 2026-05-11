@@ -1,9 +1,29 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
 let fileToOpen = null;
+const customDictPath = path.join(app.getPath('userData'), 'custom-dictionary.json');
+
+function loadCustomDictionary() {
+  try {
+    if (fs.existsSync(customDictPath)) {
+      return JSON.parse(fs.readFileSync(customDictPath, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Failed to load custom dictionary:', e);
+  }
+  return [];
+}
+
+function saveCustomDictionary(words) {
+  try {
+    fs.writeFileSync(customDictPath, JSON.stringify(words, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save custom dictionary:', e);
+  }
+}
 
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
@@ -46,6 +66,65 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
   }
+
+  // --- Spell checker setup ---
+  const session = mainWindow.webContents.session;
+  session.setSpellCheckerEnabled(true);
+  session.setSpellCheckerLanguages(['es-ES']);
+  const customWords = loadCustomDictionary();
+  customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
+
+  // Context menu with spelling suggestions
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    if (!params.isEditable) return;
+    const menu = new Menu();
+
+    if (params.misspelledWord) {
+      for (const s of params.dictionarySuggestions.slice(0, 5)) {
+        menu.append(new MenuItem({
+          label: s,
+          click: () => mainWindow.webContents.replaceMisspelling(s)
+        }));
+      }
+      if (params.dictionarySuggestions.length > 0) {
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+      menu.append(new MenuItem({
+        label: 'Añadir «' + params.misspelledWord + '» al diccionario',
+        click: () => {
+          const word = params.misspelledWord;
+          if (session.addWordToSpellCheckerDictionary(word)) {
+            const words = loadCustomDictionary();
+            if (!words.includes(word)) {
+              words.push(word);
+              saveCustomDictionary(words);
+            }
+          }
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.editFlags.canCut) {
+      menu.append(new MenuItem({ label: 'Cortar', accelerator: 'CmdOrCtrl+X', role: 'cut' }));
+    }
+    if (params.editFlags.canCopy) {
+      menu.append(new MenuItem({ label: 'Copiar', accelerator: 'CmdOrCtrl+C', role: 'copy' }));
+    }
+    if (params.editFlags.canPaste) {
+      menu.append(new MenuItem({ label: 'Pegar', accelerator: 'CmdOrCtrl+V', role: 'paste' }));
+    }
+    if (params.editFlags.canSelectAll) {
+      if (menu.items.some(i => i.type !== 'separator')) {
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+      menu.append(new MenuItem({ label: 'Seleccionar todo', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }));
+    }
+
+    if (menu.items.length > 0) {
+      menu.popup({ window: mainWindow });
+    }
+  });
 
   mainWindow.webContents.on('did-finish-load', () => {
     const filePath = fileToOpen ?? getFileArgument();
@@ -140,6 +219,43 @@ ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
   return fs.readFileSync(filePath, 'utf-8');
 });
+
+// ─── Spell checker IPC ──────────────────────────────────────────────────────────
+
+ipcMain.handle('spell:set-language', async (_event, lang) => {
+  mainWindow?.webContents.session.setSpellCheckerLanguages([lang]);
+});
+
+ipcMain.handle('spell:get-dictionary', async () => {
+  return loadCustomDictionary();
+});
+
+ipcMain.handle('spell:add-word', async (_event, word) => {
+  const added = mainWindow?.webContents.session.addWordToSpellCheckerDictionary(word);
+  if (added) {
+    const words = loadCustomDictionary();
+    if (!words.includes(word)) {
+      words.push(word);
+      saveCustomDictionary(words);
+    }
+  }
+  return !!added;
+});
+
+ipcMain.handle('spell:remove-word', async (_event, word) => {
+  const removed = mainWindow?.webContents.session.removeWordFromSpellCheckerDictionary(word);
+  if (removed) {
+    const words = loadCustomDictionary();
+    const idx = words.indexOf(word);
+    if (idx !== -1) {
+      words.splice(idx, 1);
+      saveCustomDictionary(words);
+    }
+  }
+  return !!removed;
+});
+
+// ─── PDF ────────────────────────────────────────────────────────────────────────
 
 ipcMain.handle('pdf:printToPDF', async (_event, options) => {
   // Apply inline styles directly — they override any stylesheet rule (no @media print needed)

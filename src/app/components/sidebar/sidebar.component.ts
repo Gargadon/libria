@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Book, ChapterKind } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { ExportService } from '../../services/export.service';
+import { SpellCheckService } from '../../services/spell-check.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
 
@@ -279,10 +280,19 @@ import { environment } from '../../../environments/environment';
               </select>
             </div>
 
-            <div class="sb__row sb__row--col">
-              <div class="sb__label">Texto Encabezado</div>
-              <input type="text" class="sb__input" placeholder="Título o autor..." [ngModel]="store.tweaks.headerText()" (ngModelChange)="store.updateTweak('headerText', $event)">
+            <div class="sb__row">
+              <div class="sb__label">Encabezado de página</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.showHeader()" (click)="store.updateTweak('showHeader', true)">sí</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.showHeader()" (click)="store.updateTweak('showHeader', false)">no</button>
+              </div>
             </div>
+            @if (store.tweaks.showHeader()) {
+              <div class="sb__row sb__row--col">
+                <div class="sb__label">Texto Encabezado</div>
+                <input type="text" class="sb__input" placeholder="Título o autor..." [ngModel]="store.tweaks.headerText()" (ngModelChange)="store.updateTweak('headerText', $event)">
+              </div>
+            }
           </div>
         }
 
@@ -510,15 +520,6 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
 
-            <div class="sb__section">Tipografía del editor</div>
-            <div class="sb__row">
-              <div class="sb__label">Fuente</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.bookFont() === 'spectral'" (click)="store.updateTweak('bookFont', 'spectral')">Spectral</button>
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.bookFont() === 'lora'" (click)="store.updateTweak('bookFont', 'lora')">Lora</button>
-              </div>
-            </div>
-
             <div class="sb__section">Ortografía</div>
             <div class="sb__row">
               <div class="sb__label">Corrector</div>
@@ -529,11 +530,38 @@ import { environment } from '../../../environments/environment';
             </div>
             <div class="sb__row" [style.opacity]="store.tweaks.spellcheck() ? '1' : '0.5'" [style.pointer-events]="store.tweaks.spellcheck() ? 'auto' : 'none'">
               <div class="sb__label">Idioma</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.spellcheckLang() === 'es'" (click)="store.updateTweak('spellcheckLang', 'es')">Español</button>
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.spellcheckLang() === 'en'" (click)="store.updateTweak('spellcheckLang', 'en')">English</button>
-              </div>
+              <select class="sb__select" [ngModel]="store.tweaks.spellcheckLang()" (ngModelChange)="store.updateTweak('spellcheckLang', $event)">
+                <option value="es-MX">Español (México)</option>
+                <option value="es-ES">Español (España)</option>
+                <option value="en-US">English (US)</option>
+                <option value="en-GB">English (UK)</option>
+                <option value="fr">Français</option>
+                <option value="it">Italiano</option>
+              </select>
             </div>
+
+            @if (spellCheckService.isAvailable) {
+              <div class="sb__section">Diccionario personal</div>
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">Añadir palabra</label>
+                <div class="sb__dict-add-row">
+                  <input class="sb__input" type="text" placeholder="Nueva palabra…" [(ngModel)]="newDictWord" (keydown.enter)="addDictWord()">
+                  <button class="sb__btn-primary sb__dict-add-btn" [disabled]="!newDictWord.trim()" (click)="addDictWord()">+</button>
+                </div>
+              </div>
+              @if (dictWords().length > 0) {
+                <div class="sb__dict-list">
+                  @for (w of dictWords(); track w) {
+                    <div class="sb__dict-item">
+                      <span class="sb__dict-word">{{ w }}</span>
+                      <button class="sb__dict-del" (click)="removeDictWord(w)">×</button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="sb__help">El diccionario personal está vacío. Añade palabras que el corrector marca incorrectamente (nombres, lugares, etc.).</div>
+              }
+            }
           </div>
         }
       }
@@ -600,7 +628,11 @@ import { environment } from '../../../environments/environment';
 export class SidebarComponent implements OnInit {
   readonly store = inject(BookStore);
   readonly exportService = inject(ExportService);
+  readonly spellCheckService = inject(SpellCheckService);
   readonly Math = Math;
+
+  dictWords = signal<string[]>([]);
+  newDictWord = '';
 
   showAddMenu = signal(false);
 
@@ -623,6 +655,31 @@ export class SidebarComponent implements OnInit {
 
   ngOnInit() {
     this.initLocalMetadata();
+    this.loadDictWords();
+  }
+
+  async loadDictWords() {
+    if (this.spellCheckService.isAvailable) {
+      const words = await this.spellCheckService.getCustomDictionary();
+      this.dictWords.set(words);
+    }
+  }
+
+  async addDictWord() {
+    const word = this.newDictWord.trim();
+    if (!word) return;
+    const ok = await this.spellCheckService.addWord(word);
+    if (ok) {
+      this.dictWords.update(w => [...w, word].sort((a, b) => a.localeCompare(b)));
+      this.newDictWord = '';
+    }
+  }
+
+  async removeDictWord(word: string) {
+    const ok = await this.spellCheckService.removeWord(word);
+    if (ok) {
+      this.dictWords.update(w => w.filter(x => x !== word));
+    }
   }
 
   initLocalMetadata() {

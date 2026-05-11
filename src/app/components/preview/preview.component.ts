@@ -24,9 +24,11 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            <div class="print__header">
-              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-            </div>
+            @if (store.tweaks.showHeader()) {
+              <div class="print__header">
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              </div>
+            }
             <div class="print__content">
                 <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: ptToPx(store.tweaks.fontSize()) }"></ng-container>
             </div>
@@ -123,9 +125,11 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            <div class="print__header">
-              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-            </div>
+            @if (store.tweaks.showHeader()) {
+              <div class="print__header">
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              </div>
+            }
 
             <div class="print__content" style="flex: 1; position: relative;">
               <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>

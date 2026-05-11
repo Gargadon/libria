@@ -1198,6 +1198,73 @@ app-welcome {
   border-radius: 2px;
 }
 
+/* ===== Personal dictionary ===== */
+.sb__dict-add-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.sb__dict-add-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--terra);
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb__dict-add-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sb__dict-add-btn:hover:not(:disabled) {
+  background: #8e5334;
+}
+
+.sb__dict-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.sb__dict-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: var(--paper-2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.sb__dict-word {
+  font-family: var(--serif);
+  color: var(--ink);
+}
+
+.sb__dict-del {
+  padding: 0 6px;
+  font-size: 16px;
+  color: var(--ink-mute);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.sb__dict-del:hover {
+  color: var(--terra);
+}
+
 .sb__add-wrapper {
   position: relative;
 }
@@ -3118,6 +3185,21 @@ app-welcome {
   color: var(--ink);
   box-shadow: var(--shadow-sm);
   font-weight: 500
+}
+
+.tp__select {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  width: 100px;
+}
+
+.tp__select:focus {
+  outline: none;
+  border-color: var(--terra);
 }
 
 /* ===== Exit Modal ===== */

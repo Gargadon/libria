@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Libria - Document management application",
   "main": "main.js",
   "author": {

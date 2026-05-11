@@ -10,4 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onCloseRequested: (callback) => ipcRenderer.on('app:close-requested', () => callback()),
   confirmClose: () => ipcRenderer.send('app:confirm-close'),
   onFileOpen: (callback) => ipcRenderer.on('file:open', (_event, filePath) => callback(filePath)),
+
+  // Spell checker
+  setSpellCheckerLanguage: (lang) => ipcRenderer.invoke('spell:set-language', lang),
+  getCustomDictionary: () => ipcRenderer.invoke('spell:get-dictionary'),
+  addWordToDictionary: (word) => ipcRenderer.invoke('spell:add-word', word),
+  removeWordFromDictionary: (word) => ipcRenderer.invoke('spell:remove-word', word),
 });

@@ -2,6 +2,7 @@ import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
 import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
+import { SpellCheckService } from '../services/spell-check.service';
 import { environment } from '../../environments/environment';
 
 export interface BookState {
@@ -41,7 +42,7 @@ const initialState: BookState = {
     mode: 'light',
     bookFont: 'lora',
     spellcheck: true,
-    spellcheckLang: 'es',
+    spellcheckLang: 'es-MX',
     fontSize: 12,
     lineHeight: 1.6,
     paragraphSpacing: 4,
@@ -53,6 +54,7 @@ const initialState: BookState = {
     marginInner: 25,
     marginOuter: 15,
     showPageNumbers: true,
+    showHeader: true,
     headerText: '',
     sceneBreakType: 'asterisks',
     titleAlignment: 'center',
@@ -639,7 +641,8 @@ export const BookStore = signalStore(
   withHooks({
     onInit(store) {
       const personalConfigService = inject(PersonalConfigService);
-      
+      const spellCheckService = inject(SpellCheckService);
+
       // Load initial personal config
       const saved = personalConfigService.load();
       patchState(store, { personalConfig: saved });
@@ -648,6 +651,14 @@ export const BookStore = signalStore(
       effect(() => {
         const config = store.personalConfig();
         personalConfigService.save(config);
+      });
+
+      // Sync spell checker language with Electron
+      effect(() => {
+        const lang = store.tweaks.spellcheckLang();
+        if (spellCheckService.isAvailable) {
+          spellCheckService.setLanguage(lang);
+        }
       });
     }
   })

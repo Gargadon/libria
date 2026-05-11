@@ -37,7 +37,7 @@ export interface Tweaks {
   mode: 'light' | 'dark';
   bookFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
   spellcheck: boolean;
-  spellcheckLang: 'es' | 'en';
+  spellcheckLang: 'es-MX' | 'es-ES' | 'en-US' | 'en-GB' | 'fr' | 'it';
   // Detailed styles
   fontSize: number;
   lineHeight: number;
@@ -51,6 +51,7 @@ export interface Tweaks {
   marginInner: number;
   marginOuter: number;
   showPageNumbers: boolean;
+  showHeader: boolean;
   headerText: string;
   // Advanced Decoration
   sceneBreakType: 'asterisks' | 'dots' | 'flourish' | 'none';

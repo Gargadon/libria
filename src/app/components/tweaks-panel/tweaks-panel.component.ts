@@ -1,11 +1,12 @@
 import { Component, inject, input } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-tweaks-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="tp">
       <div class="tp__h">
@@ -65,18 +66,14 @@ import { CommonModule } from '@angular/common';
         </div>
         <div class="tp__row" [style.opacity]="store.tweaks.spellcheck() ? '1' : '0.5'" [style.pointer-events]="store.tweaks.spellcheck() ? 'auto' : 'none'">
           <div class="tp__label">Idioma</div>
-          <div class="tp__radio">
-            <button 
-              class="tp__opt" 
-              [class.tp__opt--on]="store.tweaks.spellcheckLang() === 'es'"
-              (click)="store.updateTweak('spellcheckLang', 'es')"
-            >es</button>
-            <button 
-              class="tp__opt" 
-              [class.tp__opt--on]="store.tweaks.spellcheckLang() === 'en'"
-              (click)="store.updateTweak('spellcheckLang', 'en')"
-            >en</button>
-          </div>
+          <select class="tp__select" [ngModel]="store.tweaks.spellcheckLang()" (ngModelChange)="store.updateTweak('spellcheckLang', $event)">
+            <option value="es-MX">Español (México)</option>
+            <option value="es-ES">Español (España)</option>
+            <option value="en-US">English (US)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+          </select>
         </div>
       </div>
     </div>
