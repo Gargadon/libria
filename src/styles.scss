@@ -2632,6 +2632,10 @@ app-welcome {
   /* Start every chapter on a new column/page */
 }
 
+.kp--blank {
+  min-height: 1px;
+}
+
 .kp-chtitle,
 .kp-chnum,
 .kp-first,

@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setLanguage: (lang) => ipcRenderer.send('app:set-language', lang),
 
+  platform: process.platform,
+  arch: process.arch,
+
   // Spell checker
   setSpellCheckerLanguage: (lang) => ipcRenderer.invoke('spell:set-language', lang),
   getCustomDictionary: () => ipcRenderer.invoke('spell:get-dictionary'),

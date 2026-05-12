@@ -163,8 +163,11 @@ import * as htmlToImage from 'html-to-image';
             <div class="kp-slider" [style.--page-index]="globalPage()">
               <div class="kp-flow" #kpFlow>
                 @for (c of store.chapters(); track c.id; let idx = $index) {
+                  @if (mode() === 'print' && shouldInsertBlankPage(idx)) {
+                    <div class="kp kp--blank" style="break-before: column;"></div>
+                  }
                   <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id"
-                       [style.break-before]="c.forceOddPage ? 'right' : 'column'">
+                       style="break-before: column;">
                     <ng-container *ngTemplateOutlet="contentTpl; context: { 
                       $implicit: c, 
                       showNotes: false,
@@ -324,6 +327,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
+  realChapterPages = signal<Record<string, number>>({});
 
   readonly bookLayout = computed(() => {
     const chapters = this.store.chapters();
@@ -332,7 +336,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      const pages = this.estimateChapterPages(ch);
+      const realPages = this.realChapterPages()[ch.id];
+      const pages = realPages !== undefined ? realPages : this.estimateChapterPages(ch);
       let blank = false;
 
       // Force Odd: if current page is even (2, 4, 6...), add a blank
@@ -399,8 +404,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         if (realOffset !== undefined) {
           this.globalPage.set(realOffset);
         } else {
+          // If not measured yet (e.g. new chapter), use layout estimation
           const layout = this.bookLayout().chapters[id];
-          if (layout) this.globalPage.set(layout.startPage - 1);
+          if (layout) {
+            this.globalPage.set(layout.startPage - 1);
+          }
         }
       });
     });
@@ -423,7 +431,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       this.store.chapters();
       this.store.tweaks();
-      this.scheduleMeasure();
+      this.pageSize();
+      this.mode();
+      untracked(() => {
+        // Only clear if essential settings changed, otherwise just schedule
+        this.scheduleMeasure();
+      });
     });
 
     // Auto-zoom effect
@@ -492,6 +505,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         }
       }
       this.measureDOM();
+      // Second pass to ensure everything settled
+      setTimeout(() => this.measureDOM(), 300);
     }, 150);
   }
 
@@ -504,18 +519,33 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const cw = flow.clientWidth + gap;
     if (cw <= 0) return;
 
-    const elements = Array.from(flow.querySelectorAll('.kp:not(.kp--blank)')) as HTMLElement[];
-    const offsets: Record<string, number> = {};
+    const allKps = Array.from(flow.querySelectorAll('.kp')) as HTMLElement[];
+    const chapterOffsets: Record<string, number> = {};
+    const chapterPages: Record<string, number> = {};
     
-    elements.forEach((el) => {
+    for (let i = 0; i < allKps.length; i++) {
+      const el = allKps[i];
       const id = el.getAttribute('data-chapter');
       if (id) {
         const left = el.offsetLeft - flow.offsetLeft;
-        offsets[id] = Math.round(left / cw);
-      }
-    });
+        const currentOffset = Math.round(left / cw);
+        chapterOffsets[id] = currentOffset;
 
-    this.realPageOffsets.set(offsets);
+        // Determine pages occupied by this chapter by looking at the next element (chapter or blank)
+        const nextEl = allKps[i + 1];
+        let nextOffset: number;
+        if (nextEl) {
+          nextOffset = Math.round((nextEl.offsetLeft - flow.offsetLeft) / cw);
+        } else {
+          nextOffset = Math.round(flow.scrollWidth / cw);
+        }
+        
+        chapterPages[id] = Math.max(1, nextOffset - currentOffset);
+      }
+    }
+
+    this.realPageOffsets.set(chapterOffsets);
+    this.realChapterPages.set(chapterPages);
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
   }
 
@@ -589,14 +619,28 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private syncActiveChapter() {
     const p = this.globalPage();
     const offsets = this.realPageOffsets();
+    const chapters = this.store.chapters();
     
     let activeId = '';
-    
     let maxStartCol = -1;
+
+    // 1. Try real offsets first
     for (const [id, startCol] of Object.entries(offsets)) {
       if (startCol <= p && startCol > maxStartCol) {
         maxStartCol = startCol;
         activeId = id;
+      }
+    }
+    
+    // 2. Fallback to layout estimation if no real offset matches
+    if (!activeId) {
+      const layout = this.bookLayout().chapters;
+      for (const id in layout) {
+        const start = layout[id].startPage - 1;
+        if (start <= p && start > maxStartCol) {
+          maxStartCol = start;
+          activeId = id;
+        }
       }
     }
     

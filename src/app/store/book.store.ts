@@ -369,60 +369,13 @@ export const BookStore = signalStore(
       patchState(store, { isSaving });
     },
     addChapter(kind: ChapterKind = 'chapter') {
-      patchState(store, (state) => {
-        const sameKindChapters = state.chapters.filter(c => c.kind === kind);
-        const nextNumber = kind === 'chapter' 
-          ? (sameKindChapters.length > 0 ? Math.max(...sameKindChapters.map(c => c.number || 0)) + 1 : 1)
-          : undefined;
-        
-        const isEn = store.personalConfig().language === 'en';
-        const titles: Record<ChapterKind, string> = {
-          'front': isEn ? 'Front Page' : 'Página frontal',
-          'chapter': (isEn ? 'Chapter ' : 'Capítulo ') + (nextNumber || ''),
-          'back': isEn ? 'Back Page' : 'Página posterior'
-        };
-
-        const newChapter: Chapter = {
-          id: 'ch-' + Date.now().toString(36),
-          kind,
-          title: titles[kind],
-          words: 0,
-          readMin: 0,
-          number: nextNumber,
-          status: kind === 'chapter' ? 'draft' : (kind === 'front' ? 'front' : 'back'),
-          body: [
-            { type: kind === 'chapter' ? 'chapter-title' : 'h1', text: titles[kind] },
-            { type: 'p', text: '' }
-          ]
-        };
-
-        // insertion point: after last of same kind or at strategic boundaries
-        let insertIndex = state.chapters.length;
-        if (kind === 'front') {
-          const lastFront = state.chapters.map(c => c.kind).lastIndexOf('front');
-          insertIndex = lastFront >= 0 ? lastFront + 1 : 0;
-        } else if (kind === 'chapter') {
-          const lastChapter = state.chapters.map(c => c.kind).lastIndexOf('chapter');
-          if (lastChapter >= 0) {
-            insertIndex = lastChapter + 1;
-          } else {
-            const lastFront = state.chapters.map(c => c.kind).lastIndexOf('front');
-            insertIndex = lastFront >= 0 ? lastFront + 1 : 0;
-          }
-        }
-        
-        const newChapters = [
-          ...state.chapters.slice(0, insertIndex),
-          newChapter,
-          ...state.chapters.slice(insertIndex)
-        ];
-
-        return {
-          chapters: newChapters,
-          activeChapterId: newChapter.id,
-          isDirty: true
-        };
-      });
+      // ... (existing code)
+    },
+    addChapters(newChapters: Chapter[]) {
+      patchState(store, (state) => ({
+        chapters: [...state.chapters, ...newChapters],
+        isDirty: true
+      }));
     },
     updateChapterMeta(chapterId: string, meta: Partial<Pick<Chapter, 'title' | 'number' | 'forceOddPage' | 'status'>>) {
       patchState(store, (state) => ({

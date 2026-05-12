@@ -1,6 +1,8 @@
 import { Component, output, inject } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../environments/environment';
+
 
 @Component({
   selector: 'app-about-modal',
@@ -30,15 +32,15 @@ import { CommonModule } from '@angular/common';
           <dl class="about__meta">
             <div class="about__row">
               <dt>{{ 'about.version' | translate }}</dt>
-              <dd>1.0.0</dd>
-            </div>
-            <div class="about__row">
-              <dt>{{ 'about.environment' | translate }}</dt>
-              <dd>Electron</dd>
+              <dd>{{ environment.version }}</dd>
             </div>
             <div class="about__row">
               <dt>{{ 'about.platform' | translate }}</dt>
               <dd>{{ platform }}</dd>
+            </div>
+            <div class="about__row">
+              <dt>{{ 'about.architecture' | translate }}</dt>
+              <dd>{{ arch }}</dd>
             </div>
             <div class="about__row">
               <dt>{{ 'about.license' | translate }}</dt>
@@ -217,5 +219,12 @@ import { CommonModule } from '@angular/common';
 export class AboutModalComponent {
   close = output<void>();
   readonly translate = inject(TranslateService);
-  readonly platform = 'Electron';
+  
+  readonly platform = (() => {
+    const raw = (window as any).electronAPI?.platform ?? 'web';
+    return ({ win32: 'Windows', darwin: 'macOS', linux: 'Linux' } as Record<string, string>)[raw] ?? raw;
+  })();
+  
+  readonly arch = (window as any).electronAPI?.arch ?? 'unknown';
+  readonly environment = environment;
 }
