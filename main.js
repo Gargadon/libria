@@ -350,10 +350,11 @@ ipcMain.handle('pdf:printToPDF', async (_event, options) => {
 
       // Unlock print__content (container-type:size clips content)
       pg.querySelectorAll('.print__content').forEach(c => {
-        _save(c, ['overflow', 'height', 'flex']);
+        _save(c, ['overflow', 'height', 'flex', 'display']);
         c.style.overflow = 'visible';
         c.style.height   = 'auto';
         c.style.flex     = 'none';
+        c.style.display  = 'block';
       });
 
       // Remove inline padding from each chapter page so @page :left/:right margins

@@ -424,6 +424,15 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <div class="sb__export-card">
+              <div class="sb__export-icon" style="background: var(--terra); color: white;">PDF</div>
+              <div class="sb__export-info">
+                <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
+                <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
+                <button class="sb__btn-primary" (click)="exportPdf()">{{ 'sidebar.generatePDF' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__export-card">
               <div class="sb__export-icon">DOCX</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.word' | translate }}</div>
@@ -918,5 +927,9 @@ export class SidebarComponent implements OnInit {
 
   exportDocx() {
     this.exportService.exportDocx();
+  }
+
+  exportPdf() {
+    this.exportService.exportPdf();
   }
 }

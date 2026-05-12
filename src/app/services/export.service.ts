@@ -115,6 +115,36 @@ ${dropCapStyles}`);
     this.downloadFile(content, `${book.title}.epub`);
   }
 
+  async exportPdf() {
+    const book = this.store.book();
+    if (!book) return;
+
+    try {
+      // Electron's printToPDF uses Chrome DevTools Protocol which expects dimensions in INCHES
+      const sizeMap: Record<string, { width: number, height: number }> = {
+        '5x8': { width: 5, height: 8 },
+        '6x9': { width: 6, height: 9 },
+        'Letter': { width: 8.5, height: 11 },
+        'A5': { width: 5.827, height: 8.268 },
+        'A4': { width: 8.268, height: 11.693 }
+      };
+
+      const customSize = sizeMap[book.paperSize || '5x8'] || sizeMap['5x8'];
+
+      const options = {
+        pageSize: customSize,
+        printBackground: true,
+        margins: { marginType: 'none' }
+      };
+
+      const pdfData = await (window as any).electronAPI.printToPDF(options);
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
+      this.downloadFile(blob, `${book.title}.pdf`);
+    } catch (error) {
+      console.error('PDF export failed', error);
+    }
+  }
+
   async exportDocx() {
     const book = this.store.book();
     const chapters = this.store.chapters();

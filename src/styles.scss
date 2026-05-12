@@ -2899,14 +2899,10 @@ app-welcome {
   }
 
   .kp-page-break {
-    display: block;
-    height: 0;
-    page-break-after: always;
-    break-after: page;
-
-    span {
-      display: none;
-    }
+    display: block !important;
+    height: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
   }
 }
 

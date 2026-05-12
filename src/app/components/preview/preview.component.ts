@@ -368,19 +368,23 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly printStyles = computed(() => {
     const size = this.store.pageSize();
     const t = this.store.tweaks;
-    let css = `@media print { @page { size: ${size}; margin: 0; } `;
-
-    css += `
-      @page {
-        margin-top: ${t.marginTop()}mm;
-        margin-bottom: ${t.marginBottom()}mm;
-        margin-left: ${t.marginInner()}mm;
-        margin-right: ${t.marginInner()}mm;
+    return `
+      @media print { 
+        @page { 
+          size: ${size}; 
+          margin-top: ${t.marginTop()}mm;
+          margin-bottom: ${t.marginBottom()}mm;
+        }
+        @page :left {
+          margin-left: ${t.marginOuter()}mm;
+          margin-right: ${t.marginInner()}mm;
+        }
+        @page :right {
+          margin-left: ${t.marginInner()}mm;
+          margin-right: ${t.marginOuter()}mm;
+        }
       }
     `;
-
-    css += ` }`;
-    return css;
   });
 
   printZoom = signal(0.8);
