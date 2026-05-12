@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.0.1",
+  "libriaVersion": "1.0.4",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -14,7 +14,7 @@
       "Antoine de Saint-Exupéry"
     ],
     "author": "Antoine de Saint-Exupéry",
-    "lang": "es-ES"
+    "lang": "es-MX"
   },
   "preferences": {
     "sidebar": "right",
@@ -47,7 +47,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-1"
+    "lastActiveChapterId": "ch-front"
   },
   "chapters": [
     {
@@ -57,7 +57,7 @@
       "title": "Páginas de cortesía",
       "status": "ok",
       "words": 30,
-      "forceOddPage": true,
+      "forceOddPage": false,
       "body": [
         {
           "type": "halftitle",
@@ -94,7 +94,7 @@
       "title": "I",
       "status": "ok",
       "words": 425,
-      "forceOddPage": true,
+      "forceOddPage": false,
       "body": [
         {
           "type": "chapter-title",
@@ -313,6 +313,65 @@
       ],
       "number": 2,
       "readMin": 3
+    },
+    {
+      "id": "ch-mp20m1ap",
+      "kind": "chapter",
+      "title": "III",
+      "words": 128,
+      "readMin": 1,
+      "number": 3,
+      "status": "draft",
+      "body": [
+        {
+          "type": "chapter-title",
+          "text": "III"
+        },
+        {
+          "type": "p",
+          "text": "Necesité tiempo para comprender de dónde venía. El principito, que siempre insistía con sus preguntas, no parecía oír las mías. Fueron frases al azar las que, poco a poco, me fueron revelando sus secretos. Así, cuando distinguió por vez primera mi avión (no dibujaré mi avión, por tratarse de algo demasiado complicado para mí) me preguntó:"
+        },
+        {
+          "type": "p",
+          "text": "–¿Qué cosa es esa?"
+        },
+        {
+          "type": "p",
+          "text": "–Esa no es una cosa. Es un avión, vuela. Es mi avión."
+        },
+        {
+          "type": "p",
+          "text": "Me sentí orgulloso al decir que mi avión volaba. El entonces gritó:"
+        },
+        {
+          "type": "p",
+          "text": "–¡Cómo! ¿Has caído del cielo?"
+        },
+        {
+          "type": "p",
+          "text": "–Sí –le dije modestamente."
+        },
+        {
+          "type": "p",
+          "text": "–¡Ah, es curioso!"
+        },
+        {
+          "type": "p",
+          "text": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio."
+        },
+        {
+          "type": "p",
+          "text": "Después añadió:"
+        },
+        {
+          "type": "p",
+          "text": "–Entonces ¿tú también vienes del cielo? ¿De cuál planeta?"
+        },
+        {
+          "type": "p",
+          "text": ""
+        }
+      ]
     }
   ],
   "notes": [],
