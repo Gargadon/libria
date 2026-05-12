@@ -30,6 +30,7 @@ export interface Book {
   year: number;
   isbn: string;
   paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'Letter';
+  lang?: string;
 }
 
 export interface Tweaks {
@@ -37,7 +38,6 @@ export interface Tweaks {
   mode: 'light' | 'dark';
   bookFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
   spellcheck: boolean;
-  spellcheckLang: 'es' | 'en';
   // Detailed styles
   fontSize: number;
   lineHeight: number;
@@ -51,6 +51,7 @@ export interface Tweaks {
   marginInner: number;
   marginOuter: number;
   showPageNumbers: boolean;
+  showHeader: boolean;
   headerText: string;
   // Advanced Decoration
   sceneBreakType: 'asterisks' | 'dots' | 'flourish' | 'none';
@@ -107,6 +108,7 @@ export interface PersonalConfig {
   avatar: string;
   userName: string;
   previewWidth: number;
+  language: string;
 }
 
 export interface LibriaDocument {

@@ -8,6 +8,12 @@ interface ElectronAPI {
   onCloseRequested(callback: () => void): void;
   confirmClose(): void;
   onFileOpen(callback: (filePath: string) => void): void;
+
+  // Spell checker
+  setSpellCheckerLanguage(lang: string): Promise<void>;
+  getCustomDictionary(): Promise<string[]>;
+  addWordToDictionary(word: string): Promise<boolean>;
+  removeWordFromDictionary(word: string): Promise<boolean>;
 }
 
 interface Window {

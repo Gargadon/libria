@@ -6,7 +6,7 @@
      [class.font-inter]="store.tweaks.bookFont() === 'inter'"
      [class.font-montserrat]="store.tweaks.bookFont() === 'montserrat'"
      [class.font-crimson-pro]="store.tweaks.bookFont() === 'crimson-pro'"
-     [attr.data-screen-label]="'Libria — Editor'">
+      [attr.data-screen-label]="'app.title' | translate">
   <app-topbar></app-topbar>
   
   <div class="layout" [class.layout--empty]="!store.book()"
@@ -49,4 +49,9 @@
   @if (showAbout()) {
     <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
   }
+
+  <!-- Subtle saving indicator -->
+  <div class="subtle-loader" [class.subtle-loader--on]="store.isSaving()">
+    <div class="subtle-loader__bar"></div>
+  </div>
 </div>

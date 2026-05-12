@@ -2,12 +2,13 @@ import { Component, inject, signal, computed, HostListener } from '@angular/core
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
     <header class="tb">
       <div class="tb__left">
@@ -21,7 +22,7 @@ import { environment } from '../../../environments/environment';
         </div>
         <div class="tb__brand">
           <div class="tb__brandN">Libria</div>
-          <div class="tb__brandV">{{ environment.version }} · Atelier</div>
+          <div class="tb__brandV">{{ 'topbar.brandVersion' | translate:{ version: environment.version } }}</div>
         </div>
 
         @if (store.book(); as book) {
@@ -39,16 +40,16 @@ import { environment } from '../../../environments/environment';
         <nav class="tb__nav tb__nav--full">
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'manuscript'"
-            (click)="store.setNav('manuscript')">Manuscrito</button>
+            (click)="store.setNav('manuscript')">{{ 'topbar.manuscript' | translate }}</button>
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'styles'"
-            (click)="store.setNav('styles')">Estilos</button>
+            (click)="store.setNav('styles')">{{ 'topbar.styles' | translate }}</button>
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'layout'"
-            (click)="store.setNav('layout')">Maquetar</button>
+            (click)="store.setNav('layout')">{{ 'topbar.layout' | translate }}</button>
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'metadata'"
-            (click)="store.setNav('metadata')">Propiedades</button>
+            (click)="store.setNav('metadata')">{{ 'topbar.properties' | translate }}</button>
         </nav>
       }
 
@@ -57,53 +58,57 @@ import { environment } from '../../../environments/environment';
 
           <!-- FILE ACTIONS FULL (≥1360px) -->
           <div class="tb__actions tb__actions--full">
-            <button class="tb__action" title="Nuevo" (click)="newDoc()"><span class="material-symbols-outlined">note_add</span></button>
-            <button class="tb__action" title="Abrir" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
-            <button class="tb__action" title="Guardar" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>
-            <button class="tb__action" title="Guardar como" (click)="saveDocAs()"><span class="material-symbols-outlined">save_as</span></button>
+            <button class="tb__action" [attr.title]="'topbar.new' | translate" (click)="newDoc()"><span class="material-symbols-outlined">note_add</span></button>
+            <button class="tb__action" [attr.title]="'topbar.open' | translate" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
+            <button class="tb__action" [attr.title]="'topbar.save' | translate" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>
+            <button class="tb__action" [attr.title]="'topbar.saveAs' | translate" (click)="saveDocAs()"><span class="material-symbols-outlined">save_as</span></button>
+            <button class="tb__action" [attr.title]="'topbar.closeDoc' | translate" (click)="closeDoc()"><span class="material-symbols-outlined">close_fullscreen</span></button>
           </div>
           <span class="tb__sep tb__sep--full"></span>
 
           <!-- UNDO/REDO FULL (≥1360px) -->
           <div class="tb__actions tb__actions--full">
-            <button class="tb__action" title="Deshacer (Ctrl+Z)" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
-            <button class="tb__action" title="Rehacer (Ctrl+Y)" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
+            <button class="tb__action" [attr.title]="'topbar.undo' | translate" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
+            <button class="tb__action" [attr.title]="'topbar.redo' | translate" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
           </div>
           <span class="tb__sep tb__sep--full"></span>
 
           <!-- NAV COMPACT (<1360px) -->
           <div class="tb__compact-menu tb__compact-menu--nav">
-            <button class="tb__action" title="Vista" (click)="toggleMenu('nav', $event)">
+            <button class="tb__action" [attr.title]="'topbar.view' | translate" (click)="toggleMenu('nav', $event)">
               <span class="material-symbols-outlined">menu_book</span>
             </button>
             @if (openMenu() === 'nav') {
               <div class="tb__compact-dropdown">
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'manuscript'" (click)="store.setNav('manuscript'); closeMenus()">Manuscrito</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'styles'" (click)="store.setNav('styles'); closeMenus()">Estilos</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">Maquetar</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">Propiedades</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'manuscript'" (click)="store.setNav('manuscript'); closeMenus()">{{ 'topbar.manuscript' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'styles'" (click)="store.setNav('styles'); closeMenus()">{{ 'topbar.styles' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">{{ 'topbar.layout' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">{{ 'topbar.properties' | translate }}</button>
               </div>
             }
           </div>
 
           <!-- FILE COMPACT (<1360px) -->
           <div class="tb__compact-menu tb__compact-menu--file">
-            <button class="tb__action" title="Archivo" (click)="toggleMenu('file', $event)">
+            <button class="tb__action" [attr.title]="'topbar.file' | translate" (click)="toggleMenu('file', $event)">
               <span class="material-symbols-outlined">folder_open</span>
             </button>
             @if (openMenu() === 'file') {
               <div class="tb__compact-dropdown">
                 <button class="tb__compact-item" (click)="newDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">note_add</span> Nuevo
+                  <span class="material-symbols-outlined">note_add</span> {{ 'topbar.new' | translate }}
                 </button>
                 <button class="tb__compact-item" (click)="openDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">folder_open</span> Abrir
+                  <span class="material-symbols-outlined">folder_open</span> {{ 'topbar.open' | translate }}
                 </button>
                 <button class="tb__compact-item" (click)="saveDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">save</span> Guardar
+                  <span class="material-symbols-outlined">save</span> {{ 'topbar.save' | translate }}
                 </button>
                 <button class="tb__compact-item" (click)="saveDocAs(); closeMenus()">
-                  <span class="material-symbols-outlined">save_as</span> Guardar como…
+                  <span class="material-symbols-outlined">save_as</span> {{ 'topbar.saveAs' | translate }}
+                </button>
+                <button class="tb__compact-item" (click)="closeDoc(); closeMenus()">
+                  <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
                 </button>
               </div>
             }
@@ -111,29 +116,28 @@ import { environment } from '../../../environments/environment';
 
           <!-- UNDO/REDO COMPACT (<1360px) -->
           <div class="tb__compact-menu tb__compact-menu--edit">
-            <button class="tb__action" title="Edición" (click)="toggleMenu('edit', $event)">
+            <button class="tb__action" [attr.title]="'topbar.edit' | translate" (click)="toggleMenu('edit', $event)">
               <span class="material-symbols-outlined">history</span>
             </button>
             @if (openMenu() === 'edit') {
               <div class="tb__compact-dropdown">
                 <button class="tb__compact-item" (click)="store.undo(); closeMenus()">
-                  <span class="material-symbols-outlined">undo</span> Deshacer
+                  <span class="material-symbols-outlined">undo</span> {{ 'topbar.undo' | translate }}
                 </button>
                 <button class="tb__compact-item" (click)="store.redo(); closeMenus()">
-                  <span class="material-symbols-outlined">redo</span> Rehacer
+                  <span class="material-symbols-outlined">redo</span> {{ 'topbar.redo' | translate }}
                 </button>
               </div>
             }
           </div>
 
-          <span class="tb__sep"></span>
-          <button class="tb__icon" title="Buscar" (click)="store.search(''); store.setNav('search')">
+          <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="store.search(''); store.setNav('search')">
             <span class="material-symbols-outlined">search</span>
           </button>
-          <button class="tb__icon" title="Ajustes" (click)="store.setNav('settings')">
+          <button class="tb__icon" [attr.title]="'topbar.settings' | translate" (click)="store.setNav('settings')">
             <span class="material-symbols-outlined">settings</span>
           </button>
-          <button class="tb__cta" (click)="store.setNav('export')">Generar libro</button>
+          <button class="tb__cta" (click)="store.setNav('export')">{{ 'topbar.export' | translate }}</button>
         }
 
         <div class="tb__avatar tb__avatar--hideable">
@@ -149,12 +153,12 @@ import { environment } from '../../../environments/environment';
     @if (showExitModal()) {
       <div class="exit-modal-backdrop">
         <div class="exit-modal">
-          <div class="exit-modal__title">Cambios sin guardar</div>
-          <div class="exit-modal__body">¿Deseas guardar los cambios antes de continuar? Si no lo haces, se perderán las modificaciones recientes.</div>
+          <div class="exit-modal__title">{{ 'topbar.unsavedTitle' | translate }}</div>
+          <div class="exit-modal__body">{{ 'topbar.unsavedBody' | translate }}</div>
           <div class="exit-modal__actions">
-            <button class="exit-modal__btn" (click)="cancelExit()">Cancelar</button>
-            <button class="exit-modal__btn exit-modal__btn--danger" (click)="exitWithoutSaving()">Descartar</button>
-            <button class="exit-modal__btn exit-modal__btn--primary" (click)="saveAndExit()">Guardar</button>
+            <button class="exit-modal__btn" (click)="cancelExit()">{{ 'topbar.cancel' | translate }}</button>
+            <button class="exit-modal__btn exit-modal__btn--danger" (click)="exitWithoutSaving()">{{ 'topbar.discard' | translate }}</button>
+            <button class="exit-modal__btn exit-modal__btn--primary" (click)="saveAndExit()">{{ 'topbar.saveAndExit' | translate }}</button>
           </div>
         </div>
       </div>
@@ -164,6 +168,7 @@ import { environment } from '../../../environments/environment';
 export class TopbarComponent {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly translate = inject(TranslateService);
   readonly environment = environment;
 
   readonly displayAuthors = computed(() => {
@@ -173,9 +178,9 @@ export class TopbarComponent {
     const list = (book.authors && book.authors.length > 0) ? book.authors : [book.author];
     const filtered = list.filter(a => !!a && a.trim() !== '');
 
-    if (filtered.length === 0) return 'Sin autor';
+    if (filtered.length === 0) return this.translate.instant('topbar.noAuthor');
     if (filtered.length === 1) return filtered[0];
-    return `${filtered[0]} et al.`;
+    return `${filtered[0]} ${this.translate.instant('topbar.etAl')}`;
   });
 
   readonly titleInitials = computed(() => {
@@ -217,17 +222,27 @@ export class TopbarComponent {
     this.fileService.saveLibriaFile(true);
   }
 
+  closeDoc() {
+    if (this.store.isDirty()) {
+      this.pendingAction.set('close-doc');
+      this.showExitModal.set(true);
+    } else {
+      this.fileService.closeProject();
+    }
+  }
+
   constructor() {
     const api = (window as any).electronAPI;
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
         switch (action) {
-          case 'new':    this.newDoc(); break;
-          case 'open':   this.openDoc(); break;
-          case 'save':   this.saveDoc(); break;
+          case 'new': this.newDoc(); break;
+          case 'open': this.openDoc(); break;
+          case 'save': this.saveDoc(); break;
           case 'saveAs': this.saveDocAs(); break;
-          case 'undo':   this.store.undo(); break;
-          case 'redo':   this.store.redo(); break;
+          case 'close': this.closeDoc(); break;
+          case 'undo': this.store.undo(); break;
+          case 'redo': this.store.redo(); break;
           case 'search': this.store.search(''); this.store.setNav('search'); break;
         }
       });
@@ -263,7 +278,7 @@ export class TopbarComponent {
 
   // --- DATA LOSS GUARD LOGIC ---
   showExitModal = signal(false);
-  pendingAction = signal<'new' | 'open' | 'close' | null>(null);
+  pendingAction = signal<'new' | 'open' | 'close' | 'close-doc' | null>(null);
 
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification($event: BeforeUnloadEvent) {
@@ -287,6 +302,7 @@ export class TopbarComponent {
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();
+    else if (action === 'close-doc') this.fileService.closeProject();
   }
 
   async saveAndExit() {
@@ -299,5 +315,6 @@ export class TopbarComponent {
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();
+    else if (action === 'close-doc') this.fileService.closeProject();
   }
 }

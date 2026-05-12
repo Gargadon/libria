@@ -2,6 +2,7 @@ import { Component, inject, computed, signal, effect, untracked, ElementRef, Vie
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { Chapter } from '../../models/book.models';
+import { HyphenService } from '../../services/hyphen.service';
 import * as htmlToImage from 'html-to-image';
 
 @Component({
@@ -24,9 +25,11 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            <div class="print__header">
-              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-            </div>
+            @if (store.tweaks.showHeader()) {
+              <div class="print__header">
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              </div>
+            }
             <div class="print__content">
                 <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: ptToPx(store.tweaks.fontSize()) }"></ng-container>
             </div>
@@ -123,9 +126,11 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            <div class="print__header">
-              <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-            </div>
+            @if (store.tweaks.showHeader()) {
+              <div class="print__header">
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              </div>
+            }
 
             <div class="print__content" style="flex: 1; position: relative;">
               <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
@@ -158,10 +163,8 @@ import * as htmlToImage from 'html-to-image';
             <div class="kp-slider" [style.--page-index]="globalPage()">
               <div class="kp-flow" #kpFlow>
                 @for (c of store.chapters(); track c.id; let idx = $index) {
-                  @if (shouldInsertBlankPage(idx)) {
-                    <div class="kp kp--blank" style="break-before: column; color: transparent;">_</div>
-                  }
-                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id">
+                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id"
+                       [style.break-before]="c.forceOddPage ? 'right' : 'column'">
                     <ng-container *ngTemplateOutlet="contentTpl; context: { 
                       $implicit: c, 
                       showNotes: false,
@@ -178,6 +181,7 @@ import * as htmlToImage from 'html-to-image';
       <!-- CHAPTER CONTENT RENDERER -->
       <ng-template #contentTpl let-chapter let-showNotes="showNotes" let-fsOverride="fsOverride">
         <div class="kp-content"
+          [attr.lang]="store.domLang()"
           [style.font-family]="store.bookFontFamily()"
           [style.font-size.px]="fsOverride || store.tweaks.fontSize()"
           [style.line-height]="store.tweaks.lineHeight()"
@@ -235,11 +239,11 @@ import * as htmlToImage from 'html-to-image';
                 [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                 [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
               @case ('first-p') { 
-                <p class="kp-first" [class.has-dropcap]="store.tweaks.dropCap()">
-                  @if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
+                <p class="kp-first" [attr.lang]="store.domLang()" [class.has-dropcap]="store.tweaks.dropCap()">
+                  @if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml((b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text)"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
                 </p> 
               }
-              @case ('p') { <p class="kp-p">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
+              @case ('p') { <p class="kp-p" [attr.lang]="store.domLang()">@if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml(b.text || '')"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
               @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
@@ -274,6 +278,7 @@ import * as htmlToImage from 'html-to-image';
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
+  readonly hyphenService = inject(HyphenService);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
@@ -543,11 +548,26 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   isChapterEven(chapterIdx: number): boolean {
     const ch = this.store.chapters()[chapterIdx];
     if (!ch) return false;
+    
+    // Prefer real measurement if available
+    const offset = this.realPageOffsets()[ch.id];
+    if (offset !== undefined) {
+      return (offset + 1) % 2 === 0;
+    }
+
     return this.bookLayout().chapters[ch.id]?.startPage % 2 === 0;
   }
 
   chapterStartPage(chapterIdx: number): number {
     const ch = this.store.chapters()[chapterIdx];
+    if (!ch) return 1;
+
+    // Prefer real measurement if available
+    const offset = this.realPageOffsets()[ch.id];
+    if (offset !== undefined) {
+      return offset + 1;
+    }
+
     return this.bookLayout().chapters[ch?.id]?.startPage || 1;
   }
 

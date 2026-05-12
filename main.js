@@ -1,9 +1,29 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
 let fileToOpen = null;
+const customDictPath = path.join(app.getPath('userData'), 'custom-dictionary.json');
+
+function loadCustomDictionary() {
+  try {
+    if (fs.existsSync(customDictPath)) {
+      return JSON.parse(fs.readFileSync(customDictPath, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Failed to load custom dictionary:', e);
+  }
+  return [];
+}
+
+function saveCustomDictionary(words) {
+  try {
+    fs.writeFileSync(customDictPath, JSON.stringify(words, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save custom dictionary:', e);
+  }
+}
 
 app.on('open-file', (event, filePath) => {
   event.preventDefault();
@@ -47,6 +67,65 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
   }
 
+  // --- Spell checker setup ---
+  const session = mainWindow.webContents.session;
+  session.setSpellCheckerEnabled(true);
+  session.setSpellCheckerLanguages(['es-ES']);
+  const customWords = loadCustomDictionary();
+  customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
+
+  // Context menu with spelling suggestions
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    if (!params.isEditable) return;
+    const menu = new Menu();
+
+    if (params.misspelledWord) {
+      for (const s of params.dictionarySuggestions.slice(0, 5)) {
+        menu.append(new MenuItem({
+          label: s,
+          click: () => mainWindow.webContents.replaceMisspelling(s)
+        }));
+      }
+      if (params.dictionarySuggestions.length > 0) {
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+      menu.append(new MenuItem({
+        label: 'Añadir «' + params.misspelledWord + '» al diccionario',
+        click: () => {
+          const word = params.misspelledWord;
+          if (session.addWordToSpellCheckerDictionary(word)) {
+            const words = loadCustomDictionary();
+            if (!words.includes(word)) {
+              words.push(word);
+              saveCustomDictionary(words);
+            }
+          }
+        }
+      }));
+      menu.append(new MenuItem({ type: 'separator' }));
+    }
+
+    if (params.editFlags.canCut) {
+      menu.append(new MenuItem({ label: 'Cortar', accelerator: 'CmdOrCtrl+X', role: 'cut' }));
+    }
+    if (params.editFlags.canCopy) {
+      menu.append(new MenuItem({ label: 'Copiar', accelerator: 'CmdOrCtrl+C', role: 'copy' }));
+    }
+    if (params.editFlags.canPaste) {
+      menu.append(new MenuItem({ label: 'Pegar', accelerator: 'CmdOrCtrl+V', role: 'paste' }));
+    }
+    if (params.editFlags.canSelectAll) {
+      if (menu.items.some(i => i.type !== 'separator')) {
+        menu.append(new MenuItem({ type: 'separator' }));
+      }
+      menu.append(new MenuItem({ label: 'Seleccionar todo', accelerator: 'CmdOrCtrl+A', role: 'selectAll' }));
+    }
+
+    if (menu.items.length > 0) {
+      menu.popup({ window: mainWindow });
+    }
+  });
+
   mainWindow.webContents.on('did-finish-load', () => {
     const filePath = fileToOpen ?? getFileArgument();
     if (filePath) {
@@ -65,36 +144,53 @@ function send(action) {
   mainWindow?.webContents.send('menu:action', action);
 }
 
-function buildMenu() {
+const menuLabels = {
+  es: {
+    file: 'Archivo', fileNew: 'Nuevo', fileOpen: 'Abrir', fileSave: 'Guardar', fileSaveAs: 'Guardar como', fileClose: 'Cerrar documento', fileQuit: 'Salir',
+    edit: 'Editar', editUndo: 'Deshacer', editRedo: 'Rehacer',
+    view: 'Ver', viewSearch: 'Buscar',
+    help: 'Ayuda', helpAbout: 'Acerca de Libria…',
+  },
+  en: {
+    file: 'File', fileNew: 'New', fileOpen: 'Open', fileSave: 'Save', fileSaveAs: 'Save As', fileClose: 'Close Document', fileQuit: 'Quit',
+    edit: 'Edit', editUndo: 'Undo', editRedo: 'Redo',
+    view: 'View', viewSearch: 'Search',
+    help: 'Help', helpAbout: 'About Libria…',
+  }
+};
+
+function buildMenu(lang = 'es') {
+  const labels = menuLabels[lang] || menuLabels.es;
   const template = [
     {
-      label: 'Archivo',
+      label: labels.file,
       submenu: [
-        { label: 'Nuevo', accelerator: 'CmdOrCtrl+N', click: () => send('new') },
-        { label: 'Abrir', accelerator: 'CmdOrCtrl+O', click: () => send('open') },
-        { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => send('save') },
-        { label: 'Guardar como', accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+        { label: labels.fileNew, accelerator: 'CmdOrCtrl+N', click: () => send('new') },
+        { label: labels.fileOpen, accelerator: 'CmdOrCtrl+O', click: () => send('open') },
+        { label: labels.fileSave, accelerator: 'CmdOrCtrl+S', click: () => send('save') },
+        { label: labels.fileSaveAs, accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
+        { label: labels.fileClose, accelerator: 'CmdOrCtrl+W', click: () => send('close') },
         { type: 'separator' },
-        { label: 'Salir', accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
+        { label: labels.fileQuit, accelerator: 'CmdOrCtrl+Q', click: () => mainWindow.close() },
       ],
     },
     {
-      label: 'Editar',
+      label: labels.edit,
       submenu: [
-        { label: 'Deshacer', accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
-        { label: 'Rehacer', accelerator: 'CmdOrCtrl+Y', click: () => send('redo') },
+        { label: labels.editUndo, accelerator: 'CmdOrCtrl+Z', click: () => send('undo') },
+        { label: labels.editRedo, accelerator: 'CmdOrCtrl+Y', click: () => send('redo') },
       ],
     },
     {
-      label: 'Ver',
+      label: labels.view,
       submenu: [
-        { label: 'Buscar', accelerator: 'CmdOrCtrl+F', click: () => send('search') },
+        { label: labels.viewSearch, accelerator: 'CmdOrCtrl+F', click: () => send('search') },
       ],
     },
     {
-      label: 'Ayuda',
+      label: labels.help,
       submenu: [
-        { label: 'Acerca de Libria…', click: () => send('about') },
+        { label: labels.helpAbout, click: () => send('about') },
       ],
     },
   ];
@@ -104,7 +200,44 @@ function buildMenu() {
   return menu;
 }
 
+function setupHyphenation() {
+  try {
+    const userDataPath = app.getPath('userData');
+    const hyphenDataPath = path.join(userDataPath, 'hyphen-data');
+    if (!fs.existsSync(hyphenDataPath)) {
+      fs.mkdirSync(hyphenDataPath, { recursive: true });
+    }
+
+    const dicts = ['hyph-es.hyb', 'hyph-en-us.hyb', 'hyph-en-gb.hyb', 'hyph-fr.hyb', 'hyph-it.hyb'];
+    const isDev = process.argv.includes('--dev');
+    const sourceDir = isDev 
+      ? path.join(__dirname, 'public', 'dictionaries') 
+      : path.join(__dirname, 'dist', 'libria', 'browser', 'dictionaries');
+    
+    // In some packaged structures, the public folder might end up somewhere else. Fallback:
+    const fallbackSourceDir = path.join(process.resourcesPath || __dirname, 'dictionaries');
+
+    let actualSource = null;
+    if (fs.existsSync(sourceDir)) actualSource = sourceDir;
+    else if (fs.existsSync(fallbackSourceDir)) actualSource = fallbackSourceDir;
+    else actualSource = path.join(__dirname, 'public', 'dictionaries');
+
+    if (fs.existsSync(actualSource)) {
+      for (const dict of dicts) {
+        const sourceFile = path.join(actualSource, dict);
+        const destFile = path.join(hyphenDataPath, dict);
+        if (fs.existsSync(sourceFile) && !fs.existsSync(destFile)) {
+          fs.copyFileSync(sourceFile, destFile);
+        }
+      }
+    }
+  } catch (e) {
+    // Fail silently
+  }
+}
+
 app.whenReady().then(() => {
+  setupHyphenation();
   buildMenu();
   createWindow();
 });
@@ -140,6 +273,49 @@ ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
   return fs.readFileSync(filePath, 'utf-8');
 });
+
+// ─── Language IPC (rebuild native menu) ────────────────────────────────────────
+
+ipcMain.on('app:set-language', (_event, lang) => {
+  buildMenu(lang);
+});
+
+// ─── Spell checker IPC ──────────────────────────────────────────────────────────
+
+ipcMain.handle('spell:set-language', async (_event, lang) => {
+  mainWindow?.webContents.session.setSpellCheckerLanguages([lang]);
+});
+
+ipcMain.handle('spell:get-dictionary', async () => {
+  return loadCustomDictionary();
+});
+
+ipcMain.handle('spell:add-word', async (_event, word) => {
+  const added = mainWindow?.webContents.session.addWordToSpellCheckerDictionary(word);
+  if (added) {
+    const words = loadCustomDictionary();
+    if (!words.includes(word)) {
+      words.push(word);
+      saveCustomDictionary(words);
+    }
+  }
+  return !!added;
+});
+
+ipcMain.handle('spell:remove-word', async (_event, word) => {
+  const removed = mainWindow?.webContents.session.removeWordFromSpellCheckerDictionary(word);
+  if (removed) {
+    const words = loadCustomDictionary();
+    const idx = words.indexOf(word);
+    if (idx !== -1) {
+      words.splice(idx, 1);
+      saveCustomDictionary(words);
+    }
+  }
+  return !!removed;
+});
+
+// ─── PDF ────────────────────────────────────────────────────────────────────────
 
 ipcMain.handle('pdf:printToPDF', async (_event, options) => {
   // Apply inline styles directly — they override any stylesheet rule (no @media print needed)

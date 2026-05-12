@@ -111,19 +111,41 @@ button {
   overflow: hidden;
 }
 
-.layout__side { grid-column: 1; }
-.layout__ed { grid-column: 2; }
-.resizer { grid-column: 3; }
-.layout__pv { grid-column: 4; }
+.layout__side {
+  grid-column: 1;
+}
+
+.layout__ed {
+  grid-column: 2;
+}
+
+.resizer {
+  grid-column: 3;
+}
+
+.layout__pv {
+  grid-column: 4;
+}
 
 .app--sb-right .layout {
   grid-template-columns: minmax(0, 1fr) 6px var(--pv-width, 460px) 300px;
 }
 
-.app--sb-right .layout__ed { grid-column: 1; }
-.app--sb-right .resizer { grid-column: 2; }
-.app--sb-right .layout__pv { grid-column: 3; }
-.app--sb-right .layout__side { grid-column: 4; }
+.app--sb-right .layout__ed {
+  grid-column: 1;
+}
+
+.app--sb-right .resizer {
+  grid-column: 2;
+}
+
+.app--sb-right .layout__pv {
+  grid-column: 3;
+}
+
+.app--sb-right .layout__side {
+  grid-column: 4;
+}
 
 .layout__side,
 .layout__ed,
@@ -155,8 +177,10 @@ button {
     transform: translateX(-50%);
   }
 
-  &:hover, &:active {
+  &:hover,
+  &:active {
     background: rgba(168, 98, 61, 0.1);
+
     &::after {
       background: var(--terra);
       width: 2px;
@@ -174,9 +198,11 @@ button {
   grid-template-columns: 0 minmax(0, 1fr) 6px var(--pv-width, 460px) !important;
   transition: grid-template-columns .22s ease;
 }
+
 .app--sb-right .layout--sb-closed {
   grid-template-columns: minmax(0, 1fr) 6px var(--pv-width, 460px) 0 !important;
 }
+
 .layout--sb-closed .layout__side {
   overflow: hidden;
   pointer-events: none;
@@ -1196,6 +1222,73 @@ app-welcome {
   color: var(--ink);
   padding: 0 1px;
   border-radius: 2px;
+}
+
+/* ===== Personal dictionary ===== */
+.sb__dict-add-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.sb__dict-add-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--terra);
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb__dict-add-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.sb__dict-add-btn:hover:not(:disabled) {
+  background: #8e5334;
+}
+
+.sb__dict-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.sb__dict-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: var(--paper-2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.sb__dict-word {
+  font-family: var(--serif);
+  color: var(--ink);
+}
+
+.sb__dict-del {
+  padding: 0 6px;
+  font-size: 16px;
+  color: var(--ink-mute);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.sb__dict-del:hover {
+  color: var(--terra);
 }
 
 .sb__add-wrapper {
@@ -2830,17 +2923,14 @@ app-welcome {
 .kp-p {
   margin: 0;
   text-indent: 0;
-  hyphens: none
 }
 
 .kp-content--hyphen .kp-p,
-.kp-content--hyphen .kp-first {
-  hyphens: auto;
-}
-
+.kp-content--hyphen .kp-first,
 .ed__doc--hyphen .bk-p,
 .ed__doc--hyphen .bk-first {
-  hyphens: auto;
+  -webkit-hyphens: manual;
+  hyphens: manual;
 }
 
 .kp-break {
@@ -2940,11 +3030,13 @@ app-welcome {
 
 /* ===== Compact topbar (<1360px) ===== */
 @media (max-width: 1359px) {
+
   .tb__nav--full,
   .tb__actions--full,
   .tb__sep--full {
     display: none;
   }
+
   .tb__avatar--hideable {
     display: none;
   }
@@ -3120,6 +3212,21 @@ app-welcome {
   font-weight: 500
 }
 
+.tp__select {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--ink);
+  width: 100px;
+}
+
+.tp__select:focus {
+  outline: none;
+  border-color: var(--terra);
+}
+
 /* ===== Exit Modal ===== */
 .exit-modal-backdrop {
   position: fixed;
@@ -3204,17 +3311,20 @@ app-welcome {
 
 /* ===== Export & Print Profiles ===== */
 
-body.print-physical, body.print-digital {
+body.print-physical,
+body.print-digital {
   background: white !important;
   overflow: visible !important;
 }
 
 .print-physical {
+
   /* Mirrored margins for physical book printing */
   .print__page:nth-child(even) {
     padding-left: calc(var(--outer-gap, 15mm) + var(--gutter, 5mm)) !important;
     padding-right: var(--inner-gap, 25mm) !important;
   }
+
   .print__page:nth-child(odd) {
     padding-left: var(--inner-gap, 25mm) !important;
     padding-right: calc(var(--outer-gap, 15mm) + var(--gutter, 5mm)) !important;
@@ -3236,11 +3346,23 @@ body.print-physical, body.print-digital {
 @media print {
   /* No default @page size/margin here, it's set dynamically in the component */
 
-  .tb, .sb, .ed, .pv__head, .pv__foot, .pv__zoom, .pv-click-zone, .ed__statbar, .pv__stage > div:not(.print-generator), .pv__nav-btn {
+  .tb,
+  .sb,
+  .ed,
+  .pv__head,
+  .pv__foot,
+  .pv__zoom,
+  .pv-click-zone,
+  .ed__statbar,
+  .pv__stage>div:not(.print-generator),
+  .pv__nav-btn {
     display: none !important;
   }
 
-  .app, .layout, .pv, .pv__stage {
+  .app,
+  .layout,
+  .pv,
+  .pv__stage {
     display: block !important;
     padding: 0 !important;
     margin: 0 !important;
@@ -3250,7 +3372,9 @@ body.print-physical, body.print-digital {
     overflow: visible !important;
   }
 
-  app-sidebar, app-editor, app-preview {
+  app-sidebar,
+  app-editor,
+  app-preview {
     display: block !important;
     overflow: visible !important;
     height: auto !important;
@@ -3298,11 +3422,60 @@ body.print-physical, body.print-digital {
   gap: 20px;
   align-items: center;
   padding: 40px 0;
-  --gutter: 5mm; /* Default gutter */
+  --gutter: 5mm;
+  /* Default gutter */
 }
 
 @media screen {
   .print--full {
     background: var(--paper-2);
+  }
+}
+
+/* Subtle Loader */
+.subtle-loader {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: transparent;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.subtle-loader--on {
+  opacity: 1;
+}
+
+.subtle-loader__bar {
+  width: 100%;
+  height: 100%;
+  background: #a8623d; /* Libria primary color */
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.subtle-loader--on .subtle-loader__bar {
+  animation: subtle-load 0.8s ease-in-out infinite;
+}
+
+@keyframes subtle-load {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  50% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  51% {
+    transform-origin: right;
+  }
+  100% {
+    transform: scaleX(0);
+    transform-origin: right;
   }
 }

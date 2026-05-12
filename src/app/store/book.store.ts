@@ -2,6 +2,7 @@ import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
 import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
+import { SpellCheckService } from '../services/spell-check.service';
 import { environment } from '../../environments/environment';
 
 export interface BookState {
@@ -29,6 +30,7 @@ export interface BookState {
   searchResults: SearchResult[];
   replaceQuery: string;
   personalConfig: PersonalConfig;
+  isSaving: boolean;
 }
 
 const initialState: BookState = {
@@ -41,7 +43,6 @@ const initialState: BookState = {
     mode: 'light',
     bookFont: 'lora',
     spellcheck: true,
-    spellcheckLang: 'es',
     fontSize: 12,
     lineHeight: 1.6,
     paragraphSpacing: 4,
@@ -53,6 +54,7 @@ const initialState: BookState = {
     marginInner: 25,
     marginOuter: 15,
     showPageNumbers: true,
+    showHeader: true,
     headerText: '',
     sceneBreakType: 'asterisks',
     titleAlignment: 'center',
@@ -84,7 +86,8 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '', userName: '', previewWidth: 460 }
+  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' },
+  isSaving: false
 };
 
 function calculateWords(body: { text?: string }[]): number {
@@ -156,6 +159,14 @@ export const BookStore = signalStore(
         case 'montserrat': return "'Montserrat', sans-serif";
         default: return "serif";
       }
+    }),
+    documentLang: computed(() => state.book()?.lang || 'es-MX'),
+    domLang: computed(() => {
+      const lang = state.book()?.lang || 'es-MX';
+      if (lang.startsWith('es-')) return 'es';
+      if (lang.startsWith('fr-')) return 'fr';
+      if (lang.startsWith('it-')) return 'it';
+      return lang;
     })
   })),
   withMethods((store) => ({
@@ -216,8 +227,9 @@ export const BookStore = signalStore(
     },
     createNewProject() {
       const author = store.personalConfig().userName;
+      const isEn = store.personalConfig().language === 'en';
       const newBook: Book = {
-        title: 'Nuevo Libro',
+        title: isEn ? 'New Book' : 'Nuevo Libro',
         subtitle: '',
         author: author,
         authors: author ? [author] : [],
@@ -225,18 +237,19 @@ export const BookStore = signalStore(
         publisher: '',
         year: new Date().getFullYear(),
         isbn: '',
-        paperSize: '5x8'
+        paperSize: '5x8',
+        lang: isEn ? 'en-US' : 'es-MX'
       };
       const firstChapter: Chapter = {
         id: 'ch-' + Date.now().toString(36),
         kind: 'chapter',
-        title: 'Capítulo 1',
+        title: isEn ? 'Chapter 1' : 'Capítulo 1',
         words: 0,
         readMin: 0,
         number: 1,
         status: 'draft',
         body: [
-          { type: 'chapter-title', text: 'Capítulo 1' },
+          { type: 'chapter-title', text: isEn ? 'Chapter 1' : 'Capítulo 1' },
           { type: 'p', text: '' }
         ]
       };
@@ -272,7 +285,7 @@ export const BookStore = signalStore(
         role,
         authorName,
         content,
-        date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }),
+        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' }),
         status: 'unresolved',
         replies: []
       };
@@ -293,7 +306,7 @@ export const BookStore = signalStore(
         authorName,
         role,
         content,
-        date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })
       };
       patchState(store, (state) => ({
         notes: state.notes.map(n => 
@@ -313,6 +326,19 @@ export const BookStore = signalStore(
         book: state.book ? { ...state.book, ...metadata } : null,
         isDirty: true
       }));
+    },
+    closeDocument() {
+      patchState(store, {
+        book: null,
+        chapters: [],
+        notes: [],
+        activeChapterId: '',
+        isDirty: false,
+        past: [],
+        future: [],
+        assets: {},
+        ui: { ...initialState.ui, activeNav: 'manuscript' }
+      });
     },
     deleteChapter(chapterId: string) {
       patchState(store, (state) => {
@@ -339,6 +365,9 @@ export const BookStore = signalStore(
     markAsSaved() {
       patchState(store, { isDirty: false });
     },
+    setIsSaving(isSaving: boolean) {
+      patchState(store, { isSaving });
+    },
     addChapter(kind: ChapterKind = 'chapter') {
       patchState(store, (state) => {
         const sameKindChapters = state.chapters.filter(c => c.kind === kind);
@@ -346,10 +375,11 @@ export const BookStore = signalStore(
           ? (sameKindChapters.length > 0 ? Math.max(...sameKindChapters.map(c => c.number || 0)) + 1 : 1)
           : undefined;
         
+        const isEn = store.personalConfig().language === 'en';
         const titles: Record<ChapterKind, string> = {
-          'front': 'Página frontal',
-          'chapter': 'Capítulo ' + (nextNumber || ''),
-          'back': 'Página posterior'
+          'front': isEn ? 'Front Page' : 'Página frontal',
+          'chapter': (isEn ? 'Chapter ' : 'Capítulo ') + (nextNumber || ''),
+          'back': isEn ? 'Back Page' : 'Página posterior'
         };
 
         const newChapter: Chapter = {
@@ -412,7 +442,7 @@ export const BookStore = signalStore(
           
           return {
             ...c,
-            title: isTitleBlock ? (text || 'Sin título') : c.title,
+            title: isTitleBlock ? (text || (store.personalConfig().language === 'en' ? 'Untitled' : 'Sin título')) : c.title,
             body: c.body.map((b, i) =>
               i === blockIndex ? { ...b, text, html } : b
             )
@@ -639,7 +669,8 @@ export const BookStore = signalStore(
   withHooks({
     onInit(store) {
       const personalConfigService = inject(PersonalConfigService);
-      
+      const spellCheckService = inject(SpellCheckService);
+
       // Load initial personal config
       const saved = personalConfigService.load();
       patchState(store, { personalConfig: saved });
@@ -648,6 +679,19 @@ export const BookStore = signalStore(
       effect(() => {
         const config = store.personalConfig();
         personalConfigService.save(config);
+      });
+
+      // Sync spell checker language with Electron
+      effect(() => {
+        const lang = store.documentLang();
+        if (spellCheckService.isAvailable) {
+          spellCheckService.setLanguage(lang);
+        }
+      });
+
+      // Sync HTML lang attribute for CSS hyphenation
+      effect(() => {
+        document.documentElement.lang = store.domLang();
       });
     }
   })

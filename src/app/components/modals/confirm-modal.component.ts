@@ -1,10 +1,11 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-confirm-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateModule],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
       <div class="modal" (click)="$event.stopPropagation()">
@@ -18,8 +19,8 @@ import { CommonModule } from '@angular/common';
         </div>
 
         <div class="modal__foot">
-          <button class="btn" (click)="close.emit()">Cancelar</button>
-          <button class="btn btn--danger" (click)="confirm.emit()">Confirmar</button>
+          <button class="btn" (click)="close.emit()">{{ 'confirm.cancel' | translate }}</button>
+          <button class="btn btn--danger" (click)="confirm.emit()">{{ 'confirm.confirm' | translate }}</button>
         </div>
       </div>
     </div>

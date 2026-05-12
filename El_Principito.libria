@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.0.0",
+  "libriaVersion": "1.0.1",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -13,14 +13,14 @@
     "authors": [
       "Antoine de Saint-Exupéry"
     ],
-    "author": "Antoine de Saint-Exupéry"
+    "author": "Antoine de Saint-Exupéry",
+    "lang": "es-ES"
   },
   "preferences": {
     "sidebar": "right",
     "mode": "light",
     "bookFont": "lora",
     "spellcheck": true,
-    "spellcheckLang": "es",
     "fontSize": 14,
     "lineHeight": 1.5,
     "paragraphSpacing": 8,
@@ -32,6 +32,7 @@
     "marginInner": 25,
     "marginOuter": 15,
     "showPageNumbers": true,
+    "showHeader": true,
     "headerText": "El Principito",
     "sceneBreakType": "asterisks",
     "titleAlignment": "center",
@@ -92,7 +93,7 @@
       "label": "I",
       "title": "I",
       "status": "ok",
-      "words": 422,
+      "words": 425,
       "forceOddPage": true,
       "body": [
         {
@@ -101,7 +102,8 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "p",
@@ -110,7 +112,8 @@
         },
         {
           "type": "p",
-          "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:"
+          "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
+          "html": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:"
         },
         {
           "type": "scene-break"
@@ -121,7 +124,8 @@
         },
         {
           "type": "p",
-          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron."
+          "text": "—¿Por qué habría de asustar un sombrero? —me respondiseron.",
+          "html": "—¿Por qué habría de asustar un sombrero? —me respondiseron."
         },
         {
           "type": "p",
@@ -202,7 +206,8 @@
         },
         {
           "type": "p",
-          "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
+          "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
+          "html": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
         },
         {
           "type": "p",

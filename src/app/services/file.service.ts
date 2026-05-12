@@ -31,57 +31,61 @@ export class FileService {
   }
 
   async saveLibriaFile(saveAs: boolean = false) {
+    this.store.setIsSaving(true);
     const doc = this.buildDoc();
     const json = JSON.stringify(doc, null, 2);
 
-    if (this.isElectron) {
-      try {
+    try {
+      if (this.isElectron) {
         const api = window.electronAPI!;
         let path = this.currentPath;
         if (saveAs || !path) {
           path = await api.saveDialog(this.defaultName());
-          if (!path) return;
+          if (!path) {
+            this.store.setIsSaving(false);
+            return;
+          }
         }
         await api.writeFile(path, json);
         this.currentPath = path;
         this.store.markAsSaved();
-      } catch (err) {
-        console.error(err);
-      }
-      return;
-    }
+      } else {
+        const blob = new Blob([json], { type: 'application/json' });
+        const defaultName = this.defaultName();
 
-    const blob = new Blob([json], { type: 'application/json' });
-    const defaultName = this.defaultName();
-
-    if ('showSaveFilePicker' in window) {
-      try {
-        let handle = (window as any).__libriaFileHandle;
-        if (saveAs || !handle) {
-          handle = await (window as any).showSaveFilePicker({
-            suggestedName: defaultName,
-            types: [{
-              description: 'Documento Libria',
-              accept: { 'application/json': ['.libria'] }
-            }]
-          });
+        if ('showSaveFilePicker' in window) {
+          let handle = (window as any).__libriaFileHandle;
+          if (saveAs || !handle) {
+            handle = await (window as any).showSaveFilePicker({
+              suggestedName: defaultName,
+              types: [{
+                description: 'Documento Libria',
+                accept: { 'application/json': ['.libria'] }
+              }]
+            });
+          }
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          (window as any).__libriaFileHandle = handle;
+          this.store.markAsSaved();
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = defaultName;
+          a.click();
+          URL.revokeObjectURL(url);
+          this.store.markAsSaved();
         }
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        (window as any).__libriaFileHandle = handle;
-        this.store.markAsSaved();
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') console.error(err);
       }
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = defaultName;
-      a.click();
-      URL.revokeObjectURL(url);
-      this.store.markAsSaved();
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') console.error(err);
+    } finally {
+      // Small delay to make the bar visible even for fast saves
+      setTimeout(() => {
+        this.store.setIsSaving(false);
+      }, 800);
     }
   }
 
@@ -145,5 +149,11 @@ export class FileService {
     this.currentPath = null;
     (window as any).__libriaFileHandle = null;
     this.store.createNewProject();
+  }
+
+  closeProject() {
+    this.currentPath = null;
+    (window as any).__libriaFileHandle = null;
+    this.store.closeDocument();
   }
 }
