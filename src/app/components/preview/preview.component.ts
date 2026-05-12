@@ -163,10 +163,8 @@ import * as htmlToImage from 'html-to-image';
             <div class="kp-slider" [style.--page-index]="globalPage()">
               <div class="kp-flow" #kpFlow>
                 @for (c of store.chapters(); track c.id; let idx = $index) {
-                  @if (shouldInsertBlankPage(idx)) {
-                    <div class="kp kp--blank" style="break-before: column; color: transparent;">_</div>
-                  }
-                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id">
+                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id"
+                       [style.break-before]="c.forceOddPage ? 'right' : 'column'">
                     <ng-container *ngTemplateOutlet="contentTpl; context: { 
                       $implicit: c, 
                       showNotes: false,
@@ -550,11 +548,26 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   isChapterEven(chapterIdx: number): boolean {
     const ch = this.store.chapters()[chapterIdx];
     if (!ch) return false;
+    
+    // Prefer real measurement if available
+    const offset = this.realPageOffsets()[ch.id];
+    if (offset !== undefined) {
+      return (offset + 1) % 2 === 0;
+    }
+
     return this.bookLayout().chapters[ch.id]?.startPage % 2 === 0;
   }
 
   chapterStartPage(chapterIdx: number): number {
     const ch = this.store.chapters()[chapterIdx];
+    if (!ch) return 1;
+
+    // Prefer real measurement if available
+    const offset = this.realPageOffsets()[ch.id];
+    if (offset !== undefined) {
+      return offset + 1;
+    }
+
     return this.bookLayout().chapters[ch?.id]?.startPage || 1;
   }
 
