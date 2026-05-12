@@ -1,13 +1,36 @@
-name: Build macOS
+name: Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   build:
-    runs-on: macos-latest
+    name: Build and Publish (${{ matrix.os }}, ${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS
+          - os: macos-latest
+            arch: universal
+            target: mac
+          # Windows
+          - os: windows-latest
+            arch: x64
+            target: win
+          - os: windows-latest
+            arch: arm64
+            target: win
+          # Linux
+          - os: ubuntu-latest
+            arch: x64
+            target: linux
+          - os: ubuntu-latest
+            arch: arm64
+            target: linux
 
     steps:
       - uses: actions/checkout@v4
@@ -17,10 +40,17 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools liblzma-dev
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate .icns icon
+      - name: Generate .icns icon (macOS)
+        if: runner.os == 'macOS'
         run: |
           mkdir -p build/icon.iconset
           sips -z 16   16   build/icon-512.png --out build/icon.iconset/icon_16x16.png
@@ -37,14 +67,7 @@ jobs:
       - name: Build Angular
         run: npm run build
 
-      - name: Build Electron (macOS)
-        run: npx electron-builder --mac
+      - name: Build and Publish Electron
+        run: npx electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload DMG
-        uses: actions/upload-artifact@v4
-        with:
-          name: libria-mac
-          path: release/*.dmg
-          retention-days: 30
