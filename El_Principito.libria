@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.0.4",
+  "libriaVersion": "1.1.0",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -47,7 +47,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-mp21ix4k"
+    "lastActiveChapterId": "ch-front"
   },
   "chapters": [
     {
@@ -56,36 +56,43 @@
       "label": "Frontmatter",
       "title": "Páginas de cortesía",
       "status": "ok",
-      "words": 30,
+      "words": 40,
       "forceOddPage": true,
       "body": [
         {
-          "type": "halftitle",
+          "type": "chapter-title",
           "text": "El Principito"
         },
         {
           "type": "page-break"
         },
         {
-          "type": "title",
+          "type": "chapter-title",
           "text": "El Principito"
         },
         {
-          "type": "author",
+          "type": "chapter-title",
           "text": "Antoine de Saint-Exupéry"
         },
         {
-          "type": "publisher",
-          "text": "Reynal & Hitchcock"
+          "type": "p",
+          "text": "",
+          "html": "<br>"
         },
         {
           "type": "page-break"
         },
         {
-          "type": "dedication",
-          "text": "A Léon Werth\n\nPido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo."
+          "type": "p",
+          "text": "A Léon Werth:",
+          "html": "A Léon Werth:"
+        },
+        {
+          "type": "blockquote",
+          "text": "Pido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo."
         }
-      ]
+      ],
+      "readMin": 1
     },
     {
       "id": "ch-1",
@@ -93,7 +100,7 @@
       "label": "I",
       "title": "I",
       "status": "ok",
-      "words": 425,
+      "words": 422,
       "forceOddPage": true,
       "body": [
         {
@@ -102,8 +109,8 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
-          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "p",
@@ -124,8 +131,8 @@
         },
         {
           "type": "p",
-          "text": "—¿Por qué habría de asustar un sombrero? —me respondiseron.",
-          "html": "—¿Por qué habría de asustar un sombrero? —me respondiseron."
+          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron.",
+          "html": "—¿Por qué habría de asustar un sombrero? —me respondieron."
         },
         {
           "type": "p",

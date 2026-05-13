@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   printToPDF: (options) => ipcRenderer.invoke('pdf:printToPDF', options),
+  printFromHTML: (html, options) => ipcRenderer.invoke('pdf:printFromHTML', html, options),
   onMenuAction: (callback) => ipcRenderer.on('menu:action', (_event, action) => callback(action)),
   onCloseRequested: (callback) => ipcRenderer.on('app:close-requested', () => callback()),
   confirmClose: () => ipcRenderer.send('app:confirm-close'),
