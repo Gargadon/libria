@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { pathToFileURL } = require('url');
 
 let mainWindow;
 let fileToOpen = null;
@@ -317,6 +318,200 @@ ipcMain.handle('spell:remove-word', async (_event, word) => {
 
 // ─── PDF ────────────────────────────────────────────────────────────────────────
 
+// Inserts blank pages before .ch--recto chapters that land on a verso (even)
+// page so they start on a recto (odd) page.
+//
+// Root cause of the old offsetTop approach: break-before:page is IGNORED by
+// Chromium in screen (non-print) mode, so chapters flowed without page breaks
+// and offsetTop didn't represent actual print page positions.
+//
+// Fix: use a temporary multi-column layout where break-before:column IS
+// respected in screen mode, identical to how the preview's fixRectoChapters()
+// works. Measure offsetLeft / columnWidth = accurate page (column) index, then
+// restore the normal layout and insert full-height blank divs before chapters
+// that land on verso pages.
+async function applyForceRecto(win, options) {
+  const rectoCount = await win.webContents.executeJavaScript(
+    `document.querySelectorAll('.ch--recto').length`
+  );
+  console.log('[forceRecto] .ch--recto elements found:', rectoCount);
+  if (!rectoCount) return;
+
+  const cfg = await win.webContents.executeJavaScript(`
+    (function() {
+      try { return JSON.parse(document.getElementById('libria-cfg').textContent); }
+      catch(e) { return {mi: 20, mo: 20}; }
+    })()
+  `);
+  console.log('[forceRecto] config:', cfg);
+
+  const pageW   = options.pageSize.width;
+  const pageH   = options.pageSize.height;
+  const mTop    = (options.margins && options.margins.top)    || 0;
+  const mBottom = (options.margins && options.margins.bottom) || 0;
+  const mInner  = (cfg.mi || 20) / 25.4;
+  const mOuter  = (cfg.mo || 20) / 25.4;
+  const contentW = (pageW - mInner - mOuter) * 96;
+  const contentH = (pageH - mTop - mBottom) * 96;
+  console.log('[forceRecto] pageW=%s pageH=%s contentW=%s contentH=%s', pageW, pageH, contentW.toFixed(1), contentH.toFixed(1));
+
+  // Resize body to print content width for accurate reflow
+  await win.webContents.executeJavaScript(`
+    document.documentElement.style.width    = '${contentW}px';
+    document.documentElement.style.maxWidth = '${contentW}px';
+    document.body.style.width    = '${contentW}px';
+    document.body.style.maxWidth = '${contentW}px';
+    document.body.style.margin   = '0';
+    document.body.style.padding  = '0';
+    void document.body.offsetHeight;
+  `);
+  await new Promise(r => setTimeout(r, 200));
+
+  // Phase 1: measure chapter page positions using a temporary multi-column layout.
+  // break-before:column IS respected in screen mode, so each chapter correctly
+  // starts at a new column (= page). This mirrors fixRectoChapters() in the preview.
+  const report = await win.webContents.executeJavaScript(`
+    (function() {
+      const cW = ${contentW};
+      const cH = ${contentH};
+
+      // Wrap all body content in a multi-column flow container
+      const flow = document.createElement('div');
+      flow.style.cssText =
+        'width:' + cW + 'px;' +
+        'height:' + cH + 'px;' +
+        'column-fill:auto;' +
+        'column-width:' + cW + 'px;' +
+        'column-gap:0;' +
+        'overflow:visible;';
+      const bodyChildren = Array.from(document.body.childNodes);
+      bodyChildren.forEach(function(c) { flow.appendChild(c); });
+      document.body.appendChild(flow);
+
+      // Switch chapters to column breaks (respected in screen mode)
+      const allCh = Array.from(document.querySelectorAll('.ch'));
+      allCh.forEach(function(ch, i) {
+        ch.dataset.frBreak = ch.style.breakBefore || '';
+        if (i > 0) ch.style.setProperty('break-before', 'column');
+      });
+      // Also switch in-chapter manual page breaks
+      Array.from(document.querySelectorAll('.kp-page-break')).forEach(function(el) {
+        el.dataset.frBreak = el.style.breakAfter || '';
+        el.style.setProperty('break-after', 'column');
+      });
+
+      void document.body.offsetHeight; // flush layout
+
+      // Read column (page) positions for recto chapters
+      const rectoChapters = Array.from(document.querySelectorAll('.ch--recto'));
+      let added = 0;
+      const log = [];
+      rectoChapters.forEach(function(ch) {
+        const rawCol = Math.round((ch.offsetLeft - flow.offsetLeft) / cW);
+        const colIdx = rawCol + added; // adjust for blanks already decided
+        const needsBlank = colIdx % 2 !== 0; // odd 0-based index = even page = verso
+        log.push({ rawCol, colIdx, needsBlank });
+        if (needsBlank) added++;
+      });
+
+      // Restore original break values and remove flow wrapper
+      allCh.forEach(function(ch) {
+        const orig = ch.dataset.frBreak;
+        if (orig) ch.style.setProperty('break-before', orig);
+        else ch.style.removeProperty('break-before');
+        delete ch.dataset.frBreak;
+      });
+      Array.from(document.querySelectorAll('.kp-page-break')).forEach(function(el) {
+        const orig = el.dataset.frBreak;
+        if (orig) el.style.setProperty('break-after', orig);
+        else el.style.removeProperty('break-after');
+        delete el.dataset.frBreak;
+      });
+      const flowChildren = Array.from(flow.childNodes);
+      flowChildren.forEach(function(c) { document.body.appendChild(c); });
+      flow.remove();
+
+      void document.body.offsetHeight; // flush layout
+
+      return log;
+    })()
+  `);
+  console.log('[forceRecto] chapter positions:', JSON.stringify(report));
+
+  // Phase 2: insert full-height blank pages before chapters that need to move to recto
+  const needsAny = report.some(function(r) { return r.needsBlank; });
+  if (needsAny) {
+    await win.webContents.executeJavaScript(`
+      (function() {
+        const cH = ${contentH};
+        const log = ${JSON.stringify(report)};
+        const rectoChapters = Array.from(document.querySelectorAll('.ch--recto'));
+        rectoChapters.forEach(function(ch, i) {
+          if (!log[i] || !log[i].needsBlank) return;
+          // Full-page-height blank: break-before:page starts a new blank page,
+          // height fills it, break-after:page lands the chapter on the next page.
+          const blank = document.createElement('div');
+          blank.style.cssText =
+            'display:block;' +
+            'break-before:page;page-break-before:always;' +
+            'height:' + cH + 'px;' +
+            'break-after:page;page-break-after:always;';
+          ch.parentElement.insertBefore(blank, ch);
+          // Override chapter's CSS break-before:page to prevent a triple break.
+          ch.style.setProperty('break-before', 'auto');
+          ch.style.setProperty('page-break-before', 'auto');
+        });
+      })()
+    `);
+  }
+}
+
+// Clean HTML-based PDF export: render content in a dedicated hidden window
+// to avoid fighting with the main UI's CSS/DOM complexity.
+ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
+  // Inject local WOFF2 fonts from public/fonts.css (works offline, no CDN needed).
+  const isDev = process.argv.includes('--dev');
+  const fontsBase = isDev
+    ? path.join(__dirname, 'public')
+    : path.join(__dirname, 'dist', 'libria', 'browser');
+  const fontsCssPath = path.join(fontsBase, 'fonts.css');
+  let htmlWithFonts = html;
+  if (fs.existsSync(fontsCssPath)) {
+    const fontsDir = pathToFileURL(path.join(fontsBase, 'fonts')).href + '/';
+    const fontsCss = fs.readFileSync(fontsCssPath, 'utf-8')
+      .replace(/url\(fonts\//g, `url(${fontsDir}`);
+    htmlWithFonts = html.replace('</head>', `<style>\n${fontsCss}\n</style>\n</head>`);
+  }
+
+  const tmpFile = path.join(app.getPath('userData'), `libria-print-${Date.now()}.html`);
+  fs.writeFileSync(tmpFile, htmlWithFonts, 'utf-8');
+
+  const win = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  try {
+    await win.loadFile(tmpFile);
+    // Wait for fonts and layout to settle, 3 s max
+    await win.webContents.executeJavaScript(
+      'new Promise(r => { document.fonts.ready.then(r).catch(r); setTimeout(r, 3000); })'
+    );
+    await applyForceRecto(win, options);
+    const pdf = await win.webContents.printToPDF(options);
+    return pdf;
+  } catch (err) {
+    console.error('[printFromHTML] Error:', err);
+    throw err;
+  } finally {
+    win.destroy();
+    try { fs.unlinkSync(tmpFile); } catch (_) {}
+  }
+});
+
 ipcMain.handle('pdf:printToPDF', async (_event, options) => {
   // Apply inline styles directly — they override any stylesheet rule (no @media print needed)
   await mainWindow.webContents.executeJavaScript(`
@@ -350,20 +545,23 @@ ipcMain.handle('pdf:printToPDF', async (_event, options) => {
 
       // Unlock print__content (container-type:size clips content)
       pg.querySelectorAll('.print__content').forEach(c => {
-        _save(c, ['overflow', 'height', 'flex']);
+        _save(c, ['overflow', 'height', 'flex', 'display']);
         c.style.overflow = 'visible';
         c.style.height   = 'auto';
         c.style.flex     = 'none';
+        c.style.display  = 'block';
       });
 
       // Remove inline padding from each chapter page so @page :left/:right margins
       // are the ONLY margin source (prevents double-margin and wrong odd/even margins).
+      // Also remove container-type:size which blocks CSS page fragmentation.
       pg.querySelectorAll('.print__page').forEach(page => {
-        _save(page, ['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight']);
+        _save(page, ['paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight', 'containerType']);
         page.style.paddingTop    = '0';
         page.style.paddingBottom = '0';
         page.style.paddingLeft   = '0';
         page.style.paddingRight  = '0';
+        page.style.containerType = 'normal';
       });
     }
   `);

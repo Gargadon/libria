@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -8,6 +8,10 @@
     "email": "dkantun@gmail.com"
   },
   "homepage": "https://github.com/Gargadon/libria",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gargadon/libria.git"
+  },
   "license": "MIT",
   "scripts": {
     "ng": "ng",
@@ -17,8 +21,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "electron:dev": "concurrently --kill-others \"npm run dev\" \"wait-on http://localhost:4200 && electron . --dev --ozone-platform=x11\"",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win"
+    "electron:build": "npm run build && electron-builder"
   },
   "private": true,
   "packageManager": "npm@11.13.0",
@@ -66,6 +69,13 @@
   "build": {
     "appId": "com.libria.app",
     "productName": "Libria",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Gargadon",
+        "repo": "libria"
+      }
+    ],
     "files": [
       "dist/**/*",
       "build/**/*",
@@ -84,7 +94,6 @@
       "target": [
         "AppImage",
         "deb",
-        "rpm",
         "pacman"
       ],
       "icon": "build/icon.png"

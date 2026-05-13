@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.0.1",
+  "libriaVersion": "1.1.0",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -14,7 +14,7 @@
       "Antoine de Saint-Exupéry"
     ],
     "author": "Antoine de Saint-Exupéry",
-    "lang": "es-ES"
+    "lang": "es-MX"
   },
   "preferences": {
     "sidebar": "right",
@@ -47,7 +47,7 @@
     "hyphenation": true
   },
   "session": {
-    "lastActiveChapterId": "ch-1"
+    "lastActiveChapterId": "ch-front"
   },
   "chapters": [
     {
@@ -56,36 +56,43 @@
       "label": "Frontmatter",
       "title": "Páginas de cortesía",
       "status": "ok",
-      "words": 30,
+      "words": 40,
       "forceOddPage": true,
       "body": [
         {
-          "type": "halftitle",
+          "type": "chapter-title",
           "text": "El Principito"
         },
         {
           "type": "page-break"
         },
         {
-          "type": "title",
+          "type": "chapter-title",
           "text": "El Principito"
         },
         {
-          "type": "author",
+          "type": "chapter-title",
           "text": "Antoine de Saint-Exupéry"
         },
         {
-          "type": "publisher",
-          "text": "Reynal & Hitchcock"
+          "type": "p",
+          "text": "",
+          "html": "<br>"
         },
         {
           "type": "page-break"
         },
         {
-          "type": "dedication",
-          "text": "A Léon Werth\n\nPido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo."
+          "type": "p",
+          "text": "A Léon Werth:",
+          "html": "A Léon Werth:"
+        },
+        {
+          "type": "blockquote",
+          "text": "Pido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo."
         }
-      ]
+      ],
+      "readMin": 1
     },
     {
       "id": "ch-1",
@@ -93,7 +100,7 @@
       "label": "I",
       "title": "I",
       "status": "ok",
-      "words": 425,
+      "words": 422,
       "forceOddPage": true,
       "body": [
         {
@@ -102,8 +109,8 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
-          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas del esternocleidomastoideo, propietariamente, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "p",
@@ -124,8 +131,8 @@
         },
         {
           "type": "p",
-          "text": "—¿Por qué habría de asustar un sombrero? —me respondiseron.",
-          "html": "—¿Por qué habría de asustar un sombrero? —me respondiseron."
+          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron.",
+          "html": "—¿Por qué habría de asustar un sombrero? —me respondieron."
         },
         {
           "type": "p",
@@ -313,6 +320,200 @@
       ],
       "number": 2,
       "readMin": 3
+    },
+    {
+      "id": "ch-mp2156a9",
+      "kind": "chapter",
+      "title": "III",
+      "words": 324,
+      "readMin": 2,
+      "number": 3,
+      "status": "draft",
+      "body": [
+        {
+          "type": "chapter-title",
+          "text": "III"
+        },
+        {
+          "type": "first-p",
+          "text": "Necesité tiempo para comprender de dónde venía. El principito, que siempre insistía con sus preguntas, no parecía oír las mías. Fueron frases al azar las que, poco a poco, me fueron revelando sus secretos. Así, cuando distinguió por vez primera mi avión (no dibujaré mi avión, por tratarse de algo demasiado complicado para mí) me preguntó:"
+        },
+        {
+          "type": "p",
+          "text": "–¿Qué cosa es esa?"
+        },
+        {
+          "type": "p",
+          "text": "–Esa no es una cosa. Es un avión, vuela. Es mi avión.",
+          "html": "–<i>Esa</i> no es una cosa. Es un avión, vuela. Es <i>mi</i> avión."
+        },
+        {
+          "type": "p",
+          "text": "Me sentí orgulloso al decir que mi avión volaba. Él entonces gritó:",
+          "html": "Me sentí orgulloso al decir que mi avión volaba. Él&nbsp;entonces gritó:"
+        },
+        {
+          "type": "p",
+          "text": "–¡Cómo! ¿Has caído del cielo?"
+        },
+        {
+          "type": "p",
+          "text": "–Sí –le dije modestamente."
+        },
+        {
+          "type": "p",
+          "text": "–¡Ah, es curioso!"
+        },
+        {
+          "type": "p",
+          "text": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio.",
+          "html": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio."
+        },
+        {
+          "type": "p",
+          "text": "Después añadió:"
+        },
+        {
+          "type": "p",
+          "text": "–Entonces ¿tú también vienes del cielo? ¿De cuál planeta?"
+        },
+        {
+          "type": "p",
+          "text": "Esa pequeña luz iluminó un poco el misterio y le pregunté:"
+        },
+        {
+          "type": "p",
+          "text": "–¿Tú… vienes de otro planeta?"
+        },
+        {
+          "type": "p",
+          "text": "No me respondió; solo movía lentamente la cabeza examinando detenidamente mi avión."
+        },
+        {
+          "type": "p",
+          "text": "–En esto no creo que puedas venir de muy lejos…"
+        },
+        {
+          "type": "p",
+          "text": "Y se hundió en un ensueño durante largo tiempo. Había sacado de su bolsillo a mi cordero y se abismó en la contemplación de su tesoro."
+        },
+        {
+          "type": "p",
+          "text": "Imagínense cómo me intrigó eso de: otro planeta. Y me esforcé en saber algo más:"
+        },
+        {
+          "type": "p",
+          "text": "–¿De dónde vienes, muchachito? ¿Dónde está tu casa? ¿Dónde quieres llevarte mi cordero?"
+        },
+        {
+          "type": "p",
+          "text": "Después de meditar silenciosamente me comentó:"
+        },
+        {
+          "type": "p",
+          "text": "–Lo bueno de la caja que me has dado es que, por la noche, puede servirle de casa."
+        },
+        {
+          "type": "p",
+          "text": "–¡Sin duda! Y si eres bueno te daré también una cuerda y una estaca para atarlo durante el día."
+        },
+        {
+          "type": "p",
+          "text": "–¿Atarlo? ¡Qué idea más rara!"
+        },
+        {
+          "type": "p",
+          "text": "–Si no lo atas, se irá por donde sea y puede perderse…",
+          "html": "–Si no lo atas, se irá por donde sea y puede perderse…"
+        },
+        {
+          "type": "p",
+          "text": "Mi amigo empezó a reír."
+        },
+        {
+          "type": "p",
+          "text": "–¿Y dónde quieres que vaya?"
+        },
+        {
+          "type": "p",
+          "text": "–No sé, a cualquier lado."
+        },
+        {
+          "type": "p",
+          "text": "Entonces el principito señaló con gravedad:"
+        },
+        {
+          "type": "p",
+          "text": "–¡No importa, mi tierra es muy pequeña!"
+        },
+        {
+          "type": "p",
+          "text": "Y agregó, quizá con un poco de melancolía:"
+        },
+        {
+          "type": "p",
+          "text": "–A donde vaya no puede ser muy lejos. "
+        }
+      ],
+      "forceOddPage": true
+    },
+    {
+      "id": "ch-mp21ix4k",
+      "kind": "chapter",
+      "title": "IV",
+      "words": 642,
+      "readMin": 4,
+      "number": 4,
+      "status": "draft",
+      "body": [
+        {
+          "type": "chapter-title",
+          "text": "IV"
+        },
+        {
+          "type": "first-p",
+          "text": "De esta manera supe otra cosa importante: su planeta era apenas más grande que una casa."
+        },
+        {
+          "type": "p",
+          "text": "Esto no me sorprendió mucho pues sabía muy bien que además de los grandes planetas como la Tierra, Júpiter, Marte, Venus, a los cuales se les ha puesto nombre, existen otros muchos, centenares de ellos, tan, tan pequeños, que a algunos es difícil distinguirlos aun con la ayuda de los telescopios. Cuando un astrónomo descubre uno de ellos, le da por nombre un número. Le llama, por ejemplo, \"Asteroide 3251\"."
+        },
+        {
+          "type": "p",
+          "text": "Tengo suficientes razones para creer que el planeta del principito era el asteroide B-612 el cual, por medio del telescopio, sólo ha sido visto una vez, por un astrónomo turco en 1909.",
+          "html": "Tengo suficientes razones para creer que el planeta del&nbsp;principito era el asteroide B-612 el cual, por medio del&nbsp;telescopio, sólo ha sido visto una vez, por un astrónomo&nbsp;turco en 1909."
+        },
+        {
+          "type": "p",
+          "text": "Si les he contado estos detalles sobre el asteroide B-612 y hasta les he confiado su número, es por consideración a las personas mayores. A los mayores les gustan mucho las cifras. Cuando se les habla de un nuevo amigo, jamás preguntan cosas esenciales como: \"¿Qué tono tiene su voz? ¿Qué juegos prefiere? o ¿Si le gusta o no coleccionar mariposas?\" En cambio preguntan: \"¿Qué edad tiene? ¿Cuántos hermanos? ¿Cuánto pesa? ¿Cuánto gana su padre?\" Solamente con estos detalles creen conocerle. Si a una persona mayor le decimos: \"Hay una casa preciosa de ladrillos rosas, con geranios en las ventanas y palomas sobre el tejado\", no pueden imaginarse cómo es. Es preciso decir: \"Hay una casa que vale tantos millones de pesos\". Entonces exclaman entusiasmados: \"¡Oh, qué hermosa es!\"",
+          "html": "Si les he contado estos&nbsp;detalles sobre el asteroide&nbsp;B-612 y hasta les he&nbsp;confiado su número, es por&nbsp;consideración a las&nbsp;personas mayores. A los&nbsp;mayores les gustan mucho&nbsp;las cifras. Cuando se les&nbsp;habla de un nuevo amigo, jamás preguntan cosas esenciales&nbsp;como: \"¿Qué tono tiene su voz? ¿Qué juegos prefiere? o ¿Si le gusta o no coleccionar mariposas?\" En cambio preguntan:&nbsp;\"¿Qué edad tiene? ¿Cuántos hermanos? ¿Cuánto pesa? ¿Cuánto&nbsp;gana su padre?\" Solamente con estos detalles creen conocerle. Si&nbsp;a una persona mayor le decimos: \"Hay una casa preciosa de&nbsp;ladrillos rosas, con geranios en las ventanas y palomas sobre el&nbsp;tejado\", no pueden imaginarse cómo es. Es preciso decir: \"Hay&nbsp;una casa que vale tantos millones de pesos\". Entonces exclaman&nbsp;entusiasmados: \"¡Oh, qué hermosa es!\""
+        },
+        {
+          "type": "p",
+          "text": "Si les decimos: \"La prueba de que el principito ha existido es que reía, era encantador y quería un cordero”. No lo entienden ni lo creen, aunque “querer un cordero” sea una prueba irrebatible de existencia; las personas mayores se encogerán de hombros y nos dirán que nos comportamos como niños. Pero si les decimos: \"el planeta de donde venía el principito es el asteroide B-612\", quedarán totalmente convencidas y no dudarán más ¡ni modo!, hay que entender que son así. Los niños deben ser muy condescendientes con las personas mayores."
+        },
+        {
+          "type": "p",
+          "text": "Claro que nosotros, como sabemos comprender la vida, nos burlamos tranquilamente de los números. A mí me habría gustado empezar esta historia a la manera de los cuentos de hadas. Me habría gustado decir:"
+        },
+        {
+          "type": "p",
+          "text": "\"Érase una vez un principito que vivía en un planeta apenas más grande que él y que tenía necesidad de un amigo…\" Para aquellos que comprenden la vida, esto hubiera parecido más real. No me gustaría que mi libro fuese tomado a la ligera."
+        },
+        {
+          "type": "p",
+          "text": "Siento tristeza al acordarme de mi amigo. Hace ya seis años que él se fue con su cordero y si intento describirlo aquí es sólo con el fin de recordarlo bien. Tener un amigo es un verdadero privilegio y si uno se olvida de ellos se corre el riesgo de volverse como las personas mayores que sólo se interesan por las cifras y los números. Para evitar esto, he comprado una caja de lápices de colores."
+        },
+        {
+          "type": "p",
+          "text": "¡Es muy duro, a mi edad, ponerse a dibujar, cuando en toda la vida no se ha hecho más que boas abiertas y boas cerradas a la edad de seis años! Trataré de hacer retratos lo más parecido que me sea posible, aunque no estoy muy seguro de lograrlo. Uno saldrá bien y otro quizá no tanto. En las proporciones me equivoco también un poco; aquí, el principito es demasiado alto y allá es muy pequeño. Dudo sobre los colores de su traje. Titubeo sobre algo y a veces sale bien pero no siempre. En fin, es posible que me equivoque sobre algunos detalles importantes pero habrá que perdonarme ya que mi amigo no daba explicaciones."
+        },
+        {
+          "type": "p",
+          "text": "Quizá me creía semejante a él y yo, desgraciadamente, no sé ver un cordero a través de una caja. Es posible que ya sea un poco como las personas mayores. Debo haber envejecido. "
+        }
+      ],
+      "forceOddPage": true
     }
   ],
   "notes": [],
