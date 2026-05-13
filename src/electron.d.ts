@@ -9,6 +9,9 @@ interface ElectronAPI {
   confirmClose(): void;
   onFileOpen(callback: (filePath: string) => void): void;
 
+  platform: string;
+  arch: string;
+
   // Spell checker
   setSpellCheckerLanguage(lang: string): Promise<void>;
   getCustomDictionary(): Promise<string[]>;

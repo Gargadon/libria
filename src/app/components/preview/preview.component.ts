@@ -3,6 +3,8 @@ import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { Chapter } from '../../models/book.models';
 import { HyphenService } from '../../services/hyphen.service';
+import { ExportService } from '../../services/export.service';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as htmlToImage from 'html-to-image';
 
 @Component({
@@ -70,8 +72,10 @@ import * as htmlToImage from 'html-to-image';
         <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
         <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
-        <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h" 
-             [style.zoom]="mode() === 'print' ? printZoom() : 1">
+        <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h"
+             [style.width.px]="mode() === 'print' ? toPixels(pageSize().w) * printZoom() : null"
+             [style.height.px]="mode() === 'print' ? toPixels(pageSize().h) * printZoom() : null"
+             [style.overflow]="mode() === 'print' ? 'hidden' : null">
           
           <div [class]="mode() + '__bezel'" *ngIf="mode() !== 'print'">
             <div [class]="mode() + '__screen'">
@@ -119,24 +123,33 @@ import * as htmlToImage from 'html-to-image';
 
           <!-- THE PAPEL (Single Page Preview) -->
           <div class="print__page" *ngIf="mode() === 'print'" #snapshotPage
-            [style.width]="'var(--pw)'"
-            [style.height]="'var(--ph)'"
-            [style.padding-top.mm]="store.tweaks.marginTop()"
-            [style.padding-bottom.mm]="store.tweaks.marginBottom()"
+            [style.transform]="'scale(' + printZoom() + ')'"
+            [style.transform-origin]="'top left'"
+            [style.padding-top.px]="0"
+            [style.padding-bottom.px]="0"
             [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
-            
-            @if (store.tweaks.showHeader()) {
-              <div class="print__header">
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-              </div>
-            }
 
-            <div class="print__content" style="flex: 1; position: relative;">
-              <ng-container *ngTemplateOutlet="paginatedTpl"></ng-container>
+            <div class="print__header"
+              [style.height.mm]="store.tweaks.marginTop()"
+              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+              @if (store.tweaks.showHeader()) {
+                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+              }
             </div>
 
-            <div class="print__footer">
+            <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
+              <iframe #printIframe
+                [srcdoc]="printIframeHtml()"
+                scrolling="no"
+                style="width:100%;height:100%;border:none;display:block;"
+                (load)="onIframeLoad()"
+              ></iframe>
+            </div>
+
+            <div class="print__footer"
+              [style.height.mm]="store.tweaks.marginBottom()"
+              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
               @if (store.tweaks.showPageNumbers()) {
                 <span>{{ globalPage() + 1 }}</span>
               }
@@ -163,8 +176,11 @@ import * as htmlToImage from 'html-to-image';
             <div class="kp-slider" [style.--page-index]="globalPage()">
               <div class="kp-flow" #kpFlow>
                 @for (c of store.chapters(); track c.id; let idx = $index) {
+                  @if (mode() === 'print' && shouldInsertBlankPage(idx)) {
+                    <div class="kp kp--blank" style="break-before: column;"></div>
+                  }
                   <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id"
-                       [style.break-before]="c.forceOddPage ? 'right' : 'column'">
+                       style="break-before: column;">
                     <ng-container *ngTemplateOutlet="contentTpl; context: { 
                       $implicit: c, 
                       showNotes: false,
@@ -279,25 +295,32 @@ import * as htmlToImage from 'html-to-image';
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
   readonly hyphenService = inject(HyphenService);
+  readonly exportService = inject(ExportService);
+  readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
   @ViewChild('snapshotPage', { static: false }) snapshotPageEl?: ElementRef<HTMLElement>;
+  @ViewChild('printIframe', { static: false }) printIframeEl?: ElementRef<HTMLIFrameElement>;
 
   private resizeObserver?: ResizeObserver;
   private measureTimeout?: any;
+  private printHtmlTimeout?: any;
+
+  printIframeHtml = signal<SafeHtml>('');
+  iframeContentHeight = signal(0);
 
   isCapturing = signal(false);
 
   async takeSnapshot() {
     if (!this.snapshotPageEl) return;
-    
+
     this.isCapturing.set(true);
-    
+
     try {
       const node = this.snapshotPageEl.nativeElement;
-      
+
       // Capture options
       const options = {
         backgroundColor: '#ffffff',
@@ -324,6 +347,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
+  realChapterPages = signal<Record<string, number>>({});
 
   readonly bookLayout = computed(() => {
     const chapters = this.store.chapters();
@@ -332,7 +356,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      const pages = this.estimateChapterPages(ch);
+      const realPages = this.realChapterPages()[ch.id];
+      const pages = realPages !== undefined ? realPages : this.estimateChapterPages(ch);
       let blank = false;
 
       // Force Odd: if current page is even (2, 4, 6...), add a blank
@@ -363,19 +388,23 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly printStyles = computed(() => {
     const size = this.store.pageSize();
     const t = this.store.tweaks;
-    let css = `@media print { @page { size: ${size}; margin: 0; } `;
-
-    css += `
+    // @page rules must be at the top level — wrapping them in @media print
+    // is invalid per CSS spec and Chromium may ignore them.
+    return `
       @page {
+        size: ${size};
         margin-top: ${t.marginTop()}mm;
         margin-bottom: ${t.marginBottom()}mm;
-        margin-left: ${t.marginInner()}mm;
+      }
+      @page :left {
+        margin-left: ${t.marginOuter()}mm;
         margin-right: ${t.marginInner()}mm;
       }
+      @page :right {
+        margin-left: ${t.marginInner()}mm;
+        margin-right: ${t.marginOuter()}mm;
+      }
     `;
-
-    css += ` }`;
-    return css;
   });
 
   printZoom = signal(0.8);
@@ -399,8 +428,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         if (realOffset !== undefined) {
           this.globalPage.set(realOffset);
         } else {
+          // If not measured yet (e.g. new chapter), use layout estimation
           const layout = this.bookLayout().chapters[id];
-          if (layout) this.globalPage.set(layout.startPage - 1);
+          if (layout) {
+            this.globalPage.set(layout.startPage - 1);
+          }
         }
       });
     });
@@ -423,7 +455,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       this.store.chapters();
       this.store.tweaks();
-      this.scheduleMeasure();
+      this.pageSize();
+      this.mode();
+      untracked(() => {
+        // Only clear if essential settings changed, otherwise just schedule
+        this.scheduleMeasure();
+      });
     });
 
     // Auto-zoom effect
@@ -434,6 +471,29 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         if (m === 'print') {
           setTimeout(() => this.autoZoom(), 50);
         }
+      });
+    });
+
+    // Print iframe HTML generation (debounced 300ms)
+    effect(() => {
+      const m = this.mode();
+      if (m !== 'print') return;
+
+      const book = this.store.book();
+      const chapters = this.store.chapters();
+      const t = this.store.tweaks();
+      const bodyFont = this.store.bookFontFamily();
+      const titleFont = this.store.titleFontFamily();
+
+      if (!book) return;
+
+      untracked(() => {
+        clearTimeout(this.printHtmlTimeout);
+        this.printHtmlTimeout = setTimeout(() => {
+          const fontsHref = new URL('fonts.css', document.baseURI).href;
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref);
+          this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
+        }, 300);
       });
     });
   }
@@ -455,9 +515,54 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     if (this.resizeObserver) this.resizeObserver.disconnect();
     clearTimeout(this.measureTimeout);
+    clearTimeout(this.printHtmlTimeout);
   }
 
-  private toPixels(value: string): number {
+  onIframeLoad() {
+    const iframe = this.printIframeEl?.nativeElement;
+    if (!iframe?.contentDocument || !iframe?.contentWindow) return;
+
+    const measure = () => {
+      const flow = iframe.contentDocument?.querySelector('.pv-flow') as HTMLElement | null;
+      if (!flow) return;
+      const pageW = iframe.contentWindow!.innerWidth;
+      if (pageW <= 0) return;
+      this.fixRectoChapters(flow, pageW);
+      const total = Math.max(1, Math.ceil(flow.scrollWidth / pageW));
+      this.measuredTotalPages.set(total);
+      this.scrollIframeToPage(this.globalPage());
+    };
+
+    measure();
+    iframe.contentDocument.fonts?.ready.then(() => measure());
+  }
+
+  private fixRectoChapters(flow: HTMLElement, pageW: number) {
+    // Remove previously auto-inserted blank pages
+    Array.from(flow.querySelectorAll('.ch--auto-blank')).forEach(el => el.remove());
+
+    // Process recto chapters in document order; accessing offsetLeft forces synchronous layout
+    const rectoChapters = Array.from(flow.querySelectorAll('.ch--recto')) as HTMLElement[];
+    for (const el of rectoChapters) {
+      // Column 0 = page 1 (odd/recto), col 1 = page 2 (even/verso), etc.
+      const col = Math.round((el.offsetLeft - flow.offsetLeft) / pageW);
+      if (col % 2 !== 0) {
+        const blank = flow.ownerDocument!.createElement('div');
+        blank.className = 'ch ch--auto-blank';
+        flow.insertBefore(blank, el);
+      }
+    }
+  }
+
+  private scrollIframeToPage(page: number) {
+    const iframe = this.printIframeEl?.nativeElement;
+    if (!iframe?.contentDocument) return;
+    const slider = iframe.contentDocument.querySelector('.pv-slider') as HTMLElement | null;
+    if (!slider) return;
+    slider.style.setProperty('--pi', String(page));
+  }
+
+  public toPixels(value: string): number {
     const num = parseFloat(value);
     const unit = value.replace(/[0-9.]/g, '');
     if (unit === 'in') return num * 96;
@@ -492,6 +597,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         }
       }
       this.measureDOM();
+      // Second pass to ensure everything settled
+      setTimeout(() => this.measureDOM(), 300);
     }, 150);
   }
 
@@ -504,18 +611,33 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const cw = flow.clientWidth + gap;
     if (cw <= 0) return;
 
-    const elements = Array.from(flow.querySelectorAll('.kp:not(.kp--blank)')) as HTMLElement[];
-    const offsets: Record<string, number> = {};
-    
-    elements.forEach((el) => {
+    const allKps = Array.from(flow.querySelectorAll('.kp')) as HTMLElement[];
+    const chapterOffsets: Record<string, number> = {};
+    const chapterPages: Record<string, number> = {};
+
+    for (let i = 0; i < allKps.length; i++) {
+      const el = allKps[i];
       const id = el.getAttribute('data-chapter');
       if (id) {
         const left = el.offsetLeft - flow.offsetLeft;
-        offsets[id] = Math.round(left / cw);
-      }
-    });
+        const currentOffset = Math.round(left / cw);
+        chapterOffsets[id] = currentOffset;
 
-    this.realPageOffsets.set(offsets);
+        // Determine pages occupied by this chapter by looking at the next element (chapter or blank)
+        const nextEl = allKps[i + 1];
+        let nextOffset: number;
+        if (nextEl) {
+          nextOffset = Math.round((nextEl.offsetLeft - flow.offsetLeft) / cw);
+        } else {
+          nextOffset = Math.round(flow.scrollWidth / cw);
+        }
+
+        chapterPages[id] = Math.max(1, nextOffset - currentOffset);
+      }
+    }
+
+    this.realPageOffsets.set(chapterOffsets);
+    this.realChapterPages.set(chapterPages);
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
   }
 
@@ -529,8 +651,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private estimateChapterPages(c: Chapter): number {
     const m = this.mode();
     const paperSize = this.store.book()?.paperSize || '5x8';
-    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 : 
-                    (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
+    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 :
+      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
     const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
     const fsFactor = 12 / fs;
     const wpp = wppBase * fsFactor;
@@ -548,7 +670,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   isChapterEven(chapterIdx: number): boolean {
     const ch = this.store.chapters()[chapterIdx];
     if (!ch) return false;
-    
+
     // Prefer real measurement if available
     const offset = this.realPageOffsets()[ch.id];
     if (offset !== undefined) {
@@ -572,34 +694,56 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   }
 
   globalPage = signal(0);
-  nextPage() { 
+  nextPage() {
     const max = this.measuredTotalPages();
-    if (this.globalPage() < max - 1) { 
-      this.globalPage.update(p => p + 1); 
-      this.syncActiveChapter(); 
-    } 
+    if (this.globalPage() < max - 1) {
+      this.globalPage.update(p => p + 1);
+      if (this.mode() === 'print') {
+        this.scrollIframeToPage(this.globalPage());
+      } else {
+        this.syncActiveChapter();
+      }
+    }
   }
-  prevPage() { 
-    if (this.globalPage() > 0) { 
-      this.globalPage.update(p => p - 1); 
-      this.syncActiveChapter(); 
-    } 
+  prevPage() {
+    if (this.globalPage() > 0) {
+      this.globalPage.update(p => p - 1);
+      if (this.mode() === 'print') {
+        this.scrollIframeToPage(this.globalPage());
+      } else {
+        this.syncActiveChapter();
+      }
+    }
   }
 
   private syncActiveChapter() {
     const p = this.globalPage();
     const offsets = this.realPageOffsets();
-    
+    const chapters = this.store.chapters();
+
     let activeId = '';
-    
     let maxStartCol = -1;
+
+    // 1. Try real offsets first
     for (const [id, startCol] of Object.entries(offsets)) {
       if (startCol <= p && startCol > maxStartCol) {
         maxStartCol = startCol;
         activeId = id;
       }
     }
-    
+
+    // 2. Fallback to layout estimation if no real offset matches
+    if (!activeId) {
+      const layout = this.bookLayout().chapters;
+      for (const id in layout) {
+        const start = layout[id].startPage - 1;
+        if (start <= p && start > maxStartCol) {
+          maxStartCol = start;
+          activeId = id;
+        }
+      }
+    }
+
     if (activeId && this.store.activeChapterId() !== activeId) {
       untracked(() => this.store.setActiveChapter(activeId));
     }

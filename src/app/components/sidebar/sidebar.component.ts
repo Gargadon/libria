@@ -1,10 +1,11 @@
-import { Component, inject, computed, signal, HostListener, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Book, ChapterKind } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { ExportService } from '../../services/export.service';
+import { ImportService } from '../../services/import.service';
 import { SpellCheckService } from '../../services/spell-check.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
@@ -79,6 +80,13 @@ import { environment } from '../../../environments/environment';
                 </div>
               }
             </div>
+            
+            <button class="sb__btn-link" style="margin-top: 8px; font-size: 11px;" (click)="triggerImport()">
+              <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">publish</span>
+              {{ 'sidebar.importFile' | translate }}
+            </button>
+            <input type="file" #importInput hidden (change)="onImportFile($event)" accept=".docx,.txt">
+
             <div class="sb__legend">
               <span><i class="lg lg--ok"></i> {{ 'sidebar.reviewed' | translate }}</span>
               <span><i class="lg lg--draft"></i> {{ 'sidebar.draft' | translate }}</span>
@@ -416,6 +424,15 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <div class="sb__export-card">
+              <div class="sb__export-icon" style="background: var(--terra); color: white;">PDF</div>
+              <div class="sb__export-info">
+                <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
+                <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
+                <button class="sb__btn-primary" (click)="exportPdf()">{{ 'sidebar.generatePDF' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__export-card">
               <div class="sb__export-icon">DOCX</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.word' | translate }}</div>
@@ -637,9 +654,30 @@ import { environment } from '../../../environments/environment';
 export class SidebarComponent implements OnInit {
   readonly store = inject(BookStore);
   readonly exportService = inject(ExportService);
+  readonly importService = inject(ImportService);
   readonly spellCheckService = inject(SpellCheckService);
   readonly translate = inject(TranslateService);
   readonly Math = Math;
+
+  @ViewChild('importInput') importInput!: ElementRef<HTMLInputElement>;
+
+  triggerImport() {
+    this.importInput.nativeElement.click();
+  }
+
+  async onImportFile(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.name.endsWith('.docx')) {
+      await this.importService.importDocx(file);
+    } else if (file.name.endsWith('.txt')) {
+      await this.importService.importTxt(file);
+    }
+    
+    // Clear input for next time
+    event.target.value = '';
+  }
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;
@@ -889,5 +927,9 @@ export class SidebarComponent implements OnInit {
 
   exportDocx() {
     this.exportService.exportDocx();
+  }
+
+  exportPdf() {
+    this.exportService.exportPdf();
   }
 }

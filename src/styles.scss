@@ -2632,6 +2632,10 @@ app-welcome {
   /* Start every chapter on a new column/page */
 }
 
+.kp--blank {
+  min-height: 1px;
+}
+
 .kp-chtitle,
 .kp-chnum,
 .kp-first,
@@ -2895,14 +2899,16 @@ app-welcome {
   }
 
   .kp-page-break {
-    display: block;
-    height: 0;
-    page-break-after: always;
-    break-after: page;
+    display: block !important;
+    height: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
 
-    span {
-      display: none;
-    }
+  /* Prevent lines from being visually sliced at physical page boundaries */
+  .kp-p,
+  .kp-first {
+    break-inside: avoid;
   }
 }
 
@@ -3401,6 +3407,7 @@ body.print-digital {
     position: relative;
     page-break-after: always !important;
     display: block !important;
+    container-type: normal !important;
   }
 
   .print__content {
