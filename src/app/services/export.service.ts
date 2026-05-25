@@ -126,7 +126,7 @@ ${dropCapStyles}`);
     const bodyFontFamily = this.store.bookFontFamily();
     const titleFontFamily = this.store.titleFontFamily();
 
-    const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily);
+    const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.store.assets());
     const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
 
     const pdfOptions: Record<string, any> = {
@@ -180,6 +180,7 @@ ${dropCapStyles}`);
     bodyFontFamily: string,
     titleFontFamily: string,
     fontsHref?: string,
+    assets: Record<string, string> = {},
   ): string {
     const pageSizeCss: Record<string, string> = {
       '5x8':   '5in 8in',
@@ -437,6 +438,10 @@ ${t.dropCap ? `
           case 'blockquote':    return `<blockquote class="kp-quote">${hyph(raw)}</blockquote>`;
           case 'scene-break':   return `<div class="kp-break">${brk}</div>`;
           case 'page-break':    return `<div class="kp-page-break"></div>`;
+          case 'image': {
+            const imgSrc = b.src ? (assets[b.src] ?? '') : '';
+            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="max-width:100%;height:auto;display:block;margin:0 auto;" alt=""></figure>` : '';
+          }
           default:              return '';
         }
       }).join('\n');

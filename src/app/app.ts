@@ -1,9 +1,10 @@
-import { Component, inject, effect, signal } from '@angular/core';
+import { Component, inject, effect, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
 import { FileService } from './services/file.service';
 import { PersonalConfigService } from './services/personal-config.service';
+import { AutosaveService } from './services/autosave.service';
 import { TopbarComponent } from './components/topbar/topbar.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { EditorComponent } from './components/editor/editor.component';
@@ -33,11 +34,24 @@ export class App {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
+  private readonly autosave = inject(AutosaveService);
 
   isResizing = false;
   showAbout = signal(false);
 
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (event.key === 'F11') {
+      event.preventDefault();
+      if (this.store.book()) this.store.toggleZenMode();
+    }
+    if (event.key === 'Escape' && this.store.ui.zenMode()) {
+      this.store.toggleZenMode();
+    }
+  }
+
   constructor() {
+    this.autosave.init();
     this.translate.addLangs(['es', 'en']);
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);

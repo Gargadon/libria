@@ -19,6 +19,7 @@ export interface BookState {
     showStyles: boolean;
     showTweaks: boolean;
     sidebarOpen: boolean;
+    zenMode: boolean;
     activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings';
   };
   exportPrefs: {
@@ -66,7 +67,11 @@ const initialState: BookState = {
     pageNumberPosition: 'bottom-center',
     dropCap: true,
     dropCapLines: 3,
-    hyphenation: true
+    hyphenation: true,
+    smartQuotes: true,
+    smartDashes: true,
+    smartEllipsis: true,
+    smartOpeningSigns: true
   },
   assets: {},
   past: [],
@@ -76,6 +81,7 @@ const initialState: BookState = {
     showStyles: false,
     showTweaks: false,
     sidebarOpen: true,
+    zenMode: false,
     activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
   },
   exportPrefs: {
@@ -271,6 +277,9 @@ export const BookStore = signalStore(
     },
     closeSidebar() {
       patchState(store, (state) => ({ ui: { ...state.ui, sidebarOpen: false } }));
+    },
+    toggleZenMode() {
+      patchState(store, (state) => ({ ui: { ...state.ui, zenMode: !state.ui.zenMode } }));
     },
     updateUi(ui: Partial<BookState['ui']>) {
       patchState(store, (state) => ({
@@ -531,6 +540,33 @@ export const BookStore = signalStore(
           isDirty: true
         };
       });
+    },
+    insertImageBlock(chapterId: string, afterIndex: number, assetKey: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? {
+                ...c,
+                body: [
+                  ...c.body.slice(0, afterIndex + 1),
+                  { type: 'image', src: assetKey },
+                  ...c.body.slice(afterIndex + 1)
+                ]
+              }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    setImageSrc(chapterId: string, blockIndex: number, assetKey: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, src: assetKey } : b) }
+            : c
+        ),
+        isDirty: true
+      }));
     },
     updateTweak<K extends keyof Tweaks>(key: K, value: Tweaks[K]) {
       patchState(store, (state) => ({

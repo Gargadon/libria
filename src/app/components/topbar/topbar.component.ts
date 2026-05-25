@@ -134,6 +134,9 @@ import { environment } from '../../../environments/environment';
           <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="store.search(''); store.setNav('search')">
             <span class="material-symbols-outlined">search</span>
           </button>
+          <button class="tb__icon" [attr.title]="'topbar.zenMode' | translate" (click)="store.toggleZenMode()" [class.tb__icon--on]="store.ui.zenMode()">
+            <span class="material-symbols-outlined">{{ store.ui.zenMode() ? 'fullscreen_exit' : 'fullscreen' }}</span>
+          </button>
           <button class="tb__icon" [attr.title]="'topbar.settings' | translate" (click)="store.setNav('settings')">
             <span class="material-symbols-outlined">settings</span>
           </button>

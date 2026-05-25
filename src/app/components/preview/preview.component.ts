@@ -263,6 +263,11 @@ import * as htmlToImage from 'html-to-image';
               @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
+              @case ('image') {
+                @if (b.src && store.assets()[b.src]) {
+                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;"></figure>
+                }
+              }
             }
           }
 
@@ -484,6 +489,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const t = this.store.tweaks();
       const bodyFont = this.store.bookFontFamily();
       const titleFont = this.store.titleFontFamily();
+      const assets = this.store.assets();
 
       if (!book) return;
 
@@ -491,7 +497,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         clearTimeout(this.printHtmlTimeout);
         this.printHtmlTimeout = setTimeout(() => {
           const fontsHref = new URL('fonts.css', document.baseURI).href;
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref);
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets);
           this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
         }, 300);
       });

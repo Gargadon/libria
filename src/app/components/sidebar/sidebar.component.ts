@@ -177,6 +177,40 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
 
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartQuotes' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartQuotes()" (click)="store.updateTweak('smartQuotes', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartQuotes()" (click)="store.updateTweak('smartQuotes', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartDashes' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartDashes()" (click)="store.updateTweak('smartDashes', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartDashes()" (click)="store.updateTweak('smartDashes', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartEllipsis' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartEllipsis()" (click)="store.updateTweak('smartEllipsis', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartEllipsis()" (click)="store.updateTweak('smartEllipsis', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            @if (store.domLang() === 'es') {
+              <div class="sb__row">
+                <div class="sb__label">{{ 'sidebar.smartOpeningSigns' | translate }}</div>
+                <div class="sb__radio">
+                  <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartOpeningSigns()" (click)="store.updateTweak('smartOpeningSigns', true)">{{ 'sidebar.yes' | translate }}</button>
+                  <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartOpeningSigns()" (click)="store.updateTweak('smartOpeningSigns', false)">{{ 'sidebar.no' | translate }}</button>
+                </div>
+              </div>
+            }
+
             <div class="sb__section">{{ 'sidebar.dropCap' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.dropCapToggle' | translate }}</div>

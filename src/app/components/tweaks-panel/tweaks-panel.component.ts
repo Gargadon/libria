@@ -65,6 +65,54 @@ import { TranslateModule } from '@ngx-translate/core';
             >{{ 'sidebar.no' | translate }}</button>
           </div>
         </div>
+
+        <div class="tp__row">
+          <div class="tp__label">{{ 'sidebar.smartQuotes' | translate }}</div>
+          <div class="tp__radio">
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="store.tweaks.smartQuotes()"
+              (click)="store.updateTweak('smartQuotes', true)"
+            >{{ 'sidebar.yes' | translate }}</button>
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="!store.tweaks.smartQuotes()"
+              (click)="store.updateTweak('smartQuotes', false)"
+            >{{ 'sidebar.no' | translate }}</button>
+          </div>
+        </div>
+
+        <div class="tp__row">
+          <div class="tp__label">{{ 'sidebar.smartDashes' | translate }}</div>
+          <div class="tp__radio">
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="store.tweaks.smartDashes()"
+              (click)="store.updateTweak('smartDashes', true)"
+            >{{ 'sidebar.yes' | translate }}</button>
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="!store.tweaks.smartDashes()"
+              (click)="store.updateTweak('smartDashes', false)"
+            >{{ 'sidebar.no' | translate }}</button>
+          </div>
+        </div>
+
+        <div class="tp__row">
+          <div class="tp__label">{{ 'sidebar.smartEllipsis' | translate }}</div>
+          <div class="tp__radio">
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="store.tweaks.smartEllipsis()"
+              (click)="store.updateTweak('smartEllipsis', true)"
+            >{{ 'sidebar.yes' | translate }}</button>
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="!store.tweaks.smartEllipsis()"
+              (click)="store.updateTweak('smartEllipsis', false)"
+            >{{ 'sidebar.no' | translate }}</button>
+          </div>
+        </div>
         </div>
         </div>  `
 })

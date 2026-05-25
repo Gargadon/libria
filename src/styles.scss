@@ -3486,3 +3486,108 @@ body.print-digital {
     transform-origin: right;
   }
 }
+
+/* ===== Modo Zen ===== */
+.app--zen app-topbar {
+  display: none;
+}
+
+.app--zen .layout,
+.app--zen.app--sb-right .layout {
+  grid-template-columns: minmax(0, 1fr) !important;
+  transition: grid-template-columns .22s ease;
+}
+
+.app--zen .layout__side,
+.app--zen .layout__pv,
+.app--zen .resizer {
+  display: none !important;
+}
+
+.app--zen .layout__ed,
+.app--zen.app--sb-right .layout__ed {
+  grid-column: 1 !important;
+}
+
+.app--zen .ed__sheet {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* ===== Imagen en el editor ===== */
+.bk-image {
+  margin: 1.5em 0;
+  padding: 0;
+  text-align: center;
+}
+
+.bk-image__img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.bk-image__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  border: 2px dashed var(--rule);
+  border-radius: 8px;
+  color: var(--ink-mute);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color .15s, color .15s;
+
+  &:hover {
+    border-color: var(--terra);
+    color: var(--terra);
+  }
+
+  .material-symbols-outlined {
+    font-size: 32px;
+  }
+}
+
+/* Botón zen activo en topbar */
+.tb__icon--on {
+  color: var(--terra);
+}
+
+/* Botón flotante de salida del modo zen */
+.ed__zen-exit {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 200;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-md);
+  opacity: 0.4;
+  transition: opacity .15s;
+
+  &:hover {
+    opacity: 1;
+    color: var(--terra);
+  }
+
+  .material-symbols-outlined {
+    font-size: 20px;
+  }
+}
+
+/* Imagen en previsualización */
+.kp-image {
+  margin: 1.2em 0;
+  padding: 0;
+}

@@ -6,6 +6,7 @@ export interface Block {
   text?: string;
   html?: string;
   drop?: string;
+  src?: string; // asset key for image blocks
 }
 
 export interface Chapter {
@@ -66,6 +67,10 @@ export interface Tweaks {
   dropCap: boolean;
   dropCapLines: number;
   hyphenation: boolean;
+  smartQuotes: boolean;
+  smartDashes: boolean;
+  smartEllipsis: boolean;
+  smartOpeningSigns: boolean;
 }
 
 export type NoteRole = 'author' | 'editor' | 'corrector' | 'publisher';

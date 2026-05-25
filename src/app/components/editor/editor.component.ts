@@ -16,6 +16,12 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
     'style': 'display: flex; flex-direction: column; min-height: 0; flex: 1;'
   },
   template: `
+    @if (store.ui.zenMode()) {
+      <button class="ed__zen-exit" (click)="store.toggleZenMode()" [attr.title]="'topbar.zenMode' | translate">
+        <span class="material-symbols-outlined">fullscreen_exit</span>
+      </button>
+    }
+
     @if (store.activeChapter(); as chapter) {
       <main class="ed">
         <div class="ed__bar">
@@ -32,8 +38,9 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
             <button class="ed__t" [attr.title]="'editor.underline' | translate" (click)="execCommand('underline')"><u>U</u></button>
             <span class="ed__tsep"></span>
             <button class="ed__t ed__t--wide" [attr.title]="'editor.sceneBreak' | translate" (click)="insertSceneBreak()">✦ ✦ ✦</button>
-            <button class="ed__t ed__t--wide" [attr.title]="'editor.pageBreak' | translate" (click)="insertPageBreak()">[ {{ 'editor.pageBreak' | translate }} ]</button>
+            <button class="ed__t" [attr.title]="'editor.pageBreak' | translate" (click)="insertPageBreak()"><span class="material-symbols-outlined" style="font-size:16px;line-height:1">insert_page_break</span></button>
             <button class="ed__t" [attr.title]="'editor.blockQuote' | translate" (click)="toggleQuote()">❝</button>
+            <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined" style="font-size:16px;line-height:1">add_photo_alternate</span></button>
             <span class="ed__tsep"></span>
             <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
               <i class="ed__statusDot" [class]="'ed__statusDot--' + status()"></i> {{ statusLabel() }}
@@ -71,6 +78,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                       <option value="scene-break">{{ 'editor.blockSceneBreak' | translate }}</option>
                       <option value="page-break">{{ 'editor.blockPageBreak' | translate }}</option>
                       <option value="blockquote">{{ 'editor.blockQuote' | translate }}</option>
+                      <option value="image">{{ 'editor.blockImage' | translate }}</option>
                     </select>
                   </div>
                   @switch (b.type) {
@@ -160,6 +168,18 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                     }
                     @case ('scene-break') { <div class="bk-break">✦  ✦  ✦</div> }
                     @case ('page-break') { <div class="bk-page-break"><span>{{ 'editor.pageBreakLabel' | translate }}</span></div> }
+                    @case ('image') {
+                      <figure class="bk-image">
+                        @if (b.src && store.assets()[b.src]) {
+                          <img [src]="store.assets()[b.src]" alt="" class="bk-image__img">
+                        } @else {
+                          <div class="bk-image__placeholder" (click)="pickImageForBlock(chapter.id, $index)">
+                            <span class="material-symbols-outlined">add_photo_alternate</span>
+                            <span>{{ 'editor.imagePlaceholder' | translate }}</span>
+                          </div>
+                        }
+                      </figure>
+                    }
                   }
                 </div>
               }
@@ -176,7 +196,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
           <span class="ed__dot2"></span>
           <span>{{ 'editor.wordCount' | translate:{ count: (chapter.words || 0).toLocaleString(currentLang()) } }}</span>
           <span class="ed__dot2"></span>
-          <span>{{ 'editor.autoSave' | translate }}</span>
+          <span>{{ store.isDirty() ? ('editor.unsaved' | translate) : ('editor.saved' | translate) }}</span>
           <span style="flex: 1"></span>
           <span>{{ 'editor.layoutLabel' | translate:{ version: environment.version } }}</span>
         </div>
@@ -483,7 +503,48 @@ export class EditorComponent {
 
     switch (event.key) {
 
-      // ── Hyphen: convert -- to — ──────────────────────────────────────────
+      // ── Quotes: convert " to smart quotes ──────────────────────────────
+      case '"': {
+        if (!this.store.tweaks.smartQuotes()) return;
+        event.preventDefault();
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed) return;
+
+        const offset = this._getCaretOffset(el);
+        const text = el.innerText.replace(/\n$/, '');
+        const prevChar = offset > 0 ? text.charAt(offset - 1) : '';
+        const isOpening = offset === 0 || /\s|[([<{¡¿]/.test(prevChar);
+
+        const lang = this.store.domLang();
+        const quote = lang === 'es' 
+          ? (isOpening ? '«' : '»') 
+          : (isOpening ? '“' : '”');
+
+        document.execCommand('insertText', false, quote);
+        this.onInput(chapterId, blockIndex, event);
+        break;
+      }
+
+      // ── Apostrophe: convert ' to smart apostrophe ────────────────────────
+      case "'": {
+        if (!this.store.tweaks.smartQuotes()) return;
+        event.preventDefault();
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed) return;
+
+        const offset = this._getCaretOffset(el);
+        const text = el.innerText.replace(/\n$/, '');
+        const prevChar = offset > 0 ? text.charAt(offset - 1) : '';
+        const isOpening = offset === 0 || /\s|[([<{¡¿]/.test(prevChar);
+
+        const apostrophe = isOpening ? '‘' : '’';
+
+        document.execCommand('insertText', false, apostrophe);
+        this.onInput(chapterId, blockIndex, event);
+        break;
+      }
+
+      // ── Hyphen: convert -- to — or - at start to — ────────────────────────
       case '-': {
         const sel = window.getSelection();
         if (!sel || !sel.isCollapsed) return;
@@ -491,15 +552,59 @@ export class EditorComponent {
         const offset = this._getCaretOffset(el);
         const text = el.innerText.replace(/\n$/, '');
 
-        // If previous character was also a hyphen, replace it with em dash
-        if (offset > 0 && text.charAt(offset - 1) === '-') {
+        // 1. Double hyphen to em-dash
+        if (this.store.tweaks.smartDashes() && offset > 0 && text.charAt(offset - 1) === '-') {
           event.preventDefault();
-
-          // Remove the first hyphen and insert em dash
           document.execCommand('delete', false);
           document.execCommand('insertText', false, '—');
+          this.onInput(chapterId, blockIndex, event);
+          return;
+        }
+        
+        // 2. Hyphen at start of paragraph to em-dash (Spanish dialogue style)
+        if (this.store.tweaks.smartDashes() && offset === 0 && this.store.domLang() === 'es') {
+           event.preventDefault();
+           document.execCommand('insertText', false, '—');
+           this.onInput(chapterId, blockIndex, event);
+           return;
+        }
+        break;
+      }
 
-          // Sync with store
+      // ── Dot: convert ... to … ───────────────────────────────────────────
+      case '.': {
+        if (!this.store.tweaks.smartEllipsis()) return;
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed) return;
+
+        const offset = this._getCaretOffset(el);
+        const text = el.innerText.replace(/\n$/, '');
+
+        if (offset >= 2 && text.charAt(offset - 1) === '.' && text.charAt(offset - 2) === '.') {
+          event.preventDefault();
+          document.execCommand('delete', false);
+          document.execCommand('delete', false);
+          document.execCommand('insertText', false, '…');
+          this.onInput(chapterId, blockIndex, event);
+        }
+        break;
+      }
+
+      // ── Opening Signs (Spanish): ?? -> ¿ and !! -> ¡ ────────────────────
+      case '?':
+      case '!': {
+        if (!this.store.tweaks.smartOpeningSigns() || this.store.domLang() !== 'es') return;
+        const sel = window.getSelection();
+        if (!sel || !sel.isCollapsed) return;
+
+        const offset = this._getCaretOffset(el);
+        const text = el.innerText.replace(/\n$/, '');
+
+        if (offset > 0 && text.charAt(offset - 1) === event.key) {
+          event.preventDefault();
+          document.execCommand('delete', false);
+          const sign = event.key === '?' ? '¿' : '¡';
+          document.execCommand('insertText', false, sign);
           this.onInput(chapterId, blockIndex, event);
         }
         break;
@@ -556,8 +661,8 @@ export class EditorComponent {
         const chapter = this.store.chapters().find(c => c.id === chapterId);
         const prevData = chapter?.body[blockIndex - 1];
 
-        if (prevData?.type === 'scene-break') {
-          // Delete the scene-break instead of merging into it
+        if (prevData?.type === 'scene-break' || prevData?.type === 'image') {
+          // Delete the non-editable block instead of merging into it
           this._suppressInput = true;
           this.store.deleteBlock(chapterId, blockIndex - 1);
           setTimeout(() => {
@@ -605,8 +710,8 @@ export class EditorComponent {
         event.preventDefault();
         this.store.saveSnapshot();
 
-        if (nextData.type === 'scene-break') {
-          // Delete the scene-break
+        if (nextData.type === 'scene-break' || nextData.type === 'image') {
+          // Delete the non-editable block
           this._suppressInput = true;
           this.store.deleteBlock(chapterId, blockIndex + 1);
           setTimeout(() => {
@@ -691,11 +796,13 @@ export class EditorComponent {
     return containers[i]?.querySelector<HTMLElement>('[contenteditable="true"]') ?? null;
   }
 
+  private readonly _nonEditableTypes = new Set(['scene-break', 'image', 'page-break']);
+
   /** Returns the store index of the nearest editable block before `fromIndex`. */
   private _prevEditableIndex(fromIndex: number): number {
     const body = this.store.activeChapter()?.body ?? [];
     for (let i = fromIndex - 1; i >= 0; i--) {
-      if (body[i].type !== 'scene-break') return i;
+      if (!this._nonEditableTypes.has(body[i].type)) return i;
     }
     return -1;
   }
@@ -704,7 +811,7 @@ export class EditorComponent {
   private _nextEditableIndex(fromIndex: number): number {
     const body = this.store.activeChapter()?.body ?? [];
     for (let i = fromIndex + 1; i < body.length; i++) {
-      if (body[i].type !== 'scene-break') return i;
+      if (!this._nonEditableTypes.has(body[i].type)) return i;
     }
     return -1;
   }
@@ -804,6 +911,49 @@ export class EditorComponent {
     const newType = block.type === 'blockquote' ? 'p' : 'blockquote';
     this.store.saveSnapshot();
     this.store.setBlockType(chapter.id, idx, newType);
+  }
+
+  insertImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = reader.result as string;
+        const assetKey = 'img-' + Date.now().toString(36);
+        this.store.updateAsset(assetKey, data);
+        const chapterId = this.store.activeChapterId();
+        const index = this.lastFocusedIndex >= 0
+          ? this.lastFocusedIndex
+          : this.store.activeChapter()!.body.length - 1;
+        this.store.saveSnapshot();
+        this.store.insertImageBlock(chapterId, index, assetKey);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  pickImageForBlock(chapterId: string, blockIndex: number) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = reader.result as string;
+        const assetKey = 'img-' + Date.now().toString(36);
+        this.store.updateAsset(assetKey, data);
+        this.store.setImageSrc(chapterId, blockIndex, assetKey);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   }
 
   private _focusAfterHistory() {

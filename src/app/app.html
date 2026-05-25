@@ -1,5 +1,6 @@
-<div class="app" 
-     [class.app--sb-right]="store.tweaks.sidebar() === 'right'" 
+<div class="app"
+     [class.app--sb-right]="store.tweaks.sidebar() === 'right'"
+     [class.app--zen]="store.ui.zenMode()"
      [class.font-lora]="store.tweaks.bookFont() === 'lora'"
      [class.font-spectral]="store.tweaks.bookFont() === 'spectral'"
      [class.font-eb-garamond]="store.tweaks.bookFont() === 'eb-garamond'"
