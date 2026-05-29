@@ -30,7 +30,7 @@ export interface Book {
   publisher: string;
   year: number;
   isbn: string;
-  paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'Letter';
+  paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'A6' | 'Letter';
   lang?: string;
 }
 

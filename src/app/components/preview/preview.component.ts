@@ -658,7 +658,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const m = this.mode();
     const paperSize = this.store.book()?.paperSize || '5x8';
     const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 :
-      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
+      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : paperSize === 'A6' ? 150 : 250);
     const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
     const fsFactor = 12 / fs;
     const wpp = wppBase * fsFactor;

@@ -436,6 +436,7 @@ import { environment } from '../../../environments/environment';
                 <option value="Letter">{{ 'sidebar.sizeLetter' | translate }}</option>
                 <option value="A5">{{ 'sidebar.sizeA5' | translate }}</option>
                 <option value="A4">{{ 'sidebar.sizeA4' | translate }}</option>
+                <option value="A6">{{ 'sidebar.sizeA6' | translate }}</option>
               </select>
             </div>
           </div>
@@ -554,6 +555,8 @@ import { environment } from '../../../environments/environment';
               <select class="sb__select" [ngModel]="store.personalConfig().language" (ngModelChange)="setLanguage($event)">
                 <option value="es">{{ 'lang.es' | translate }}</option>
                 <option value="en">{{ 'lang.en' | translate }}</option>
+                <option value="fr">{{ 'lang.fr' | translate }}</option>
+                <option value="it">{{ 'lang.it' | translate }}</option>
               </select>
             </div>
 
@@ -715,7 +718,8 @@ export class SidebarComponent implements OnInit {
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;
-    return lang === 'en' ? 'en-US' : 'es-ES';
+    const localeMap: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+    return localeMap[lang] || 'es-ES';
   });
 
   dictWords = signal<string[]>([]);

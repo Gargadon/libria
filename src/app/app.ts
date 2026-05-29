@@ -52,7 +52,7 @@ export class App {
 
   constructor() {
     this.autosave.init();
-    this.translate.addLangs(['es', 'en']);
+    this.translate.addLangs(['es', 'en', 'fr', 'it']);
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);
 
