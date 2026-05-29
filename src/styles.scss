@@ -1374,6 +1374,63 @@ app-welcome {
   background: var(--rule)
 }
 
+/* Writing Goals */
+.sb__goals {
+  margin: 0 16px 12px;
+  padding: 10px 12px;
+  background: var(--paper-alt);
+  border-radius: 6px;
+  border: 1px solid var(--rule-soft);
+}
+
+.sb__goals-label {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.sb__goals-bar {
+  height: 5px;
+  background: var(--rule-soft);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.sb__goals-fill {
+  height: 100%;
+  background: var(--ink-2);
+  border-radius: 3px;
+  transition: width .3s ease;
+}
+
+.sb__goals-deadline {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.sb__goals-deadline--warn {
+  color: var(--terra);
+  font-weight: 600;
+}
+
+.sb__goals-editor {
+  padding: 10px 0 12px;
+  border-bottom: 1px solid var(--rule-soft);
+  margin-bottom: 10px;
+}
+
+.sb__goals-editor-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 8px;
+}
+
 /* ===== Editor ===== */
 .ed {
   flex: 1;

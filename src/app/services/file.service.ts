@@ -27,7 +27,8 @@ export class FileService {
       },
       chapters: this.store.chapters(),
       notes: this.store.notes(),
-      assets: this.store.assets()
+      assets: this.store.assets(),
+      writingGoals: this.store.writingGoals()
     };
   }
 

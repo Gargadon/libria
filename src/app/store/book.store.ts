@@ -1,6 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig } from '../models/book.models';
+import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { environment } from '../../environments/environment';
@@ -32,6 +32,7 @@ export interface BookState {
   replaceQuery: string;
   personalConfig: PersonalConfig;
   isSaving: boolean;
+  writingGoals: WritingGoals;
 }
 
 const initialState: BookState = {
@@ -93,7 +94,8 @@ const initialState: BookState = {
   searchResults: [],
   replaceQuery: '',
   personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' },
-  isSaving: false
+  isSaving: false,
+  writingGoals: { targetWords: 0, deadline: '' }
 };
 
 function uiLocale(lang: string): string {
@@ -177,6 +179,17 @@ export const BookStore = signalStore(
         default: return "serif";
       }
     }),
+    wordsProgress: computed(() => {
+      const target = state.writingGoals.targetWords();
+      if (!target) return 0;
+      return Math.min(100, Math.round((state.chapters().reduce((s, c) => s + (c.words || 0), 0) / target) * 100));
+    }),
+    daysToDeadline: computed(() => {
+      const dl = state.writingGoals.deadline();
+      if (!dl) return null;
+      const diff = Math.ceil((new Date(dl).getTime() - Date.now()) / 86_400_000);
+      return diff;
+    }),
     documentLang: computed(() => state.book()?.lang || 'es-MX'),
     domLang: computed(() => {
       const lang = state.book()?.lang || 'es-MX';
@@ -238,6 +251,7 @@ export const BookStore = signalStore(
         assets: doc.assets || {},
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(doc.preferences || {}) },
+        writingGoals: doc.writingGoals || initialState.writingGoals,
         isDirty: false,
         ui: initialState.ui
       });
@@ -613,6 +627,9 @@ export const BookStore = signalStore(
     },
     setPersonalConfig(config: PersonalConfig) {
       patchState(store, { personalConfig: config });
+    },
+    setWritingGoals(goals: WritingGoals) {
+      patchState(store, { writingGoals: goals, isDirty: true });
     },
     search(query: string) {
       if (!query.trim()) {

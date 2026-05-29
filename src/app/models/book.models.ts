@@ -96,6 +96,11 @@ export interface Note {
   replies: Reply[];
 }
 
+export interface WritingGoals {
+  targetWords: number;
+  deadline: string;
+}
+
 export interface SearchResult {
   chapterId: string;
   chapterTitle: string;
@@ -126,4 +131,5 @@ export interface LibriaDocument {
   chapters: Chapter[];
   notes?: Note[];
   assets?: Record<string, string>;
+  writingGoals?: WritingGoals;
 }

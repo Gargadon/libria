@@ -277,5 +277,18 @@
   "electron.context.copy": "Copy",
   "electron.context.paste": "Paste",
   "electron.context.selectAll": "Select All",
-  "electron.context.addDict": "Add \"{{word}}\" to dictionary"
+  "electron.context.addDict": "Add \"{{word}}\" to dictionary",
+  "sidebar.chapterStatus": "Status",
+  "sidebar.statusOk": "reviewed",
+  "sidebar.statusDraft": "draft",
+  "sidebar.statusOutline": "outline",
+  "sidebar.goalsProgress": "{{current}} / {{target}} words",
+  "sidebar.goalsDeadlineDays": "Deadline: {{days}} days left",
+  "sidebar.goalsDeadlineToday": "Deadline: today!",
+  "sidebar.goalsDeadlineOver": "Deadline passed {{days}} days ago",
+  "sidebar.goalsTitle": "Writing Goals",
+  "sidebar.goalsTargetWords": "Word goal (0 = no goal)",
+  "sidebar.goalsDeadlineLabel": "Deadline",
+  "sidebar.goalsDone": "Done",
+  "sidebar.goalsEdit": "Set goals"
 }

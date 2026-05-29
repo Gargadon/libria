@@ -51,6 +51,30 @@ import { environment } from '../../../environments/environment';
             </div>
           </div>
 
+          @if (store.writingGoals.targetWords() > 0 || store.writingGoals.deadline()) {
+            <div class="sb__goals">
+              @if (store.writingGoals.targetWords() > 0) {
+                <div class="sb__goals-label">
+                  {{ 'sidebar.goalsProgress' | translate:{ current: store.totalWords().toLocaleString(currentLang()), target: store.writingGoals.targetWords().toLocaleString(currentLang()) } }}
+                </div>
+                <div class="sb__goals-bar">
+                  <div class="sb__goals-fill" [style.width.%]="store.wordsProgress()"></div>
+                </div>
+              }
+              @if (store.daysToDeadline() !== null) {
+                <div class="sb__goals-deadline" [class.sb__goals-deadline--warn]="(store.daysToDeadline() ?? 99) <= 7">
+                  @if ((store.daysToDeadline() ?? 0) > 0) {
+                    {{ 'sidebar.goalsDeadlineDays' | translate:{ days: store.daysToDeadline() } }}
+                  } @else if ((store.daysToDeadline() ?? 0) === 0) {
+                    {{ 'sidebar.goalsDeadlineToday' | translate }}
+                  } @else {
+                    {{ 'sidebar.goalsDeadlineOver' | translate:{ days: Math.abs(store.daysToDeadline() ?? 0) } }}
+                  }
+                </div>
+              }
+            </div>
+          }
+
           <div class="sb__content">
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.preliminares' | translate), items: frontChapters() }"></ng-container>
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true }"></ng-container>
@@ -58,6 +82,16 @@ import { environment } from '../../../environments/environment';
 
             @if (store.activeChapter(); as active) {
               <div class="sb__section">{{ 'sidebar.elementSettings' | translate }}</div>
+              @if (active.kind === 'chapter') {
+                <div class="sb__row">
+                  <div class="sb__label">{{ 'sidebar.chapterStatus' | translate }}</div>
+                  <div class="sb__radio">
+                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'ok'" (click)="store.updateChapterMeta(active.id, { status: 'ok' })">{{ 'sidebar.statusOk' | translate }}</button>
+                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'draft' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
+                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'outline'" (click)="store.updateChapterMeta(active.id, { status: 'outline' })">{{ 'sidebar.statusOutline' | translate }}</button>
+                  </div>
+                </div>
+              }
               <div class="sb__row">
                 <div class="sb__label">{{ 'sidebar.oddPage' | translate }}</div>
                 <div class="sb__radio">
@@ -70,6 +104,29 @@ import { environment } from '../../../environments/environment';
           </div>
 
           <div class="sb__foot">
+            @if (showGoalsEditor()) {
+              <div class="sb__goals-editor">
+                <div class="sb__goals-editor-title">{{ 'sidebar.goalsTitle' | translate }}</div>
+                <div class="sb__row sb__row--col">
+                  <label class="sb__label">{{ 'sidebar.goalsTargetWords' | translate }}</label>
+                  <input type="number" class="sb__input" min="0" step="1000"
+                    [ngModel]="store.writingGoals.targetWords()"
+                    (ngModelChange)="updateGoalWords($event)">
+                </div>
+                <div class="sb__row sb__row--col">
+                  <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+                  <input type="date" class="sb__input"
+                    [ngModel]="store.writingGoals.deadline()"
+                    (ngModelChange)="updateGoalDeadline($event)">
+                </div>
+                <button class="sb__btn-link" (click)="showGoalsEditor.set(false)">{{ 'sidebar.goalsDone' | translate }}</button>
+              </div>
+            } @else {
+              <button class="sb__btn-link" style="font-size: 11px;" (click)="showGoalsEditor.set(true)">
+                <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">flag</span>
+                {{ 'sidebar.goalsEdit' | translate }}
+              </button>
+            }
             <div class="sb__add-wrapper">
               <button class="sb__add" (click)="toggleAddMenu($event)">{{ 'sidebar.addElement' | translate }}</button>
               @if (showAddMenu()) {
@@ -726,6 +783,7 @@ export class SidebarComponent implements OnInit {
   newDictWord = '';
 
   showAddMenu = signal(false);
+  showGoalsEditor = signal(false);
 
   // Modal states
   showInputModal = signal(false);
@@ -881,6 +939,14 @@ export class SidebarComponent implements OnInit {
   toggleAddMenu(event: Event) {
     event.stopPropagation();
     this.showAddMenu.update(v => !v);
+  }
+
+  updateGoalWords(value: number) {
+    this.store.setWritingGoals({ ...this.store.writingGoals(), targetWords: Number(value) || 0 });
+  }
+
+  updateGoalDeadline(value: string) {
+    this.store.setWritingGoals({ ...this.store.writingGoals(), deadline: value || '' });
   }
 
   add(kind: ChapterKind) {
