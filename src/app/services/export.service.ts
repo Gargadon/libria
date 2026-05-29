@@ -169,6 +169,7 @@ ${dropCapStyles}`);
       'Letter':{ width: 8.5,   height: 11    },
       'A5':    { width: 5.827, height: 8.268 },
       'A4':    { width: 8.268, height: 11.693},
+      'A6':    { width: 4.134, height: 5.827 },
     };
     return map[size] || map['5x8'];
   }
@@ -187,6 +188,7 @@ ${dropCapStyles}`);
       'Letter':'8.5in 11in',
       'A5':    '148mm 210mm',
       'A4':    '210mm 297mm',
+      'A6':    '105mm 148mm',
     };
     const pageSize = pageSizeCss[book.paperSize || '5x8'] || '5in 8in';
 

@@ -38,7 +38,7 @@ export class App {
   showAbout = signal(false);
 
   constructor() {
-    this.translate.addLangs(['es', 'en']);
+    this.translate.addLangs(['es', 'en', 'fr', 'it']);
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);
 

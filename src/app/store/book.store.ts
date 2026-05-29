@@ -90,6 +90,16 @@ const initialState: BookState = {
   isSaving: false
 };
 
+function uiLocale(lang: string): string {
+  const map: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+  return map[lang] || 'es-ES';
+}
+
+function untitledLabel(lang: string): string {
+  const map: Record<string, string> = { en: 'Untitled', fr: 'Sans titre', it: 'Senza titolo' };
+  return map[lang] || 'Sin título';
+}
+
 function calculateWords(body: { text?: string }[]): number {
   return body.reduce((sum, b) => {
     const text = (b.text || '').trim();
@@ -134,6 +144,7 @@ export const BookStore = signalStore(
         case 'Letter': return '8.5in 11in';
         case 'A5': return '148mm 210mm';
         case 'A4': return '210mm 297mm';
+        case 'A6': return '105mm 148mm';
         default: return '5in 8in';
       }
     }),
@@ -227,9 +238,15 @@ export const BookStore = signalStore(
     },
     createNewProject() {
       const author = store.personalConfig().userName;
-      const isEn = store.personalConfig().language === 'en';
+      const lang = store.personalConfig().language;
+      const newProjectLabels: Record<string, { title: string; chapter: string; docLang: string }> = {
+        en: { title: 'New Book',      chapter: 'Chapter 1',  docLang: 'en-US' },
+        fr: { title: 'Nouveau livre', chapter: 'Chapitre 1', docLang: 'fr-FR' },
+        it: { title: 'Nuovo libro',   chapter: 'Capitolo 1', docLang: 'it-IT' },
+      };
+      const labels = newProjectLabels[lang] || { title: 'Nuevo Libro', chapter: 'Capítulo 1', docLang: 'es-MX' };
       const newBook: Book = {
-        title: isEn ? 'New Book' : 'Nuevo Libro',
+        title: labels.title,
         subtitle: '',
         author: author,
         authors: author ? [author] : [],
@@ -238,18 +255,18 @@ export const BookStore = signalStore(
         year: new Date().getFullYear(),
         isbn: '',
         paperSize: '5x8',
-        lang: isEn ? 'en-US' : 'es-MX'
+        lang: labels.docLang
       };
       const firstChapter: Chapter = {
         id: 'ch-' + Date.now().toString(36),
         kind: 'chapter',
-        title: isEn ? 'Chapter 1' : 'Capítulo 1',
+        title: labels.chapter,
         words: 0,
         readMin: 0,
         number: 1,
         status: 'draft',
         body: [
-          { type: 'chapter-title', text: isEn ? 'Chapter 1' : 'Capítulo 1' },
+          { type: 'chapter-title', text: labels.chapter },
           { type: 'p', text: '' }
         ]
       };
@@ -285,7 +302,7 @@ export const BookStore = signalStore(
         role,
         authorName,
         content,
-        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' }),
+        date: new Date().toLocaleDateString(uiLocale(store.personalConfig().language), { day: 'numeric', month: 'short' }),
         status: 'unresolved',
         replies: []
       };
@@ -306,10 +323,10 @@ export const BookStore = signalStore(
         authorName,
         role,
         content,
-        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })
+        date: new Date().toLocaleDateString(uiLocale(store.personalConfig().language), { day: 'numeric', month: 'short' })
       };
       patchState(store, (state) => ({
-        notes: state.notes.map(n => 
+        notes: state.notes.map(n =>
           n.id === noteId ? { ...n, replies: [...n.replies, newReply] } : n
         ),
         isDirty: true
@@ -395,7 +412,7 @@ export const BookStore = signalStore(
           
           return {
             ...c,
-            title: isTitleBlock ? (text || (store.personalConfig().language === 'en' ? 'Untitled' : 'Sin título')) : c.title,
+            title: isTitleBlock ? (text || untitledLabel(store.personalConfig().language)) : c.title,
             body: c.body.map((b, i) =>
               i === blockIndex ? { ...b, text, html } : b
             )

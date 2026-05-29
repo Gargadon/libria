@@ -201,7 +201,8 @@ export class EditorComponent {
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;
-    return lang === 'en' ? 'en-US' : 'es-ES';
+    const localeMap: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+    return localeMap[lang] || 'es-ES';
   });
 
   readonly status = computed(() => {
