@@ -15,13 +15,14 @@
   "packageManager": "bun@1.3.14",
   "scripts": {
     "ng": "ng",
-    "start": "bun run ng serve",
-    "dev": "bun run ng serve",
+    "start": "bun run ng serve --port 4300",
+    "dev": "bun run ng serve --port 4300",
     "build": "bun run ng build",
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
-    "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4200 && electron . --dev --ozone-platform=x11\"",
-    "electron:build": "bun run build && electron-builder"
+    "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev --ozone-platform=x11\"",
+    "electron:build": "bun run build && electron-builder",
+    "tauri:dev": "bun tauri dev"
   },
   "private": true,
   "dependencies": {
@@ -34,6 +35,10 @@
     "@ngrx/signals": "^21.1.0",
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
+    "@tauri-apps/plugin-shell": "^2.3.5",
     "@types/hyphen": "^1.14.0",
     "blob-stream": "^0.1.3",
     "buffer": "^6.0.3",
@@ -53,6 +58,7 @@
     "@angular/build": "^21.2.9",
     "@angular/cli": "^21.2.9",
     "@angular/compiler-cli": "^21.2.0",
+    "@tauri-apps/cli": "^2.11.2",
     "@types/blob-stream": "^0.1.33",
     "@types/file-saver": "^2.0.7",
     "@types/jszip": "^3.4.0",

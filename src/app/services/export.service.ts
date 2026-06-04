@@ -182,6 +182,7 @@ ${dropCapStyles}`);
     titleFontFamily: string,
     fontsHref?: string,
     assets: Record<string, string> = {},
+    scaleCorrection: number = 1.0,
   ): string {
     const pageSizeCss: Record<string, string> = {
       '5x8':   '5in 8in',
@@ -201,6 +202,10 @@ ${dropCapStyles}`);
       none: '',
     };
     const brk = sceneGlyph[t.sceneBreakType] ?? '✦ ✦ ✦';
+
+    // Apply scale correction to font sizes for WebViews with different DPI interpretations
+    const baseFontSize = (t.fontSize * scaleCorrection).toFixed(2);
+    const titleFontSize = (t.titleFontSize * scaleCorrection).toFixed(2);
 
     const pGap   = `${(t.paragraphSpacing / t.fontSize).toFixed(3)}em`;
     const indent = t.indentFirstLine ? `${t.indentSize}cm` : '0';
@@ -235,6 +240,9 @@ html::-webkit-scrollbar { display: none; }
   overflow: visible;
 }` : '';
 
+    const mmToPx = (mm: number) => (mm * 96) / 25.4;
+    const ptToPx = (pt: number) => (pt * 96) / 72;
+
     const css = `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -252,10 +260,11 @@ html::-webkit-scrollbar { display: none; }
 
 body {
   font-family: ${bodyFontFamily};
-  font-size: ${t.fontSize}pt;
+  font-size: ${ptToPx(t.fontSize * scaleCorrection).toFixed(2)}px;
   line-height: ${t.lineHeight};
   color: #000;
   background: #fff;
+  -webkit-text-size-adjust: none;
 }
 
 /* ── Chapter separators ── */
@@ -298,7 +307,7 @@ ${t.dropCap ? `
 /* ── Titles ── */
 .kp-halftitle {
   font-family: ${titleFontFamily};
-  font-size: ${(t.titleFontSize * 1.2).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(titleFontSize) * 1.2).toFixed(1)}px;
   font-weight: ${titleW}; font-style: ${titleS}; text-decoration: ${titleD};
   text-align: ${tAlign};
   line-height: 1.2;
@@ -307,7 +316,7 @@ ${t.dropCap ? `
 }
 .kp-title {
   font-family: ${titleFontFamily};
-  font-size: ${(t.titleFontSize * 1.8).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(titleFontSize) * 1.8).toFixed(1)}px;
   font-weight: ${titleW}; font-style: ${titleS}; text-decoration: ${titleD};
   text-align: ${tAlign};
   line-height: 1.1;
@@ -317,14 +326,14 @@ ${t.dropCap ? `
 .kp-sub {
   text-align: ${tAlign};
   font-style: italic;
-  font-size: ${(t.fontSize * 0.9).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(baseFontSize) * 0.9).toFixed(1)}px;
   margin-bottom: 28pt;
   color: #3a3530;
   break-inside: avoid;
 }
 .kp-author {
   text-align: center;
-  font-size: ${(t.fontSize * 0.85).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(baseFontSize) * 0.85).toFixed(1)}px;
   letter-spacing: .12em;
   text-transform: uppercase;
   margin-bottom: 6pt;
@@ -332,7 +341,7 @@ ${t.dropCap ? `
 }
 .kp-pub {
   text-align: center;
-  font-size: ${(t.fontSize * 0.7).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(baseFontSize) * 0.7).toFixed(1)}px;
   letter-spacing: .16em;
   text-transform: uppercase;
   color: #5a554d;
@@ -348,7 +357,7 @@ ${t.dropCap ? `
 }
 .kp-chnum {
   font-family: ${titleFontFamily};
-  font-size: ${(t.titleFontSize * 0.7).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(titleFontSize) * 0.7).toFixed(1)}px;
   font-weight: ${titleW}; font-style: ${titleS};
   letter-spacing: .28em;
   text-transform: uppercase;
@@ -359,7 +368,7 @@ ${t.dropCap ? `
 }
 .kp-chtitle {
   font-family: ${titleFontFamily};
-  font-size: ${t.titleFontSize}pt;
+  font-size: ${ptToPx(parseFloat(titleFontSize)).toFixed(1)}px;
   font-weight: ${titleW}; font-style: ${titleS}; text-decoration: ${titleD};
   text-align: ${tAlign};
   line-height: 1.2;
@@ -377,7 +386,7 @@ ${t.dropCap ? `
 }
 .kp-h1 {
   font-family: ${titleFontFamily};
-  font-size: ${(t.titleFontSize * 0.85).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(titleFontSize) * 0.85).toFixed(1)}px;
   font-weight: ${titleW}; font-style: ${titleS};
   text-align: ${tAlign};
   margin: 0 0 14pt;
@@ -389,7 +398,7 @@ ${t.dropCap ? `
   text-align: center;
   margin: 1em 0;
   letter-spacing: .6em;
-  font-size: ${(t.fontSize * 0.8).toFixed(1)}pt;
+  font-size: ${ptToPx(parseFloat(baseFontSize) * 0.8).toFixed(1)}px;
   color: #5a554d;
   break-inside: avoid;
 }
@@ -401,6 +410,27 @@ ${t.dropCap ? `
   font-style: italic;
   break-inside: avoid;
 }
+
+/* ── Page Layout (Screen) ── */
+${fontsHref ? `
+.ch {
+  padding-top: ${mmToPx(t.marginTop)}px;
+  padding-bottom: ${mmToPx(t.marginBottom)}px;
+}
+/* 
+  Odd Page (Recto): Inner margin on LEFT, Outer on RIGHT
+  Even Page (Verso): Outer margin on LEFT, Inner on RIGHT
+*/
+.ch:nth-child(odd):not(.ch--recto), .ch--recto {
+  padding-left: ${mmToPx(t.marginInner)}px;
+  padding-right: ${mmToPx(t.marginOuter)}px;
+}
+.ch:nth-child(even):not(.ch--recto) {
+  padding-left: ${mmToPx(t.marginOuter)}px;
+  padding-right: ${mmToPx(t.marginInner)}px;
+}
+` : ''}
+
 .kp-page-break {
   display: block;
   height: 0;

@@ -127,18 +127,19 @@ import * as htmlToImage from 'html-to-image';
             [style.transform-origin]="'top left'"
             [style.padding-top.px]="0"
             [style.padding-bottom.px]="0"
-            [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
-            [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
+            [style.padding-left.px]="0"
+            [style.padding-right.px]="0">
 
             <div class="print__header"
-              [style.height.mm]="store.tweaks.marginTop()"
+              [style.height.px]="toPixels(store.tweaks.marginTop() + 'mm')"
               style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
               @if (store.tweaks.showHeader()) {
                 <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
               }
             </div>
 
-            <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
+            <div class="print__content" 
+              style="flex: 1; position: relative; overflow: hidden;">
               <iframe #printIframe
                 [srcdoc]="printIframeHtml()"
                 scrolling="no"
@@ -148,7 +149,7 @@ import * as htmlToImage from 'html-to-image';
             </div>
 
             <div class="print__footer"
-              [style.height.mm]="store.tweaks.marginBottom()"
+              [style.height.px]="toPixels(store.tweaks.marginBottom() + 'mm')"
               style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
               @if (store.tweaks.showPageNumbers()) {
                 <span>{{ globalPage() + 1 }}</span>
@@ -497,7 +498,10 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         clearTimeout(this.printHtmlTimeout);
         this.printHtmlTimeout = setTimeout(() => {
           const fontsHref = new URL('fonts.css', document.baseURI).href;
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets);
+          // Apply a standard 1.05x correction for Tauri/WebKit to compensate 
+          // for the more accurate physical unit rendering in some system WebViews.
+          const scaleCorrection = (window as any).electronAPI?.platform === 'tauri' ? 1.05 : 1.0;
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, scaleCorrection);
           this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
         }, 300);
       });
@@ -571,8 +575,13 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   public toPixels(value: string): number {
     const num = parseFloat(value);
     const unit = value.replace(/[0-9.]/g, '');
-    if (unit === 'in') return num * 96;
-    if (unit === 'mm') return (num * 96) / 25.4;
+    
+    // In Tauri/System WebViews, the DPI handling can vary. 
+    // We explicitly use 96 DPI as the standard reference.
+    const dpi = 96;
+
+    if (unit === 'in') return num * dpi;
+    if (unit === 'mm') return (num * dpi) / 25.4;
     return num;
   }
 
@@ -580,8 +589,9 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.mode() !== 'print' || !this.pvStageEl) return;
 
     const stage = this.pvStageEl.nativeElement;
-    const availW = stage.clientWidth - 60; // padding
-    const availH = stage.clientHeight - 60;
+    // Reduced padding to allow the page to fill more space in the stage
+    const availW = stage.clientWidth - 20; 
+    const availH = stage.clientHeight - 20;
 
     if (availW <= 0 || availH <= 0) return;
 
@@ -589,7 +599,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const pageH = this.toPixels(this.pageSize().h);
 
     const zoom = Math.min(availW / pageW, availH / pageH);
-    this.printZoom.set(Math.floor(zoom * 100) / 100);
+    // Apply a slight safety factor (0.98) to avoid tight fits
+    this.printZoom.set(Math.floor(zoom * 98) / 100);
   }
 
   scheduleMeasure() {
@@ -755,5 +766,9 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  ptToPx(pt: number): number { return pt * 96 / 72; }
+  ptToPx(pt: number): number { 
+    // 1pt = 1/72 inch. At 96 DPI, this is 1.333px.
+    // Tauri's WebView might default to a different logical DPI.
+    return pt * 96 / 72; 
+  }
 }
