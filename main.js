@@ -62,7 +62,7 @@ function createWindow() {
 
   const isDev = process.argv.includes('--dev');
   if (isDev) {
-    mainWindow.loadURL('http://localhost:4200');
+    mainWindow.loadURL('http://localhost:4300');
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
