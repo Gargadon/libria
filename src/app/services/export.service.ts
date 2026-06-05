@@ -6,7 +6,15 @@ import {
   Document,
   Packer,
   Paragraph,
+  TextRun,
+  ImageRun,
+  TableOfContents,
   HeadingLevel,
+  UnderlineType,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
 } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -91,6 +99,11 @@ ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
 h1, h2 { text-align: center; }
 p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .first-p { text-indent: 0; }
+.kp-list { margin: 0.5em 0; padding-left: 1.5em; }
+.kp-list li { margin: 0.2em 0; }
+.kp-table-wrap { overflow-x: auto; margin: 1em 0; }
+.kp-table-wrap table { border-collapse: collapse; width: 100%; }
+.kp-table-wrap td, .kp-table-wrap th { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
 ${dropCapStyles}`);
 
     let navLinks = '';
@@ -98,10 +111,31 @@ ${dropCapStyles}`);
       navLinks += `<li><a href="chapters/${c.id}.xhtml">${c.title}</a></li>`;
       let content = '';
       c.body.forEach(b => {
-        if (b.type === 'p' || b.type === 'first-p') {
-          content += `<p class="${b.type}">${b.text}</p>`;
-        } else if (b.type === 'chapter-title') {
-          content += `<h2>${b.text}</h2>`;
+        const raw = b.html || this.escapeHtml(b.text || '');
+        switch (b.type) {
+          case 'halftitle':     content += `<h1 class="kp-halftitle">${raw}</h1>`; break;
+          case 'title':         content += `<h1 class="kp-title">${raw}</h1>`; break;
+          case 'subtitle':      content += `<div class="kp-sub">${raw}</div>`; break;
+          case 'author':        content += `<div class="kp-author">${raw}</div>`; break;
+          case 'publisher':     content += `<div class="kp-pub">${raw}</div>`; break;
+          case 'dedication':    content += `<div class="kp-ded">${raw}</div>`; break;
+          case 'chapter-num':   content += `<div class="kp-chnum">${raw}</div>`; break;
+          case 'chapter-title': content += `<h2>${raw}</h2>`; break;
+          case 'h1':            content += `<h2 class="kp-h1">${raw}</h2>`; break;
+          case 'first-p':       content += `<p class="first-p">${raw}</p>`; break;
+          case 'p':             content += `<p>${raw}</p>`; break;
+          case 'blockquote':    content += `<blockquote>${raw}</blockquote>`; break;
+          case 'scene-break':   content += `<p style="text-align:center;margin:1em 0;color:#888">* * *</p>`; break;
+          case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
+          case 'image': {
+            if (b.src && assets[b.src]) {
+              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="max-width:100%;height:auto" alt=""/></figure>`;
+            }
+            break;
+          }
+          case 'list-unordered': content += `<ul class="kp-list">${raw}</ul>`; break;
+          case 'list-ordered':   content += `<ol class="kp-list">${raw}</ol>`; break;
+          case 'table':          content += `<div class="kp-table-wrap">${raw}</div>`; break;
         }
       });
       zip.file(`OEBPS/chapters/${c.id}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
@@ -407,6 +441,28 @@ ${t.dropCap ? `
   break-after: ${fontsHref ? 'column' : 'page'};
   ${!fontsHref ? 'page-break-after: always;' : ''}
 }
+.kp-list {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.kp-list li {
+  margin: 0.2em 0;
+}
+.kp-table-wrap {
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.kp-table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.kp-table-wrap td {
+  border: 1px solid #999;
+  padding: 5px 7px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9em;
+}
 `;
 
     const chaptersHtml = chapters.map((ch: any, idx: number) => {
@@ -444,6 +500,9 @@ ${t.dropCap ? `
             const imgSrc = b.src ? (assets[b.src] ?? '') : '';
             return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="max-width:100%;height:auto;display:block;margin:0 auto;" alt=""></figure>` : '';
           }
+          case 'list-unordered': return `<ul class="kp-list">${raw}</ul>`;
+          case 'list-ordered':   return `<ol class="kp-list">${raw}</ol>`;
+          case 'table':          return `<div class="kp-table-wrap">${raw}</div>`;
           default:              return '';
         }
       }).join('\n');
@@ -480,19 +539,281 @@ ${bodyContent}
   async exportDocx() {
     const book = this.store.book();
     const chapters = this.store.chapters();
+    const t = this.store.tweaks();
+    const prefs = this.store.exportPrefs();
+    const assets = this.store.assets();
     if (!book) return;
 
+    const children: (Paragraph | TableOfContents | Table)[] = [];
+
+    if (prefs.includeCover && assets['cover']) {
+      const coverBlob = this.dataUrlToBlob(assets['cover']);
+      const coverBuf = await coverBlob.arrayBuffer();
+      const ext = this.imageExt(assets['cover']);
+      children.push(new Paragraph({
+        alignment: 'center',
+        spacing: { before: 3000, after: 100 },
+              children: [new ImageRun({ type: ext as any, data: coverBuf, transformation: { width: 400, height: 600 } })],
+      }));
+    }
+
+    if (prefs.includeTOC) {
+      children.push(new TableOfContents('Table of Contents', { hyperlink: true }));
+    }
+
+    const bodyFont = t.customBookFont || this.fontName(t.bookFont);
+    const titleFont = t.customTitleFont || this.fontName(t.titleFont);
+    const tAlign = this.align(t.titleAlignment);
+    const bodyAlign = (t.justifyText ? 'both' : 'left') as any;
+    const fs = Math.round(t.fontSize * 2);
+    const ts = Math.round(t.titleFontSize * 2);
+    const lsp = Math.round(t.lineHeight * 240);
+    const pg = Math.round(t.paragraphSpacing * 20);
+    const ind = t.indentFirstLine ? Math.round(t.indentSize * 567) : 0;
+    const glyph = this.sceneGlyphText(t.sceneBreakType);
+
+    for (const ch of chapters) {
+      if (ch.forceOddPage && children.length > 0) {
+        children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+      }
+
+      for (const b of ch.body) {
+        switch (b.type) {
+          case 'halftitle':
+            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.2), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 1200));
+            break;
+          case 'title':
+            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.8), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 200));
+            break;
+          case 'subtitle':
+            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.9), italics: true }, tAlign, 0, 600));
+            break;
+          case 'author':
+            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.85) }, 'center', 0, 200));
+            break;
+          case 'publisher':
+            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.7) }, 'center', 1200, 0));
+            break;
+          case 'dedication': {
+            const lines = (b.text ?? '').split('\n');
+            for (const line of lines) {
+              children.push(new Paragraph({
+                alignment: 'center',
+                spacing: { after: 100 },
+                children: [new TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
+              }));
+            }
+            break;
+          }
+          case 'chapter-num':
+            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.7), bold: t.titleBold, italics: t.titleItalic }, tAlign, 0, 80));
+            break;
+          case 'chapter-title':
+            children.push(this.p(b, { font: titleFont, size: ts, bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 400));
+            break;
+          case 'h1':
+            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.85), bold: t.titleBold, italics: t.titleItalic }, tAlign, 400, 200));
+            break;
+          case 'first-p':
+            children.push(new Paragraph({
+              alignment: bodyAlign,
+              spacing: { line: lsp, after: pg },
+              indent: { firstLine: 0 },
+              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, smallCaps: true }),
+            }));
+            break;
+          case 'p':
+            children.push(new Paragraph({
+              alignment: bodyAlign,
+              spacing: { line: lsp, after: pg },
+              indent: { firstLine: ind },
+              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs }),
+            }));
+            break;
+          case 'blockquote':
+            children.push(new Paragraph({
+              alignment: 'left',
+              indent: { left: 720 },
+              spacing: { line: lsp, before: 200, after: 200 },
+              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
+            }));
+            break;
+          case 'scene-break':
+            children.push(new Paragraph({
+              alignment: 'center',
+              spacing: { before: 400, after: 400 },
+              children: [new TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
+            }));
+            break;
+          case 'page-break':
+            children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+            break;
+          case 'image': {
+            const imgKey = b.src;
+            if (imgKey && assets[imgKey]) {
+              const imgBlob = this.dataUrlToBlob(assets[imgKey]);
+              const imgBuf = await imgBlob.arrayBuffer();
+              const ext = this.imageExt(assets[imgKey]);
+              children.push(new Paragraph({
+                alignment: 'center',
+                spacing: { before: 200, after: 200 },
+                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: 460, height: 600 } })],
+              }));
+            }
+            break;
+          }
+          case 'list-unordered':
+          case 'list-ordered': {
+            const items = (b.html || b.text || '').split('</li>').filter(s => s.trim());
+            for (const item of items) {
+              const itemText = item.replace(/<[^>]+>/g, '').trim();
+              if (!itemText) continue;
+              children.push(new Paragraph({
+                alignment: 'left',
+                spacing: { line: lsp, after: 60 },
+                indent: { left: 720, hanging: 360 },
+                bullet: b.type === 'list-unordered' ? { level: 0 } : undefined,
+                children: [new TextRun({ text: itemText, font: bodyFont, size: fs })],
+              }));
+            }
+            break;
+          }
+          case 'table': {
+            const rows = (b.html || '').match(/<tr>.*?<\/tr>/gi) || [];
+            const tableRows: TableRow[] = [];
+            for (const rowHtml of rows) {
+              const cells = rowHtml.match(/<t[dh][^>]*>.*?<\/t[dh]>/gi) || [];
+              const rowChildren: TableCell[] = [];
+              for (const cellHtml of cells) {
+                const cellText = cellHtml.replace(/<[^>]+>/g, '').trim();
+                rowChildren.push(new TableCell({
+                  children: [new Paragraph({
+                    alignment: 'left',
+                    children: [new TextRun({ text: cellText || ' ', font: bodyFont, size: fs })],
+                  })],
+                }));
+              }
+              if (rowChildren.length) {
+                tableRows.push(new TableRow({ children: rowChildren }));
+              }
+            }
+            if (tableRows.length) {
+              children.push(new Table({
+                rows: tableRows,
+                width: { size: 100, type: WidthType.PERCENTAGE },
+              }));
+            }
+            break;
+          }
+        }
+      }
+    }
+
     const doc = new Document({
-      sections: [{
-        children: chapters.flatMap(c => [
-          new Paragraph({ text: c.title, heading: HeadingLevel.HEADING_1 }),
-          ...c.body.filter(b => b.text).map(b => new Paragraph({ text: b.text }))
-        ])
-      }]
+      title: book.title,
+      description: book.subtitle || '',
+      creator: book.author || '',
+      styles: {
+        default: {
+          document: {
+            run: { font: bodyFont, size: fs },
+          },
+        },
+      },
+      sections: [{ children }],
     });
 
     const blob = await Packer.toBlob(doc);
     this.downloadFile(blob, `${book.title}.docx`);
+  }
+
+  private p(b: { text?: string; html?: string }, opts: {
+    font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean;
+  }, align: string, before = 0, after = 0): Paragraph {
+    return new Paragraph({
+      alignment: align as any,
+      spacing: { before, after },
+      children: this.htmlToTextRuns(b, opts),
+    });
+  }
+
+  private sceneGlyphText(type: string): string {
+    const m: Record<string, string> = {
+      asterisks: '✦ ✦ ✦',
+      dots: '· · ·',
+      flourish: '— o —',
+      none: '',
+    };
+    return m[type] ?? '✦ ✦ ✦';
+  }
+
+  private fontName(key: string): string {
+    const m: Record<string, string> = {
+      spectral: 'Spectral',
+      lora: 'Lora',
+      'eb-garamond': 'EB Garamond',
+      'crimson-pro': 'Crimson Pro',
+      inter: 'Inter',
+      montserrat: 'Montserrat',
+    };
+    return m[key] || 'Spectral';
+  }
+
+  private imageExt(dataUrl: string) {
+    const m = dataUrl.match(/^data:image\/(\w+);/);
+    const ext = m?.[1] ?? 'png';
+    if (ext === 'jpeg') return 'jpg';
+    if (ext === 'svg+xml') return 'png';
+    return ext;
+  }
+
+  private align(val: string) {
+    if (val === 'left') return 'left';
+    if (val === 'right') return 'right';
+    if (val === 'justify') return 'both';
+    return 'center';
+  }
+
+  private htmlToTextRuns(b: { text?: string; html?: string }, opts: {
+    font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
+  }): TextRun[] {
+    const raw = b.html || this.escapeHtml(b.text ?? '');
+    if (!raw) return [new TextRun({ text: '', font: opts.font, size: opts.size })];
+
+    const runs: TextRun[] = [];
+    const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
+    let m: RegExpExecArray | null;
+
+    let bold = !!opts.bold;
+    let italic = !!opts.italics;
+    let uline = !!opts.underline;
+
+    while ((m = re.exec(raw)) !== null) {
+      if (m[3] !== undefined) {
+        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        runs.push(new TextRun({
+          text,
+          font: opts.font,
+          size: opts.size,
+          bold,
+          italics: italic,
+          underline: uline ? { type: UnderlineType.SINGLE } : undefined,
+          smallCaps: opts.smallCaps && runs.length === 0,
+        }));
+      } else if (m[1] === '' && m[2] !== 'br') {
+        const tag = m[2];
+        if (tag === 'b' || tag === 'strong') bold = true;
+        if (tag === 'i' || tag === 'em') italic = true;
+        if (tag === 'u' || tag === 'ins') uline = true;
+      } else if (m[1] === '/') {
+        const tag = m[2];
+        if (tag === 'b' || tag === 'strong') bold = !!opts.bold;
+        if (tag === 'i' || tag === 'em') italic = !!opts.italics;
+        if (tag === 'u' || tag === 'ins') uline = !!opts.underline;
+      }
+    }
+
+    return runs.length ? runs : [new TextRun({ text: '', font: opts.font, size: opts.size })];
   }
 
   private downloadFile(blob: Blob, filename: string) {

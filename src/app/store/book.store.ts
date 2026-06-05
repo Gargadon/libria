@@ -44,6 +44,7 @@ const initialState: BookState = {
     sidebar: 'right',
     mode: 'light',
     bookFont: 'lora',
+    customBookFont: null,
     spellcheck: true,
     fontSize: 12,
     lineHeight: 1.6,
@@ -62,6 +63,7 @@ const initialState: BookState = {
     titleAlignment: 'center',
     titleFontSize: 16,
     titleFont: 'spectral',
+    customTitleFont: null,
     titleBold: true,
     titleItalic: false,
     titleUnderline: false,
@@ -156,7 +158,10 @@ export const BookStore = signalStore(
         default: return '5in 8in';
       }
     }),
-    bookFontFamily: computed(() => {      const font = state.tweaks.bookFont();
+    bookFontFamily: computed(() => {
+      const custom = state.tweaks.customBookFont();
+      if (custom) return `"${custom}", serif`;
+      const font = state.tweaks.bookFont();
       switch (font) {
         case 'eb-garamond': return "'EB Garamond', serif";
         case 'crimson-pro': return "'Crimson Pro', serif";
@@ -168,6 +173,8 @@ export const BookStore = signalStore(
       }
     }),
     titleFontFamily: computed(() => {
+      const custom = state.tweaks.customTitleFont();
+      if (custom) return `"${custom}", serif`;
       const font = state.tweaks.titleFont();
       switch (font) {
         case 'eb-garamond': return "'EB Garamond', serif";
@@ -495,7 +502,7 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    insertBlock(chapterId: string, afterIndex: number, type: string, text: string = '') {
+    insertBlock(chapterId: string, afterIndex: number, type: string, text: string = '', html?: string) {
       patchState(store, (state) => {
         const chapters = state.chapters.map((c) =>
           c.id === chapterId
@@ -503,7 +510,7 @@ export const BookStore = signalStore(
                 ...c,
                 body: [
                   ...c.body.slice(0, afterIndex + 1),
-                  { type, text },
+                  { type, text, ...(html ? { html } : {}) },
                   ...c.body.slice(afterIndex + 1)
                 ]
               }

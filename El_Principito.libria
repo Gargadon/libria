@@ -20,6 +20,7 @@
     "sidebar": "right",
     "mode": "light",
     "bookFont": "lora",
+    "customBookFont": null,
     "spellcheck": true,
     "fontSize": 14,
     "lineHeight": 1.5,
@@ -38,6 +39,7 @@
     "titleAlignment": "center",
     "titleFontSize": 24,
     "titleFont": "spectral",
+    "customTitleFont": null,
     "titleBold": true,
     "titleItalic": false,
     "titleUnderline": false,
@@ -51,7 +53,7 @@
     "smartOpeningSigns": true
   },
   "session": {
-    "lastActiveChapterId": "ch-mp21ix4k"
+    "lastActiveChapterId": "ch-1"
   },
   "chapters": [
     {

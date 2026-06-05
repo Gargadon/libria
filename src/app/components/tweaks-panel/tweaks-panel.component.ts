@@ -38,16 +38,22 @@ import { TranslateModule } from '@ngx-translate/core';
           <div class="tp__radio">
             <button 
               class="tp__opt" 
-              [class.tp__opt--on]="store.tweaks.bookFont() === 'spectral'"
-              (click)="store.updateTweak('bookFont', 'spectral')"
+              [class.tp__opt--on]="store.tweaks.bookFont() === 'spectral' && !store.tweaks.customBookFont()"
+              (click)="setBookFont('spectral')"
             >spectral</button>
             <button 
               class="tp__opt" 
-              [class.tp__opt--on]="store.tweaks.bookFont() === 'lora'"
-              (click)="store.updateTweak('bookFont', 'lora')"
+              [class.tp__opt--on]="store.tweaks.bookFont() === 'lora' && !store.tweaks.customBookFont()"
+              (click)="setBookFont('lora')"
             >lora</button>
           </div>
         </div>
+        @if (store.tweaks.customBookFont() !== null) {
+          <div class="tp__row tp__row--col">
+            <input class="tp__input" type="text" [ngModel]="store.tweaks.customBookFont()" (ngModelChange)="store.updateTweak('customBookFont', $event)" placeholder="Georgia">
+          </div>
+        }
+        <button class="tp__link" (click)="setBookFont('__custom__')">{{ 'sidebar.customFont' | translate }}</button>
 
         <div class="tp__section">{{ 'sidebar.spelling' | translate }}</div>
         <div class="tp__row">
@@ -119,4 +125,13 @@ import { TranslateModule } from '@ngx-translate/core';
 export class TweaksPanelComponent {
   readonly store = inject(BookStore);
   readonly title = input<string>('Tweaks');
+
+  setBookFont(val: string) {
+    if (val === '__custom__') {
+      this.store.updateTweak('customBookFont', '');
+    } else {
+      this.store.updateTweak('bookFont', val as any);
+      this.store.updateTweak('customBookFont', null);
+    }
+  }
 }

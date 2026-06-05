@@ -27,10 +27,10 @@ import { environment } from '../../../environments/environment';
 
         @if (store.book(); as book) {
           <div class="tb__bookchip">
-            <span class="tb__chipBadge">{{ titleInitials() }}</span>
-            <span class="tb__chipT">{{ book.title }}</span>
-            <span class="tb__chipMeta">{{ displayAuthors() }}</span>
-            <span class="tb__chipChev">▾</span>
+            <span class="tb__chipBody">
+              <span class="tb__chipT">{{ book.title }}</span>
+              <span class="tb__chipMeta">{{ displayAuthors() }}</span>
+            </span>
           </div>
         }
       </div>
@@ -184,12 +184,6 @@ export class TopbarComponent {
     if (filtered.length === 0) return this.translate.instant('topbar.noAuthor');
     if (filtered.length === 1) return filtered[0];
     return `${filtered[0]} ${this.translate.instant('topbar.etAl')}`;
-  });
-
-  readonly titleInitials = computed(() => {
-    const title = this.store.book()?.title || '';
-    const words = title.trim().split(/\s+/).filter(w => w.length > 0);
-    return words.slice(0, 2).map(w => w[0].toUpperCase()).join('');
   });
 
   @HostListener('document:click')

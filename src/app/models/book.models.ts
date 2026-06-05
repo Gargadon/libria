@@ -38,6 +38,7 @@ export interface Tweaks {
   sidebar: 'left' | 'right';
   mode: 'light' | 'dark';
   bookFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
+  customBookFont: string | null;
   spellcheck: boolean;
   // Detailed styles
   fontSize: number;
@@ -59,6 +60,7 @@ export interface Tweaks {
   titleAlignment: 'left' | 'center' | 'right';
   titleFontSize: number;
   titleFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
+  customTitleFont: string | null;
   titleBold: boolean;
   titleItalic: boolean;
   titleUnderline: boolean;

@@ -8,7 +8,9 @@
      [class.font-inter]="store.tweaks.bookFont() === 'inter'"
      [class.font-montserrat]="store.tweaks.bookFont() === 'montserrat'"
      [class.font-crimson-pro]="store.tweaks.bookFont() === 'crimson-pro'"
-      [attr.data-screen-label]="'app.title' | translate">
+     [style.--serif]="store.tweaks.customBookFont() ? store.bookFontFamily() : null"
+     [style.--display]="store.tweaks.customTitleFont() ? store.titleFontFamily() : null"
+     [attr.data-screen-label]="'app.title' | translate">
   <app-topbar></app-topbar>
   
   <div class="layout" [class.layout--empty]="!store.book()"

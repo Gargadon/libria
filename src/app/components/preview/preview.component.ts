@@ -265,6 +265,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                   <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;"></figure>
                 }
               }
+              @case ('list-unordered') {
+                <ul class="kp-list" [innerHTML]="b.html || b.text"></ul>
+              }
+              @case ('list-ordered') {
+                <ol class="kp-list" [innerHTML]="b.html || b.text"></ol>
+              }
+              @case ('table') {
+                <div class="kp-table-wrap" [innerHTML]="b.html || b.text"></div>
+              }
             }
           }
 

@@ -40,6 +40,9 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
             <button class="ed__t ed__t--wide" [attr.title]="'editor.sceneBreak' | translate" (click)="insertSceneBreak()"><span class="material-symbols-outlined">horizontal_rule</span></button>
             <button class="ed__t" [attr.title]="'editor.pageBreak' | translate" (click)="insertPageBreak()"><span class="material-symbols-outlined">insert_page_break</span></button>
             <button class="ed__t" [attr.title]="'editor.blockQuote' | translate" (click)="toggleQuote()"><span class="material-symbols-outlined">format_quote</span></button>
+            <button class="ed__t" [attr.title]="'editor.insertUnorderedList' | translate" (click)="insertUnorderedList()"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+            <button class="ed__t" [attr.title]="'editor.insertOrderedList' | translate" (click)="insertOrderedList()"><span class="material-symbols-outlined">format_list_numbered</span></button>
+            <button class="ed__t" [attr.title]="'editor.insertTable' | translate" (click)="insertTable()"><span class="material-symbols-outlined">table</span></button>
             <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined">add_photo_alternate</span></button>
             <span class="ed__tsep"></span>
             <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
@@ -75,6 +78,9 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                       <option value="first-p">{{ 'editor.blockFirstP' | translate }}</option>
                       <option value="chapter-title">{{ 'editor.blockChapterTitle' | translate }}</option>
                       <option value="chapter-num">{{ 'editor.blockChapterNum' | translate }}</option>
+                      <option value="list-unordered">{{ 'editor.blockUnorderedList' | translate }}</option>
+                      <option value="list-ordered">{{ 'editor.blockOrderedList' | translate }}</option>
+                      <option value="table">{{ 'editor.blockTable' | translate }}</option>
                       <option value="scene-break">{{ 'editor.blockSceneBreak' | translate }}</option>
                       <option value="page-break">{{ 'editor.blockPageBreak' | translate }}</option>
                       <option value="blockquote">{{ 'editor.blockQuote' | translate }}</option>
@@ -179,6 +185,15 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                           </div>
                         }
                       </figure>
+                    }
+                    @case ('list-unordered') {
+                      <ul class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ul>
+                    }
+                    @case ('list-ordered') {
+                      <ol class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ol>
+                    }
+                    @case ('table') {
+                      <table class="bk-table" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></table>
                     }
                   }
                 </div>
@@ -338,6 +353,8 @@ export class EditorComponent {
   }
 
   onPaste(chapterId: string, blockIndex: number, event: ClipboardEvent) {
+    const chapter = this.store.activeChapter();
+    if (chapter?.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
     const text = event.clipboardData?.getData('text/plain');
     if (!text || !text.includes('\n')) return; // Let default behavior handle single lines
 
@@ -472,11 +489,17 @@ export class EditorComponent {
 
   // ─── Key handler ────────────────────────────────────────────────────────────
 
+  private _nativeBlocks = new Set(['list-ordered', 'list-unordered', 'table']);
+
   onKeyDown(chapterId: string, blockIndex: number, event: KeyboardEvent) {
     if (this._suppressInput) {
       event.preventDefault();
       return;
     }
+
+    const chapter = this.store.activeChapter();
+    const blockType = chapter?.body[blockIndex]?.type;
+    const isNative = blockType && this._nativeBlocks.has(blockType);
 
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault();
@@ -613,6 +636,7 @@ export class EditorComponent {
 
       // ── Enter: split block ────────────────────────────────────────────────
       case 'Enter': {
+        if (isNative) return; // browser handles list/table natively
         event.preventDefault();
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
@@ -653,6 +677,7 @@ export class EditorComponent {
 
       // ── Backspace at start: merge with previous ───────────────────────────
       case 'Backspace': {
+        if (isNative) return; // browser handles list/table natively
         const sel = window.getSelection();
         if (!sel || !sel.isCollapsed) return;
         if (this._getCaretOffset(el) !== 0 || blockIndex <= 0) return;
@@ -698,6 +723,7 @@ export class EditorComponent {
 
       // ── Delete at end: merge with next ────────────────────────────────────
       case 'Delete': {
+        if (isNative) return; // browser handles list/table natively
         const sel = window.getSelection();
         if (!sel || !sel.isCollapsed) return;
 
@@ -879,12 +905,16 @@ export class EditorComponent {
     this.store.setBlockType(chapterId, blockIndex, select.value);
   }
 
+  private _insertIndex() {
+    return this.lastFocusedIndex >= 0
+      ? this.lastFocusedIndex
+      : this.store.activeChapter()!.body.length - 1;
+  }
+
   insertSceneBreak() {
     this.store.saveSnapshot();
     const chapterId = this.store.activeChapterId();
-    const index = this.lastFocusedIndex >= 0
-      ? this.lastFocusedIndex
-      : this.store.activeChapter()!.body.length - 1;
+    const index = this._insertIndex();
     this.store.insertBlock(chapterId, index, 'scene-break');
     this.store.insertBlock(chapterId, index + 1, 'p', '');
   }
@@ -892,11 +922,30 @@ export class EditorComponent {
   insertPageBreak() {
     this.store.saveSnapshot();
     const chapterId = this.store.activeChapterId();
-    const index = this.lastFocusedIndex >= 0
-      ? this.lastFocusedIndex
-      : this.store.activeChapter()!.body.length - 1;
+    const index = this._insertIndex();
     this.store.insertBlock(chapterId, index, 'page-break');
     this.store.insertBlock(chapterId, index + 1, 'p', '');
+  }
+
+  insertOrderedList() {
+    this.store.saveSnapshot();
+    const chapterId = this.store.activeChapterId();
+    const index = this._insertIndex();
+    this.store.insertBlock(chapterId, index, 'list-ordered', '', '<ol><li></li></ol>');
+  }
+
+  insertUnorderedList() {
+    this.store.saveSnapshot();
+    const chapterId = this.store.activeChapterId();
+    const index = this._insertIndex();
+    this.store.insertBlock(chapterId, index, 'list-unordered', '', '<ul><li></li></ul>');
+  }
+
+  insertTable() {
+    this.store.saveSnapshot();
+    const chapterId = this.store.activeChapterId();
+    const index = this._insertIndex();
+    this.store.insertBlock(chapterId, index, 'table', '', '<table><tbody><tr><td></td><td></td></tr><tr><td></td><td></td></tr></tbody></table>');
   }
 
   execCommand(command: string) {

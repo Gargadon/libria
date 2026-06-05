@@ -6,67 +6,93 @@
 
 ---
 
-## ✨ Características Principales
+## Características Principales
 
-### ✍️ Edición por Bloques y Organización
+### Edición por Bloques y Organización
 
-Libria abandona el concepto de "página en blanco" tradicional por un sistema de **edición basado en bloques** (contenteditable), permitiendo una estructura semántica clara:
+Libria abandona el concepto de "página en blanco" tradicional por un sistema de **edición basada en bloques** (contenteditable), permitiendo una estructura semántica clara:
 
 - **Secciones especializadas:** Preliminares, cuerpo de la obra y posliminares.
-- **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo).
+- **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo) con indicadores de color.
 - **Métricas en tiempo real:** Recuento de palabras y tiempo de lectura estimado por capítulo y total.
-- **Bloques enriquecidos:** Saltos de escena, saltos de página, citas y títulos decorativos.
+- **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes y más.
+- **Formato de texto:** Negrita, cursiva, subrayado, tachado, superíndice y subíndice.
+- **Búsqueda y reemplazo global:** Vista de contexto con coincidencias resaltadas.
 
-### 🎨 Maquetación Tipográfica de Alto Nivel
+### Maquetación Tipográfica de Alto Nivel
 
 Un panel de control con más de **40 parámetros ajustables** para ver cómo quedará tu libro mientras lo escribes:
 
-- **Tipografía seleccionada:** Spectral, Lora, EB Garamond, Crimson Pro, Inter y Montserrat.
-- **Control absoluto:** Márgenes internos/externos, interlineado, espaciado de párrafos, sangrías y justificación.
-- **Detalles "Pro":** Letras capitulares (drop caps), guionización automática (hyphenation) y decoraciones de escena personalizables.
-- **Paginación Dinámica:** Previsualiza tu obra en formatos estándar (5x8, 6x9, A5, A4) o simulando dispositivos como Kindle o iPhone.
+- **Tipografía:** Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat — y cualquier fuente instalada en tu sistema.
+- **Control absoluto:** Márgenes (interior/exterior/superior/inferior), interlineado, espaciado de párrafos, sangrías, justificación y alineación.
+- **Detalles profesionales:** Letras capitulares (drop caps), guionización automática en 5 idiomas, comillas inteligentes y decoraciones de escena personalizables.
+- **Encabezados y pies:** Texto personalizado, numeración de página con posición configurable.
+- **Paginación dinámica:** Previsualiza en formatos estándar (5×8, 6×9, A5, A4, Carta, A6) o simulando dispositivos Kindle o iPhone.
 
-### 🤝 Flujo Editorial y Revisión
+### Flujo Editorial y Revisión
 
 Diseñado para el trabajo colaborativo entre autores y editores:
 
-- **Notas Marginales:** Comenta fragmentos específicos del texto.
-- **Roles Definidos:** Autor, Editor, Corrector y Editorial.
-- **Hilos de Conversación:** Respuestas anidadas para discutir cambios estilísticos o estructurales.
-- **Control de Estado:** Marca notas como resueltas o no aplicables.
+- **Notas marginales:** Comenta fragmentos específicos del texto con hilos de discusión.
+- **Roles definidos:** Autor, Editor, Corrector y Editorial.
+- **Hilos de conversación:** Respuestas anidadas para discutir cambios estilísticos o estructurales.
+- **Control de estado:** Marca notas como resueltas o no aplicables.
 
-### 📦 Exportación Lista para Publicar
+### Experiencia de Escritura
 
-Genera archivos finales sin necesidad de herramientas externas:
+- **Modo Zen:** Ocultación total de la interfaz (topbar, sidebar y previsualización) para escribir sin distracciones. Acceso vía `F11`.
+- **Tema claro/oscuro:** Alterna entre ambos modos desde el panel lateral.
+- **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
+- **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
+- **Corrección ortográfica:** Integración nativa con el corrector del sistema vía Electron.
 
-- **EPUB 3.0:** Estándar de la industria para distribución digital.
-- **DOCX:** Compatible con editores tradicionales, incluyendo metadatos y notas.
-- **PDF:** Formato de impresión nativo con maquetación y estilos aplicados.
+### Importación y Exportación
+
+- **Importar:** Desde DOCX (con formato) y TXT (texto plano).
+- **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC y tipografía embebida.
+- **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido, tweaks tipográficos aplicados, portada y TOC opcionales.
+- **Exportación PDF:** Formato de impresión nativo vía CSS print con maquetación y estilos aplicados.
+- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas e imágenes.
+
+### Internacionalización
+
+Interfaz disponible en español, inglés, francés e italiano — conmutación en vivo desde el panel lateral.
 
 ---
 
-## 🛠️ Especificaciones Técnicas
+## Especificaciones Técnicas
 
 Libria está construida con las tecnologías más modernas para garantizar fluidez y seguridad:
 
 | Componente | Tecnología |
 | :--- | :--- |
-| **Framework** | [Angular 21](https://angular.dev/) |
+| **Framework** | [Angular 21](https://angular.dev/) (standalone components) |
 | **Gestión de Estado** | [NgRx Signals Store](https://ngrx.io/guide/signals) |
 | **Entorno de Escritorio** | [Electron 42](https://www.electronjs.org/) |
-| **Persistencia** | Formato Open-Source `.libria` (JSON) |
+| **Persistencia** | Formato abierto `.libria` (JSON autocontenido) |
 | **Testing** | [Vitest](https://vitest.dev/) |
-| **Estilos** | SCSS (Sass) |
+| **Estilos** | SCSS (Sass) por componente |
 | **Lenguaje** | TypeScript 5.9 (Modo Estricto) |
+| **Runtime** | [Bun](https://bun.sh/) 1.3.14 |
+| **Dependencias clave** | `docx` (generación DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
+
+### Arquitectura de Datos
+
+El estado de la aplicación se gestiona mediante un **Signals Store** altamente optimizado que incluye:
+
+- **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
+- **Búsqueda Global:** Motor de búsqueda indexado con contexto de coincidencias.
+- **Sistema de Activos:** Imágenes embebidas directamente en el archivo `.libria`.
+- **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización) en LocalStorage.
 
 ---
 
-## 🚀 Para Desarrolladores
+## Para Desarrolladores
 
 ### Requisitos Previos
 
 - **Node.js**: 18.0 o superior
-- **npm**: 11.0 o superior
+- **Bun**: 1.3.14 o superior
 
 ### Instalación y Ejecución
 
@@ -75,27 +101,35 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 git clone https://github.com/gargadon/libria.git
 
 # 2. Instalar dependencias
-npm install
+bun install
 
-# 3. Iniciar en modo desarrollo (Angular + Electron)
-npm run electron:dev
+# 3. Iniciar servidor de desarrollo
+bun run start          # http://localhost:4300
 
-# 4. Construir para producción
-npm run electron:build
+# 4. Iniciar con Electron
+bun run electron:dev   # Servidor + Electron en paralelo
+
+# 5. Construir para producción
+bun run build
+
+# 6. Empaquetar para distribución
+bun run electron:build
 ```
 
-### Arquitectura de Datos
+### Scripts Disponibles
 
-El estado de la aplicación se gestiona mediante un **Signals Store** altamente optimizado que incluye:
-
-- **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
-- **Búsqueda Global:** Motor de búsqueda indexado que muestra contexto antes y después de cada coincidencia.
-- **Sistema de Activos:** Portada y otros recursos embebidos directamente en el archivo `.libria`.
-- **Especificación del Formato:** Consulta [FORMATO_LIBRIA.md](FORMATO_LIBRIA.md) para ver el esquema detallado y el JSON Schema oficial.
+| Script | Descripción |
+| :--- | :--- |
+| `bun run start` | Servidor de desarrollo Angular (puerto 4300) |
+| `bun run dev` | Alias de `start` |
+| `bun run build` | Build de producción |
+| `bun run test` | Ejecutar tests con Vitest |
+| `bun run electron:dev` | Servidor dev + Electron en paralelo |
+| `bun run electron:build` | Build + empaquetado con electron-builder |
 
 ---
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 

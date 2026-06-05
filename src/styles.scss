@@ -407,46 +407,41 @@ app-welcome {
 .tb__bookchip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px 6px 6px;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--paper);
+  gap: 8px;
+  padding: 5px 10px 5px 12px;
+  border-left: 2px solid var(--rule);
+  margin-left: 4px;
   max-width: 380px;
   min-width: 0;
+  cursor: default;
 }
 
-.tb__chipBadge {
-  font-family: var(--display);
-  font-size: 11px;
-  background: var(--ink);
-  color: var(--paper);
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  letter-spacing: .04em;
+.tb__chipBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
 }
 
 .tb__chipT {
   font-family: var(--display);
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
 }
 
 .tb__chipMeta {
-  font-size: 11px;
-  color: var(--ink-mute)
+  font-size: 10.5px;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tb__chipChev {
-  font-size: 10px;
-  color: var(--ink-mute)
-}
+
 
 .tb__nav {
   display: flex;
@@ -1358,6 +1353,31 @@ app-welcome {
 .sb__add:hover {
   border-color: var(--ink-mute);
   color: var(--ink-2)
+}
+
+.sb__action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.sb__action-btn:hover {
+  border-color: var(--ink-mute);
+  color: var(--ink-2);
+  background: var(--paper-2);
+}
+
+.sb__action-btn .material-symbols-outlined {
+  font-size: 16px;
 }
 
 .sb__add-menu {
@@ -2291,11 +2311,32 @@ app-welcome {
 
 .bk-quote {
   margin: 1em 0;
-  padding: 0.5em 1.5em;
-  border-left: 3px solid var(--rule);
+  padding: 0 0 0 1.5em;
+  border-left: 3px solid var(--rule-soft);
   color: var(--ink-soft);
   font-style: italic;
-  outline: none;
+}
+
+.bk-list {
+  margin: 0.4em 0;
+  padding-left: 1.5em;
+}
+
+.bk-list li {
+  margin: 0.15em 0;
+}
+
+.bk-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.4em 0;
+}
+
+.bk-table td {
+  border: 1px solid var(--rule);
+  padding: 6px 8px;
+  min-width: 60px;
+  vertical-align: top;
 }
 
 .bk-page-break {
@@ -3338,6 +3379,31 @@ app-welcome {
   font-weight: 500
 }
 
+.tp__input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  color: var(--ink);
+}
+
+.tp__link {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 6px 0;
+  font-weight: 500;
+}
+
+.tp__link:hover {
+  color: var(--ink-2);
+}
+
 .tp__select {
   background: var(--paper-2);
   border: 1px solid var(--rule-soft);
@@ -3710,4 +3776,32 @@ body.print-digital {
 .kp-image {
   margin: 1.2em 0;
   padding: 0;
+}
+
+.kp-list {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.kp-list li {
+  margin: 0.2em 0;
+}
+
+.kp-table-wrap {
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+
+.kp-table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.kp-table-wrap td,
+.kp-table-wrap th {
+  border: 1px solid var(--rule);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9em;
 }

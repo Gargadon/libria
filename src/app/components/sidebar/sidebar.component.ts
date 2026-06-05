@@ -121,8 +121,8 @@ import { environment } from '../../../environments/environment';
                 <button class="sb__btn-link" (click)="showGoalsEditor.set(false)">{{ 'sidebar.goalsDone' | translate }}</button>
               </div>
             } @else {
-              <button class="sb__btn-link" style="font-size: 11px;" (click)="showGoalsEditor.set(true)">
-                <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">flag</span>
+              <button class="sb__action-btn" (click)="showGoalsEditor.set(true)">
+                <span class="material-symbols-outlined">flag</span>
                 {{ 'sidebar.goalsEdit' | translate }}
               </button>
             }
@@ -137,8 +137,8 @@ import { environment } from '../../../environments/environment';
               }
             </div>
             
-            <button class="sb__btn-link" style="margin-top: 8px; font-size: 11px;" (click)="triggerImport()">
-              <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">publish</span>
+            <button class="sb__action-btn" (click)="triggerImport()">
+              <span class="material-symbols-outlined">publish</span>
               {{ 'sidebar.importFile' | translate }}
             </button>
             <input type="file" #importInput hidden (change)="onImportFile($event)" accept=".docx,.txt">
@@ -162,8 +162,8 @@ import { environment } from '../../../environments/environment';
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
               <select class="sb__select sb__select--font" 
-                      [ngModel]="store.tweaks.bookFont()" 
-                      (ngModelChange)="store.updateTweak('bookFont', $event)">
+                      [value]="store.tweaks.customBookFont() !== null ? '__custom__' : store.tweaks.bookFont()" 
+                      (change)="onBookFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
                   <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
@@ -174,8 +174,15 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
+            @if (store.tweaks.customBookFont() !== null) {
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+                <input class="sb__input" type="text" [ngModel]="store.tweaks.customBookFont()" (ngModelChange)="store.updateTweak('customBookFont', $event)" placeholder="Georgia">
+              </div>
+            }
 
             <div class="sb__section">{{ 'sidebar.paragraph' | translate }}</div>
             <div class="sb__row sb__row--col">
@@ -317,7 +324,7 @@ import { environment } from '../../../environments/environment';
             <div class="sb__section">{{ 'sidebar.titleTypography' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
-              <select class="sb__select sb__select--font" [ngModel]="store.tweaks.titleFont()" (ngModelChange)="store.updateTweak('titleFont', $event)">
+              <select class="sb__select sb__select--font" [value]="store.tweaks.customTitleFont() !== null ? '__custom__' : store.tweaks.titleFont()" (change)="onTitleFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
                   <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
@@ -328,8 +335,15 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
+            @if (store.tweaks.customTitleFont() !== null) {
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+                <input class="sb__input" type="text" [ngModel]="store.tweaks.customTitleFont()" (ngModelChange)="store.updateTweak('customTitleFont', $event)" placeholder="Georgia">
+              </div>
+            }
             <div class="sb__row sb__row--col">
               <div class="sb__label">{{ 'sidebar.titleSize' | translate:{ value: store.tweaks.titleFontSize() } }}</div>
               <input type="range" min="12" max="36" step="0.5" [ngModel]="store.tweaks.titleFontSize()" (ngModelChange)="store.updateTweak('titleFontSize', $event)">
@@ -938,6 +952,24 @@ export class SidebarComponent implements OnInit {
     const config = { ...this.store.personalConfig(), language: lang };
     this.store.setPersonalConfig(config);
     this.translate.use(lang);
+  }
+
+  onBookFontSelect(val: string) {
+    if (val === '__custom__') {
+      this.store.updateTweak('customBookFont', '');
+    } else {
+      this.store.updateTweak('bookFont', val as any);
+      this.store.updateTweak('customBookFont', null);
+    }
+  }
+
+  onTitleFontSelect(val: string) {
+    if (val === '__custom__') {
+      this.store.updateTweak('customTitleFont', '');
+    } else {
+      this.store.updateTweak('titleFont', val as any);
+      this.store.updateTweak('customTitleFont', null);
+    }
   }
 
   @HostListener('document:click')
