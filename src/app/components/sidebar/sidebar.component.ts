@@ -17,9 +17,8 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, InputModalComponent, ConfirmModalComponent],
   template: `
-    <aside class="sb" [class.sb--left]="store.tweaks.sidebar() === 'left'" [class.sb--right]="store.tweaks.sidebar() === 'right'">
-
-      <button class="sb__close" (click)="store.closeSidebar()" [attr.title]="'app.closePanel' | translate">
+    <aside class="sb">
+      <button class="sb__close" (click)="store.closeSidebar()">
         <span class="material-symbols-outlined">close</span>
       </button>
 
@@ -86,9 +85,9 @@ import { environment } from '../../../environments/environment';
                 <div class="sb__row">
                   <div class="sb__label">{{ 'sidebar.chapterStatus' | translate }}</div>
                   <div class="sb__radio">
-                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'ok'" (click)="store.updateChapterMeta(active.id, { status: 'ok' })">{{ 'sidebar.statusOk' | translate }}</button>
-                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'draft' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
-                    <button class="sb__opt" [class.sb__opt--on]="active.status === 'outline'" (click)="store.updateChapterMeta(active.id, { status: 'outline' })">{{ 'sidebar.statusOutline' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-ok" [class.sb__opt--on]="active.status === 'ok'" (click)="store.updateChapterMeta(active.id, { status: 'ok' })">{{ 'sidebar.statusOk' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-draft" [class.sb__opt--on]="active.status === 'draft' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-outline" [class.sb__opt--on]="active.status === 'outline'" (click)="store.updateChapterMeta(active.id, { status: 'outline' })">{{ 'sidebar.statusOutline' | translate }}</button>
                   </div>
                 </div>
               }
@@ -643,6 +642,15 @@ import { environment } from '../../../environments/environment';
               <div class="sb__help">{{ 'sidebar.nameHelp' | translate }}</div>
             </div>
 
+            <div class="sb__section">{{ 'sidebar.appearance' | translate }}</div>
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.theme' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'light'" (click)="store.updateTweak('mode', 'light')">{{ 'sidebar.light' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'dark'" (click)="store.updateTweak('mode', 'dark')">{{ 'sidebar.dark' | translate }}</button>
+              </div>
+            </div>
+
             <div class="sb__section">{{ 'sidebar.layoutLabel' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.sidebarLabel' | translate }}</div>
@@ -929,6 +937,7 @@ export class SidebarComponent implements OnInit {
   setLanguage(lang: string) {
     const config = { ...this.store.personalConfig(), language: lang };
     this.store.setPersonalConfig(config);
+    this.translate.use(lang);
   }
 
   @HostListener('document:click')

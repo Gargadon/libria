@@ -5,7 +5,6 @@ import { Chapter } from '../../models/book.models';
 import { HyphenService } from '../../services/hyphen.service';
 import { ExportService } from '../../services/export.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import * as htmlToImage from 'html-to-image';
 
 @Component({
   selector: 'app-preview',
@@ -55,9 +54,7 @@ import * as htmlToImage from 'html-to-image';
           <button (click)="zoomOut()">－</button>
           <span (click)="resetZoom()" style="cursor:pointer" title="Reiniciar zoom">{{ (printZoom() * 100) | number:'1.0-0' }}%</span>
           <button (click)="zoomIn()">＋</button>
-          <button class="pv__snapshot-btn" (click)="takeSnapshot()" title="Capturar instantánea (PNG)">
-            <span class="material-symbols-outlined">photo_camera</span>
-          </button>
+
         </div>
         
         <div class="pv__zoom" *ngIf="mode() === 'kindle' || mode() === 'iphone'">
@@ -122,7 +119,7 @@ import * as htmlToImage from 'html-to-image';
           </div>
 
           <!-- THE PAPEL (Single Page Preview) -->
-          <div class="print__page" *ngIf="mode() === 'print'" #snapshotPage
+          <div class="print__page" *ngIf="mode() === 'print'"
             [style.transform]="'scale(' + printZoom() + ')'"
             [style.transform-origin]="'top left'"
             [style.padding-top.px]="0"
@@ -306,7 +303,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
-  @ViewChild('snapshotPage', { static: false }) snapshotPageEl?: ElementRef<HTMLElement>;
   @ViewChild('printIframe', { static: false }) printIframeEl?: ElementRef<HTMLIFrameElement>;
 
   private resizeObserver?: ResizeObserver;
@@ -315,40 +311,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   printIframeHtml = signal<SafeHtml>('');
   iframeContentHeight = signal(0);
-
-  isCapturing = signal(false);
-
-  async takeSnapshot() {
-    if (!this.snapshotPageEl) return;
-
-    this.isCapturing.set(true);
-
-    try {
-      const node = this.snapshotPageEl.nativeElement;
-
-      // Capture options
-      const options = {
-        backgroundColor: '#ffffff',
-        width: this.toPixels(this.pageSize().w),
-        height: this.toPixels(this.pageSize().h),
-        style: {
-          transform: 'scale(1)', // Force real size
-          margin: '0',
-          boxShadow: 'none'
-        }
-      };
-
-      const dataUrl = await htmlToImage.toPng(node, options);
-      const link = document.createElement('a');
-      link.download = `Libria_Snapshot_${this.store.book()?.title || 'Book'}_Page_${this.globalPage() + 1}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (error) {
-      console.error('Snapshot failed', error);
-    } finally {
-      this.isCapturing.set(false);
-    }
-  }
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});

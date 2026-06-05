@@ -1,4 +1,5 @@
 <div class="app"
+     [class.app--dark]="store.tweaks.mode() === 'dark'"
      [class.app--sb-right]="store.tweaks.sidebar() === 'right'"
      [class.app--zen]="store.ui.zenMode()"
      [class.font-lora]="store.tweaks.bookFont() === 'lora'"

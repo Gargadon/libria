@@ -409,7 +409,38 @@ export const BookStore = signalStore(
       patchState(store, { isSaving });
     },
     addChapter(kind: ChapterKind = 'chapter') {
-      // ... (existing code)
+      patchState(store, (state) => {
+        const chapters = state.chapters;
+        const lastChapter = [...chapters].reverse().find(c => c.kind === 'chapter');
+        const newChapter: Chapter = {
+          id: 'ch-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+          kind,
+          title: untitledLabel(store.personalConfig().language),
+          words: 0,
+          readMin: 0,
+          number: kind === 'chapter' ? (lastChapter?.number ?? 0) + 1 : undefined,
+          status: 'draft',
+          body: kind === 'chapter'
+            ? [{ type: 'chapter-title', text: untitledLabel(store.personalConfig().language) }, { type: 'p', text: '' }]
+            : [{ type: 'p', text: '' }]
+        };
+        let insertAt = chapters.length;
+        if (kind === 'front') {
+          insertAt = 0;
+        } else if (kind === 'chapter') {
+          const lastFront = [...chapters].reverse().find(c => c.kind === 'front');
+          insertAt = lastFront ? chapters.lastIndexOf(lastFront) + 1 : 0;
+        }
+        return {
+          chapters: [
+            ...chapters.slice(0, insertAt),
+            newChapter,
+            ...chapters.slice(insertAt)
+          ],
+          activeChapterId: newChapter.id,
+          isDirty: true
+        };
+      });
     },
     addChapters(newChapters: Chapter[]) {
       patchState(store, (state) => ({

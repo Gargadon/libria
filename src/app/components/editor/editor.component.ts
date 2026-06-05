@@ -33,14 +33,14 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
             <span class="ed__current">{{ chapter.title }}</span>
           </div>
           <div class="ed__tools">
-            <button class="ed__t" [attr.title]="'editor.italic' | translate" (click)="execCommand('italic')">𝐼</button>
-            <button class="ed__t" [attr.title]="'editor.bold' | translate" (click)="execCommand('bold')"><b>B</b></button>
-            <button class="ed__t" [attr.title]="'editor.underline' | translate" (click)="execCommand('underline')"><u>U</u></button>
+            <button class="ed__t" [attr.title]="'editor.italic' | translate" (click)="execCommand('italic')"><span class="material-symbols-outlined">format_italic</span></button>
+            <button class="ed__t" [attr.title]="'editor.bold' | translate" (click)="execCommand('bold')"><span class="material-symbols-outlined">format_bold</span></button>
+            <button class="ed__t" [attr.title]="'editor.underline' | translate" (click)="execCommand('underline')"><span class="material-symbols-outlined">format_underlined</span></button>
             <span class="ed__tsep"></span>
-            <button class="ed__t ed__t--wide" [attr.title]="'editor.sceneBreak' | translate" (click)="insertSceneBreak()">✦ ✦ ✦</button>
-            <button class="ed__t" [attr.title]="'editor.pageBreak' | translate" (click)="insertPageBreak()"><span class="material-symbols-outlined" style="font-size:16px;line-height:1">insert_page_break</span></button>
-            <button class="ed__t" [attr.title]="'editor.blockQuote' | translate" (click)="toggleQuote()">❝</button>
-            <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined" style="font-size:16px;line-height:1">add_photo_alternate</span></button>
+            <button class="ed__t ed__t--wide" [attr.title]="'editor.sceneBreak' | translate" (click)="insertSceneBreak()"><span class="material-symbols-outlined">horizontal_rule</span></button>
+            <button class="ed__t" [attr.title]="'editor.pageBreak' | translate" (click)="insertPageBreak()"><span class="material-symbols-outlined">insert_page_break</span></button>
+            <button class="ed__t" [attr.title]="'editor.blockQuote' | translate" (click)="toggleQuote()"><span class="material-symbols-outlined">format_quote</span></button>
+            <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined">add_photo_alternate</span></button>
             <span class="ed__tsep"></span>
             <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
               <i class="ed__statusDot" [class]="'ed__statusDot--' + status()"></i> {{ statusLabel() }}
@@ -517,8 +517,8 @@ export class EditorComponent {
         const isOpening = offset === 0 || /\s|[([<{¡¿]/.test(prevChar);
 
         const lang = this.store.domLang();
-        const quote = lang === 'es' 
-          ? (isOpening ? '«' : '»') 
+        const quote = lang === 'es'
+          ? (isOpening ? '«' : '»')
           : (isOpening ? '“' : '”');
 
         document.execCommand('insertText', false, quote);
@@ -561,13 +561,13 @@ export class EditorComponent {
           this.onInput(chapterId, blockIndex, event);
           return;
         }
-        
+
         // 2. Hyphen at start of paragraph to em-dash (Spanish dialogue style)
         if (this.store.tweaks.smartDashes() && offset === 0 && this.store.domLang() === 'es') {
-           event.preventDefault();
-           document.execCommand('insertText', false, '—');
-           this.onInput(chapterId, blockIndex, event);
-           return;
+          event.preventDefault();
+          document.execCommand('insertText', false, '—');
+          this.onInput(chapterId, blockIndex, event);
+          return;
         }
         break;
       }

@@ -14,10 +14,10 @@ import { environment } from '../../../environments/environment';
       <div class="tb__left">
         <div class="tb__logo">
           <svg viewBox="0 0 28 28" width="22" height="22">
-            <rect x="2" y="2" width="24" height="24" rx="4" fill="#1a1612"/>
-            <path d="M14 6l4.5 7-1 7.5-3.5 2.5-3.5-2.5-1-7.5z" fill="none" stroke="#f5efe4" stroke-width="1.2" stroke-linejoin="round"/>
-            <path d="M14 14.5v7" fill="none" stroke="#f5efe4" stroke-width="1.2" stroke-linecap="round"/>
-            <circle cx="14" cy="13.5" r="1.2" fill="#f5efe4"/>
+            <rect x="2" y="2" width="24" height="24" rx="4" class="logo-bg"/>
+            <path d="M14 6l4.5 7-1 7.5-3.5 2.5-3.5-2.5-1-7.5z" fill="none" stroke-width="1.2" stroke-linejoin="round" class="logo-fg"/>
+            <path d="M14 14.5v7" fill="none" stroke-width="1.2" stroke-linecap="round" class="logo-fg"/>
+            <circle cx="14" cy="13.5" r="1.2" class="logo-fg"/>
           </svg>
         </div>
         <div class="tb__brand">
