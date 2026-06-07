@@ -13,12 +13,7 @@ import { environment } from '../../../environments/environment';
     <div class="welcome">
       <div class="welcome__card">
         <div class="welcome__logo">
-          <svg viewBox="0 0 28 28" width="64" height="64">
-            <rect x="2" y="2" width="24" height="24" rx="4" class="logo-bg"/>
-            <path d="M14 6l4.5 7-1 7.5-3.5 2.5-3.5-2.5-1-7.5z" fill="none" stroke-width="1.2" stroke-linejoin="round" class="logo-fg"/>
-            <path d="M14 14.5v7" fill="none" stroke-width="1.2" stroke-linecap="round" class="logo-fg"/>
-            <circle cx="14" cy="13.5" r="1.2" class="logo-fg"/>
-          </svg>
+          <img src="libria.svg" alt="Libria" class="app-logo">
         </div>
         <h1 class="welcome__title">Libria</h1>
         <p class="welcome__tagline">{{ 'welcome.tagline' | translate }}</p>
@@ -42,7 +37,7 @@ import { environment } from '../../../environments/environment';
         </div>
         
         <div class="welcome__footer">
-          {{ 'welcome.version' | translate:{ version: version } }}
+          {{ 'welcome.version' | translate:{ version: version } }} - {{edition}} Edition
         </div>
       </div>
     </div>
@@ -54,8 +49,8 @@ import { environment } from '../../../environments/environment';
       justify-content: center;
       width: 100%;
       height: 100%;
-      background: var(--bg-paper, #f9f7f2);
-      color: #333;
+      background: var(--paper);
+      color: var(--ink);
     }
     .welcome__card {
       max-width: 500px;
@@ -77,7 +72,7 @@ import { environment } from '../../../environments/environment';
     }
     .welcome__tagline {
       font-size: 1.1rem;
-      color: #666;
+      color: var(--ink-soft);
       margin-bottom: 3rem;
     }
     .welcome__actions {
@@ -90,26 +85,26 @@ import { environment } from '../../../environments/environment';
       align-items: center;
       gap: 1.5rem;
       padding: 1.5rem;
-      border: 1px solid #ddd;
+      border: 1px solid var(--rule);
       border-radius: 8px;
-      background: white;
+      background: var(--paper-2);
       cursor: pointer;
       text-align: left;
       transition: all 0.2s ease;
     }
     .welcome__btn:hover {
-      border-color: #999;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-color: var(--ink-mute);
+      box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
     .welcome__btn--primary {
-      background: #333;
-      color: white;
-      border-color: #333;
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
     }
     .welcome__btn--primary:hover {
-      background: #000;
-      border-color: #000;
+      background: var(--ink-2);
+      border-color: var(--ink-2);
     }
     .welcome__btn-icon {
       font-size: 1.5rem;
@@ -128,7 +123,7 @@ import { environment } from '../../../environments/environment';
     .welcome__footer {
       margin-top: 4rem;
       font-size: 0.8rem;
-      color: #999;
+      color: var(--ink-mute);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -138,4 +133,5 @@ export class WelcomeComponent {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
   readonly version = environment.version;
+  readonly edition = environment.edition;
 }

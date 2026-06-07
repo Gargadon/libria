@@ -1,6 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals } from '../models/book.models';
+import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { environment } from '../../environments/environment';
@@ -18,7 +18,9 @@ export interface BookState {
   ui: {
     showStyles: boolean;
     showTweaks: boolean;
+    showSpellCheck: boolean;
     sidebarOpen: boolean;
+    previewOpen: boolean;
     zenMode: boolean;
     activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings';
   };
@@ -59,7 +61,7 @@ const initialState: BookState = {
     showPageNumbers: true,
     showHeader: true,
     headerText: '',
-    sceneBreakType: 'asterisks',
+    sceneBreakType: 'asterisks3',
     titleAlignment: 'center',
     titleFontSize: 16,
     titleFont: 'spectral',
@@ -83,7 +85,9 @@ const initialState: BookState = {
   ui: {
     showStyles: false,
     showTweaks: false,
+    showSpellCheck: false,
     sidebarOpen: true,
+    previewOpen: true,
     zenMode: false,
     activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
   },
@@ -95,7 +99,7 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' },
+  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es', mode: 'light' },
   isSaving: false,
   writingGoals: { targetWords: 0, deadline: '' }
 };
@@ -319,6 +323,12 @@ export const BookStore = signalStore(
     toggleZenMode() {
       patchState(store, (state) => ({ ui: { ...state.ui, zenMode: !state.ui.zenMode } }));
     },
+    toggleSpellCheckPanel() {
+      patchState(store, (state) => ({ ui: { ...state.ui, showSpellCheck: !state.ui.showSpellCheck } }));
+    },
+    togglePreview() {
+      patchState(store, (state) => ({ ui: { ...state.ui, previewOpen: !state.ui.previewOpen } }));
+    },
     updateUi(ui: Partial<BookState['ui']>) {
       patchState(store, (state) => ({
         ui: { ...state.ui, ...ui }
@@ -365,6 +375,38 @@ export const BookStore = signalStore(
     deleteNote(noteId: string) {
       patchState(store, (state) => ({
         notes: state.notes.filter(n => n.id !== noteId),
+        isDirty: true
+      }));
+    },
+    addFootnote(chapterId: string, blockIndex: number, footnoteId: string, content: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: [...(c.footnotes || []), { id: footnoteId, blockIndex, content }] }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    updateFootnote(chapterId: string, footnoteId: string, content: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: (c.footnotes || []).map((fn) =>
+                fn.id === footnoteId ? { ...fn, content } : fn
+              )}
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    deleteFootnote(chapterId: string, footnoteId: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: (c.footnotes || []).filter((fn) => fn.id !== footnoteId) }
+            : c
+        ),
         isDirty: true
       }));
     },
@@ -642,6 +684,12 @@ export const BookStore = signalStore(
         tweaks: { ...state.tweaks, [key]: value }
       }));
     },
+    setThemeMode(mode: 'light' | 'dark') {
+      patchState(store, (state) => ({
+        tweaks: { ...state.tweaks, mode },
+        personalConfig: { ...state.personalConfig, mode }
+      }));
+    },
     updateExportPrefs(prefs: Partial<BookState['exportPrefs']>) {
       patchState(store, (state) => ({
         exportPrefs: { ...state.exportPrefs, ...prefs }
@@ -735,6 +783,12 @@ export const BookStore = signalStore(
       // Load initial personal config
       const saved = personalConfigService.load();
       patchState(store, { personalConfig: saved });
+
+      // Apply saved theme mode (personal preference overrides book setting)
+      const tweaks = store.tweaks();
+      if (saved.mode && saved.mode !== tweaks.mode) {
+        patchState(store, { tweaks: { ...tweaks, mode: saved.mode } });
+      }
 
       // Effect to save personal config whenever it changes
       effect(() => {

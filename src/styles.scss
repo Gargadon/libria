@@ -16,6 +16,8 @@
   --role-editor: #5a7a5a;
   --role-corrector: #b8983e;
   --role-publisher: #8a8a8a;
+  --terra: #b87333;
+  --terra-2: #9a5a2a;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 0 rgba(0,0,0,.02);
   --shadow-md: 0 1px 0 rgba(0,0,0,.03), 0 8px 24px -12px rgba(0,0,0,.1);
@@ -42,6 +44,8 @@
   --role-editor: #7a9a7a;
   --role-corrector: #d4b060;
   --role-publisher: #808080;
+  --terra: #d4945a;
+  --terra-2: #b87a3e;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.2), 0 1px 0 rgba(0,0,0,.15);
   --shadow-md: 0 1px 0 rgba(0,0,0,.15), 0 8px 24px -12px rgba(0,0,0,.4);
@@ -225,6 +229,24 @@ button {
   pointer-events: none;
 }
 
+/* Preview closed: collapse resizer + preview to 0 */
+.app--pv-closed .layout {
+  grid-template-columns: 300px minmax(0, 1fr) 0 0 !important;
+}
+
+.app--pv-closed.app--sb-right .layout {
+  grid-template-columns: minmax(0, 1fr) 0 0 300px !important;
+}
+
+.app--pv-closed .resizer {
+  display: none;
+}
+
+.app--pv-closed .layout__pv {
+  overflow: hidden;
+  pointer-events: none;
+}
+
 /* Component hosts must be constrained */
 app-sidebar,
 app-editor,
@@ -266,9 +288,12 @@ app-welcome {
   flex-shrink: 0;
 }
 
-/* Logo SVG — light/dark aware */
-.logo-bg { fill: var(--ink); }
-.logo-fg { fill: var(--paper); stroke: var(--paper); }
+/* Logo */
+.app-logo { display: block; }
+.app--dark .app-logo { filter: invert(1); }
+.tb__logo .app-logo { width: 22px; height: 22px; }
+.welcome__logo .app-logo { width: 64px; height: 64px; }
+.about__logo .app-logo { width: 48px; height: 48px; }
 
 /* ===== Topbar ===== */
 .tb {
@@ -307,6 +332,7 @@ app-welcome {
   font-family: var(--display);
   font-size: 18px;
   letter-spacing: .01em;
+  color: var(--ink);
 }
 
 .tb__brandV {
@@ -609,6 +635,7 @@ app-welcome {
   letter-spacing: -.005em;
   margin-bottom: 4px;
   text-wrap: balance;
+  color: var(--ink);
 }
 
 .sb__author {
@@ -635,6 +662,7 @@ app-welcome {
   font-family: var(--display);
   font-size: 18px;
   letter-spacing: -.005em;
+  color: var(--ink);
 }
 
 .sb__statN span {
@@ -1590,6 +1618,11 @@ app-welcome {
   color: var(--ink);
 }
 
+.ed__t--on {
+  background: var(--accent-soft, rgba(0,0,0,.06));
+  color: var(--accent);
+}
+
 .ed__t--wide {
   width: auto;
   padding: 0 8px;
@@ -2185,6 +2218,58 @@ app-welcome {
   background: var(--rule)
 }
 
+.ed__fnpanel {
+  border-top: 1px solid var(--rule);
+  padding: 12px 16px;
+  background: var(--paper);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.ed__fnpanel-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+.ed__fnpanel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.ed__fnpanel-num {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  min-width: 20px;
+  line-height: 1.4;
+}
+.ed__fnpanel-input {
+  flex: 1;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 4px 6px;
+  resize: vertical;
+  min-height: 28px;
+  background: var(--bg);
+  color: var(--ink);
+}
+.ed__fnpanel-del {
+  background: none;
+  border: none;
+  color: var(--ink-mute);
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+}
+.ed__fnpanel-del:hover {
+  color: var(--terra);
+}
+
 /* ===== Book typography (editor canvas) ===== */
 .bk-halftitle {
   font-family: var(--display);
@@ -2674,8 +2759,6 @@ app-welcome {
   --pw: 5in;
   --ph: 8in;
   width: var(--pw);
-  zoom: 0.75;
-  /* Zoom out to see the whole page on screen */
 }
 
 .print__page {
@@ -2690,6 +2773,7 @@ app-welcome {
   padding: 40px 48px;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
   container-type: size;
   --page-gap: 48px;
 }
@@ -2751,8 +2835,13 @@ app-welcome {
   }
 }
 
+.print__header, .print__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .print__header {
-  text-align: center;
   font-size: 9px;
   color: #555;
   margin-bottom: 20px;
@@ -2760,12 +2849,36 @@ app-welcome {
   font-family: var(--serif);
 }
 
-.print__footer {
+.print__header.print__header--edge-even {
+  justify-content: flex-start;
+}
+
+.print__header.print__header--edge-odd {
+  justify-content: flex-end;
+}
+
+.print__header .print__hdr-text {
+  flex: 1 1 auto;
   text-align: center;
+}
+
+.print__header .print__hdr-pagenum {
+  flex: 0 0 auto;
+}
+
+.print__footer {
   font-size: 10px;
   color: #000;
   margin-top: 20px;
   font-family: var(--serif);
+}
+
+.print__footer.print__footer--edge-even {
+  justify-content: flex-start;
+}
+
+.print__footer.print__footer--edge-odd {
+  justify-content: flex-end;
 }
 
 /* Print preview inner content area (replaces nested print__page in paginatedTpl) */
@@ -2934,6 +3047,32 @@ app-welcome {
   margin-left: 16px;
   font-size: 12px;
   opacity: 0.8;
+}
+
+.kp-fnpanel {
+  margin-top: 30px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  break-before: auto;
+}
+.kp-fnpanel-rule {
+  border: 0;
+  border-top: 1px solid var(--rule-soft);
+  margin-bottom: 12px;
+}
+.kp-fnpanel-item {
+  margin-bottom: 8px;
+  line-height: 1.4;
+  display: flex;
+  gap: 4px;
+}
+.kp-fnpanel-num {
+  font-weight: 600;
+  min-width: 18px;
+  flex-shrink: 0;
+}
+.kp-fnpanel-text {
+  flex: 1;
 }
 
 .kp-chnum {
@@ -3143,7 +3282,8 @@ app-welcome {
   letter-spacing: -.005em;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis
+  text-overflow: ellipsis;
+  color: var(--ink);
 }
 
 .pv__mL {
@@ -3804,4 +3944,204 @@ body.print-digital {
   text-align: left;
   vertical-align: top;
   font-size: 0.9em;
+}
+
+/* ===== Spell Check Panel ===== */
+.scp {
+  position: fixed;
+  bottom: 48px;
+  right: 24px;
+  width: 320px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scp__h {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.scp__title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .02em
+}
+
+.scp__close {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  border-radius: 6px;
+}
+
+.scp__close:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.scp__body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scp__status {
+  text-align: center;
+  padding: 24px 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.scp__status--error {
+  color: var(--accent);
+}
+
+.scp__status--ok {
+  color: var(--green, #2ecc71);
+}
+
+.scp__counter {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-mute);
+}
+
+.scp__word {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.scp__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.scp__sug {
+  padding: 6px 14px;
+  font-size: 13px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background .15s, border-color .15s;
+}
+
+.scp__sug:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.scp__nosug {
+  font-size: 12px;
+  color: var(--ink-mute);
+  text-align: center;
+}
+
+.scp__context {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  padding: 8px 10px;
+  background: var(--paper-2);
+  border-radius: 8px;
+  border: 1px solid var(--rule-soft);
+  word-break: break-word;
+}
+
+.scp__hl {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.scp__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scp__btn {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 500;
+  transition: background .15s;
+}
+
+.scp__btn:hover {
+  background: var(--paper);
+  border-color: var(--rule);
+}
+
+.scp__btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.scp__btn--primary:hover {
+  opacity: .85;
+}
+
+.scp__nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scp__nav-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background .15s;
+}
+
+.scp__nav-btn:hover:not(:disabled) {
+  background: var(--paper);
+}
+
+.scp__nav-btn:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+/* ── Spell error underline in editor ── */
+.spell-err {
+  text-decoration: red wavy underline;
+  text-underline-position: under;
+}
+.app--dark .spell-err {
+  text-decoration: #ff6b6b wavy underline;
 }

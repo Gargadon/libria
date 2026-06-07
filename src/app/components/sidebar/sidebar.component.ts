@@ -369,6 +369,7 @@ import { environment } from '../../../environments/environment';
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.sceneBreak' | translate }}</div>
               <select class="sb__select" [ngModel]="store.tweaks.sceneBreakType()" (ngModelChange)="store.updateTweak('sceneBreakType', $event)">
+                <option value="asterisks3">* * *</option>
                 <option value="asterisks">✦ ✦ ✦</option>
                 <option value="dots">· · ·</option>
                 <option value="flourish">~ o ~</option>
@@ -660,8 +661,8 @@ import { environment } from '../../../environments/environment';
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.theme' | translate }}</div>
               <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'light'" (click)="store.updateTweak('mode', 'light')">{{ 'sidebar.light' | translate }}</button>
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'dark'" (click)="store.updateTweak('mode', 'dark')">{{ 'sidebar.dark' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'light'" (click)="store.setThemeMode('light')">{{ 'sidebar.light' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'dark'" (click)="store.setThemeMode('dark')">{{ 'sidebar.dark' | translate }}</button>
               </div>
             </div>
 

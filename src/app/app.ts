@@ -10,6 +10,7 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { PreviewComponent } from './components/preview/preview.component';
 import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.component';
+import { SpellCheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
 
@@ -24,6 +25,7 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
     EditorComponent,
     PreviewComponent,
     TweaksPanelComponent,
+    SpellCheckPanelComponent,
     WelcomeComponent,
     AboutModalComponent,
   ],
@@ -47,6 +49,10 @@ export class App {
     }
     if (event.key === 'Escape' && this.store.ui.zenMode()) {
       this.store.toggleZenMode();
+    }
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      if (this.store.book()) this.store.togglePreview();
     }
   }
 

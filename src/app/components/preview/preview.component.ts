@@ -1,7 +1,7 @@
 import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
-import { Chapter } from '../../models/book.models';
+import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
 import { HyphenService } from '../../services/hyphen.service';
 import { ExportService } from '../../services/export.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -26,19 +26,35 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
             [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            @if (store.tweaks.showHeader()) {
-              <div class="print__header">
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+            @let showHdr = store.tweaks.showHeader();
+            @let showPN = store.tweaks.showPageNumbers();
+            @let pnp = store.tweaks.pageNumberPosition();
+            @let isEven = isChapterEven(idx);
+            @if (showHdr || (showPN && pnp === 'top-edges')) {
+              <div class="print__header"
+                [class.print__header--edge-even]="showPN && pnp === 'top-edges' && isEven"
+                [class.print__header--edge-odd]="showPN && pnp === 'top-edges' && !isEven">
+                @if (showPN && pnp === 'top-edges') {
+                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                }
+                @if (showHdr) {
+                  <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
+                }
+                @if (showPN && pnp === 'top-edges' && !isEven) {
+                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                }
               </div>
             }
             <div class="print__content">
                 <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: ptToPx(store.tweaks.fontSize()) }"></ng-container>
             </div>
-            <div class="print__footer">
-              @if (store.tweaks.showPageNumbers()) {
+            @if (showPN && pnp !== 'top-edges') {
+              <div class="print__footer"
+                [class.print__footer--edge-even]="pnp === 'bottom-edges' && isEven"
+                [class.print__footer--edge-odd]="pnp === 'bottom-edges' && !isEven">
                 <span>Pág. {{ chapterStartPage(idx) }}</span>
-              }
-            </div>
+              </div>
+            }
           </div>
         }
       </div>
@@ -64,7 +80,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
         </div>
       </div>
 
-      <div class="pv__stage" #pvStage [style.align-items]="mode() === 'print' ? 'flex-start' : 'center'">
+      <div class="pv__stage" #pvStage [style.align-items]="'center'">
         <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
         <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
@@ -127,13 +143,27 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
             [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
 
-            <div class="print__header"
-              [style.height.mm]="store.tweaks.marginTop()"
-              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-              @if (store.tweaks.showHeader()) {
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-              }
-            </div>
+            @let showHdr2 = store.tweaks.showHeader();
+            @let showPN2 = store.tweaks.showPageNumbers();
+            @let pnp2 = store.tweaks.pageNumberPosition();
+            @let isEven2 = isEvenPage();
+            @if (showHdr2 || (showPN2 && pnp2 === 'top-edges')) {
+              <div class="print__header"
+                [style.height.mm]="store.tweaks.marginTop()"
+                [class.print__header--edge-even]="showPN2 && pnp2 === 'top-edges' && isEven2"
+                [class.print__header--edge-odd]="showPN2 && pnp2 === 'top-edges' && !isEven2"
+                style="margin:0;flex-shrink:0;">
+                @if (showPN2 && pnp2 === 'top-edges') {
+                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
+                }
+                @if (showHdr2) {
+                  <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
+                }
+                @if (showPN2 && pnp2 === 'top-edges' && !isEven2) {
+                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
+                }
+              </div>
+            }
 
             <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
               <iframe #printIframe
@@ -144,13 +174,15 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               ></iframe>
             </div>
 
-            <div class="print__footer"
-              [style.height.mm]="store.tweaks.marginBottom()"
-              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-              @if (store.tweaks.showPageNumbers()) {
+            @if (showPN2 && pnp2 !== 'top-edges') {
+              <div class="print__footer"
+                [style.height.mm]="store.tweaks.marginBottom()"
+                [class.print__footer--edge-even]="pnp2 === 'bottom-edges' && isEven2"
+                [class.print__footer--edge-odd]="pnp2 === 'bottom-edges' && !isEven2"
+                style="margin:0;flex-shrink:0;">
                 <span>{{ globalPage() + 1 }}</span>
-              }
-            </div>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -290,6 +322,18 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               </div>
             }
           }
+          @let fns = sortFootnotesByPosition(chapter.footnotes, chapter.body);
+          @if (fns.length) {
+            <div class="kp-fnpanel">
+              <hr class="kp-fnpanel-rule">
+              @for (fn of fns; track fn.id; let fi = $index) {
+                <div class="kp-fnpanel-item">
+                  <span class="kp-fnpanel-num">{{ fi + 1 }}.</span>
+                  <span class="kp-fnpanel-text">{{ fn.content }}</span>
+                </div>
+              }
+            </div>
+          }
         </div>
       </ng-template>
 
@@ -309,6 +353,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly exportService = inject(ExportService);
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
+  readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
@@ -478,7 +523,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.resizeObserver = new ResizeObserver(() => {
       this.scheduleMeasure();
-      if (this.mode() === 'print') this.autoZoom();
     });
 
     if (this.kpFlowEl) {
@@ -620,7 +664,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   readonly sceneBreakGlyph = computed(() => {
     const t = this.store.tweaks.sceneBreakType();
-    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
+    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'asterisks3' ? '* * *' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
   });
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }

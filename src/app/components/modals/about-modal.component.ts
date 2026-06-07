@@ -16,16 +16,11 @@ import { environment } from '../../../environments/environment';
 
         <div class="about__body">
           <div class="about__logo">
-            <svg viewBox="0 0 28 28" width="48" height="48">
-              <rect x="2" y="2" width="24" height="24" rx="4" class="logo-bg"/>
-              <path d="M14 6l4.5 7-1 7.5-3.5 2.5-3.5-2.5-1-7.5z" fill="none" stroke-width="1.2" stroke-linejoin="round" class="logo-fg"/>
-              <path d="M14 14.5v7" fill="none" stroke-width="1.2" stroke-linecap="round" class="logo-fg"/>
-              <circle cx="14" cy="13.5" r="1.2" class="logo-fg"/>
-            </svg>
+            <img src="libria.svg" alt="Libria" class="app-logo">
           </div>
 
           <h1 class="about__name">Libria</h1>
-          <p class="about__edition">{{ 'about.edition' | translate }}</p>
+           <p class="about__edition">{{ editionName }}</p>
 
           <div class="about__rule"></div>
 
@@ -227,4 +222,5 @@ export class AboutModalComponent {
   
   readonly arch = (window as any).electronAPI?.arch ?? 'unknown';
   readonly environment = environment;
+  readonly editionName = `${environment.edition} Edition`;
 }

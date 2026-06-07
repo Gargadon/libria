@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.1.0",
+  "libriaVersion": "1.2.0",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -53,7 +53,7 @@
     "smartOpeningSigns": true
   },
   "session": {
-    "lastActiveChapterId": "ch-1"
+    "lastActiveChapterId": "ch-mp21ix4k"
   },
   "chapters": [
     {

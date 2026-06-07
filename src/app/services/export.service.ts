@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
+import { sortFootnotesByPosition } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import JSZip from 'jszip';
 import {
@@ -104,6 +105,10 @@ p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .kp-table-wrap { overflow-x: auto; margin: 1em 0; }
 .kp-table-wrap table { border-collapse: collapse; width: 100%; }
 .kp-table-wrap td, .kp-table-wrap th { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+.kp-fnpanel { margin-top: 2em; font-size: 0.85em; color: #555; }
+.kp-fnpanel-rule { border: 0; border-top: 1px solid #ccc; margin-bottom: 0.8em; }
+.kp-fnpanel-item { margin-bottom: 0.4em; line-height: 1.4; }
+.kp-fnpanel-num { font-weight: bold; }
 ${dropCapStyles}`);
 
     let navLinks = '';
@@ -125,7 +130,7 @@ ${dropCapStyles}`);
           case 'first-p':       content += `<p class="first-p">${raw}</p>`; break;
           case 'p':             content += `<p>${raw}</p>`; break;
           case 'blockquote':    content += `<blockquote>${raw}</blockquote>`; break;
-          case 'scene-break':   content += `<p style="text-align:center;margin:1em 0;color:#888">* * *</p>`; break;
+          case 'scene-break':   content += `<p style="text-align:center;margin:1em 0;color:#888">${this.sceneGlyphText(tweaks.sceneBreakType) || '* * *'}</p>`; break;
           case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
           case 'image': {
             if (b.src && assets[b.src]) {
@@ -138,6 +143,15 @@ ${dropCapStyles}`);
           case 'table':          content += `<div class="kp-table-wrap">${raw}</div>`; break;
         }
       });
+      const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
+      if (sortedFns.length) {
+        content += `<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`;
+        sortedFns.forEach((fn: any, fi: number) => {
+          const fnText = this.escapeHtml(fn.content || '');
+          content += `<div class="kp-fnpanel-item"><span class="kp-fnpanel-num">${fi + 1}.</span> <span class="kp-fnpanel-text">${fnText}</span></div>`;
+        });
+        content += `</div>`;
+      }
       zip.file(`OEBPS/chapters/${c.id}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
 <body>${content}</body></html>`);
@@ -179,12 +193,34 @@ ${dropCapStyles}`);
 
     if (t.showHeader || t.showPageNumbers) {
       pdfOptions['displayHeaderFooter'] = true;
-      pdfOptions['headerTemplate'] = t.showHeader
-        ? `<div style="font-size:9pt;font-style:italic;width:100%;height:${t.marginTop}mm;display:flex;align-items:center;justify-content:center;font-family:serif;color:#555;padding:0 1cm;">${this.escapeHtml(t.headerText || book.title)}</div>`
-        : '<div></div>';
-      pdfOptions['footerTemplate'] = t.showPageNumbers
-        ? `<div style="font-size:9pt;width:100%;height:${t.marginBottom}mm;display:flex;align-items:center;justify-content:center;font-family:serif;padding:0 1cm;"><span class="pageNumber"></span></div>`
-        : '<div></div>';
+      const showHdr = t.showHeader;
+      const showPN = t.showPageNumbers;
+      const pnp = t.pageNumberPosition;
+      const esc = (s: string) => this.escapeHtml(s);
+      if (showHdr || (showPN && pnp === 'top-edges')) {
+        const parts: string[] = [];
+        if (showPN && pnp === 'top-edges') {
+          parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
+        }
+        if (showHdr) {
+          parts.push(`<span style="flex:1;text-align:center;font-style:italic;">${esc(t.headerText || book.title)}</span>`);
+        }
+        if (showPN && pnp === 'top-edges') {
+          parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
+        }
+        pdfOptions['headerTemplate'] =
+          `<div style="font-size:9pt;font-family:serif;color:#555;padding:0 1cm;width:100%;height:${t.marginTop}mm;display:flex;align-items:center;justify-content:center;">${parts.join('')}</div>`;
+      } else {
+        pdfOptions['headerTemplate'] = '<div></div>';
+      }
+      if (showPN && pnp !== 'top-edges') {
+        const justify = pnp === 'bottom-edges' ? 'space-between' : 'center';
+        pdfOptions['footerTemplate'] =
+          `<div style="font-size:9pt;font-family:serif;padding:0 1cm;width:100%;height:${t.marginBottom}mm;display:flex;align-items:center;justify-content:${justify};">
+            <span class="pageNumber"></span>${pnp === 'bottom-edges' ? '<span class="pageNumber"></span>' : ''}</div>`;
+      } else {
+        pdfOptions['footerTemplate'] = '<div></div>';
+      }
     }
 
     try {
@@ -230,11 +266,12 @@ ${dropCapStyles}`);
     // Fonts are injected by the main process from public/fonts.css (local WOFF2).
     const sceneGlyph: Record<string, string> = {
       asterisks: '✦ ✦ ✦',
+      asterisks3: '* * *',
       dots: '· · ·',
       flourish: '— o —',
       none: '',
     };
-    const brk = sceneGlyph[t.sceneBreakType] ?? '✦ ✦ ✦';
+    const brk = sceneGlyph[t.sceneBreakType] ?? '* * *';
 
     const pGap   = `${(t.paragraphSpacing / t.fontSize).toFixed(3)}em`;
     const indent = t.indentFirstLine ? `${t.indentSize}cm` : '0';
@@ -267,7 +304,8 @@ html::-webkit-scrollbar { display: none; }
   column-width: 100vw;
   column-gap: 0;
   overflow: visible;
-}` : '';
+}
+.kp-quote { margin-left: 0.5px; }` : '';
 
     const css = `
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -463,6 +501,30 @@ ${t.dropCap ? `
   vertical-align: top;
   font-size: 0.9em;
 }
+.kp-fnpanel {
+  margin-top: 30px;
+  font-size: 11pt;
+  color: #555;
+}
+.kp-fnpanel-rule {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin-bottom: 12px;
+}
+.kp-fnpanel-item {
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: flex;
+  gap: 4px;
+}
+.kp-fnpanel-num {
+  font-weight: 600;
+  min-width: 18px;
+  flex-shrink: 0;
+}
+.kp-fnpanel-text {
+  flex: 1;
+}
 `;
 
     const chaptersHtml = chapters.map((ch: any, idx: number) => {
@@ -507,7 +569,17 @@ ${t.dropCap ? `
         }
       }).join('\n');
 
-      return `<div class="${cls}" data-id="${ch.id}">\n${body}\n</div>`;
+      let fnHtml = '';
+      const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
+      if (fnsSorted.length) {
+        fnHtml = `<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`;
+        fnsSorted.forEach((fn: any, fi: number) => {
+          const fnText = this.escapeHtml(fn.content || '');
+          fnHtml += `<div class="kp-fnpanel-item"><span class="kp-fnpanel-num">${fi + 1}.</span> <span class="kp-fnpanel-text">${fnText}</span></div>`;
+        });
+        fnHtml += `</div>`;
+      }
+      return `<div class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
     }).join('\n\n');
 
     let fontTags = '';
@@ -707,6 +779,29 @@ ${bodyContent}
           }
         }
       }
+      const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
+      if (fnsSorted.length) {
+        children.push(new Paragraph({
+          alignment: 'left',
+          spacing: { before: 400, after: 100 },
+          children: [new TextRun({ text: 'Notas', font: bodyFont, size: fs, bold: true })],
+        }));
+        children.push(new Paragraph({
+          alignment: 'left',
+          spacing: { before: 0, after: 200 },
+          children: [new TextRun({ text: '————————————————', font: bodyFont, size: fs })],
+        }));
+        fnsSorted.forEach((fn: any, fi: number) => {
+          children.push(new Paragraph({
+            alignment: 'left',
+            spacing: { before: 40, after: 40 },
+            children: [
+              new TextRun({ text: `${fi + 1}. `, font: bodyFont, size: Math.round(fs * 0.85), superScript: true }),
+              new TextRun({ text: fn.content || '', font: bodyFont, size: Math.round(fs * 0.85) }),
+            ],
+          }));
+        });
+      }
     }
 
     const doc = new Document({
@@ -740,11 +835,12 @@ ${bodyContent}
   private sceneGlyphText(type: string): string {
     const m: Record<string, string> = {
       asterisks: '✦ ✦ ✦',
+      asterisks3: '* * *',
       dots: '· · ·',
       flourish: '— o —',
       none: '',
     };
-    return m[type] ?? '✦ ✦ ✦';
+    return m[type] ?? '* * *';
   }
 
   private fontName(key: string): string {
