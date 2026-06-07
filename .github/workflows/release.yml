@@ -73,3 +73,10 @@ jobs:
         run: bunx electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libria-${{ matrix.target }}-${{ matrix.arch }}
+          path: release/*
+          if-no-files-found: warn
