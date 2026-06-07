@@ -1,63 +1,74 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, effect } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import hyphen from 'hyphen';
 
-// Importing patterns
-import * as patternEs from 'hyphen/patterns/es';
-import * as patternEnUs from 'hyphen/patterns/en-us';
-import * as patternEnGb from 'hyphen/patterns/en-gb';
-import * as patternFr from 'hyphen/patterns/fr';
-import * as patternIt from 'hyphen/patterns/it';
+type PatternModule = { default?: any; patterns?: any };
+
+const PATTERN_LOADERS: Record<string, () => Promise<PatternModule>> = {
+  es: () => import('hyphen/patterns/es'),
+  'en-us': () => import('hyphen/patterns/en-us'),
+  'en-gb': () => import('hyphen/patterns/en-gb'),
+  fr: () => import('hyphen/patterns/fr'),
+  it: () => import('hyphen/patterns/it'),
+};
+
+function extractPattern(mod: PatternModule): any {
+  if (!mod) return null;
+  return mod.default || (mod.patterns ? mod : null) || mod;
+}
 
 @Injectable({ providedIn: 'root' })
 export class HyphenService {
   private hyphenators = new Map<string, any>();
+  private loading = new Set<string>();
   private store = inject(BookStore);
 
   constructor() {
-    this.init();
+    effect(() => {
+      const lang = this.store.domLang().toLowerCase();
+      if (this.store.tweaks.hyphenation()) {
+        this.ensurePattern(lang);
+      }
+    });
   }
 
-  private init() {
+  private async ensurePattern(lang: string): Promise<void> {
+    const key = lang.split('-')[0];
+    const cacheKey = (PATTERN_LOADERS[lang] ? lang : PATTERN_LOADERS[key] ? key : '') as string;
+    if (!cacheKey || this.hyphenators.has(cacheKey) || this.loading.has(cacheKey)) return;
+
+    this.loading.add(cacheKey);
     try {
-      const getP = (p: any) => {
-        if (!p) return null;
-        return p.default || (p.patterns ? p : null) || p;
-      };
-      
-      const es = getP(patternEs);
-      const enUs = getP(patternEnUs);
-      
-      if (es) this.hyphenators.set('es', hyphen(es, { html: true }));
-      if (enUs) this.hyphenators.set('en-us', hyphen(enUs, { html: true }));
-      if (getP(patternEnGb)) this.hyphenators.set('en-gb', hyphen(getP(patternEnGb), { html: true }));
-      if (getP(patternFr)) this.hyphenators.set('fr', hyphen(getP(patternFr), { html: true }));
-      if (getP(patternIt)) this.hyphenators.set('it', hyphen(getP(patternIt), { html: true }));
-    } catch (e) {
-      // Silent fail in production
+      const mod = await PATTERN_LOADERS[cacheKey]();
+      const pattern = extractPattern(mod);
+      if (pattern) {
+        this.hyphenators.set(cacheKey, hyphen(pattern, { html: true }));
+      }
+    } catch {
+      // pattern loading failed silently
     }
   }
 
   hyphenateHtml(htmlOrText: string): string {
     if (!htmlOrText) return '';
-    
+
     const isEnabled = this.store.tweaks.hyphenation();
     if (!isEnabled) return htmlOrText;
 
     const lang = this.store.domLang().toLowerCase();
-    const hyphenator = this.hyphenators.get(lang) || this.hyphenators.get(lang.split('-')[0]);
-    
+    const key = lang.split('-')[0];
+    const cacheKey = (PATTERN_LOADERS[lang] ? lang : PATTERN_LOADERS[key] ? key : '') as string;
+    if (!cacheKey) return htmlOrText;
+
+    const hyphenator = this.hyphenators.get(cacheKey);
     if (!hyphenator) {
-      if (this.hyphenators.size === 0) {
-        this.init();
-        return this.hyphenateHtml(htmlOrText);
-      }
+      this.ensurePattern(lang);
       return htmlOrText;
     }
-    
+
     try {
       return hyphenator(htmlOrText);
-    } catch (e) {
+    } catch {
       return htmlOrText;
     }
   }

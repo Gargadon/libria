@@ -1,4 +1,4 @@
-import { Component, output, inject } from '@angular/core';
+import { Component, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-about-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TranslateModule],
   template: `
     <div class="about-backdrop" (click)="close.emit()">

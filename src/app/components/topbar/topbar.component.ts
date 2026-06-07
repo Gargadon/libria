@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TranslateModule],
   template: `
     <header class="tb">

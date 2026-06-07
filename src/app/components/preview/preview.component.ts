@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
@@ -9,6 +9,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 @Component({
   selector: 'app-preview',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <style [innerHTML]="printStyles()"></style>
@@ -304,7 +305,10 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                 <ol class="kp-list" [innerHTML]="b.html || b.text"></ol>
               }
               @case ('table') {
-                <div class="kp-table-wrap" [innerHTML]="b.html || b.text"></div>
+                <div class="kp-table-wrap" [innerHTML]="safeHtml(b.html || b.text)"></div>
+              }
+              @default {
+                <div>[{{ b.type }}]</div>
               }
             }
           }
@@ -354,6 +358,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
   readonly sortFootnotesByPosition = sortFootnotesByPosition;
+
+  safeHtml(html: string) {
+    const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
+    return this.sanitizer.bypassSecurityTrustHtml(normalized);
+  }
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;

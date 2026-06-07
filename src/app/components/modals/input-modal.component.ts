@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -6,6 +6,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-input-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">

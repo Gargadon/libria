@@ -214,8 +214,8 @@ export const BookStore = signalStore(
     saveSnapshot() {
       patchState(store, (state) => ({
         past: [...state.past.slice(-49), { 
-          chapters: structuredClone(state.chapters), 
-          notes: structuredClone(state.notes) 
+          chapters: state.chapters, 
+          notes: state.notes 
         }],
         future: []
       }));
@@ -230,8 +230,8 @@ export const BookStore = signalStore(
           notes: previous.notes,
           past: newPast,
           future: [{ 
-            chapters: structuredClone(state.chapters), 
-            notes: structuredClone(state.notes) 
+            chapters: state.chapters, 
+            notes: state.notes 
           }, ...state.future],
           isDirty: true
         };
@@ -246,8 +246,8 @@ export const BookStore = signalStore(
           chapters: next.chapters,
           notes: next.notes,
           past: [...state.past, { 
-            chapters: structuredClone(state.chapters), 
-            notes: structuredClone(state.notes) 
+            chapters: state.chapters, 
+            notes: state.notes 
           }],
           future: newFuture,
           isDirty: true

@@ -140,7 +140,8 @@ ${dropCapStyles}`);
           }
           case 'list-unordered': content += `<ul class="kp-list">${raw}</ul>`; break;
           case 'list-ordered':   content += `<ol class="kp-list">${raw}</ol>`; break;
-          case 'table':          content += `<div class="kp-table-wrap">${raw}</div>`; break;
+          case 'table':          content += `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`; break;
+          default:              content += `<p>[${b.type}]</p>`; break;
         }
       });
       const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
@@ -564,7 +565,7 @@ ${t.dropCap ? `
           }
           case 'list-unordered': return `<ul class="kp-list">${raw}</ul>`;
           case 'list-ordered':   return `<ol class="kp-list">${raw}</ol>`;
-          case 'table':          return `<div class="kp-table-wrap">${raw}</div>`;
+          case 'table':          return `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`;
           default:              return '';
         }
       }).join('\n');
@@ -777,6 +778,8 @@ ${bodyContent}
             }
             break;
           }
+          default:
+            break;
         }
       }
       const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
@@ -841,6 +844,11 @@ ${bodyContent}
       none: '',
     };
     return m[type] ?? '* * *';
+  }
+
+  private tableHtml(html: string): string {
+    if (!html) return '';
+    return html.startsWith('<table') ? html : '<table>' + html + '</table>';
   }
 
   private fontName(key: string): string {

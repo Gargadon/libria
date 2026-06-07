@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, OnInit, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -15,6 +15,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, TranslateModule, InputModalComponent, ConfirmModalComponent],
   template: `
     <aside class="sb">

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-welcome',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TranslateModule],
   template: `
     <div class="welcome">

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, effect, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -9,6 +9,7 @@ import { Misspelling } from '../../models/book.models';
 @Component({
   selector: 'app-spellcheck-panel',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="scp" (click)="$event.stopPropagation()">
