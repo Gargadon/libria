@@ -1,14 +1,16 @@
-import { Component, inject, effect, signal } from '@angular/core';
+import { Component, inject, effect, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
 import { FileService } from './services/file.service';
 import { PersonalConfigService } from './services/personal-config.service';
+import { AutosaveService } from './services/autosave.service';
 import { TopbarComponent } from './components/topbar/topbar.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { PreviewComponent } from './components/preview/preview.component';
 import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.component';
+import { SpellCheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
 
@@ -23,6 +25,7 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
     EditorComponent,
     PreviewComponent,
     TweaksPanelComponent,
+    SpellCheckPanelComponent,
     WelcomeComponent,
     AboutModalComponent,
   ],
@@ -33,12 +36,29 @@ export class App {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
+  private readonly autosave = inject(AutosaveService);
 
   isResizing = false;
   showAbout = signal(false);
 
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (event.key === 'F11') {
+      event.preventDefault();
+      if (this.store.book()) this.store.toggleZenMode();
+    }
+    if (event.key === 'Escape' && this.store.ui.zenMode()) {
+      this.store.toggleZenMode();
+    }
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'p') {
+      event.preventDefault();
+      if (this.store.book()) this.store.togglePreview();
+    }
+  }
+
   constructor() {
-    this.translate.addLangs(['es', 'en']);
+    this.autosave.init();
+    this.translate.addLangs(['es', 'en', 'fr', 'it']);
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);
 

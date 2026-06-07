@@ -1,11 +1,10 @@
 import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
-import { Chapter } from '../../models/book.models';
+import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
 import { HyphenService } from '../../services/hyphen.service';
 import { ExportService } from '../../services/export.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import * as htmlToImage from 'html-to-image';
 
 @Component({
   selector: 'app-preview',
@@ -27,19 +26,35 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isChapterEven(idx) ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
-            @if (store.tweaks.showHeader()) {
-              <div class="print__header">
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
+            @let showHdr = store.tweaks.showHeader();
+            @let showPN = store.tweaks.showPageNumbers();
+            @let pnp = store.tweaks.pageNumberPosition();
+            @let isEven = isChapterEven(idx);
+            @if (showHdr || (showPN && pnp === 'top-edges')) {
+              <div class="print__header"
+                [class.print__header--edge-even]="showPN && pnp === 'top-edges' && isEven"
+                [class.print__header--edge-odd]="showPN && pnp === 'top-edges' && !isEven">
+                @if (showPN && pnp === 'top-edges') {
+                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                }
+                @if (showHdr) {
+                  <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
+                }
+                @if (showPN && pnp === 'top-edges' && !isEven) {
+                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                }
               </div>
             }
             <div class="print__content">
                 <ng-container *ngTemplateOutlet="contentTpl; context: { $implicit: chapter, showNotes: store.exportPrefs.includeNotes(), fsOverride: ptToPx(store.tweaks.fontSize()) }"></ng-container>
             </div>
-            <div class="print__footer">
-              @if (store.tweaks.showPageNumbers()) {
+            @if (showPN && pnp !== 'top-edges') {
+              <div class="print__footer"
+                [class.print__footer--edge-even]="pnp === 'bottom-edges' && isEven"
+                [class.print__footer--edge-odd]="pnp === 'bottom-edges' && !isEven">
                 <span>Pág. {{ chapterStartPage(idx) }}</span>
-              }
-            </div>
+              </div>
+            }
           </div>
         }
       </div>
@@ -55,9 +70,7 @@ import * as htmlToImage from 'html-to-image';
           <button (click)="zoomOut()">－</button>
           <span (click)="resetZoom()" style="cursor:pointer" title="Reiniciar zoom">{{ (printZoom() * 100) | number:'1.0-0' }}%</span>
           <button (click)="zoomIn()">＋</button>
-          <button class="pv__snapshot-btn" (click)="takeSnapshot()" title="Capturar instantánea (PNG)">
-            <span class="material-symbols-outlined">photo_camera</span>
-          </button>
+
         </div>
         
         <div class="pv__zoom" *ngIf="mode() === 'kindle' || mode() === 'iphone'">
@@ -67,7 +80,7 @@ import * as htmlToImage from 'html-to-image';
         </div>
       </div>
 
-      <div class="pv__stage" #pvStage [style.align-items]="mode() === 'print' ? 'flex-start' : 'center'">
+      <div class="pv__stage" #pvStage [style.align-items]="'center'">
         <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
         <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
@@ -122,7 +135,7 @@ import * as htmlToImage from 'html-to-image';
           </div>
 
           <!-- THE PAPEL (Single Page Preview) -->
-          <div class="print__page" *ngIf="mode() === 'print'" #snapshotPage
+          <div class="print__page" *ngIf="mode() === 'print'"
             [style.transform]="'scale(' + printZoom() + ')'"
             [style.transform-origin]="'top left'"
             [style.padding-top.px]="0"
@@ -130,13 +143,27 @@ import * as htmlToImage from 'html-to-image';
             [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
             [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
 
-            <div class="print__header"
-              [style.height.mm]="store.tweaks.marginTop()"
-              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-              @if (store.tweaks.showHeader()) {
-                <span>{{ store.tweaks.headerText() || store.book()?.title }}</span>
-              }
-            </div>
+            @let showHdr2 = store.tweaks.showHeader();
+            @let showPN2 = store.tweaks.showPageNumbers();
+            @let pnp2 = store.tweaks.pageNumberPosition();
+            @let isEven2 = isEvenPage();
+            @if (showHdr2 || (showPN2 && pnp2 === 'top-edges')) {
+              <div class="print__header"
+                [style.height.mm]="store.tweaks.marginTop()"
+                [class.print__header--edge-even]="showPN2 && pnp2 === 'top-edges' && isEven2"
+                [class.print__header--edge-odd]="showPN2 && pnp2 === 'top-edges' && !isEven2"
+                style="margin:0;flex-shrink:0;">
+                @if (showPN2 && pnp2 === 'top-edges') {
+                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
+                }
+                @if (showHdr2) {
+                  <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
+                }
+                @if (showPN2 && pnp2 === 'top-edges' && !isEven2) {
+                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
+                }
+              </div>
+            }
 
             <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
               <iframe #printIframe
@@ -147,13 +174,15 @@ import * as htmlToImage from 'html-to-image';
               ></iframe>
             </div>
 
-            <div class="print__footer"
-              [style.height.mm]="store.tweaks.marginBottom()"
-              style="margin:0;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-              @if (store.tweaks.showPageNumbers()) {
+            @if (showPN2 && pnp2 !== 'top-edges') {
+              <div class="print__footer"
+                [style.height.mm]="store.tweaks.marginBottom()"
+                [class.print__footer--edge-even]="pnp2 === 'bottom-edges' && isEven2"
+                [class.print__footer--edge-odd]="pnp2 === 'bottom-edges' && !isEven2"
+                style="margin:0;flex-shrink:0;">
                 <span>{{ globalPage() + 1 }}</span>
-              }
-            </div>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -263,6 +292,20 @@ import * as htmlToImage from 'html-to-image';
               @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
+              @case ('image') {
+                @if (b.src && store.assets()[b.src]) {
+                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;"></figure>
+                }
+              }
+              @case ('list-unordered') {
+                <ul class="kp-list" [innerHTML]="b.html || b.text"></ul>
+              }
+              @case ('list-ordered') {
+                <ol class="kp-list" [innerHTML]="b.html || b.text"></ol>
+              }
+              @case ('table') {
+                <div class="kp-table-wrap" [innerHTML]="b.html || b.text"></div>
+              }
             }
           }
 
@@ -278,6 +321,18 @@ import * as htmlToImage from 'html-to-image';
                 }
               </div>
             }
+          }
+          @let fns = sortFootnotesByPosition(chapter.footnotes, chapter.body);
+          @if (fns.length) {
+            <div class="kp-fnpanel">
+              <hr class="kp-fnpanel-rule">
+              @for (fn of fns; track fn.id; let fi = $index) {
+                <div class="kp-fnpanel-item">
+                  <span class="kp-fnpanel-num">{{ fi + 1 }}.</span>
+                  <span class="kp-fnpanel-text">{{ fn.content }}</span>
+                </div>
+              }
+            </div>
           }
         </div>
       </ng-template>
@@ -298,10 +353,10 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly exportService = inject(ExportService);
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
+  readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
-  @ViewChild('snapshotPage', { static: false }) snapshotPageEl?: ElementRef<HTMLElement>;
   @ViewChild('printIframe', { static: false }) printIframeEl?: ElementRef<HTMLIFrameElement>;
 
   private resizeObserver?: ResizeObserver;
@@ -310,40 +365,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   printIframeHtml = signal<SafeHtml>('');
   iframeContentHeight = signal(0);
-
-  isCapturing = signal(false);
-
-  async takeSnapshot() {
-    if (!this.snapshotPageEl) return;
-
-    this.isCapturing.set(true);
-
-    try {
-      const node = this.snapshotPageEl.nativeElement;
-
-      // Capture options
-      const options = {
-        backgroundColor: '#ffffff',
-        width: this.toPixels(this.pageSize().w),
-        height: this.toPixels(this.pageSize().h),
-        style: {
-          transform: 'scale(1)', // Force real size
-          margin: '0',
-          boxShadow: 'none'
-        }
-      };
-
-      const dataUrl = await htmlToImage.toPng(node, options);
-      const link = document.createElement('a');
-      link.download = `Libria_Snapshot_${this.store.book()?.title || 'Book'}_Page_${this.globalPage() + 1}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (error) {
-      console.error('Snapshot failed', error);
-    } finally {
-      this.isCapturing.set(false);
-    }
-  }
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
@@ -484,6 +505,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const t = this.store.tweaks();
       const bodyFont = this.store.bookFontFamily();
       const titleFont = this.store.titleFontFamily();
+      const assets = this.store.assets();
 
       if (!book) return;
 
@@ -491,7 +513,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         clearTimeout(this.printHtmlTimeout);
         this.printHtmlTimeout = setTimeout(() => {
           const fontsHref = new URL('fonts.css', document.baseURI).href;
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref);
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets);
           this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
         }, 300);
       });
@@ -501,7 +523,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.resizeObserver = new ResizeObserver(() => {
       this.scheduleMeasure();
-      if (this.mode() === 'print') this.autoZoom();
     });
 
     if (this.kpFlowEl) {
@@ -643,7 +664,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   readonly sceneBreakGlyph = computed(() => {
     const t = this.store.tweaks.sceneBreakType();
-    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
+    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'asterisks3' ? '* * *' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
   });
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
@@ -652,7 +673,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const m = this.mode();
     const paperSize = this.store.book()?.paperSize || '5x8';
     const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 :
-      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : 250);
+      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : paperSize === 'A6' ? 150 : 250);
     const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
     const fsFactor = 12 / fs;
     const wpp = wppBase * fsFactor;

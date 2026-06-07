@@ -13,24 +13,19 @@ import { environment } from '../../../environments/environment';
     <header class="tb">
       <div class="tb__left">
         <div class="tb__logo">
-          <svg viewBox="0 0 28 28" width="22" height="22">
-            <rect x="2" y="2" width="24" height="24" rx="4" fill="#1a1612"/>
-            <path d="M14 6l4.5 7-1 7.5-3.5 2.5-3.5-2.5-1-7.5z" fill="none" stroke="#f5efe4" stroke-width="1.2" stroke-linejoin="round"/>
-            <path d="M14 14.5v7" fill="none" stroke="#f5efe4" stroke-width="1.2" stroke-linecap="round"/>
-            <circle cx="14" cy="13.5" r="1.2" fill="#f5efe4"/>
-          </svg>
+          <img src="libria.svg" alt="Libria" class="app-logo">
         </div>
         <div class="tb__brand">
           <div class="tb__brandN">Libria</div>
-          <div class="tb__brandV">{{ 'topbar.brandVersion' | translate:{ version: environment.version } }}</div>
+          <div class="tb__brandV">{{ editionLabel }}</div>
         </div>
 
         @if (store.book(); as book) {
           <div class="tb__bookchip">
-            <span class="tb__chipBadge">{{ titleInitials() }}</span>
-            <span class="tb__chipT">{{ book.title }}</span>
-            <span class="tb__chipMeta">{{ displayAuthors() }}</span>
-            <span class="tb__chipChev">▾</span>
+            <span class="tb__chipBody">
+              <span class="tb__chipT">{{ book.title }}</span>
+              <span class="tb__chipMeta">{{ displayAuthors() }}</span>
+            </span>
           </div>
         }
       </div>
@@ -134,6 +129,12 @@ import { environment } from '../../../environments/environment';
           <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="store.search(''); store.setNav('search')">
             <span class="material-symbols-outlined">search</span>
           </button>
+          <button class="tb__icon" [attr.title]="'topbar.preview' | translate" (click)="store.togglePreview()" [class.tb__icon--on]="store.ui.previewOpen()">
+            <span class="material-symbols-outlined">{{ store.ui.previewOpen() ? 'visibility' : 'visibility_off' }}</span>
+          </button>
+          <button class="tb__icon" [attr.title]="'topbar.zenMode' | translate" (click)="store.toggleZenMode()" [class.tb__icon--on]="store.ui.zenMode()">
+            <span class="material-symbols-outlined">{{ store.ui.zenMode() ? 'fullscreen_exit' : 'fullscreen' }}</span>
+          </button>
           <button class="tb__icon" [attr.title]="'topbar.settings' | translate" (click)="store.setNav('settings')">
             <span class="material-symbols-outlined">settings</span>
           </button>
@@ -170,6 +171,7 @@ export class TopbarComponent {
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
   readonly environment = environment;
+  readonly editionLabel = `${environment.version} · ${environment.edition}`;
 
   readonly displayAuthors = computed(() => {
     const book = this.store.book();
@@ -181,12 +183,6 @@ export class TopbarComponent {
     if (filtered.length === 0) return this.translate.instant('topbar.noAuthor');
     if (filtered.length === 1) return filtered[0];
     return `${filtered[0]} ${this.translate.instant('topbar.etAl')}`;
-  });
-
-  readonly titleInitials = computed(() => {
-    const title = this.store.book()?.title || '';
-    const words = title.trim().split(/\s+/).filter(w => w.length > 0);
-    return words.slice(0, 2).map(w => w[0].toUpperCase()).join('');
   });
 
   @HostListener('document:click')

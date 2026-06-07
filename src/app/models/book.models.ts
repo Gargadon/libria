@@ -6,6 +6,23 @@ export interface Block {
   text?: string;
   html?: string;
   drop?: string;
+  src?: string; // asset key for image blocks
+}
+
+export interface Footnote {
+  id: string;
+  blockIndex: number;
+  content: string;
+}
+
+export function sortFootnotesByPosition(footnotes: Footnote[] | undefined, body: Block[]): Footnote[] {
+  if (!footnotes?.length) return [];
+  return [...footnotes].sort((a, b) => {
+    if (a.blockIndex !== b.blockIndex) return a.blockIndex - b.blockIndex;
+    const htmlA = body[a.blockIndex]?.html || '';
+    const htmlB = body[b.blockIndex]?.html || '';
+    return htmlA.indexOf(`data-fn="${a.id}"`) - htmlB.indexOf(`data-fn="${b.id}"`);
+  });
 }
 
 export interface Chapter {
@@ -18,6 +35,7 @@ export interface Chapter {
   status?: ChapterStatus;
   forceOddPage?: boolean;
   body: Block[];
+  footnotes?: Footnote[];
 }
 
 export interface Book {
@@ -29,7 +47,7 @@ export interface Book {
   publisher: string;
   year: number;
   isbn: string;
-  paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'Letter';
+  paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'A6' | 'Letter';
   lang?: string;
 }
 
@@ -37,6 +55,7 @@ export interface Tweaks {
   sidebar: 'left' | 'right';
   mode: 'light' | 'dark';
   bookFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
+  customBookFont: string | null;
   spellcheck: boolean;
   // Detailed styles
   fontSize: number;
@@ -54,10 +73,11 @@ export interface Tweaks {
   showHeader: boolean;
   headerText: string;
   // Advanced Decoration
-  sceneBreakType: 'asterisks' | 'dots' | 'flourish' | 'none';
+  sceneBreakType: 'asterisks' | 'asterisks3' | 'dots' | 'flourish' | 'none';
   titleAlignment: 'left' | 'center' | 'right';
   titleFontSize: number;
   titleFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
+  customTitleFont: string | null;
   titleBold: boolean;
   titleItalic: boolean;
   titleUnderline: boolean;
@@ -66,6 +86,10 @@ export interface Tweaks {
   dropCap: boolean;
   dropCapLines: number;
   hyphenation: boolean;
+  smartQuotes: boolean;
+  smartDashes: boolean;
+  smartEllipsis: boolean;
+  smartOpeningSigns: boolean;
 }
 
 export type NoteRole = 'author' | 'editor' | 'corrector' | 'publisher';
@@ -91,6 +115,19 @@ export interface Note {
   replies: Reply[];
 }
 
+export interface WritingGoals {
+  targetWords: number;
+  deadline: string;
+}
+
+export interface Misspelling {
+  word: string;
+  blockIndex: number;
+  start: number;
+  end: number;
+  suggestions: string[];
+}
+
 export interface SearchResult {
   chapterId: string;
   chapterTitle: string;
@@ -109,6 +146,7 @@ export interface PersonalConfig {
   userName: string;
   previewWidth: number;
   language: string;
+  mode: 'light' | 'dark';
 }
 
 export interface LibriaDocument {
@@ -121,4 +159,5 @@ export interface LibriaDocument {
   chapters: Chapter[];
   notes?: Note[];
   assets?: Record<string, string>;
+  writingGoals?: WritingGoals;
 }

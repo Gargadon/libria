@@ -18,6 +18,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "front",
     title: "El jardín de las horas quietas",
     words: 3,
+    footnotes: [],
     body: [
       { type: "halftitle", text: "El jardín de las horas quietas" },
     ],
@@ -27,6 +28,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "front",
     title: "Portada",
     words: 12,
+    footnotes: [],
     body: [
       { type: "title", text: "El jardín de las horas quietas" },
       { type: "subtitle", text: "una novela" },
@@ -39,6 +41,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "front",
     title: "Derechos de autor",
     words: 84,
+    footnotes: [],
     body: [
       { type: "p", text: "Copyright © 2026 Marina Cifuentes" },
       { type: "p", text: "Todos los derechos reservados. Ninguna parte de esta publicación puede ser reproducida, almacenada o transmitida en manera alguna ni por ningún medio, ya sea electrónico, mecánico, químico o de fotocopia, sin permiso previo por escrito de la editorial." },
@@ -52,6 +55,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "front",
     title: "Dedicatoria",
     words: 14,
+    footnotes: [],
     body: [
       { type: "dedication", text: "Para mi madre,\nque me enseñó a escuchar\nel sonido de los relojes\ncuando ya no marcan hora." },
     ],
@@ -63,6 +67,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     title: "La casa de la calle Almendros",
     words: 2847,
     readMin: 11,
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Uno" },
       { type: "chapter-title", text: "La casa de la calle Almendros" },
@@ -82,6 +87,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     title: "Los relojes de Elvira",
     words: 3120,
     readMin: 12,
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Dos" },
       { type: "chapter-title", text: "Los relojes de Elvira" },
@@ -99,6 +105,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     title: "Cartas que nadie envió",
     words: 2654,
     readMin: 10,
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Tres" },
       { type: "chapter-title", text: "Cartas que nadie envió" },
@@ -114,6 +121,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     title: "El hombre del paraguas negro",
     words: 2912,
     readMin: 11,
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Cuatro" },
       { type: "chapter-title", text: "El hombre del paraguas negro" },
@@ -129,6 +137,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     title: "Septiembre, otra vez",
     words: 2433,
     readMin: 9,
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Cinco" },
       { type: "chapter-title", text: "Septiembre, otra vez" },
@@ -145,6 +154,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     words: 1987,
     readMin: 8,
     status: "draft",
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Seis" },
       { type: "chapter-title", text: "Lo que devuelve el mar" },
@@ -159,6 +169,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     words: 412,
     readMin: 2,
     status: "outline",
+    footnotes: [],
     body: [
       { type: "chapter-num", text: "Siete" },
       { type: "chapter-title", text: "El último reloj" },
@@ -170,6 +181,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "back",
     title: "Agradecimientos",
     words: 142,
+    footnotes: [],
     body: [
       { type: "h1", text: "Agradecimientos" },
       { type: "p", text: "A J., que leyó cada borrador con la paciencia de quien sabe esperar a que las palabras encuentren su sitio." },
@@ -182,6 +194,7 @@ export const MOCK_CHAPTERS: Chapter[] = [
     kind: "back",
     title: "Sobre la autora",
     words: 98,
+    footnotes: [],
     body: [
       { type: "h1", text: "Sobre la autora" },
       { type: "p", text: "Marina Cifuentes (Oviedo, 1981) es autora de las novelas Las islas que no fueron (2018) y El cuaderno de horas (2022), ambas finalistas del Premio Herralde. Su obra ha sido traducida a once idiomas. Vive entre Asturias y Lisboa." },

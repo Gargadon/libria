@@ -36,7 +36,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       z-index: 3100;
     }
     .modal {
-      background: var(--paper, #f5efe4);
+      background: var(--paper, #ffffff);
       width: 400px;
       max-width: 90vw;
       border-radius: 16px;

@@ -7,7 +7,8 @@ const defaults: PersonalConfig = {
   avatar: '',
   userName: '',
   previewWidth: 460,
-  language: 'es'
+  language: 'es',
+  mode: 'light'
 };
 
 @Injectable({ providedIn: 'root' })

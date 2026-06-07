@@ -1,6 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig } from '../models/book.models';
+import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { environment } from '../../environments/environment';
@@ -18,7 +18,10 @@ export interface BookState {
   ui: {
     showStyles: boolean;
     showTweaks: boolean;
+    showSpellCheck: boolean;
     sidebarOpen: boolean;
+    previewOpen: boolean;
+    zenMode: boolean;
     activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings';
   };
   exportPrefs: {
@@ -31,6 +34,7 @@ export interface BookState {
   replaceQuery: string;
   personalConfig: PersonalConfig;
   isSaving: boolean;
+  writingGoals: WritingGoals;
 }
 
 const initialState: BookState = {
@@ -42,6 +46,7 @@ const initialState: BookState = {
     sidebar: 'right',
     mode: 'light',
     bookFont: 'lora',
+    customBookFont: null,
     spellcheck: true,
     fontSize: 12,
     lineHeight: 1.6,
@@ -56,17 +61,22 @@ const initialState: BookState = {
     showPageNumbers: true,
     showHeader: true,
     headerText: '',
-    sceneBreakType: 'asterisks',
+    sceneBreakType: 'asterisks3',
     titleAlignment: 'center',
     titleFontSize: 16,
     titleFont: 'spectral',
+    customTitleFont: null,
     titleBold: true,
     titleItalic: false,
     titleUnderline: false,
     pageNumberPosition: 'bottom-center',
     dropCap: true,
     dropCapLines: 3,
-    hyphenation: true
+    hyphenation: true,
+    smartQuotes: true,
+    smartDashes: true,
+    smartEllipsis: true,
+    smartOpeningSigns: true
   },
   assets: {},
   past: [],
@@ -75,7 +85,10 @@ const initialState: BookState = {
   ui: {
     showStyles: false,
     showTweaks: false,
+    showSpellCheck: false,
     sidebarOpen: true,
+    previewOpen: true,
+    zenMode: false,
     activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
   },
   exportPrefs: {
@@ -86,9 +99,20 @@ const initialState: BookState = {
   searchQuery: '',
   searchResults: [],
   replaceQuery: '',
-  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es' },
-  isSaving: false
+  personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es', mode: 'light' },
+  isSaving: false,
+  writingGoals: { targetWords: 0, deadline: '' }
 };
+
+function uiLocale(lang: string): string {
+  const map: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+  return map[lang] || 'es-ES';
+}
+
+function untitledLabel(lang: string): string {
+  const map: Record<string, string> = { en: 'Untitled', fr: 'Sans titre', it: 'Senza titolo' };
+  return map[lang] || 'Sin título';
+}
 
 function calculateWords(body: { text?: string }[]): number {
   return body.reduce((sum, b) => {
@@ -134,10 +158,14 @@ export const BookStore = signalStore(
         case 'Letter': return '8.5in 11in';
         case 'A5': return '148mm 210mm';
         case 'A4': return '210mm 297mm';
+        case 'A6': return '105mm 148mm';
         default: return '5in 8in';
       }
     }),
-    bookFontFamily: computed(() => {      const font = state.tweaks.bookFont();
+    bookFontFamily: computed(() => {
+      const custom = state.tweaks.customBookFont();
+      if (custom) return `"${custom}", serif`;
+      const font = state.tweaks.bookFont();
       switch (font) {
         case 'eb-garamond': return "'EB Garamond', serif";
         case 'crimson-pro': return "'Crimson Pro', serif";
@@ -149,6 +177,8 @@ export const BookStore = signalStore(
       }
     }),
     titleFontFamily: computed(() => {
+      const custom = state.tweaks.customTitleFont();
+      if (custom) return `"${custom}", serif`;
       const font = state.tweaks.titleFont();
       switch (font) {
         case 'eb-garamond': return "'EB Garamond', serif";
@@ -159,6 +189,17 @@ export const BookStore = signalStore(
         case 'montserrat': return "'Montserrat', sans-serif";
         default: return "serif";
       }
+    }),
+    wordsProgress: computed(() => {
+      const target = state.writingGoals.targetWords();
+      if (!target) return 0;
+      return Math.min(100, Math.round((state.chapters().reduce((s, c) => s + (c.words || 0), 0) / target) * 100));
+    }),
+    daysToDeadline: computed(() => {
+      const dl = state.writingGoals.deadline();
+      if (!dl) return null;
+      const diff = Math.ceil((new Date(dl).getTime() - Date.now()) / 86_400_000);
+      return diff;
     }),
     documentLang: computed(() => state.book()?.lang || 'es-MX'),
     domLang: computed(() => {
@@ -221,15 +262,22 @@ export const BookStore = signalStore(
         assets: doc.assets || {},
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(doc.preferences || {}) },
+        writingGoals: doc.writingGoals || initialState.writingGoals,
         isDirty: false,
         ui: initialState.ui
       });
     },
     createNewProject() {
       const author = store.personalConfig().userName;
-      const isEn = store.personalConfig().language === 'en';
+      const lang = store.personalConfig().language;
+      const newProjectLabels: Record<string, { title: string; chapter: string; docLang: string }> = {
+        en: { title: 'New Book',      chapter: 'Chapter 1',  docLang: 'en-US' },
+        fr: { title: 'Nouveau livre', chapter: 'Chapitre 1', docLang: 'fr-FR' },
+        it: { title: 'Nuovo libro',   chapter: 'Capitolo 1', docLang: 'it-IT' },
+      };
+      const labels = newProjectLabels[lang] || { title: 'Nuevo Libro', chapter: 'Capítulo 1', docLang: 'es-MX' };
       const newBook: Book = {
-        title: isEn ? 'New Book' : 'Nuevo Libro',
+        title: labels.title,
         subtitle: '',
         author: author,
         authors: author ? [author] : [],
@@ -238,18 +286,18 @@ export const BookStore = signalStore(
         year: new Date().getFullYear(),
         isbn: '',
         paperSize: '5x8',
-        lang: isEn ? 'en-US' : 'es-MX'
+        lang: labels.docLang
       };
       const firstChapter: Chapter = {
         id: 'ch-' + Date.now().toString(36),
         kind: 'chapter',
-        title: isEn ? 'Chapter 1' : 'Capítulo 1',
+        title: labels.chapter,
         words: 0,
         readMin: 0,
         number: 1,
         status: 'draft',
         body: [
-          { type: 'chapter-title', text: isEn ? 'Chapter 1' : 'Capítulo 1' },
+          { type: 'chapter-title', text: labels.chapter },
           { type: 'p', text: '' }
         ]
       };
@@ -272,6 +320,15 @@ export const BookStore = signalStore(
     closeSidebar() {
       patchState(store, (state) => ({ ui: { ...state.ui, sidebarOpen: false } }));
     },
+    toggleZenMode() {
+      patchState(store, (state) => ({ ui: { ...state.ui, zenMode: !state.ui.zenMode } }));
+    },
+    toggleSpellCheckPanel() {
+      patchState(store, (state) => ({ ui: { ...state.ui, showSpellCheck: !state.ui.showSpellCheck } }));
+    },
+    togglePreview() {
+      patchState(store, (state) => ({ ui: { ...state.ui, previewOpen: !state.ui.previewOpen } }));
+    },
     updateUi(ui: Partial<BookState['ui']>) {
       patchState(store, (state) => ({
         ui: { ...state.ui, ...ui }
@@ -285,7 +342,7 @@ export const BookStore = signalStore(
         role,
         authorName,
         content,
-        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' }),
+        date: new Date().toLocaleDateString(uiLocale(store.personalConfig().language), { day: 'numeric', month: 'short' }),
         status: 'unresolved',
         replies: []
       };
@@ -306,10 +363,10 @@ export const BookStore = signalStore(
         authorName,
         role,
         content,
-        date: new Date().toLocaleDateString(store.personalConfig().language === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })
+        date: new Date().toLocaleDateString(uiLocale(store.personalConfig().language), { day: 'numeric', month: 'short' })
       };
       patchState(store, (state) => ({
-        notes: state.notes.map(n => 
+        notes: state.notes.map(n =>
           n.id === noteId ? { ...n, replies: [...n.replies, newReply] } : n
         ),
         isDirty: true
@@ -318,6 +375,38 @@ export const BookStore = signalStore(
     deleteNote(noteId: string) {
       patchState(store, (state) => ({
         notes: state.notes.filter(n => n.id !== noteId),
+        isDirty: true
+      }));
+    },
+    addFootnote(chapterId: string, blockIndex: number, footnoteId: string, content: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: [...(c.footnotes || []), { id: footnoteId, blockIndex, content }] }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    updateFootnote(chapterId: string, footnoteId: string, content: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: (c.footnotes || []).map((fn) =>
+                fn.id === footnoteId ? { ...fn, content } : fn
+              )}
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    deleteFootnote(chapterId: string, footnoteId: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, footnotes: (c.footnotes || []).filter((fn) => fn.id !== footnoteId) }
+            : c
+        ),
         isDirty: true
       }));
     },
@@ -369,7 +458,38 @@ export const BookStore = signalStore(
       patchState(store, { isSaving });
     },
     addChapter(kind: ChapterKind = 'chapter') {
-      // ... (existing code)
+      patchState(store, (state) => {
+        const chapters = state.chapters;
+        const lastChapter = [...chapters].reverse().find(c => c.kind === 'chapter');
+        const newChapter: Chapter = {
+          id: 'ch-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+          kind,
+          title: untitledLabel(store.personalConfig().language),
+          words: 0,
+          readMin: 0,
+          number: kind === 'chapter' ? (lastChapter?.number ?? 0) + 1 : undefined,
+          status: 'draft',
+          body: kind === 'chapter'
+            ? [{ type: 'chapter-title', text: untitledLabel(store.personalConfig().language) }, { type: 'p', text: '' }]
+            : [{ type: 'p', text: '' }]
+        };
+        let insertAt = chapters.length;
+        if (kind === 'front') {
+          insertAt = 0;
+        } else if (kind === 'chapter') {
+          const lastFront = [...chapters].reverse().find(c => c.kind === 'front');
+          insertAt = lastFront ? chapters.lastIndexOf(lastFront) + 1 : 0;
+        }
+        return {
+          chapters: [
+            ...chapters.slice(0, insertAt),
+            newChapter,
+            ...chapters.slice(insertAt)
+          ],
+          activeChapterId: newChapter.id,
+          isDirty: true
+        };
+      });
     },
     addChapters(newChapters: Chapter[]) {
       patchState(store, (state) => ({
@@ -395,7 +515,7 @@ export const BookStore = signalStore(
           
           return {
             ...c,
-            title: isTitleBlock ? (text || (store.personalConfig().language === 'en' ? 'Untitled' : 'Sin título')) : c.title,
+            title: isTitleBlock ? (text || untitledLabel(store.personalConfig().language)) : c.title,
             body: c.body.map((b, i) =>
               i === blockIndex ? { ...b, text, html } : b
             )
@@ -424,7 +544,7 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    insertBlock(chapterId: string, afterIndex: number, type: string, text: string = '') {
+    insertBlock(chapterId: string, afterIndex: number, type: string, text: string = '', html?: string) {
       patchState(store, (state) => {
         const chapters = state.chapters.map((c) =>
           c.id === chapterId
@@ -432,7 +552,7 @@ export const BookStore = signalStore(
                 ...c,
                 body: [
                   ...c.body.slice(0, afterIndex + 1),
-                  { type, text },
+                  { type, text, ...(html ? { html } : {}) },
                   ...c.body.slice(afterIndex + 1)
                 ]
               }
@@ -532,9 +652,42 @@ export const BookStore = signalStore(
         };
       });
     },
+    insertImageBlock(chapterId: string, afterIndex: number, assetKey: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? {
+                ...c,
+                body: [
+                  ...c.body.slice(0, afterIndex + 1),
+                  { type: 'image', src: assetKey },
+                  ...c.body.slice(afterIndex + 1)
+                ]
+              }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    setImageSrc(chapterId: string, blockIndex: number, assetKey: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, src: assetKey } : b) }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
     updateTweak<K extends keyof Tweaks>(key: K, value: Tweaks[K]) {
       patchState(store, (state) => ({
         tweaks: { ...state.tweaks, [key]: value }
+      }));
+    },
+    setThemeMode(mode: 'light' | 'dark') {
+      patchState(store, (state) => ({
+        tweaks: { ...state.tweaks, mode },
+        personalConfig: { ...state.personalConfig, mode }
       }));
     },
     updateExportPrefs(prefs: Partial<BookState['exportPrefs']>) {
@@ -560,6 +713,9 @@ export const BookStore = signalStore(
     },
     setPersonalConfig(config: PersonalConfig) {
       patchState(store, { personalConfig: config });
+    },
+    setWritingGoals(goals: WritingGoals) {
+      patchState(store, { writingGoals: goals, isDirty: true });
     },
     search(query: string) {
       if (!query.trim()) {
@@ -627,6 +783,12 @@ export const BookStore = signalStore(
       // Load initial personal config
       const saved = personalConfigService.load();
       patchState(store, { personalConfig: saved });
+
+      // Apply saved theme mode (personal preference overrides book setting)
+      const tweaks = store.tweaks();
+      if (saved.mode && saved.mode !== tweaks.mode) {
+        patchState(store, { tweaks: { ...tweaks, mode: saved.mode } });
+      }
 
       // Effect to save personal config whenever it changes
       effect(() => {

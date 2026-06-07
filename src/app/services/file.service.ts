@@ -12,6 +12,11 @@ export class FileService {
     return !!(window as any).electronAPI;
   }
 
+  get canSilentSave(): boolean {
+    if (this.isElectron) return !!this.currentPath;
+    return !!(window as any).__libriaFileHandle;
+  }
+
   private buildDoc(): LibriaDocument {
     return {
       libriaVersion: environment.version,
@@ -22,7 +27,8 @@ export class FileService {
       },
       chapters: this.store.chapters(),
       notes: this.store.notes(),
-      assets: this.store.assets()
+      assets: this.store.assets(),
+      writingGoals: this.store.writingGoals()
     };
   }
 

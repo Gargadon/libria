@@ -1,12 +1,17 @@
-<div class="app" 
-     [class.app--sb-right]="store.tweaks.sidebar() === 'right'" 
+<div class="app"
+     [class.app--dark]="store.tweaks.mode() === 'dark'"
+     [class.app--sb-right]="store.tweaks.sidebar() === 'right'"
+     [class.app--pv-closed]="!store.ui.previewOpen()"
+     [class.app--zen]="store.ui.zenMode()"
      [class.font-lora]="store.tweaks.bookFont() === 'lora'"
      [class.font-spectral]="store.tweaks.bookFont() === 'spectral'"
      [class.font-eb-garamond]="store.tweaks.bookFont() === 'eb-garamond'"
      [class.font-inter]="store.tweaks.bookFont() === 'inter'"
      [class.font-montserrat]="store.tweaks.bookFont() === 'montserrat'"
      [class.font-crimson-pro]="store.tweaks.bookFont() === 'crimson-pro'"
-      [attr.data-screen-label]="'app.title' | translate">
+     [style.--serif]="store.tweaks.customBookFont() ? store.bookFontFamily() : null"
+     [style.--display]="store.tweaks.customTitleFont() ? store.titleFontFamily() : null"
+     [attr.data-screen-label]="'app.title' | translate">
   <app-topbar></app-topbar>
   
   <div class="layout" [class.layout--empty]="!store.book()"
@@ -44,6 +49,10 @@
 
   @if (store.book() && store.ui.showTweaks()) {
     <app-tweaks-panel title="Tweaks"></app-tweaks-panel>
+  }
+
+  @if (store.book() && store.ui.showSpellCheck()) {
+    <app-spellcheck-panel></app-spellcheck-panel>
   }
 
   @if (showAbout()) {

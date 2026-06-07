@@ -17,9 +17,8 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, FormsModule, TranslateModule, InputModalComponent, ConfirmModalComponent],
   template: `
-    <aside class="sb" [class.sb--left]="store.tweaks.sidebar() === 'left'" [class.sb--right]="store.tweaks.sidebar() === 'right'">
-
-      <button class="sb__close" (click)="store.closeSidebar()" [attr.title]="'app.closePanel' | translate">
+    <aside class="sb">
+      <button class="sb__close" (click)="store.closeSidebar()">
         <span class="material-symbols-outlined">close</span>
       </button>
 
@@ -51,6 +50,30 @@ import { environment } from '../../../environments/environment';
             </div>
           </div>
 
+          @if (store.writingGoals.targetWords() > 0 || store.writingGoals.deadline()) {
+            <div class="sb__goals">
+              @if (store.writingGoals.targetWords() > 0) {
+                <div class="sb__goals-label">
+                  {{ 'sidebar.goalsProgress' | translate:{ current: store.totalWords().toLocaleString(currentLang()), target: store.writingGoals.targetWords().toLocaleString(currentLang()) } }}
+                </div>
+                <div class="sb__goals-bar">
+                  <div class="sb__goals-fill" [style.width.%]="store.wordsProgress()"></div>
+                </div>
+              }
+              @if (store.daysToDeadline() !== null) {
+                <div class="sb__goals-deadline" [class.sb__goals-deadline--warn]="(store.daysToDeadline() ?? 99) <= 7">
+                  @if ((store.daysToDeadline() ?? 0) > 0) {
+                    {{ 'sidebar.goalsDeadlineDays' | translate:{ days: store.daysToDeadline() } }}
+                  } @else if ((store.daysToDeadline() ?? 0) === 0) {
+                    {{ 'sidebar.goalsDeadlineToday' | translate }}
+                  } @else {
+                    {{ 'sidebar.goalsDeadlineOver' | translate:{ days: Math.abs(store.daysToDeadline() ?? 0) } }}
+                  }
+                </div>
+              }
+            </div>
+          }
+
           <div class="sb__content">
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.preliminares' | translate), items: frontChapters() }"></ng-container>
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true }"></ng-container>
@@ -58,6 +81,16 @@ import { environment } from '../../../environments/environment';
 
             @if (store.activeChapter(); as active) {
               <div class="sb__section">{{ 'sidebar.elementSettings' | translate }}</div>
+              @if (active.kind === 'chapter') {
+                <div class="sb__row">
+                  <div class="sb__label">{{ 'sidebar.chapterStatus' | translate }}</div>
+                  <div class="sb__radio">
+                    <button class="sb__opt sb__opt--status-ok" [class.sb__opt--on]="active.status === 'ok'" (click)="store.updateChapterMeta(active.id, { status: 'ok' })">{{ 'sidebar.statusOk' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-draft" [class.sb__opt--on]="active.status === 'draft' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-outline" [class.sb__opt--on]="active.status === 'outline'" (click)="store.updateChapterMeta(active.id, { status: 'outline' })">{{ 'sidebar.statusOutline' | translate }}</button>
+                  </div>
+                </div>
+              }
               <div class="sb__row">
                 <div class="sb__label">{{ 'sidebar.oddPage' | translate }}</div>
                 <div class="sb__radio">
@@ -70,6 +103,29 @@ import { environment } from '../../../environments/environment';
           </div>
 
           <div class="sb__foot">
+            @if (showGoalsEditor()) {
+              <div class="sb__goals-editor">
+                <div class="sb__goals-editor-title">{{ 'sidebar.goalsTitle' | translate }}</div>
+                <div class="sb__row sb__row--col">
+                  <label class="sb__label">{{ 'sidebar.goalsTargetWords' | translate }}</label>
+                  <input type="number" class="sb__input" min="0" step="1000"
+                    [ngModel]="store.writingGoals.targetWords()"
+                    (ngModelChange)="updateGoalWords($event)">
+                </div>
+                <div class="sb__row sb__row--col">
+                  <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+                  <input type="date" class="sb__input"
+                    [ngModel]="store.writingGoals.deadline()"
+                    (ngModelChange)="updateGoalDeadline($event)">
+                </div>
+                <button class="sb__btn-link" (click)="showGoalsEditor.set(false)">{{ 'sidebar.goalsDone' | translate }}</button>
+              </div>
+            } @else {
+              <button class="sb__action-btn" (click)="showGoalsEditor.set(true)">
+                <span class="material-symbols-outlined">flag</span>
+                {{ 'sidebar.goalsEdit' | translate }}
+              </button>
+            }
             <div class="sb__add-wrapper">
               <button class="sb__add" (click)="toggleAddMenu($event)">{{ 'sidebar.addElement' | translate }}</button>
               @if (showAddMenu()) {
@@ -81,8 +137,8 @@ import { environment } from '../../../environments/environment';
               }
             </div>
             
-            <button class="sb__btn-link" style="margin-top: 8px; font-size: 11px;" (click)="triggerImport()">
-              <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle; margin-right: 4px;">publish</span>
+            <button class="sb__action-btn" (click)="triggerImport()">
+              <span class="material-symbols-outlined">publish</span>
               {{ 'sidebar.importFile' | translate }}
             </button>
             <input type="file" #importInput hidden (change)="onImportFile($event)" accept=".docx,.txt">
@@ -106,8 +162,8 @@ import { environment } from '../../../environments/environment';
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
               <select class="sb__select sb__select--font" 
-                      [ngModel]="store.tweaks.bookFont()" 
-                      (ngModelChange)="store.updateTweak('bookFont', $event)">
+                      [value]="store.tweaks.customBookFont() !== null ? '__custom__' : store.tweaks.bookFont()" 
+                      (change)="onBookFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
                   <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
@@ -118,8 +174,15 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
+            @if (store.tweaks.customBookFont() !== null) {
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+                <input class="sb__input" type="text" [ngModel]="store.tweaks.customBookFont()" (ngModelChange)="store.updateTweak('customBookFont', $event)" placeholder="Georgia">
+              </div>
+            }
 
             <div class="sb__section">{{ 'sidebar.paragraph' | translate }}</div>
             <div class="sb__row sb__row--col">
@@ -177,6 +240,40 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
 
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartQuotes' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartQuotes()" (click)="store.updateTweak('smartQuotes', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartQuotes()" (click)="store.updateTweak('smartQuotes', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartDashes' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartDashes()" (click)="store.updateTweak('smartDashes', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartDashes()" (click)="store.updateTweak('smartDashes', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.smartEllipsis' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartEllipsis()" (click)="store.updateTweak('smartEllipsis', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartEllipsis()" (click)="store.updateTweak('smartEllipsis', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
+
+            @if (store.domLang() === 'es') {
+              <div class="sb__row">
+                <div class="sb__label">{{ 'sidebar.smartOpeningSigns' | translate }}</div>
+                <div class="sb__radio">
+                  <button class="sb__opt" [class.sb__opt--on]="store.tweaks.smartOpeningSigns()" (click)="store.updateTweak('smartOpeningSigns', true)">{{ 'sidebar.yes' | translate }}</button>
+                  <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.smartOpeningSigns()" (click)="store.updateTweak('smartOpeningSigns', false)">{{ 'sidebar.no' | translate }}</button>
+                </div>
+              </div>
+            }
+
             <div class="sb__section">{{ 'sidebar.dropCap' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.dropCapToggle' | translate }}</div>
@@ -227,7 +324,7 @@ import { environment } from '../../../environments/environment';
             <div class="sb__section">{{ 'sidebar.titleTypography' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
-              <select class="sb__select sb__select--font" [ngModel]="store.tweaks.titleFont()" (ngModelChange)="store.updateTweak('titleFont', $event)">
+              <select class="sb__select sb__select--font" [value]="store.tweaks.customTitleFont() !== null ? '__custom__' : store.tweaks.titleFont()" (change)="onTitleFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
                   <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
@@ -238,8 +335,15 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
+            @if (store.tweaks.customTitleFont() !== null) {
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+                <input class="sb__input" type="text" [ngModel]="store.tweaks.customTitleFont()" (ngModelChange)="store.updateTweak('customTitleFont', $event)" placeholder="Georgia">
+              </div>
+            }
             <div class="sb__row sb__row--col">
               <div class="sb__label">{{ 'sidebar.titleSize' | translate:{ value: store.tweaks.titleFontSize() } }}</div>
               <input type="range" min="12" max="36" step="0.5" [ngModel]="store.tweaks.titleFontSize()" (ngModelChange)="store.updateTweak('titleFontSize', $event)">
@@ -265,6 +369,7 @@ import { environment } from '../../../environments/environment';
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.sceneBreak' | translate }}</div>
               <select class="sb__select" [ngModel]="store.tweaks.sceneBreakType()" (ngModelChange)="store.updateTweak('sceneBreakType', $event)">
+                <option value="asterisks3">* * *</option>
                 <option value="asterisks">✦ ✦ ✦</option>
                 <option value="dots">· · ·</option>
                 <option value="flourish">~ o ~</option>
@@ -402,6 +507,7 @@ import { environment } from '../../../environments/environment';
                 <option value="Letter">{{ 'sidebar.sizeLetter' | translate }}</option>
                 <option value="A5">{{ 'sidebar.sizeA5' | translate }}</option>
                 <option value="A4">{{ 'sidebar.sizeA4' | translate }}</option>
+                <option value="A6">{{ 'sidebar.sizeA6' | translate }}</option>
               </select>
             </div>
           </div>
@@ -520,6 +626,8 @@ import { environment } from '../../../environments/environment';
               <select class="sb__select" [ngModel]="store.personalConfig().language" (ngModelChange)="setLanguage($event)">
                 <option value="es">{{ 'lang.es' | translate }}</option>
                 <option value="en">{{ 'lang.en' | translate }}</option>
+                <option value="fr">{{ 'lang.fr' | translate }}</option>
+                <option value="it">{{ 'lang.it' | translate }}</option>
               </select>
             </div>
 
@@ -547,6 +655,15 @@ import { environment } from '../../../environments/environment';
               <input class="sb__input" type="text" [attr.placeholder]="'sidebar.namePlaceholder' | translate"
                 [ngModel]="store.personalConfig().userName" (ngModelChange)="updateUserName($event)">
               <div class="sb__help">{{ 'sidebar.nameHelp' | translate }}</div>
+            </div>
+
+            <div class="sb__section">{{ 'sidebar.appearance' | translate }}</div>
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.theme' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'light'" (click)="store.setThemeMode('light')">{{ 'sidebar.light' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.mode() === 'dark'" (click)="store.setThemeMode('dark')">{{ 'sidebar.dark' | translate }}</button>
+              </div>
             </div>
 
             <div class="sb__section">{{ 'sidebar.layoutLabel' | translate }}</div>
@@ -681,13 +798,15 @@ export class SidebarComponent implements OnInit {
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;
-    return lang === 'en' ? 'en-US' : 'es-ES';
+    const localeMap: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+    return localeMap[lang] || 'es-ES';
   });
 
   dictWords = signal<string[]>([]);
   newDictWord = '';
 
   showAddMenu = signal(false);
+  showGoalsEditor = signal(false);
 
   // Modal states
   showInputModal = signal(false);
@@ -833,6 +952,25 @@ export class SidebarComponent implements OnInit {
   setLanguage(lang: string) {
     const config = { ...this.store.personalConfig(), language: lang };
     this.store.setPersonalConfig(config);
+    this.translate.use(lang);
+  }
+
+  onBookFontSelect(val: string) {
+    if (val === '__custom__') {
+      this.store.updateTweak('customBookFont', '');
+    } else {
+      this.store.updateTweak('bookFont', val as any);
+      this.store.updateTweak('customBookFont', null);
+    }
+  }
+
+  onTitleFontSelect(val: string) {
+    if (val === '__custom__') {
+      this.store.updateTweak('customTitleFont', '');
+    } else {
+      this.store.updateTweak('titleFont', val as any);
+      this.store.updateTweak('customTitleFont', null);
+    }
   }
 
   @HostListener('document:click')
@@ -843,6 +981,14 @@ export class SidebarComponent implements OnInit {
   toggleAddMenu(event: Event) {
     event.stopPropagation();
     this.showAddMenu.update(v => !v);
+  }
+
+  updateGoalWords(value: number) {
+    this.store.setWritingGoals({ ...this.store.writingGoals(), targetWords: Number(value) || 0 });
+  }
+
+  updateGoalDeadline(value: string) {
+    this.store.setWritingGoals({ ...this.store.writingGoals(), deadline: value || '' });
   }
 
   add(kind: ChapterKind) {
