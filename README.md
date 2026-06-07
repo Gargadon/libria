@@ -129,6 +129,21 @@ bun run electron:build
 
 ---
 
+## Apoya el Proyecto
+
+Libria es un proyecto independiente desarrollado en mi tiempo libre. Si te es útil, considera apoyar su continuidad:
+
+| Método | Link |
+| :--- | :--- |
+| **GitHub Sponsors** | [Sponsor](https://github.com/sponsors/Gargadon) — 0% comisión, matching disponible |
+| **PayPal** | [Donar](https://paypal.me/gargadon) |
+| **Ko-fi** | [Invitarme un café](https://ko-fi.com/gargadon) |
+| **Crypto** | BTC: `bc1qc8yqp6ph6gwlq83a6ytjvn90qaju8huzlgh4vacfq8j6nwmav7fsl7466e` · ETH/USDT (ERC-20): `0x4093Bc150bD32DF2ba4910901A8F320FC3Ce8568` · XRP (Ripple, tag `98270488`): `rLSn6Z3T8uCxbcd1oxwfGQN1Fdn5CyGujK` |
+
+Cada aportación, por pequeña que sea, ayuda a mantener el proyecto vivo. ¡Gracias!
+
+---
+
 ## Licencia
 
 Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
