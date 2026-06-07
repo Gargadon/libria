@@ -1,4 +1,4 @@
-# Libria
+# Libria — Shelley Edition
 
 ![Libria Banner](libria-banner.webp)
 
@@ -12,10 +12,10 @@
 
 Libria abandona el concepto de "página en blanco" tradicional por un sistema de **edición basada en bloques** (contenteditable), permitiendo una estructura semántica clara:
 
-- **Secciones especializadas:** Preliminares, cuerpo de la obra y posliminares.
+- **Secciones especializadas:** Preliminares (`halftitle`, `title`, `subtitle`, `author`, `publisher`, `dedication`, `chapter-num`), cuerpo de la obra y posliminares.
 - **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo) con indicadores de color.
 - **Métricas en tiempo real:** Recuento de palabras y tiempo de lectura estimado por capítulo y total.
-- **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes y más.
+- **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes, **listas ordenadas y no ordenadas**, **tablas**, y más.
 - **Formato de texto:** Negrita, cursiva, subrayado, tachado, superíndice y subíndice.
 - **Búsqueda y reemplazo global:** Vista de contexto con coincidencias resaltadas.
 
@@ -23,11 +23,27 @@ Libria abandona el concepto de "página en blanco" tradicional por un sistema de
 
 Un panel de control con más de **40 parámetros ajustables** para ver cómo quedará tu libro mientras lo escribes:
 
-- **Tipografía:** Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat — y cualquier fuente instalada en tu sistema.
+- **Tipografía:** Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat — y cualquier fuente instalada en tu sistema (con campos personalizados para fuente del libro y de títulos).
 - **Control absoluto:** Márgenes (interior/exterior/superior/inferior), interlineado, espaciado de párrafos, sangrías, justificación y alineación.
-- **Detalles profesionales:** Letras capitulares (drop caps), guionización automática en 5 idiomas, comillas inteligentes y decoraciones de escena personalizables.
+- **Detalles profesionales:** Letras capitulares (drop caps), guionización automática en 5 idiomas, **comillas inteligentes**, **guiones em/en**, **puntos suspensivos tipográficos** y **signos de apertura inteligentes**.
 - **Encabezados y pies:** Texto personalizado, numeración de página con posición configurable.
-- **Paginación dinámica:** Previsualiza en formatos estándar (5×8, 6×9, A5, A4, Carta, A6) o simulando dispositivos Kindle o iPhone.
+- **Paginación dinámica:** Previsualiza en formatos estándar (5×8, 6×9, A5, A4, A6, Carta) o simulando dispositivos Kindle o iPhone.
+
+### Revisión Ortográfica Integrada
+
+Corrector ortográfico completo sin depender del sistema operativo:
+
+- **Panel de revisión:** Navegación error por error con contexto, sugerencias y acciones (Ignorar, Ignorar todo, Añadir al diccionario). Acceso vía `F7` o botón en la barra de herramientas.
+- **Subrayado en tiempo real:** Los errores ortográficos se subrayan en rojo directamente en el editor mientras escribes, sin perder el cursor ni el formato.
+- **Diccionarios Hunspell:** Soporte para español, inglés, francés e italiano con más de 500 KB–1.3 MB de léxico por idioma.
+
+### Notas al Pie
+
+Sistema completo de notas al pie para libros técnicos y de no ficción:
+
+- **Inserción inline:** Referencias numéricas en el texto con contenido expandible.
+- **Exportación:** Panel de notas al pie generado automáticamente en EPUB.
+- **Ordenación:** Notas ordenadas por posición dentro del capítulo.
 
 ### Flujo Editorial y Revisión
 
@@ -40,23 +56,23 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 
 ### Experiencia de Escritura
 
-- **Modo Zen:** Ocultación total de la interfaz (topbar, sidebar y previsualización) para escribir sin distracciones. Acceso vía `F11`.
-- **Tema claro/oscuro:** Alterna entre ambos modos desde el panel lateral.
+- **Modo Zen:** Ocultación total de la interfaz (topbar, sidebar y previsualización) para escribir sin distracciones. Acceso vía `F11` o botón en la barra.
+- **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
 - **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
-- **Corrección ortográfica:** Integración nativa con el corrector del sistema vía Electron.
+- **Previsualización ocultable:** Alterna la visibilidad del panel de previsualización con `Ctrl+Shift+P` para maximizar el espacio de escritura.
 
 ### Importación y Exportación
 
 - **Importar:** Desde DOCX (con formato) y TXT (texto plano).
-- **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC y tipografía embebida.
-- **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido, tweaks tipográficos aplicados, portada y TOC opcionales.
+- **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC, tipografía embebida y soporte completo de listas, tablas y notas al pie.
+- **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido (negrita, cursiva, imágenes), tweaks tipográficos aplicados, portada y TOC opcionales.
 - **Exportación PDF:** Formato de impresión nativo vía CSS print con maquetación y estilos aplicados.
-- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas e imágenes.
+- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas, imágenes y objetivos de escritura.
 
 ### Internacionalización
 
-Interfaz disponible en español, inglés, francés e italiano — conmutación en vivo desde el panel lateral.
+Interfaz disponible en **español, inglés, francés e italiano** — conmutación en vivo desde el panel lateral.
 
 ---
 
@@ -74,6 +90,7 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 | **Estilos** | SCSS (Sass) por componente |
 | **Lenguaje** | TypeScript 5.9 (Modo Estricto) |
 | **Runtime** | [Bun](https://bun.sh/) 1.3.14 |
+| **Corrector ortográfico** | [nspell](https://github.com/wooorm/nspell) + diccionarios Hunspell |
 | **Dependencias clave** | `docx` (generación DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
 
 ### Arquitectura de Datos
@@ -83,7 +100,29 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 - **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
 - **Búsqueda Global:** Motor de búsqueda indexado con contexto de coincidencias.
 - **Sistema de Activos:** Imágenes embebidas directamente en el archivo `.libria`.
-- **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización) en LocalStorage.
+- **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización, modo oscuro) en LocalStorage.
+
+---
+
+## Novedades en 1.2.0 (Shelley Edition)
+
+| Novedad | Descripción |
+| :--- | :--- |
+| **Corrector ortográfico** | Panel de revisión con nspell, subrayado en tiempo real, 4 idiomas |
+| **Notas al pie** | Modelo de datos, inserción inline y exportación a EPUB |
+| **Listas** | Bloques `list-unordered` y `list-ordered` con exportación |
+| **Tablas** | Bloque `table` con exportación a EPUB y DOCX |
+| **Bloques editoriales** | `halftitle`, `title`, `subtitle`, `author`, `publisher`, `dedication`, `chapter-num` |
+| **Comillas y signos inteligentes** | Comillas, guiones em/en, puntos suspensivos y signos de apertura |
+| **Fuentes personalizadas** | Campos `customBookFont` y `customTitleFont` |
+| **Nuevo separador de escena** | `asterisks3` (tres asteriscos centrados) |
+| **Tamaño A6** | Nuevo formato de papel disponible |
+| **Objetivos de escritura** | Metas de palabras con deadline |
+| **Autoguardado** | Servicio de guardado silencioso cada 2 minutos |
+| **Dark mode completo** | Variables CSS unificadas, persistencia en preferencias, logo adaptativo |
+| **Preview toggle** | Ocultar/mostrar previsualización (`Ctrl+Shift+P`) |
+| **Francés e italiano** | Traducción completa de la interfaz |
+| **Correcciones de preview** | Zoom manual, centrado vertical, sub-pixel bleed |
 
 ---
 
@@ -134,3 +173,4 @@ bun run electron:build
 Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
 
 ---
+
