@@ -10,24 +10,21 @@ permissions:
 
 jobs:
   build:
-    name: Build and Publish (${{ matrix.os }}, ${{ matrix.arch }})
+    name: Build (${{ matrix.os }}, ${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # macOS
           - os: macos-latest
             arch: universal
             target: mac
-          # Windows
           - os: windows-latest
             arch: x64
             target: win
           - os: windows-latest
             arch: arm64
             target: win
-          # Linux
           - os: ubuntu-latest
             arch: x64
             target: linux
@@ -36,7 +33,7 @@ jobs:
             target: linux
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -69,8 +66,8 @@ jobs:
       - name: Build Angular
         run: bun run build
 
-      - name: Build and Publish Electron
-        run: bunx electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish always
+      - name: Build Electron
+        run: bunx electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -80,3 +77,21 @@ jobs:
           name: libria-${{ matrix.target }}-${{ matrix.arch }}
           path: release/*
           if-no-files-found: warn
+
+  publish:
+    name: Publish Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+
+      - name: Publish to GitHub Releases
+        run: |
+          gh release upload v${{ github.ref_name }} release/**/* --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
