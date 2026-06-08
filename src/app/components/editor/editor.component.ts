@@ -191,9 +191,19 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                     @case ('scene-break') { <div class="bk-break">{{ store.tweaks.sceneBreakType() === 'asterisks3' ? '* * *' : store.tweaks.sceneBreakType() === 'asterisks' ? '✦ ✦ ✦' : store.tweaks.sceneBreakType() === 'dots' ? '· · ·' : store.tweaks.sceneBreakType() === 'flourish' ? '— o —' : '' }}</div> }
                     @case ('page-break') { <div class="bk-page-break"><span>{{ 'editor.pageBreakLabel' | translate }}</span></div> }
                     @case ('image') {
-                      <figure class="bk-image">
+                      <figure class="bk-image" #imageFigure>
                         @if (b.src && store.assets()[b.src]) {
-                          <img [src]="store.assets()[b.src]" alt="" class="bk-image__img">
+                          <div class="bk-image__wrap">
+                            <img [src]="store.assets()[b.src]" alt="" class="bk-image__img"
+                              [style.width.px]="b.width"
+                              [style.height.px]="b.height"
+                              #imageEl>
+                            <span class="bk-image__resize" (mousedown)="onImageResizeStart($event, chapter.id, $index, imageEl)"></span>
+                          </div>
+                          <figcaption class="bk-image__cap" contenteditable="true"
+                            [appContenteditable]="b.caption"
+                            (input)="onImageCaptionInput(chapter.id, $index, $event)"
+                            [attr.data-placeholder]="'editor.imageCaption' | translate"></figcaption>
                         } @else {
                           <div class="bk-image__placeholder" (click)="pickImageForBlock(chapter.id, $index)">
                             <span class="material-symbols-outlined">add_photo_alternate</span>
@@ -1238,6 +1248,41 @@ export class EditorComponent {
       reader.readAsDataURL(file);
     };
     input.click();
+  }
+
+  onImageResizeStart(event: MouseEvent, chapterId: string, blockIndex: number, img: HTMLImageElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startW = img.offsetWidth;
+    const startH = img.offsetHeight;
+    const aspect = startW / startH;
+
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - startX;
+      const newW = Math.max(80, startW + dx);
+      const newH = Math.round(newW / aspect);
+      img.style.width = newW + 'px';
+      img.style.height = newH + 'px';
+    };
+
+    const onUp = (e: MouseEvent) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const dx = e.clientX - startX;
+      const newW = Math.max(80, startW + dx);
+      const newH = Math.round(newW / aspect);
+      this.store.saveSnapshot();
+      this.store.updateImageSize(chapterId, blockIndex, newW, newH);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  onImageCaptionInput(chapterId: string, blockIndex: number, event: Event) {
+    const el = event.target as HTMLElement;
+    this.store.updateImageCaption(chapterId, blockIndex, el.innerText);
   }
 
   private _focusAfterHistory() {

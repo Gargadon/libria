@@ -10,6 +10,7 @@ const PATTERN_LOADERS: Record<string, () => Promise<PatternModule>> = {
   'en-gb': () => import('hyphen/patterns/en-gb'),
   fr: () => import('hyphen/patterns/fr'),
   it: () => import('hyphen/patterns/it'),
+  de: () => import('hyphen/patterns/de-1996'),
 };
 
 function extractPattern(mod: PatternModule): any {

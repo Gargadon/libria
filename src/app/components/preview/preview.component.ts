@@ -295,7 +295,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
               @case ('image') {
                 @if (b.src && store.assets()[b.src]) {
-                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;"></figure>
+                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" [style.width.px]="b.width" [style.height.px]="b.height" style="max-width:100%;height:auto;display:block;margin:0 auto;">@if (b.caption) {<figcaption class="kp-image__cap">{{ b.caption }}</figcaption>}</figure>
                 }
               }
               @case ('list-unordered') {

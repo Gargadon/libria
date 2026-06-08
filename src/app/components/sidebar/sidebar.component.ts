@@ -629,6 +629,7 @@ import { environment } from '../../../environments/environment';
                 <option value="en">{{ 'lang.en' | translate }}</option>
                 <option value="fr">{{ 'lang.fr' | translate }}</option>
                 <option value="it">{{ 'lang.it' | translate }}</option>
+                <option value="de">{{ 'lang.de' | translate }}</option>
               </select>
             </div>
 

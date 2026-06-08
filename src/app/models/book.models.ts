@@ -7,6 +7,9 @@ export interface Block {
   html?: string;
   drop?: string;
   src?: string; // asset key for image blocks
+  width?: number;
+  height?: number;
+  caption?: string;
 }
 
 export interface Footnote {

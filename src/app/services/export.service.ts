@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
-import { sortFootnotesByPosition } from '../models/book.models';
+import { sortFootnotesByPosition, Block } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import JSZip from 'jszip';
 import {
@@ -134,7 +134,9 @@ ${dropCapStyles}`);
           case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
           case 'image': {
             if (b.src && assets[b.src]) {
-              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="max-width:100%;height:auto" alt=""/></figure>`;
+              const imgStyle = this.imageStyle(b);
+              const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
+              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="${imgStyle}" alt=""/>${cap}</figure>`;
             }
             break;
           }
@@ -561,7 +563,9 @@ ${t.dropCap ? `
           case 'page-break':    return `<div class="kp-page-break"></div>`;
           case 'image': {
             const imgSrc = b.src ? (assets[b.src] ?? '') : '';
-            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="max-width:100%;height:auto;display:block;margin:0 auto;" alt=""></figure>` : '';
+            const imgStyle = this.imageStyle(b);
+            const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
+            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="${imgStyle}" alt="">${cap}</figure>` : '';
           }
           case 'list-unordered': return `<ul class="kp-list">${raw}</ul>`;
           case 'list-ordered':   return `<ol class="kp-list">${raw}</ol>`;
@@ -727,11 +731,21 @@ ${bodyContent}
               const imgBlob = this.dataUrlToBlob(assets[imgKey]);
               const imgBuf = await imgBlob.arrayBuffer();
               const ext = this.imageExt(assets[imgKey]);
+              const dims = b.width && b.height
+                ? { width: b.width, height: b.height }
+                : { width: 460, height: 600 };
               children.push(new Paragraph({
                 alignment: 'center',
-                spacing: { before: 200, after: 200 },
-                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: 460, height: 600 } })],
+                spacing: { before: 200, after: b.caption ? 0 : 200 },
+                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: dims.width, height: dims.height } })],
               }));
+              if (b.caption) {
+                children.push(new Paragraph({
+                  alignment: 'center',
+                  spacing: { before: 60, after: 200 },
+                  children: [new TextRun({ text: b.caption, size: 20, color: '555555' })],
+                }));
+              }
             }
             break;
           }
@@ -844,6 +858,13 @@ ${bodyContent}
       none: '',
     };
     return m[type] ?? '* * *';
+  }
+
+  private imageStyle(b: Block): string {
+    if (b.width && b.height) {
+      return `max-width:100%;width:${b.width}px;height:${b.height}px;display:block;margin:0 auto`;
+    }
+    return 'max-width:100%;height:auto;display:block;margin:0 auto';
   }
 
   private tableHtml(html: string): string {
