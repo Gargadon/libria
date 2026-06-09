@@ -92,6 +92,6 @@ jobs:
 
       - name: Publish to GitHub Releases
         run: |
-          gh release upload v${{ github.ref_name }} release/**/* --clobber
+          gh release upload ${{ github.ref_name }} release/**/* --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
