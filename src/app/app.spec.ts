@@ -1,9 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { TranslateModule } from '@ngx-translate/core';
-import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { Observable, of } from 'rxjs';
 import { App } from './app';
+import es from '../../public/i18n/es.json';
+import en from '../../public/i18n/en.json';
+
+const translations: Record<string, Record<string, string>> = { es, en };
+
+class FakeTranslateLoader implements TranslateLoader {
+  getTranslation(lang: string): Observable<Record<string, string>> {
+    return of(translations[lang] || {});
+  }
+}
 
 describe('App', () => {
   beforeEach(async () => {
@@ -11,15 +20,9 @@ describe('App', () => {
       imports: [
         App,
         TranslateModule.forRoot({
-          loader: provideTranslateHttpLoader({
-            prefix: './assets/i18n/',
-            suffix: '.json'
-          }),
+          loader: { provide: TranslateLoader, useClass: FakeTranslateLoader },
           defaultLanguage: 'es'
         })
-      ],
-      providers: [
-        provideHttpClient()
       ]
     }).compileComponents();
   });

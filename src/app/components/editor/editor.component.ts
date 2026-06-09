@@ -1,9 +1,10 @@
-import { Component, inject, computed, signal, HostListener, effect } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, effect, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
-import { NoteRole, NoteStatus, Footnote, Misspelling, sortFootnotesByPosition } from '../../models/book.models';
+import { TableContentDirective } from './table-content.directive';
+import { Block, NoteRole, NoteStatus, Footnote, Misspelling, sortFootnotesByPosition } from '../../models/book.models';
 import { SpellCheckService } from '../../services/spell-check.service';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
@@ -12,7 +13,8 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
 @Component({
   selector: 'app-editor',
   standalone: true,
-  imports: [CommonModule, TranslateModule, ContenteditableDirective, FormsModule, NotesChatModalComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [CommonModule, TranslateModule, ContenteditableDirective, TableContentDirective, FormsModule, NotesChatModalComponent],
   host: {
     'style': 'display: flex; flex-direction: column; min-height: 0; flex: 1;'
   },
@@ -44,6 +46,16 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
             <button class="ed__t" [attr.title]="'editor.insertUnorderedList' | translate" (click)="insertUnorderedList()"><span class="material-symbols-outlined">format_list_bulleted</span></button>
             <button class="ed__t" [attr.title]="'editor.insertOrderedList' | translate" (click)="insertOrderedList()"><span class="material-symbols-outlined">format_list_numbered</span></button>
             <button class="ed__t" [attr.title]="'editor.insertTable' | translate" (click)="insertTable()"><span class="material-symbols-outlined">table</span></button>
+            @if (activeBlockType() === 'table') {
+              <span class="ed__tsep"></span>
+              <button class="ed__t" title="Insertar fila arriba" (click)="tableInsertRowAbove()"><span class="material-symbols-outlined">expand_less</span></button>
+              <button class="ed__t" title="Insertar fila abajo" (click)="tableInsertRowBelow()"><span class="material-symbols-outlined">expand_more</span></button>
+              <button class="ed__t" title="Insertar columna izquierda" (click)="tableInsertColLeft()"><span class="material-symbols-outlined">chevron_left</span></button>
+              <button class="ed__t" title="Insertar columna derecha" (click)="tableInsertColRight()"><span class="material-symbols-outlined">chevron_right</span></button>
+              <span class="ed__tsep"></span>
+              <button class="ed__t" title="Eliminar fila" (click)="tableDeleteRow()"><span class="material-symbols-outlined">remove</span></button>
+              <button class="ed__t" title="Eliminar columna" (click)="tableDeleteCol()"><span class="material-symbols-outlined">backspace</span></button>
+            }
             <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined">add_photo_alternate</span></button>
             <button class="ed__t" [attr.title]="'editor.insertFootnote' | translate" (click)="insertFootnote()"><span class="material-symbols-outlined">superscript</span></button>
             <span class="ed__tsep"></span>
@@ -68,11 +80,11 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
               [class.ed__doc--justify]="store.tweaks.justifyText()"
               [class.ed__doc--hyphen]="store.tweaks.hyphenation()">
               @for (b of chapter.body; track $index) {
-                <div class="ed__block-container" [class.ed__block-container--has-note]="hasNote($index)">
-                  @if (hasNote($index)) {
+                <div class="ed__block-container" [class.ed__block-container--has-note]="blockNotes().has($index)">
+                  @if (blockNotes().has($index)) {
                     <button class="ed__note-indicator" (click)="addNoteToBlock(chapter.id, $index)" [attr.title]="'editor.viewNotes' | translate">
                       <span class="material-symbols-outlined">chat_bubble</span>
-                      <span class="ed__note-count">{{ noteCount($index) }}</span>
+                      <span class="ed__note-count">{{ blockNotes().get($index) }}</span>
                     </button>
                   }
                   <div class="ed__block-actions">
@@ -179,9 +191,34 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                     @case ('scene-break') { <div class="bk-break">{{ store.tweaks.sceneBreakType() === 'asterisks3' ? '* * *' : store.tweaks.sceneBreakType() === 'asterisks' ? '✦ ✦ ✦' : store.tweaks.sceneBreakType() === 'dots' ? '· · ·' : store.tweaks.sceneBreakType() === 'flourish' ? '— o —' : '' }}</div> }
                     @case ('page-break') { <div class="bk-page-break"><span>{{ 'editor.pageBreakLabel' | translate }}</span></div> }
                     @case ('image') {
-                      <figure class="bk-image">
+                      <figure class="bk-image" #imageFigure>
                         @if (b.src && store.assets()[b.src]) {
-                          <img [src]="store.assets()[b.src]" alt="" class="bk-image__img">
+                          <div class="bk-image__wrap">
+                            <img [src]="store.assets()[b.src]" alt="" class="bk-image__img"
+                              [style.width.px]="b.width"
+                              [style.height.px]="b.height"
+                              [style.transform]="imageTransform(b)"
+                              #imageEl>
+                            <div class="bk-image__tools">
+                              <button class="bk-image__tool" (click)="rotateImage(chapter.id, $index, b, -90)" [attr.title]="'editor.imageRotateCCW' | translate">
+                                <span class="material-symbols-outlined">rotate_left</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="rotateImage(chapter.id, $index, b, 90)" [attr.title]="'editor.imageRotateCW' | translate">
+                                <span class="material-symbols-outlined">rotate_right</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="flipImage(chapter.id, $index, b, 'h')" [attr.title]="'editor.imageFlipH' | translate">
+                                <span class="material-symbols-outlined">flip</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="flipImage(chapter.id, $index, b, 'v')" [attr.title]="'editor.imageFlipV' | translate">
+                                <span class="material-symbols-outlined">flip_to_front</span>
+                              </button>
+                            </div>
+                            <span class="bk-image__resize" (mousedown)="onImageResizeStart($event, chapter.id, $index, imageEl)"></span>
+                          </div>
+                          <figcaption class="bk-image__cap" contenteditable="true"
+                            [appContenteditable]="b.caption"
+                            (input)="onImageCaptionInput(chapter.id, $index, $event)"
+                            [attr.data-placeholder]="'editor.imageCaption' | translate"></figcaption>
                         } @else {
                           <div class="bk-image__placeholder" (click)="pickImageForBlock(chapter.id, $index)">
                             <span class="material-symbols-outlined">add_photo_alternate</span>
@@ -197,7 +234,10 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                       <ol class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ol>
                     }
                     @case ('table') {
-                      <table class="bk-table" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></table>
+                      <table class="bk-table" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appTableContent]="b.html" (input)="onTableInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></table>
+                    }
+                    @default {
+                      <div class="bk-unknown">[{{ b.type }}]</div>
                     }
                   }
                 </div>
@@ -261,11 +301,6 @@ export class EditorComponent {
 
   private readonly _spellWatch = effect(() => {
     const chapter = this.store.activeChapter();
-    const panelOpen = this.store.ui.showSpellCheck();
-    if (!panelOpen) {
-      this.blockErrors.set({});
-      return;
-    }
     if (chapter) {
       clearTimeout(this.chapterSpellCheckTimeout);
       this.chapterSpellCheckTimeout = setTimeout(() => this.runSpellCheck(), 500);
@@ -273,7 +308,6 @@ export class EditorComponent {
   });
 
   getBlockErrors(blockIndex: number): Misspelling[] {
-    if (!this.store.ui.showSpellCheck()) return [];
     return this.blockErrors()[blockIndex] ?? [];
   }
   readonly environment = environment;
@@ -304,13 +338,14 @@ export class EditorComponent {
     return this.translate.instant(map[s!] || "");
   });
 
-  hasNote(blockIndex: number): boolean {
-    return this.store.activeNotes().some(n => n.blockIndex === blockIndex);
-  }
-
-  noteCount(blockIndex: number): number {
-    return this.store.activeNotes().filter(n => n.blockIndex === blockIndex).length;
-  }
+  readonly blockNotes = computed(() => {
+    const notes = this.store.activeNotes();
+    const map = new Map<number, number>();
+    for (const n of notes) {
+      map.set(n.blockIndex, (map.get(n.blockIndex) || 0) + 1);
+    }
+    return map;
+  });
 
   // --- Note Dialog ---
   showNoteDialog = signal(false);
@@ -387,21 +422,54 @@ export class EditorComponent {
 
 
   lastFocusedIndex = -1;
+  readonly focusedBlockIndex = signal(-1);
   /** Prevents onInput from firing during programmatic splits/merges */
   private _suppressInput = false;
   private _inputTimeout: any;
+  private _tableInputTimeout: any;
 
   // ─── Drag selection across blocks ────────────────────────────────────────────
   private _anchorCaret: { node: Node; offset: number } | null = null;
   private _crossBlockSelect = false;
 
+  readonly activeBlockType = computed(() => {
+    const chapter = this.store.activeChapter();
+    const idx = this.focusedBlockIndex();
+    if (!chapter || idx < 0 || idx >= chapter.body.length) return null;
+    return chapter.body[idx].type;
+  });
+
   onFocus(index: number) {
     this.lastFocusedIndex = index;
+    this.focusedBlockIndex.set(index);
   }
 
   onPaste(chapterId: string, blockIndex: number, event: ClipboardEvent) {
     const chapter = this.store.activeChapter();
-    if (chapter?.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
+    if (!chapter) return;
+    if (chapter.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
+
+    const items = event.clipboardData?.items;
+    if (items) {
+      const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
+      if (imageItems.length > 0) {
+        event.preventDefault();
+        for (const item of imageItems) {
+          const file = item.getAsFile();
+          if (!file) continue;
+          this._readImageFile(file).then(({ dataUrl, width, height }) => {
+            const assetKey = 'img-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+            this.store.updateAsset(assetKey, dataUrl);
+            const ch = this.store.activeChapter();
+            const idx = this.lastFocusedIndex >= 0 ? this.lastFocusedIndex : (ch ? ch.body.length - 1 : 0);
+            this.store.saveSnapshot();
+            this.store.insertImageBlock(chapterId, idx, assetKey, width, height);
+          });
+        }
+        return;
+      }
+    }
+
     const text = event.clipboardData?.getData('text/plain');
     if (!text || !text.includes('\n')) return; // Let default behavior handle single lines
 
@@ -480,6 +548,7 @@ export class EditorComponent {
   }
 
   private stripSpellErrors(html: string): string {
+    if (!html.includes('spell-err')) return html;
     return html.replace(/<span class="spell-err"[^>]*>/gi, '').replace(/<\/span>/gi, '');
   }
 
@@ -1028,7 +1097,99 @@ export class EditorComponent {
     this.store.saveSnapshot();
     const chapterId = this.store.activeChapterId();
     const index = this._insertIndex();
-    this.store.insertBlock(chapterId, index, 'table', '', '<table><tbody><tr><td></td><td></td></tr><tr><td></td><td></td></tr></tbody></table>');
+    this.store.insertBlock(chapterId, index, 'table', '',
+      '<table><tbody><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></tbody></table>');
+  }
+
+  onTableInput(chapterId: string, blockIndex: number, event: Event) {
+    if (this._suppressInput) return;
+    const el = event.target as HTMLTableElement;
+    const html = el.outerHTML;
+    clearTimeout(this._tableInputTimeout);
+    this._tableInputTimeout = setTimeout(() => {
+      this.store.updateChapterBlock(chapterId, blockIndex, el.innerText.replace(/\n$/, ''), html);
+    }, 500);
+  }
+
+  private get focusedTableCell(): HTMLTableCellElement | null {
+    const el = document.activeElement;
+    return el?.closest('td, th') || null;
+  }
+
+  tableInsertRowAbove() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const rowIdx = cell.closest('tr')!.rowIndex;
+    const row = table.insertRow(rowIdx);
+    const cols = table.rows[0]?.cells.length || 1;
+    for (let i = 0; i < cols; i++) row.insertCell();
+    this.syncTableHtml(table);
+  }
+
+  tableInsertRowBelow() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const row = table.insertRow(cell.closest('tr')!.rowIndex + 1);
+    const cols = table.rows[0]?.cells.length || 1;
+    for (let i = 0; i < cols; i++) row.insertCell();
+    this.syncTableHtml(table);
+  }
+
+  tableInsertColLeft() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const colIdx = cell.cellIndex;
+    for (let i = 0; i < table.rows.length; i++) {
+      table.rows[i].insertCell(colIdx);
+    }
+    this.syncTableHtml(table);
+  }
+
+  tableInsertColRight() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const colIdx = cell.cellIndex + 1;
+    for (let i = 0; i < table.rows.length; i++) {
+      table.rows[i].insertCell(colIdx);
+    }
+    this.syncTableHtml(table);
+  }
+
+  tableDeleteRow() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const rowIdx = cell.closest('tr')!.rowIndex;
+    if (table.rows.length <= 1) return;
+    table.deleteRow(rowIdx);
+    this.syncTableHtml(table);
+  }
+
+  tableDeleteCol() {
+    const cell = this.focusedTableCell;
+    if (!cell) return;
+    const table = cell.closest('table')!;
+    const colIdx = cell.cellIndex;
+    if (table.rows[0]?.cells.length <= 1) return;
+    for (let i = 0; i < table.rows.length; i++) {
+      table.rows[i].deleteCell(colIdx);
+    }
+    this.syncTableHtml(table);
+  }
+
+  private syncTableHtml(table: HTMLTableElement) {
+    clearTimeout(this._tableInputTimeout);
+    const html = table.outerHTML;
+    const chapter = this.store.activeChapter();
+    if (!chapter) return;
+    const idx = this.lastFocusedIndex >= 0 ? this.lastFocusedIndex : 0;
+    if (idx < 0 || idx >= chapter.body.length || chapter.body[idx].type !== 'table') return;
+    this.store.saveSnapshot();
+    this.store.updateChapterBlock(chapter.id, idx, table.innerText.replace(/\n$/, ''), html);
   }
 
   execCommand(command: string) {
@@ -1091,19 +1252,16 @@ export class EditorComponent {
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const data = reader.result as string;
+      this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, data);
+        this.store.updateAsset(assetKey, dataUrl);
         const chapterId = this.store.activeChapterId();
         const index = this.lastFocusedIndex >= 0
           ? this.lastFocusedIndex
           : this.store.activeChapter()!.body.length - 1;
         this.store.saveSnapshot();
-        this.store.insertImageBlock(chapterId, index, assetKey);
-      };
-      reader.readAsDataURL(file);
+        this.store.insertImageBlock(chapterId, index, assetKey, width, height);
+      });
     };
     input.click();
   }
@@ -1115,16 +1273,96 @@ export class EditorComponent {
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const data = reader.result as string;
+      this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, data);
+        this.store.updateAsset(assetKey, dataUrl);
+        this.store.saveSnapshot();
+        this.store.updateImageSize(chapterId, blockIndex, width, height);
         this.store.setImageSrc(chapterId, blockIndex, assetKey);
-      };
-      reader.readAsDataURL(file);
+      });
     };
     input.click();
+  }
+
+  onImageResizeStart(event: MouseEvent, chapterId: string, blockIndex: number, img: HTMLImageElement) {
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startW = img.offsetWidth;
+    const startH = img.offsetHeight;
+    const aspect = startW / startH;
+
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - startX;
+      const newW = Math.max(80, startW + dx);
+      const newH = Math.round(newW / aspect);
+      img.style.width = newW + 'px';
+      img.style.height = newH + 'px';
+    };
+
+    const onUp = (e: MouseEvent) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      const dx = e.clientX - startX;
+      const newW = Math.max(80, startW + dx);
+      const newH = Math.round(newW / aspect);
+      this.store.saveSnapshot();
+      this.store.updateImageSize(chapterId, blockIndex, newW, newH);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  onImageCaptionInput(chapterId: string, blockIndex: number, event: Event) {
+    const el = event.target as HTMLElement;
+    this.store.updateImageCaption(chapterId, blockIndex, el.innerText);
+  }
+
+  imageTransform(b: Block): string {
+    const parts: string[] = [];
+    if (b.rotation && b.rotation !== 0) parts.push(`rotate(${b.rotation}deg)`);
+    if (b.flipH) parts.push('scaleX(-1)');
+    if (b.flipV) parts.push('scaleY(-1)');
+    return parts.join(' ') || 'none';
+  }
+
+  rotateImage(chapterId: string, blockIndex: number, b: Block, delta: number) {
+    const current = b.rotation ?? 0;
+    const next = (((current + delta) % 360) + 360) % 360;
+    this.store.saveSnapshot();
+    this.store.updateImageTransform(chapterId, blockIndex, { rotation: next });
+  }
+
+  flipImage(chapterId: string, blockIndex: number, b: Block, axis: 'h' | 'v') {
+    this.store.saveSnapshot();
+    if (axis === 'h') {
+      this.store.updateImageTransform(chapterId, blockIndex, { flipH: !b.flipH });
+    } else {
+      this.store.updateImageTransform(chapterId, blockIndex, { flipV: !b.flipV });
+    }
+  }
+
+  private _readImageFile(file: File): Promise<{ dataUrl: string; width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Canvas 2D not available')); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight });
+        };
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   private _focusAfterHistory() {

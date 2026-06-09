@@ -18,6 +18,7 @@
   --role-publisher: #8a8a8a;
   --terra: #b87333;
   --terra-2: #9a5a2a;
+  --accent: #b87333;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 0 rgba(0,0,0,.02);
   --shadow-md: 0 1px 0 rgba(0,0,0,.03), 0 8px 24px -12px rgba(0,0,0,.1);
@@ -46,6 +47,7 @@
   --role-publisher: #808080;
   --terra: #d4945a;
   --terra-2: #b87a3e;
+  --accent: #d4945a;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,.2), 0 1px 0 rgba(0,0,0,.15);
   --shadow-md: 0 1px 0 rgba(0,0,0,.15), 0 8px 24px -12px rgba(0,0,0,.4);
@@ -712,6 +714,7 @@ app-welcome {
 .sbi {
   width: 100%;
   display: grid;
+  content-visibility: auto;
   grid-template-columns: 32px 1fr;
   gap: 8px;
   align-items: flex-start;
@@ -784,6 +787,36 @@ app-welcome {
 
 .sbi__del:hover {
   color: var(--ink);
+}
+
+.sbi__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.sbi__move {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-mute);
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+}
+
+.sbi:hover .sbi__move {
+  opacity: 1;
+}
+
+.sbi__move:hover {
+  color: var(--ink);
+}
+
+.sbi__move--hidden {
+  visibility: hidden;
 }
 
 .sbi--on .sbi__t {
@@ -1207,6 +1240,81 @@ app-welcome {
   line-height: 1.4;
 }
 
+/* ===== Attachments Panel ===== */
+.sb__attachments-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.sb__attachment {
+  background: var(--paper-2);
+  border: 1px solid var(--rule-soft);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sb__attachment-img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sb__attachment-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.sb__attachment-info {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sb__attachment-name {
+  font-size: 10px;
+  color: var(--ink-mute);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.sb__attachment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sb__attachment-del {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--ink-mute);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sb__attachment-del:hover {
+  background: var(--error-bg, rgba(180, 60, 60, 0.1));
+  color: var(--error, #b44);
+}
+
 .sb__foot {
   margin-top: 20px;
   padding-top: 14px;
@@ -1576,6 +1684,7 @@ app-welcome {
 .ed__current {
   font-family: var(--display);
   font-size: 14px;
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2188,6 +2297,15 @@ app-welcome {
   background: var(--ink-2);
 }
 
+.app--dark .btn--primary {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+
+.app--dark .btn--primary:hover {
+  background: var(--rule);
+}
+
 .btn:not(.btn--primary) {
   background: var(--paper-2);
   border: 1px solid var(--rule-soft);
@@ -2413,8 +2531,8 @@ app-welcome {
 
 .bk-table {
   border-collapse: collapse;
-  width: 100%;
-  margin: 0.4em 0;
+  width: 98%;
+  margin: 0.4em 1%;
 }
 
 .bk-table td {
@@ -3847,12 +3965,109 @@ body.print-digital {
   text-align: center;
 }
 
+.bk-image__wrap {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
 .bk-image__img {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
   display: block;
   margin: 0 auto;
+}
+
+.bk-image__resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: #fff;
+  border: 2px solid #333;
+  border-radius: 4px;
+  opacity: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+  transition: opacity .15s;
+  z-index: 2;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid #666;
+    border-bottom: 2px solid #666;
+  }
+}
+
+.bk-image__wrap:hover .bk-image__resize {
+  opacity: 1;
+}
+
+.bk-image__tools {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 2;
+}
+
+.bk-image__wrap:hover .bk-image__tools {
+  opacity: 1;
+}
+
+.bk-image__tool {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background .15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, .8);
+  }
+
+  .material-symbols-outlined {
+    font-size: 16px;
+  }
+}
+
+.bk-image__cap {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  text-align: center;
+  outline: none;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: background .15s;
+
+  &:focus {
+    background: var(--paper-em);
+  }
+
+  &:empty:before {
+    content: attr(data-placeholder);
+    color: var(--ink-mute);
+    font-style: italic;
+  }
 }
 
 .bk-image__placeholder {
@@ -3918,6 +4133,13 @@ body.print-digital {
   padding: 0;
 }
 
+.kp-image__cap {
+  text-align: center;
+  font-size: .85em;
+  margin-top: .5em;
+  color: var(--ink-soft);
+}
+
 .kp-list {
   margin: 0.5em 0;
   padding-left: 1.5em;
@@ -3928,8 +4150,8 @@ body.print-digital {
 }
 
 .kp-table-wrap {
-  overflow-x: auto;
-  margin: 0.8em 0;
+  margin: 0.6em 0;
+  break-inside: avoid;
 }
 
 .kp-table-wrap table {
@@ -3940,10 +4162,10 @@ body.print-digital {
 .kp-table-wrap td,
 .kp-table-wrap th {
   border: 1px solid var(--rule);
-  padding: 6px 8px;
+  padding: 4px 6px;
   text-align: left;
   vertical-align: top;
-  font-size: 0.9em;
+  font-size: 0.85em;
 }
 
 /* ===== Spell Check Panel ===== */
@@ -3973,7 +4195,8 @@ body.print-digital {
 .scp__title {
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: .02em
+  letter-spacing: .02em;
+  color: var(--ink);
 }
 
 .scp__close {
@@ -4144,4 +4367,14 @@ body.print-digital {
 }
 .app--dark .spell-err {
   text-decoration: #ff6b6b wavy underline;
+}
+
+.bk-unknown {
+  padding: 12px 16px;
+  border: 1px dashed var(--ink-mute);
+  border-radius: 6px;
+  color: var(--ink-mute);
+  font-size: 12px;
+  font-family: var(--mono);
+  text-align: center;
 }

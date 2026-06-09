@@ -7,6 +7,12 @@ export interface Block {
   html?: string;
   drop?: string;
   src?: string; // asset key for image blocks
+  width?: number;
+  height?: number;
+  caption?: string;
+  rotation?: number; // 0 | 90 | 180 | 270
+  flipH?: boolean;
+  flipV?: boolean;
 }
 
 export interface Footnote {

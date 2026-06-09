@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
@@ -9,6 +9,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 @Component({
   selector: 'app-preview',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
     <style [innerHTML]="printStyles()"></style>
@@ -294,7 +295,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
               @case ('image') {
                 @if (b.src && store.assets()[b.src]) {
-                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" style="max-width:100%;height:auto;display:block;margin:0 auto;"></figure>
+                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" [style.width.px]="b.width" [style.height.px]="b.height" [style.transform]="imageTransform(b)" style="max-width:100%;height:auto;display:block;margin:0 auto;">@if (b.caption) {<figcaption class="kp-image__cap">{{ b.caption }}</figcaption>}</figure>
                 }
               }
               @case ('list-unordered') {
@@ -304,7 +305,10 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                 <ol class="kp-list" [innerHTML]="b.html || b.text"></ol>
               }
               @case ('table') {
-                <div class="kp-table-wrap" [innerHTML]="b.html || b.text"></div>
+                <div class="kp-table-wrap" [innerHTML]="safeHtml(b.html || b.text)"></div>
+              }
+              @default {
+                <div>[{{ b.type }}]</div>
               }
             }
           }
@@ -354,6 +358,19 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
   readonly sortFootnotesByPosition = sortFootnotesByPosition;
+
+  safeHtml(html: string) {
+    const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
+    return this.sanitizer.bypassSecurityTrustHtml(normalized);
+  }
+
+  imageTransform(b: Block): string {
+    const parts: string[] = [];
+    if (b.rotation && b.rotation !== 0) parts.push(`rotate(${b.rotation}deg)`);
+    if (b.flipH) parts.push('scaleX(-1)');
+    if (b.flipV) parts.push('scaleY(-1)');
+    return parts.join(' ') || 'none';
+  }
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;

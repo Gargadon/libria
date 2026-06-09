@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, TranslateModule],
   template: `
     <header class="tb">
@@ -45,6 +46,9 @@ import { environment } from '../../../environments/environment';
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'metadata'"
             (click)="store.setNav('metadata')">{{ 'topbar.properties' | translate }}</button>
+          <button class="tb__nav__b"
+            [class.tb__nav__b--on]="store.ui.activeNav() === 'attachments'"
+            (click)="store.setNav('attachments')">{{ 'topbar.attachments' | translate }}</button>
         </nav>
       }
 
@@ -79,6 +83,7 @@ import { environment } from '../../../environments/environment';
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'styles'" (click)="store.setNav('styles'); closeMenus()">{{ 'topbar.styles' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">{{ 'topbar.layout' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">{{ 'topbar.properties' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'attachments'" (click)="store.setNav('attachments'); closeMenus()">{{ 'topbar.attachments' | translate }}</button>
               </div>
             }
           </div>

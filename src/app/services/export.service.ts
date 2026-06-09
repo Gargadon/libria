@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
-import { sortFootnotesByPosition } from '../models/book.models';
+import { sortFootnotesByPosition, Block } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import JSZip from 'jszip';
 import {
@@ -134,13 +134,16 @@ ${dropCapStyles}`);
           case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
           case 'image': {
             if (b.src && assets[b.src]) {
-              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="max-width:100%;height:auto" alt=""/></figure>`;
+              const imgStyle = this.imageStyle(b);
+              const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
+              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="${imgStyle}" alt=""/>${cap}</figure>`;
             }
             break;
           }
           case 'list-unordered': content += `<ul class="kp-list">${raw}</ul>`; break;
           case 'list-ordered':   content += `<ol class="kp-list">${raw}</ol>`; break;
-          case 'table':          content += `<div class="kp-table-wrap">${raw}</div>`; break;
+          case 'table':          content += `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`; break;
+          default:              content += `<p>[${b.type}]</p>`; break;
         }
       });
       const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
@@ -560,11 +563,13 @@ ${t.dropCap ? `
           case 'page-break':    return `<div class="kp-page-break"></div>`;
           case 'image': {
             const imgSrc = b.src ? (assets[b.src] ?? '') : '';
-            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="max-width:100%;height:auto;display:block;margin:0 auto;" alt=""></figure>` : '';
+            const imgStyle = this.imageStyle(b);
+            const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
+            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="${imgStyle}" alt="">${cap}</figure>` : '';
           }
           case 'list-unordered': return `<ul class="kp-list">${raw}</ul>`;
           case 'list-ordered':   return `<ol class="kp-list">${raw}</ol>`;
-          case 'table':          return `<div class="kp-table-wrap">${raw}</div>`;
+          case 'table':          return `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`;
           default:              return '';
         }
       }).join('\n');
@@ -726,11 +731,21 @@ ${bodyContent}
               const imgBlob = this.dataUrlToBlob(assets[imgKey]);
               const imgBuf = await imgBlob.arrayBuffer();
               const ext = this.imageExt(assets[imgKey]);
+              const dims = b.width && b.height
+                ? { width: b.width, height: b.height }
+                : { width: 460, height: 600 };
               children.push(new Paragraph({
                 alignment: 'center',
-                spacing: { before: 200, after: 200 },
-                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: 460, height: 600 } })],
+                spacing: { before: 200, after: b.caption ? 0 : 200 },
+                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: dims.width, height: dims.height } })],
               }));
+              if (b.caption) {
+                children.push(new Paragraph({
+                  alignment: 'center',
+                  spacing: { before: 60, after: 200 },
+                  children: [new TextRun({ text: b.caption, size: 20, color: '555555' })],
+                }));
+              }
             }
             break;
           }
@@ -777,6 +792,8 @@ ${bodyContent}
             }
             break;
           }
+          default:
+            break;
         }
       }
       const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
@@ -841,6 +858,26 @@ ${bodyContent}
       none: '',
     };
     return m[type] ?? '* * *';
+  }
+
+  private imageStyle(b: Block): string {
+    const parts = ['max-width:100%;display:block;margin:0 auto'];
+    if (b.width && b.height) {
+      parts.push(`width:${b.width}px;height:${b.height}px`);
+    } else {
+      parts.push('height:auto');
+    }
+    const xf: string[] = [];
+    if (b.rotation && b.rotation !== 0) xf.push(`rotate(${b.rotation}deg)`);
+    if (b.flipH) xf.push('scaleX(-1)');
+    if (b.flipV) xf.push('scaleY(-1)');
+    if (xf.length) parts.push(`transform:${xf.join(' ')}`);
+    return parts.join(';');
+  }
+
+  private tableHtml(html: string): string {
+    if (!html) return '';
+    return html.startsWith('<table') ? html : '<table>' + html + '</table>';
   }
 
   private fontName(key: string): string {

@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -6,6 +6,7 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
   selector: 'app-input-modal',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, TranslateModule],
   template: `
     <div class="modal-backdrop" (click)="close.emit()">
@@ -67,6 +68,7 @@ import { TranslateModule } from '@ngx-translate/core';
       font-family: var(--display);
       font-size: 18px;
       margin: 0;
+      color: var(--ink);
     }
     .modal__close {
       font-size: 24px;
@@ -88,7 +90,8 @@ import { TranslateModule } from '@ngx-translate/core';
       padding: 10px;
       border: 1px solid var(--rule);
       border-radius: 8px;
-      background: white;
+      background: var(--paper);
+      color: var(--ink);
       font-size: 14px;
     }
     label {
