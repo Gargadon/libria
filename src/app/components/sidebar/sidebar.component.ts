@@ -616,6 +616,38 @@ import { environment } from '../../../environments/environment';
           </div>
         }
 
+        @case ('attachments') {
+          <div class="sb__head">
+            <div class="sb__title">{{ 'sidebar.attachmentsTitle' | translate }}</div>
+            <div class="sb__author">{{ 'sidebar.attachmentsDesc' | translate }}</div>
+          </div>
+          <div class="sb__content sb__content--padding">
+            @if (imageAssets().length === 0) {
+              <div class="sb__help">{{ 'sidebar.attachmentsEmpty' | translate }}</div>
+            } @else {
+              <div class="sb__section">{{ 'sidebar.attachmentsCount' | translate:{ count: imageAssets().length } }}</div>
+              <div class="sb__attachments-grid">
+                @for (asset of imageAssets(); track asset.key) {
+                  <div class="sb__attachment">
+                    <div class="sb__attachment-img">
+                      <img [src]="asset.data" alt="">
+                    </div>
+                    <div class="sb__attachment-info">
+                      <span class="sb__attachment-name">{{ asset.key }}</span>
+                      <div class="sb__attachment-actions">
+                        <button class="sb__btn-link" (click)="insertAttachment(asset.key)">
+                          {{ 'sidebar.attachmentsInsert' | translate }}
+                        </button>
+                        <button class="sb__attachment-del" (click)="deleteAttachment(asset.key)">×</button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
         @case ('settings') {
           <div class="sb__head">
             <div class="sb__title">{{ 'sidebar.settingsTitle' | translate }}</div>
@@ -735,7 +767,7 @@ import { environment } from '../../../environments/environment';
       <div class="sbg">
         <div class="sbg__label">{{ label }}</div>
         <ul class="sbg__list">
-          @for (c of items; track c.id) {
+          @for (c of items; track c.id; let i = $index; let first = $first; let last = $last) {
             <li>
               <button
                 class="sbi"
@@ -748,7 +780,15 @@ import { environment } from '../../../environments/environment';
                 <span class="sbi__body">
                   <div class="sbi__title-row">
                     <span class="sbi__t" (dblclick)="editTitle(c, $event)" [attr.title]="'sidebar.doubleClickTitle' | translate">{{ c.title }}</span>
-                    <button class="sbi__del" (click)="deleteChapter(c, $event)" [attr.title]="'sidebar.deleteElement' | translate">×</button>
+                    <div class="sbi__actions">
+                      <button class="sbi__move" [class.sbi__move--hidden]="first" (click)="moveChapter(c.id, 'up', $event)" [attr.title]="'sidebar.moveUp' | translate">
+                        <span class="material-symbols-outlined">arrow_upward</span>
+                      </button>
+                      <button class="sbi__move" [class.sbi__move--hidden]="last" (click)="moveChapter(c.id, 'down', $event)" [attr.title]="'sidebar.moveDown' | translate">
+                        <span class="material-symbols-outlined">arrow_downward</span>
+                      </button>
+                      <button class="sbi__del" (click)="deleteChapter(c, $event)" [attr.title]="'sidebar.deleteElement' | translate">×</button>
+                    </div>
                   </div>
                   <span class="sbi__bar">
                     <span
@@ -1008,6 +1048,26 @@ export class SidebarComponent implements OnInit {
     this.store.chapters().filter(c => c.kind === 'back')
   );
 
+  readonly imageAssets = computed(() => {
+    const assets = this.store.assets();
+    const chapter = this.store.activeChapter();
+    return Object.entries(assets)
+      .filter(([key]) => key.startsWith('img-'))
+      .map(([key, data]) => ({ key, data }));
+  });
+
+  insertAttachment(assetKey: string) {
+    const chapter = this.store.activeChapter();
+    if (!chapter) return;
+    const index = chapter.body.length - 1;
+    this.store.saveSnapshot();
+    this.store.insertImageBlock(chapter.id, index, assetKey);
+  }
+
+  deleteAttachment(assetKey: string) {
+    this.store.deleteAsset(assetKey);
+  }
+
   editNumber(chapter: any, event: Event) {
     event.stopPropagation();
     if (chapter.kind !== 'chapter') return;
@@ -1050,6 +1110,12 @@ export class SidebarComponent implements OnInit {
     this.confirmMessage.set(this.translate.instant('sidebar.deleteConfirm', { title: chapter.title }));
     this.confirmTargetId.set(chapter.id);
     this.showConfirmModal.set(true);
+  }
+
+  moveChapter(chapterId: string, direction: 'up' | 'down', event: Event) {
+    event.stopPropagation();
+    this.store.saveSnapshot();
+    this.store.moveChapter(chapterId, direction);
   }
 
   onConfirmDelete() {

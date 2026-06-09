@@ -57,6 +57,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       font-family: var(--display);
       font-size: 18px;
       margin: 0;
+      color: var(--ink);
     }
     .modal__close {
       font-size: 24px;
@@ -84,7 +85,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       color: white;
     }
     .btn--danger:hover {
-      background: #8e5233;
+      background: var(--terra-2);
     }
   `]
 })

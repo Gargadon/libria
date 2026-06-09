@@ -16,6 +16,8 @@ Libria abandona el concepto de "página en blanco" tradicional por un sistema de
 - **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo) con indicadores de color.
 - **Métricas en tiempo real:** Recuento de palabras y tiempo de lectura estimado por capítulo y total.
 - **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes y más.
+- **Imágenes:** Inserción desde el portapapeles (Ctrl+V), desde el panel de attachments o cargando archivos. Rotación (90°, 180°, 270°), volteo horizontal y vertical, con ajuste automático de orientación EXIF. Las transformaciones se reflejan en todas las previsualizaciones (Kindle, iPhone y Papel).
+- **Reordenación de capítulos:** Botones de subir/bajar en el panel lateral para reposicionar capítulos dentro de su sección (preliminares, cuerpo, posliminares).
 - **Formato de texto:** Negrita, cursiva, subrayado, tachado, superíndice y subíndice.
 - **Búsqueda y reemplazo global:** Vista de contexto con coincidencias resaltadas.
 
@@ -82,7 +84,7 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 
 - **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
 - **Búsqueda Global:** Motor de búsqueda indexado con contexto de coincidencias.
-- **Sistema de Activos:** Imágenes embebidas directamente en el archivo `.libria`.
+- **Sistema de Activos:** Panel de attachments para gestionar imágenes embebidas (insertar, eliminar) directamente en el archivo `.libria`.
 - **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización) en LocalStorage.
 
 ---
@@ -138,7 +140,9 @@ Libria es un proyecto independiente desarrollado en mi tiempo libre. Si te es ú
 | **GitHub Sponsors** | [Sponsor](https://github.com/sponsors/Gargadon) — 0% comisión, matching disponible |
 | **PayPal** | [Donar](https://paypal.me/gargadon) |
 | **Ko-fi** | [Invitarme un café](https://ko-fi.com/gargadon) |
-| **Crypto** | BTC: `bc1qc8yqp6ph6gwlq83a6ytjvn90qaju8huzlgh4vacfq8j6nwmav7fsl7466e` · ETH/USDT (ERC-20): `0x4093Bc150bD32DF2ba4910901A8F320FC3Ce8568` · XRP (Ripple, tag `98270488`): `rLSn6Z3T8uCxbcd1oxwfGQN1Fdn5CyGujK` |
+| **Crypto** | BTC: `bc1qc8yqp6ph6gwlq83a6ytjvn90qaju8huzlgh4vacfq8j6nwmav7fsl7466e` |
+| | ETH/USDT (ERC-20): `0x4093Bc150bD32DF2ba4910901A8F320FC3Ce8568` |
+| | XRP (Ripple, tag `98270488`): `rLSn6Z3T8uCxbcd1oxwfGQN1Fdn5CyGujK` |
 
 Cada aportación, por pequeña que sea, ayuda a mantener el proyecto vivo. ¡Gracias!
 

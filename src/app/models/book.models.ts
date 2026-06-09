@@ -10,6 +10,9 @@ export interface Block {
   width?: number;
   height?: number;
   caption?: string;
+  rotation?: number; // 0 | 90 | 180 | 270
+  flipH?: boolean;
+  flipV?: boolean;
 }
 
 export interface Footnote {

@@ -861,10 +861,18 @@ ${bodyContent}
   }
 
   private imageStyle(b: Block): string {
+    const parts = ['max-width:100%;display:block;margin:0 auto'];
     if (b.width && b.height) {
-      return `max-width:100%;width:${b.width}px;height:${b.height}px;display:block;margin:0 auto`;
+      parts.push(`width:${b.width}px;height:${b.height}px`);
+    } else {
+      parts.push('height:auto');
     }
-    return 'max-width:100%;height:auto;display:block;margin:0 auto';
+    const xf: string[] = [];
+    if (b.rotation && b.rotation !== 0) xf.push(`rotate(${b.rotation}deg)`);
+    if (b.flipH) xf.push('scaleX(-1)');
+    if (b.flipV) xf.push('scaleY(-1)');
+    if (xf.length) parts.push(`transform:${xf.join(' ')}`);
+    return parts.join(';');
   }
 
   private tableHtml(html: string): string {

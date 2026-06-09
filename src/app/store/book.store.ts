@@ -22,7 +22,7 @@ export interface BookState {
     sidebarOpen: boolean;
     previewOpen: boolean;
     zenMode: boolean;
-    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings';
+    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'attachments';
   };
   exportPrefs: {
     includeCover: boolean;
@@ -314,7 +314,7 @@ export const BookStore = signalStore(
         ui: initialState.ui
       });
     },
-    setNav(nav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings') {
+    setNav(nav: BookState['ui']['activeNav']) {
       patchState(store, (state) => ({
         ui: { ...state.ui, activeNav: nav, showStyles: nav === 'styles', sidebarOpen: true }
       }));
@@ -499,6 +499,23 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
+    moveChapter(chapterId: string, direction: 'up' | 'down') {
+      patchState(store, (state) => {
+        const idx = state.chapters.findIndex(c => c.id === chapterId);
+        if (idx === -1) return state;
+        const chapter = state.chapters[idx];
+        const step = direction === 'up' ? -1 : 1;
+        let swapIdx = idx + step;
+        while (swapIdx >= 0 && swapIdx < state.chapters.length) {
+          if (state.chapters[swapIdx].kind === chapter.kind) break;
+          swapIdx += step;
+        }
+        if (swapIdx < 0 || swapIdx >= state.chapters.length) return state;
+        const chapters = [...state.chapters];
+        [chapters[idx], chapters[swapIdx]] = [chapters[swapIdx], chapters[idx]];
+        return { chapters, isDirty: true };
+      });
+    },
     updateChapterMeta(chapterId: string, meta: Partial<Pick<Chapter, 'title' | 'number' | 'forceOddPage' | 'status'>>) {
       patchState(store, (state) => ({
         chapters: state.chapters.map(c => 
@@ -654,7 +671,7 @@ export const BookStore = signalStore(
         };
       });
     },
-    insertImageBlock(chapterId: string, afterIndex: number, assetKey: string) {
+    insertImageBlock(chapterId: string, afterIndex: number, assetKey: string, width?: number, height?: number) {
       patchState(store, (state) => ({
         chapters: state.chapters.map((c) =>
           c.id === chapterId
@@ -662,7 +679,7 @@ export const BookStore = signalStore(
                 ...c,
                 body: [
                   ...c.body.slice(0, afterIndex + 1),
-                  { type: 'image', src: assetKey },
+                  { type: 'image', src: assetKey, width, height },
                   ...c.body.slice(afterIndex + 1)
                 ]
               }
@@ -696,6 +713,16 @@ export const BookStore = signalStore(
         chapters: state.chapters.map((c) =>
           c.id === chapterId
             ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, caption } : b) }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    updateImageTransform(chapterId: string, blockIndex: number, transform: { rotation?: number; flipH?: boolean; flipV?: boolean }) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, ...transform } : b) }
             : c
         ),
         isDirty: true

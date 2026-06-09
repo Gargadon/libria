@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
 import { TableContentDirective } from './table-content.directive';
-import { NoteRole, NoteStatus, Footnote, Misspelling, sortFootnotesByPosition } from '../../models/book.models';
+import { Block, NoteRole, NoteStatus, Footnote, Misspelling, sortFootnotesByPosition } from '../../models/book.models';
 import { SpellCheckService } from '../../services/spell-check.service';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
@@ -197,7 +197,22 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                             <img [src]="store.assets()[b.src]" alt="" class="bk-image__img"
                               [style.width.px]="b.width"
                               [style.height.px]="b.height"
+                              [style.transform]="imageTransform(b)"
                               #imageEl>
+                            <div class="bk-image__tools">
+                              <button class="bk-image__tool" (click)="rotateImage(chapter.id, $index, b, -90)" [attr.title]="'editor.imageRotateCCW' | translate">
+                                <span class="material-symbols-outlined">rotate_left</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="rotateImage(chapter.id, $index, b, 90)" [attr.title]="'editor.imageRotateCW' | translate">
+                                <span class="material-symbols-outlined">rotate_right</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="flipImage(chapter.id, $index, b, 'h')" [attr.title]="'editor.imageFlipH' | translate">
+                                <span class="material-symbols-outlined">flip</span>
+                              </button>
+                              <button class="bk-image__tool" (click)="flipImage(chapter.id, $index, b, 'v')" [attr.title]="'editor.imageFlipV' | translate">
+                                <span class="material-symbols-outlined">flip_to_front</span>
+                              </button>
+                            </div>
                             <span class="bk-image__resize" (mousedown)="onImageResizeStart($event, chapter.id, $index, imageEl)"></span>
                           </div>
                           <figcaption class="bk-image__cap" contenteditable="true"
@@ -431,7 +446,30 @@ export class EditorComponent {
 
   onPaste(chapterId: string, blockIndex: number, event: ClipboardEvent) {
     const chapter = this.store.activeChapter();
-    if (chapter?.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
+    if (!chapter) return;
+    if (chapter.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
+
+    const items = event.clipboardData?.items;
+    if (items) {
+      const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
+      if (imageItems.length > 0) {
+        event.preventDefault();
+        for (const item of imageItems) {
+          const file = item.getAsFile();
+          if (!file) continue;
+          this._readImageFile(file).then(({ dataUrl, width, height }) => {
+            const assetKey = 'img-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+            this.store.updateAsset(assetKey, dataUrl);
+            const ch = this.store.activeChapter();
+            const idx = this.lastFocusedIndex >= 0 ? this.lastFocusedIndex : (ch ? ch.body.length - 1 : 0);
+            this.store.saveSnapshot();
+            this.store.insertImageBlock(chapterId, idx, assetKey, width, height);
+          });
+        }
+        return;
+      }
+    }
+
     const text = event.clipboardData?.getData('text/plain');
     if (!text || !text.includes('\n')) return; // Let default behavior handle single lines
 
@@ -1214,19 +1252,16 @@ export class EditorComponent {
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const data = reader.result as string;
+      this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, data);
+        this.store.updateAsset(assetKey, dataUrl);
         const chapterId = this.store.activeChapterId();
         const index = this.lastFocusedIndex >= 0
           ? this.lastFocusedIndex
           : this.store.activeChapter()!.body.length - 1;
         this.store.saveSnapshot();
-        this.store.insertImageBlock(chapterId, index, assetKey);
-      };
-      reader.readAsDataURL(file);
+        this.store.insertImageBlock(chapterId, index, assetKey, width, height);
+      });
     };
     input.click();
   }
@@ -1238,14 +1273,13 @@ export class EditorComponent {
     input.onchange = (e: any) => {
       const file = e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const data = reader.result as string;
+      this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, data);
+        this.store.updateAsset(assetKey, dataUrl);
+        this.store.saveSnapshot();
+        this.store.updateImageSize(chapterId, blockIndex, width, height);
         this.store.setImageSrc(chapterId, blockIndex, assetKey);
-      };
-      reader.readAsDataURL(file);
+      });
     };
     input.click();
   }
@@ -1283,6 +1317,52 @@ export class EditorComponent {
   onImageCaptionInput(chapterId: string, blockIndex: number, event: Event) {
     const el = event.target as HTMLElement;
     this.store.updateImageCaption(chapterId, blockIndex, el.innerText);
+  }
+
+  imageTransform(b: Block): string {
+    const parts: string[] = [];
+    if (b.rotation && b.rotation !== 0) parts.push(`rotate(${b.rotation}deg)`);
+    if (b.flipH) parts.push('scaleX(-1)');
+    if (b.flipV) parts.push('scaleY(-1)');
+    return parts.join(' ') || 'none';
+  }
+
+  rotateImage(chapterId: string, blockIndex: number, b: Block, delta: number) {
+    const current = b.rotation ?? 0;
+    const next = (((current + delta) % 360) + 360) % 360;
+    this.store.saveSnapshot();
+    this.store.updateImageTransform(chapterId, blockIndex, { rotation: next });
+  }
+
+  flipImage(chapterId: string, blockIndex: number, b: Block, axis: 'h' | 'v') {
+    this.store.saveSnapshot();
+    if (axis === 'h') {
+      this.store.updateImageTransform(chapterId, blockIndex, { flipH: !b.flipH });
+    } else {
+      this.store.updateImageTransform(chapterId, blockIndex, { flipV: !b.flipV });
+    }
+  }
+
+  private _readImageFile(file: File): Promise<{ dataUrl: string; width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Canvas 2D not available')); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight });
+        };
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   private _focusAfterHistory() {

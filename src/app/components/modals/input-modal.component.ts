@@ -68,6 +68,7 @@ import { TranslateModule } from '@ngx-translate/core';
       font-family: var(--display);
       font-size: 18px;
       margin: 0;
+      color: var(--ink);
     }
     .modal__close {
       font-size: 24px;
@@ -89,7 +90,8 @@ import { TranslateModule } from '@ngx-translate/core';
       padding: 10px;
       border: 1px solid var(--rule);
       border-radius: 8px;
-      background: white;
+      background: var(--paper);
+      color: var(--ink);
       font-size: 14px;
     }
     label {
