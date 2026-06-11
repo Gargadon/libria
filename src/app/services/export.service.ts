@@ -19,6 +19,36 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 
+const EPUB_FONT_MAP: Record<string, {
+  family: string;
+  files: { filename: string; style: string; weight: string }[];
+}> = {
+  spectral: { family: 'Spectral', files: [
+    { filename: 'rnCr-xNNww_2s0amA9M5kng.woff2', style: 'normal', weight: '400' },
+    { filename: 'rnCt-xNNww_2s0amA9M8onrmTA.woff2', style: 'italic', weight: '400' },
+    { filename: 'rnCs-xNNww_2s0amA9vmtm3BafY.woff2', style: 'normal', weight: '600' },
+  ]},
+  lora: { family: 'Lora', files: [
+    { filename: '0QIvMX1D_JOuMwr7Iw.woff2', style: 'normal', weight: '400 700' },
+    { filename: '0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFoq92nA.woff2', style: 'italic', weight: '400 700' },
+  ]},
+  'eb-garamond': { family: 'EB Garamond', files: [
+    { filename: 'SlGUmQSNjdsmc35JDF1K5GR1SDk.woff2', style: 'normal', weight: '400 800' },
+    { filename: 'SlGWmQSNjdsmc35JDF1K5GRweDs1Zw.woff2', style: 'italic', weight: '400 800' },
+  ]},
+  'crimson-pro': { family: 'Crimson Pro', files: [
+    { filename: 'q5uDsoa5M_tv7IihmnkabARboYE.woff2', style: 'normal', weight: '200 900' },
+    { filename: 'q5uBsoa5M_tv7IihmnkabARekYNwDQ.woff2', style: 'italic', weight: '200 900' },
+  ]},
+  inter: { family: 'Inter', files: [
+    { filename: 'UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2', style: 'normal', weight: '100 900' },
+  ]},
+  montserrat: { family: 'Montserrat', files: [
+    { filename: 'JTUSjIg1_i6t8kCHKm459Wlhyw.woff2', style: 'normal', weight: '100 900' },
+    { filename: 'JTUQjIg1_i6t8kCHKm459WxRyS7m.woff2', style: 'italic', weight: '100 900' },
+  ]},
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -33,8 +63,13 @@ export class ExportService {
     const assets = this.store.assets();
     const prefs = this.store.exportPrefs();
     const tweaks = this.store.tweaks();
+    const bodyFontFamily = this.store.bookFontFamily();
+    const titleFontFamily = this.store.titleFontFamily();
 
     if (!book) return;
+
+    const { fontFaceCss, fontManifest: epubFontManifest } =
+      await this.loadEpubFonts(zip, tweaks.bookFont ?? '', tweaks.titleFont ?? '');
 
     zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
     zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
@@ -76,7 +111,7 @@ export class ExportService {
     <dc:identifier id="pub-id">${book.isbn || 'libria-' + Date.now()}</dc:identifier>
     <dc:title>${book.title}</dc:title>
     <dc:creator>${book.author}</dc:creator>
-    <dc:language>es</dc:language>
+    <dc:language>${book.lang ?? 'es'}</dc:language>
     <dc:publisher>${book.publisher || 'Libria'}</dc:publisher>
     <dc:date>${book.year}-01-01</dc:date>
     <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
@@ -86,6 +121,7 @@ export class ExportService {
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="css" href="styles.css" media-type="text/css"/>
 ${coverManifest}
+${epubFontManifest}
 ${manifest}
   </manifest>
   <spine toc="ncx">
@@ -96,8 +132,8 @@ ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
     zip.file('OEBPS/content.opf', opf);
 
     const dropCapStyles = tweaks.dropCap ? `.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }` : '';
-    zip.file('OEBPS/styles.css', `body { font-family: serif; padding: 5%; line-height: 1.5; }
-h1, h2 { text-align: center; }
+    zip.file('OEBPS/styles.css', `${fontFaceCss}body { font-family: ${bodyFontFamily}, serif; padding: 5%; line-height: 1.5; }
+h1, h2 { font-family: ${titleFontFamily}, serif; text-align: center; }
 p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .first-p { text-indent: 0; }
 .kp-list { margin: 0.5em 0; padding-left: 1.5em; }
@@ -607,6 +643,35 @@ ${fontTags}  <style>${css}${screenCss}</style>
 ${bodyContent}
 </body>
 </html>`;
+  }
+
+  private async loadEpubFonts(
+    zip: JSZip,
+    bookFontKey: string,
+    titleFontKey: string,
+  ): Promise<{ fontFaceCss: string; fontManifest: string }> {
+    const keys = [...new Set([bookFontKey, titleFontKey])].filter(k => EPUB_FONT_MAP[k]);
+    let fontFaceCss = '';
+    let fontManifest = '';
+
+    for (const key of keys) {
+      const def = EPUB_FONT_MAP[key];
+      for (const f of def.files) {
+        try {
+          const resp = await fetch(`fonts/${f.filename}`);
+          if (!resp.ok) continue;
+          const buf = await resp.arrayBuffer();
+          zip.file(`OEBPS/fonts/${f.filename}`, buf);
+          const id = `font-${f.filename.replace(/\W/g, '-')}`;
+          fontManifest += `    <item id="${id}" href="fonts/${f.filename}" media-type="application/font-woff2"/>\n`;
+          fontFaceCss += `@font-face { font-family: '${def.family}'; src: url('../fonts/${f.filename}') format('woff2'); font-style: ${f.style}; font-weight: ${f.weight}; }\n`;
+        } catch {
+          // font file unavailable, skip
+        }
+      }
+    }
+
+    return { fontFaceCss, fontManifest };
   }
 
   private escapeHtml(str: string): string {

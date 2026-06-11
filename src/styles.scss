@@ -959,6 +959,36 @@ app-welcome {
   background: var(--ink);
 }
 
+.sb__cover-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.sb__cover-chip--ok {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--ink-soft);
+}
+
+.sb__cover-chip--warn {
+  background: color-mix(in srgb, #e8a000 12%, transparent);
+  color: color-mix(in srgb, #e8a000 80%, var(--ink));
+  .material-symbols-outlined { font-size: 16px; }
+  .sb__btn-link { color: inherit; text-decoration: underline; font-size: 12px; padding: 0; }
+}
+
+.sb__cover-chip-img {
+  width: 24px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .sb__avatar-zone {
   margin-bottom: 24px;
 }

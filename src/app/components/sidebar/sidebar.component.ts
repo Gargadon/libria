@@ -556,6 +556,20 @@ import { environment } from '../../../environments/environment';
                 <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeCover()" (click)="store.updateExportPrefs({ includeCover: false })">{{ 'sidebar.no' | translate }}</button>
               </div>
             </div>
+            @if (store.exportPrefs.includeCover()) {
+              @if (store.assets()['cover']) {
+                <div class="sb__cover-chip sb__cover-chip--ok">
+                  <img [src]="store.assets()['cover']" class="sb__cover-chip-img" alt="">
+                  <span>{{ 'sidebar.coverReady' | translate }}</span>
+                </div>
+              } @else {
+                <div class="sb__cover-chip sb__cover-chip--warn">
+                  <span class="material-symbols-outlined">warning</span>
+                  <span>{{ 'sidebar.coverNotSet' | translate }}</span>
+                  <button class="sb__btn-link" (click)="store.setNav('metadata')">{{ 'sidebar.coverGoTo' | translate }}</button>
+                </div>
+              }
+            }
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.includeNotes' | translate }}</div>
               <div class="sb__radio">

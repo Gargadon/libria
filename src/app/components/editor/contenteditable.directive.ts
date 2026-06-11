@@ -29,8 +29,11 @@ export class ContenteditableDirective implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.syncDom();
-    if (changes['spellErrors'] || changes['model']) {
+    const contentChanged = !!(changes['model'] || changes['contenteditableHtml']);
+    if (contentChanged) {
+      this.syncDom();
+    }
+    if (contentChanged || changes['spellErrors']) {
       this.updateSpellUnderlines();
     }
   }
