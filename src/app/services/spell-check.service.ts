@@ -36,6 +36,8 @@ export class SpellCheckService {
       en: 'en',
       fr: 'fr',
       it: 'it',
+      pt: 'pt',
+      'pt-br': 'pt',
     };
     const dictLang = langMap[lang] || 'en';
 

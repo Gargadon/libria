@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
-import { LibriaDocument } from '../models/book.models';
+import { LibriaDocument, RecentProject } from '../models/book.models';
+import { RecentProjectsService } from './recent-projects.service';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class FileService {
   readonly store = inject(BookStore);
+  readonly recentProjects = inject(RecentProjectsService);
   currentPath: string | null = null;
 
   private get isElectron(): boolean {
@@ -54,6 +56,7 @@ export class FileService {
         }
         await api.writeFile(path, json);
         this.currentPath = path;
+        this.recentProjects.add(path, this.store.book()?.title || this.defaultName());
         this.store.markAsSaved();
       } else {
         const blob = new Blob([json], { type: 'application/json' });
@@ -102,6 +105,7 @@ export class FileService {
       const text = await api.readFile(path);
       this.store.loadDocument(JSON.parse(text));
       this.currentPath = path;
+      this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
     } catch (err) {
       console.error(err);
     }
@@ -116,6 +120,7 @@ export class FileService {
         const text = await api.readFile(path);
         this.store.loadDocument(JSON.parse(text));
         this.currentPath = path;
+        this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
       } catch (err) {
         console.error(err);
       }
@@ -134,6 +139,9 @@ export class FileService {
         const text = await file.text();
         this.store.loadDocument(JSON.parse(text));
         (window as any).__libriaFileHandle = handle;
+        if (handle.name) {
+          this.recentProjects.add(handle.name, this.store.book()?.title || handle.name);
+        }
       } catch (err) {
         if ((err as Error).name !== 'AbortError') console.error(err);
       }
@@ -146,6 +154,7 @@ export class FileService {
         if (!file) return;
         const text = await file.text();
         this.store.loadDocument(JSON.parse(text));
+        this.recentProjects.add(file.name, this.store.book()?.title || file.name);
       };
       input.click();
     }
