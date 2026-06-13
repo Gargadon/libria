@@ -60,7 +60,9 @@ function brewGsBinary() {
 }
 
 async function main() {
-  const plat = process.argv[2] || process.platform;
+  const platArg = process.argv[2] || process.platform;
+  const norm = { win: 'win32', win32: 'win32', mac: 'darwin', darwin: 'darwin', linux: 'linux' };
+  const plat = norm[platArg] || platArg;
   const map = { win32: 'win', darwin: 'mac', linux: 'linux' };
   const dir = join(BIN, map[plat] || plat);
   mkdirSync(dir, { recursive: true });
