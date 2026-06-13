@@ -17,6 +17,7 @@ import {
   TableRow,
   TableCell,
   WidthType,
+  FootnoteReferenceRun,
   type IMediaTransformation,
 } from 'docx';
 import { saveAs } from 'file-saver';
@@ -151,7 +152,8 @@ ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
     const dropCapStyles = tweaks.dropCap ? `.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }` : '';
     zip.file('OEBPS/styles.css', `${fontFaceCss}body { font-family: ${bodyFontFamily}, serif; padding: 5%; line-height: 1.5; }
 h1, h2 { font-family: ${titleFontFamily}, serif; text-align: center; }
-p { text-indent: 1.5em; margin: 0; text-align: justify; }
+p { margin: 0; text-align: justify; }
+p + p { text-indent: 1.5em; }
 .first-p { text-indent: 0; }
 .kp-list { margin: 0.5em 0; padding-left: 1.5em; }
 .kp-list li { margin: 0.2em 0; }
@@ -162,6 +164,12 @@ p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .kp-fnpanel-rule { border: 0; border-top: 1px solid #ccc; margin-bottom: 0.8em; }
 .kp-fnpanel-item { margin-bottom: 0.4em; line-height: 1.4; }
 .kp-fnpanel-num { font-weight: bold; }
+.kp-epigraph { text-align: center; margin: 1.5em 0; }
+.kp-epigraph blockquote { font-style: italic; font-size: 0.9em; margin: 0; }
+.kp-epigraph cite { display: block; margin-top: 0.5em; font-size: 0.85em; color: #555; }
+.kp-verse { font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-line; line-height: 1.6; margin: 1em 0; }
+.kp-code { background: #f5f3f1; padding: 1em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
+.kp-code code { font-family: inherit; }
 ${dropCapStyles}`);
 
     let navLinks = '';
@@ -180,9 +188,18 @@ ${dropCapStyles}`);
           case 'chapter-num':   content += `<div class="kp-chnum">${raw}</div>`; break;
           case 'chapter-title': content += `<h2>${raw}</h2>`; break;
           case 'h1':            content += `<h2 class="kp-h1">${raw}</h2>`; break;
+          case 'h2':            content += `<h3 class="kp-h2">${raw}</h3>`; break;
+          case 'h3':            content += `<h4 class="kp-h3">${raw}</h4>`; break;
           case 'first-p':       content += `<p class="first-p">${raw}</p>`; break;
           case 'p':             content += `<p>${raw}</p>`; break;
           case 'blockquote':    content += `<blockquote>${raw}</blockquote>`; break;
+          case 'epigraph': {
+            const att = this.escapeHtml(b.attribution || '');
+            content += `<div class="kp-epigraph"><blockquote>${raw}</blockquote>${att ? `<cite>— ${att}</cite>` : ''}</div>`;
+            break;
+          }
+          case 'verse':         content += `<pre class="kp-verse"><code>${raw}</code></pre>`; break;
+          case 'code':          content += `<pre class="kp-code"><code>${raw}</code></pre>`; break;
           case 'scene-break':   content += `<p style="text-align:center;margin:1em 0;color:#888">${this.sceneGlyphText(tweaks.sceneBreakType) || '* * *'}</p>`; break;
           case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
           case 'image': {
@@ -246,6 +263,7 @@ ${dropCapStyles}`);
       const pdfOptions: Record<string, any> = {
         pageSize,
         printBackground: true,
+        pdfx: t.pdfxCompliant || false,
         margins: {
           marginType: 'custom',
           top: t.marginTop / 25.4,
@@ -402,12 +420,16 @@ body {
 /* ── Paragraphs ── */
 .kp-p {
   margin-top: ${pGap};
-  text-indent: ${indent};
   text-align: ${align};
   ${hyphens}
   break-inside: auto;
   widows: 2; orphans: 2;
   overflow-wrap: break-word;
+}
+.kp-p + .kp-p,
+.kp-first + .kp-p {
+  text-indent: ${indent};
+  margin-top: ${pGap};
 }
 .kp-p:first-of-type { margin-top: 0; }
 
@@ -520,6 +542,22 @@ ${t.dropCap ? `
   margin: 0 0 14pt;
   break-after: avoid;
 }
+.kp-h2 {
+  font-family: ${titleFontFamily};
+  font-size: ${(t.titleFontSize * 0.72).toFixed(1)}pt;
+  font-weight: ${titleW}; font-style: ${titleS};
+  text-align: ${tAlign};
+  margin: 0 0 10pt;
+  break-after: avoid;
+}
+.kp-h3 {
+  font-family: ${titleFontFamily};
+  font-size: ${(t.titleFontSize * 0.62).toFixed(1)}pt;
+  font-weight: ${titleW}; font-style: ${titleS};
+  text-align: ${tAlign};
+  margin: 0 0 8pt;
+  break-after: avoid;
+}
 
 /* ── Other blocks ── */
 .kp-break {
@@ -533,9 +571,43 @@ ${t.dropCap ? `
 .kp-quote {
   margin: .5em 0;
   padding: .3em 1em;
-  border-left: 2pt solid #a8623d;
+  border-left: 2px solid #ccc;
   color: #5a554d;
   font-style: italic;
+}
+.kp-epigraph {
+  text-align: center;
+  margin: 1.2em 0;
+  break-inside: avoid;
+}
+.kp-epigraph__q {
+  font-style: italic;
+  font-size: 0.9em;
+  margin: 0;
+}
+.kp-epigraph__att {
+  display: block;
+  margin-top: 0.4em;
+  font-size: 0.85em;
+  color: #5a554d;
+}
+.kp-verse {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85em;
+  white-space: pre-line;
+  line-height: 1.6;
+  margin: 1em 0;
+  break-inside: avoid;
+}
+.kp-code {
+  background: #f5f3f1;
+  padding: 1em;
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
   break-inside: avoid;
 }
 .kp-page-break {
@@ -615,12 +687,20 @@ ${t.dropCap ? `
           case 'chapter-num':   return `<div class="kp-chnum">${raw}</div>`;
           case 'chapter-title': return `<h2 class="kp-chtitle">${raw}</h2>`;
           case 'h1':            return `<h2 class="kp-h1">${raw}</h2>`;
+          case 'h2':            return `<h3 class="kp-h2">${raw}</h3>`;
+          case 'h3':            return `<h4 class="kp-h3">${raw}</h4>`;
           case 'first-p': {
             const dc = t.dropCap ? ' has-dropcap' : '';
             return `<p class="kp-first${dc}">${hyph(raw)}</p>`;
           }
           case 'p':             return `<p class="kp-p">${hyph(raw)}</p>`;
           case 'blockquote':    return `<blockquote class="kp-quote">${hyph(raw)}</blockquote>`;
+          case 'epigraph': {
+            const att = b.attribution ? this.escapeHtml(b.attribution) : '';
+            return `<div class="kp-epigraph"><blockquote class="kp-epigraph__q">${hyph(raw)}</blockquote>${att ? `<cite class="kp-epigraph__att">— ${att}</cite>` : ''}</div>`;
+          }
+          case 'verse':         return `<pre class="kp-verse"><code>${raw}</code></pre>`;
+          case 'code':          return `<pre class="kp-code"><code>${raw}</code></pre>`;
           case 'scene-break':   return `<div class="kp-break">${brk}</div>`;
           case 'page-break':    return `<div class="kp-page-break"></div>`;
           case 'image': {
@@ -746,27 +826,47 @@ ${bodyContent}
       const ind = t.indentFirstLine ? Math.round(t.indentSize * 567) : 0;
       const glyph = this.sceneGlyphText(t.sceneBreakType);
 
+      const allFootnoteDefs: { id: number; text: string }[] = [];
+
       for (const ch of chapters) {
         if (ch.forceOddPage && children.length > 0) {
           children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+        }
+        
+        let prevIsBody = false;
+
+        const chapterFns = sortFootnotesByPosition(ch.footnotes, ch.body);
+        const fnIdToNum: Record<string, number> = {};
+        const fnContents: Record<string, string> = {};
+        if (chapterFns.length) {
+          chapterFns.forEach((fn: any, fi: number) => {
+            fnIdToNum[fn.id] = fi + 1;
+            fnContents[fn.id] = fn.content || '';
+            allFootnoteDefs.push({ id: fi + 1, text: fn.content || '' });
+          });
         }
 
         for (const b of ch.body) {
           switch (b.type) {
             case 'halftitle':
               children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.2), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 1200));
+              prevIsBody = false;
               break;
             case 'title':
               children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.8), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 200));
+              prevIsBody = false;
               break;
             case 'subtitle':
               children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.9), italics: true }, tAlign, 0, 600));
+              prevIsBody = false;
               break;
             case 'author':
               children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.85) }, 'center', 0, 200));
+              prevIsBody = false;
               break;
             case 'publisher':
               children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.7) }, 'center', 1200, 0));
+              prevIsBody = false;
               break;
             case 'dedication': {
               const lines = (b.text ?? '').split('\n');
@@ -777,40 +877,89 @@ ${bodyContent}
                   children: [new TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
                 }));
               }
+              prevIsBody = false;
               break;
             }
             case 'chapter-num':
               children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.7), bold: t.titleBold, italics: t.titleItalic }, tAlign, 0, 80));
+              prevIsBody = false;
               break;
             case 'chapter-title':
-              children.push(this.p(b, { font: titleFont, size: ts, bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 400));
+              children.push(this.p(b, { font: titleFont, size: ts, bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 400, fnIdToNum));
+              prevIsBody = false;
               break;
             case 'h1':
-              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.85), bold: t.titleBold, italics: t.titleItalic }, tAlign, 400, 200));
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.85), bold: t.titleBold, italics: t.titleItalic }, tAlign, 400, 200, fnIdToNum));
+              prevIsBody = false;
+              break;
+            case 'h2':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.72), bold: t.titleBold, italics: t.titleItalic }, tAlign, 300, 150, fnIdToNum));
+              prevIsBody = false;
+              break;
+            case 'h3':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.62), bold: t.titleBold, italics: t.titleItalic }, tAlign, 200, 100, fnIdToNum));
+              prevIsBody = false;
               break;
             case 'first-p':
               children.push(new Paragraph({
                 alignment: bodyAlign,
                 spacing: { line: lsp, after: pg },
                 indent: { firstLine: 0 },
-                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, smallCaps: true }),
+                children: fnIdToNum ? this.blockToChildren(b, { font: bodyFont, size: fs, smallCaps: true }, fnIdToNum) : this.htmlToTextRuns(b, { font: bodyFont, size: fs, smallCaps: true }),
               }));
+              prevIsBody = true;
               break;
             case 'p':
               children.push(new Paragraph({
                 alignment: bodyAlign,
                 spacing: { line: lsp, after: pg },
-                indent: { firstLine: ind },
-                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs }),
+                indent: { firstLine: prevIsBody ? ind : 0 },
+                children: fnIdToNum ? this.blockToChildren(b, { font: bodyFont, size: fs }, fnIdToNum) : this.htmlToTextRuns(b, { font: bodyFont, size: fs }),
               }));
+              prevIsBody = true;
               break;
             case 'blockquote':
               children.push(new Paragraph({
                 alignment: 'left',
                 indent: { left: 720 },
                 spacing: { line: lsp, before: 200, after: 200 },
-                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
+                children: fnIdToNum ? this.blockToChildren(b, { font: bodyFont, size: fs, italics: true }, fnIdToNum) : this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
               }));
+              prevIsBody = false;
+              break;
+            case 'epigraph':
+              children.push(new Paragraph({
+                alignment: 'center',
+                spacing: { line: lsp, before: 300, after: 60 },
+                children: fnIdToNum ? this.blockToChildren(b, { font: bodyFont, size: fs, italics: true }, fnIdToNum) : this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
+              }));
+              if (b.attribution) {
+                children.push(new Paragraph({
+                  alignment: 'center',
+                  spacing: { before: 0, after: 300 },
+                  indent: { left: 1440 },
+                  children: [new TextRun({ text: `— ${b.attribution}`, font: bodyFont, size: Math.round(fs * 0.85), color: '555555' })],
+                }));
+              }
+              prevIsBody = false;
+              break;
+            case 'verse':
+              children.push(new Paragraph({
+                alignment: 'left',
+                spacing: { line: lsp, before: 200, after: 200 },
+                children: fnIdToNum ? this.blockToChildren(b, { font: 'Courier New', size: fs }, fnIdToNum) : this.htmlToTextRuns(b, { font: 'Courier New', size: fs }),
+              }));
+              prevIsBody = false;
+              break;
+            case 'code':
+              children.push(new Paragraph({
+                alignment: 'left',
+                spacing: { line: lsp, before: 200, after: 200 },
+                indent: { left: 360, right: 360 },
+                shading: { type: 'clear', fill: 'F5F3F1' },
+                children: fnIdToNum ? this.blockToChildren(b, { font: 'Courier New', size: Math.round(fs * 0.85) }, fnIdToNum) : this.htmlToTextRuns(b, { font: 'Courier New', size: Math.round(fs * 0.85) }),
+              }));
+              prevIsBody = false;
               break;
             case 'scene-break':
               children.push(new Paragraph({
@@ -818,9 +967,11 @@ ${bodyContent}
                 spacing: { before: 400, after: 400 },
                 children: [new TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
               }));
+              prevIsBody = false;
               break;
             case 'page-break':
               children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+              prevIsBody = false;
               break;
             case 'image': {
               const imgKey = b.src;
@@ -850,6 +1001,7 @@ ${bodyContent}
                   }));
                 }
               }
+              prevIsBody = false;
               break;
             }
             case 'list-unordered':
@@ -866,6 +1018,7 @@ ${bodyContent}
                   children: [new TextRun({ text: itemText, font: bodyFont, size: fs })],
                 }));
               }
+              prevIsBody = false;
               break;
             }
             case 'table': {
@@ -893,34 +1046,13 @@ ${bodyContent}
                   width: { size: 100, type: WidthType.PERCENTAGE },
                 }));
               }
+              prevIsBody = false;
               break;
             }
             default:
+              prevIsBody = false;
               break;
           }
-        }
-        const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
-        if (fnsSorted.length) {
-          children.push(new Paragraph({
-            alignment: 'left',
-            spacing: { before: 400, after: 100 },
-            children: [new TextRun({ text: 'Notas', font: bodyFont, size: fs, bold: true })],
-          }));
-          children.push(new Paragraph({
-            alignment: 'left',
-            spacing: { before: 0, after: 200 },
-            children: [new TextRun({ text: '————————————————', font: bodyFont, size: fs })],
-          }));
-          fnsSorted.forEach((fn: any, fi: number) => {
-            children.push(new Paragraph({
-              alignment: 'left',
-              spacing: { before: 40, after: 40 },
-              children: [
-                new TextRun({ text: `${fi + 1}. `, font: bodyFont, size: Math.round(fs * 0.85), superScript: true }),
-                new TextRun({ text: fn.content || '', font: bodyFont, size: Math.round(fs * 0.85) }),
-              ],
-            }));
-          });
         }
       }
 
@@ -938,6 +1070,7 @@ ${bodyContent}
         sections: [{ children }],
       });
 
+      await this.addFootnotesToDoc(doc, allFootnoteDefs);
       const blob = await Packer.toBlob(doc);
       this.downloadFile(blob, `${book.title}.docx`);
     } finally {
@@ -945,13 +1078,30 @@ ${bodyContent}
     }
   }
 
+  private async addFootnotesToDoc(doc: any, footnoteDefs: { id: number; text: string }[]) {
+    if (!footnoteDefs.length) return;
+    try {
+      const fnView = doc.FootNotes?.View;
+      if (!fnView?.createFootNote) return;
+      for (const fn of footnoteDefs) {
+        fnView.createFootNote(fn.id, [
+          new Paragraph({
+            children: [new TextRun({ text: fn.text, size: 20 })],
+          }),
+        ]);
+      }
+    } catch {
+      // footnote API not available in this docx version — silently skip
+    }
+  }
+
   private p(b: { text?: string; html?: string }, opts: {
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean;
-  }, align: string, before = 0, after = 0): Paragraph {
+  }, align: string, before = 0, after = 0, fnIdToNum?: Record<string, number>): Paragraph {
     return new Paragraph({
       alignment: align as any,
       spacing: { before, after },
-      children: this.htmlToTextRuns(b, opts),
+      children: fnIdToNum ? this.blockToChildren(b, opts, fnIdToNum) : this.htmlToTextRuns(b, opts),
     });
   }
 
@@ -1053,6 +1203,55 @@ ${bodyContent}
     }
 
     return runs.length ? runs : [new TextRun({ text: '', font: opts.font, size: opts.size })];
+  }
+
+  private blockToChildren(b: { text?: string; html?: string }, opts: {
+    font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
+  }, fnIdToNum: Record<string, number>): (TextRun | FootnoteReferenceRun)[] {
+    const raw = b.html || this.escapeHtml(b.text ?? '');
+    if (!raw) return [new TextRun({ text: '', font: opts.font, size: opts.size })];
+
+    const children: (TextRun | FootnoteReferenceRun)[] = [];
+    const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
+    let m: RegExpExecArray | null;
+
+    let bold = !!opts.bold;
+    let italic = !!opts.italics;
+    let uline = !!opts.underline;
+
+    while ((m = re.exec(raw)) !== null) {
+      if (m[3] !== undefined) {
+        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        children.push(new TextRun({
+          text,
+          font: opts.font,
+          size: opts.size,
+          bold,
+          italics: italic,
+          underline: uline ? { type: UnderlineType.SINGLE } : undefined,
+          smallCaps: opts.smallCaps && children.length === 0,
+        }));
+      } else if (m[1] === '' && m[2] !== 'br') {
+        const tag = m[2];
+        if (tag === 'b' || tag === 'strong') bold = true;
+        if (tag === 'i' || tag === 'em') italic = true;
+        if (tag === 'u' || tag === 'ins') uline = true;
+        if (tag === 'sup') {
+          const mid = m[0];
+          const fnMatch = mid.match(/data-fn="([^"]+)"/);
+          if (fnMatch && fnIdToNum[fnMatch[1]]) {
+            children.push(new FootnoteReferenceRun(fnIdToNum[fnMatch[1]]));
+          }
+        }
+      } else if (m[1] === '/') {
+        const tag = m[2];
+        if (tag === 'b' || tag === 'strong') bold = !!opts.bold;
+        if (tag === 'i' || tag === 'em') italic = !!opts.italics;
+        if (tag === 'u' || tag === 'ins') uline = !!opts.underline;
+      }
+    }
+
+    return children.length ? children : [new TextRun({ text: '', font: opts.font, size: opts.size })];
   }
 
   private downloadFile(blob: Blob, filename: string) {

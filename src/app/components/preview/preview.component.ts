@@ -284,6 +284,18 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                 [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                 [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                 [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
+              @case ('h2') { <h3 class="kp-h2"
+                [style.font-family]="store.titleFontFamily()"
+                [style.text-align]="store.tweaks.titleAlignment()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h3> }
+              @case ('h3') { <h4 class="kp-h3"
+                [style.font-family]="store.titleFontFamily()"
+                [style.text-align]="store.tweaks.titleAlignment()"
+                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h4> }
               @case ('first-p') { 
                 <p class="kp-first" [attr.lang]="store.domLang()" [class.has-dropcap]="store.tweaks.dropCap()">
                   @if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml((b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text)"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
@@ -291,6 +303,14 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               }
               @case ('p') { <p class="kp-p" [attr.lang]="store.domLang()">@if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml(b.text || '')"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
               @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
+              @case ('epigraph') {
+                <div class="kp-epigraph">
+                  <blockquote class="kp-epigraph__q">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote>
+                  @if (b.attribution) {<cite class="kp-epigraph__att">— {{ b.attribution }}</cite>}
+                </div>
+              }
+              @case ('verse') { <pre class="kp-verse"><code>@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</code></pre> }
+              @case ('code') { <pre class="kp-code"><code>@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</code></pre> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
               @case ('image') {

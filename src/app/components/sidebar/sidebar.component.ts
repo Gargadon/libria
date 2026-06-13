@@ -582,6 +582,13 @@ import { environment } from '../../../environments/environment';
                 <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: false })">{{ 'sidebar.no' | translate }}</button>
               </div>
             </div>
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.pdfx' | translate }}</div>
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', true)">{{ 'sidebar.yes' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', false)">{{ 'sidebar.no' | translate }}</button>
+              </div>
+            </div>
           </div>
         }
         

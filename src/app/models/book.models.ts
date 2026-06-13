@@ -10,6 +10,7 @@ export interface Block {
   width?: number;
   height?: number;
   caption?: string;
+  attribution?: string; // for epigraph: —Author, Work
   rotation?: number; // 0 | 90 | 180 | 270
   flipH?: boolean;
   flipV?: boolean;
@@ -60,6 +61,7 @@ export interface Book {
 export interface Tweaks {
   sidebar: 'left' | 'right';
   mode: 'light' | 'dark';
+  pdfxCompliant: boolean;
   bookFont: 'spectral' | 'lora' | 'eb-garamond' | 'crimson-pro' | 'inter' | 'montserrat';
   customBookFont: string | null;
   spellcheck: boolean;

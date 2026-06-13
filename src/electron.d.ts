@@ -4,6 +4,7 @@ interface ElectronAPI {
   writeFile(filePath: string, content: string): Promise<void>;
   readFile(filePath: string): Promise<string>;
   printToPDF(options: object): Promise<Uint8Array>;
+  printFromHTML(html: string, options: object): Promise<Uint8Array>;
   onMenuAction(callback: (action: string) => void): void;
   onCloseRequested(callback: () => void): void;
   confirmClose(): void;

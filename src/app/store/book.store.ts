@@ -78,7 +78,8 @@ const initialState: BookState = {
     smartQuotes: true,
     smartDashes: true,
     smartEllipsis: true,
-    smartOpeningSigns: true
+    smartOpeningSigns: true,
+    pdfxCompliant: false
   },
   assets: {},
   past: [],
@@ -722,6 +723,16 @@ export const BookStore = signalStore(
         chapters: state.chapters.map((c) =>
           c.id === chapterId
             ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, caption } : b) }
+            : c
+        ),
+        isDirty: true
+      }));
+    },
+    updateBlockAttribution(chapterId: string, blockIndex: number, attribution: string) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) =>
+          c.id === chapterId
+            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, attribution } : b) }
             : c
         ),
         isDirty: true

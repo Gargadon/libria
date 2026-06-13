@@ -43,7 +43,22 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-tools liblzma-dev
+          sudo apt-get install -y libarchive-tools liblzma-dev ghostscript
+          mkdir -p build/bin/linux
+          cp "$(which gs)" build/bin/linux/gs
+          chmod +x build/bin/linux/gs
+
+      - name: Install and bundle Ghostscript (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ghostscript
+          mkdir -p build/bin/mac
+          cp "$(brew --prefix ghostscript)/bin/gs" build/bin/mac/gs
+          chmod +x build/bin/mac/gs
+
+      - name: Install Ghostscript (Windows)
+        if: runner.os == 'Windows'
+        run: bun run download:gs:win
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
