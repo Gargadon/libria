@@ -108,7 +108,17 @@
         "deb",
         "pacman"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "depends": [
+        "ghostscript"
+      ],
+      "extraResources": [
+        {
+          "from": "build/bin/linux",
+          "to": "gs/bin",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "mac": {
       "target": [
