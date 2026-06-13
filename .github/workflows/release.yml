@@ -72,6 +72,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Stage installer artifacts
+        shell: bash
         run: |
           mkdir -p dist/installers
           find release -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.pacman' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest*.yml' -o -name 'latest*.yaml' \) -exec cp {} dist/installers/ \;
