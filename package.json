@@ -128,7 +128,7 @@
         "dmg"
       ],
       "icon": "build/icon-512.png",
-      "x64ArchFiles": "gs/bin/*",
+      "x64ArchFiles": "**/gs/bin/*",
       "extraResources": [
         {
           "from": "build/bin/mac",
