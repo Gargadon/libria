@@ -10,7 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const BIN = join(ROOT, 'build', 'bin');
 
-const GS_VER = '10.04.2';
+const GS_VER = '10.07.0';
 const GS_TAG = `gs${GS_VER.replace(/\./g, '')}`;
 const BASE = 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download';
 const GHCR = 'https://ghcr.io/v2/homebrew/core/ghostscript/blobs';
@@ -85,16 +85,15 @@ async function main() {
       console.log(`  ✓ Copied from system: ${src} → ${join(dir, 'gs')}`);
       process.exit(0);
     }
-    // Fallback: download x86_64 binary
-    const name = `ghostscript-${GS_VER}-linux-x86_64.tgz`;
-    const url = `${BASE}/${GS_TAG}/${name}`;
-    const tgz = join(dir, 'gs.tar.gz');
-    await fetch(url, tgz);
-    const res = spawnSync('tar', ['-xzf', tgz, '--strip-components=1', '-C', dir]);
-    if (res.status !== 0) { console.error(`  tar failed: ${res.stderr}`); process.exit(1); }
-    unlinkSync(tgz);
-    chmodSync(join(dir, 'gs'), 0o755);
-    console.log(`  ✓ ${join(dir, 'gs')}`);
+    console.error(`
+  No Ghostscript binary found on the system.
+  Install it via your package manager, e.g.:
+    sudo apt install ghostscript   # Debian/Ubuntu
+    sudo pacman -S ghostscript      # Arch Linux
+    brew install ghostscript        # macOS
+  Then run again.
+`);
+    process.exit(1);
 
   } else if (plat === 'darwin') {
     console.log('\n[macOS]');
