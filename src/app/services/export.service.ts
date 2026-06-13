@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../store/book.store';
 import { sortFootnotesByPosition, Block } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
@@ -16,27 +17,67 @@ import {
   TableRow,
   TableCell,
   WidthType,
+  type IMediaTransformation,
 } from 'docx';
 import { saveAs } from 'file-saver';
+
+const EPUB_FONT_MAP: Record<string, {
+  family: string;
+  files: { filename: string; style: string; weight: string }[];
+}> = {
+  spectral: { family: 'Spectral', files: [
+    { filename: 'rnCr-xNNww_2s0amA9M5kng.woff2', style: 'normal', weight: '400' },
+    { filename: 'rnCt-xNNww_2s0amA9M8onrmTA.woff2', style: 'italic', weight: '400' },
+    { filename: 'rnCs-xNNww_2s0amA9vmtm3BafY.woff2', style: 'normal', weight: '600' },
+  ]},
+  lora: { family: 'Lora', files: [
+    { filename: '0QIvMX1D_JOuMwr7Iw.woff2', style: 'normal', weight: '400 700' },
+    { filename: '0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFoq92nA.woff2', style: 'italic', weight: '400 700' },
+  ]},
+  'eb-garamond': { family: 'EB Garamond', files: [
+    { filename: 'SlGUmQSNjdsmc35JDF1K5GR1SDk.woff2', style: 'normal', weight: '400 800' },
+    { filename: 'SlGWmQSNjdsmc35JDF1K5GRweDs1Zw.woff2', style: 'italic', weight: '400 800' },
+  ]},
+  'crimson-pro': { family: 'Crimson Pro', files: [
+    { filename: 'q5uDsoa5M_tv7IihmnkabARboYE.woff2', style: 'normal', weight: '200 900' },
+    { filename: 'q5uBsoa5M_tv7IihmnkabARekYNwDQ.woff2', style: 'italic', weight: '200 900' },
+  ]},
+  inter: { family: 'Inter', files: [
+    { filename: 'UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2', style: 'normal', weight: '100 900' },
+  ]},
+  montserrat: { family: 'Montserrat', files: [
+    { filename: 'JTUSjIg1_i6t8kCHKm459Wlhyw.woff2', style: 'normal', weight: '100 900' },
+    { filename: 'JTUQjIg1_i6t8kCHKm459WxRyS7m.woff2', style: 'italic', weight: '100 900' },
+  ]},
+};
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExportService {
   private readonly store = inject(BookStore);
+  private readonly ts = inject(TranslateService);
   private readonly hyphenService = inject(HyphenService);
 
   async exportEpub() {
-    const zip = new JSZip();
-    const book = this.store.book();
-    const chapters = this.store.chapters();
-    const assets = this.store.assets();
-    const prefs = this.store.exportPrefs();
-    const tweaks = this.store.tweaks();
+    this.store.setExporting(true, this.ts.instant('sidebar.exportingEpub'));
+    try {
+      const zip = new JSZip();
+      const book = this.store.book();
+      const chapters = this.store.chapters();
+      const assets = this.store.assets();
+      const prefs = this.store.exportPrefs();
+      const tweaks = this.store.tweaks();
+      const bodyFontFamily = this.store.bookFontFamily();
+      const titleFontFamily = this.store.titleFontFamily();
 
-    if (!book) return;
+      if (!book) return;
 
-    zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+      zip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+
+      this.store.setExporting(true, this.ts.instant('sidebar.exportingFonts'));
+      const { fontFaceCss, fontManifest: epubFontManifest } =
+        await this.loadEpubFonts(zip, tweaks.bookFont ?? '', tweaks.titleFont ?? '');
     zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
@@ -70,25 +111,37 @@ export class ExportService {
       spine += `    <itemref idref="chapter_${i}"/>\n`;
     });
 
+    const imageKeys = new Set<string>();
+    chapters.forEach(c => c.body.forEach(b => { if (b.type === 'image' && b.src && assets[b.src]) imageKeys.add(b.src); }));
+    let imageManifest = '';
+    imageKeys.forEach(key => {
+      const ext = this.imageExt(assets[key]);
+      const blob = this.dataUrlToBlob(assets[key]);
+      zip.file(`OEBPS/images/img-${key}.${ext}`, blob);
+      imageManifest += `    <item id="img-${key}" href="images/img-${key}.${ext}" media-type="image/${ext === 'jpg' ? 'jpeg' : ext}"/>\n`;
+    });
+
+    const esc = (s: string) => this.escapeHtml(s);
     const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="pub-id">${book.isbn || 'libria-' + Date.now()}</dc:identifier>
-    <dc:title>${book.title}</dc:title>
-    <dc:creator>${book.author}</dc:creator>
-    <dc:language>es</dc:language>
-    <dc:publisher>${book.publisher || 'Libria'}</dc:publisher>
+    <dc:identifier id="pub-id">${esc(book.isbn) || 'libria-' + Date.now()}</dc:identifier>
+    <dc:title>${esc(book.title)}</dc:title>
+    <dc:creator>${esc(book.author)}</dc:creator>
+    <dc:language>${book.lang ?? 'es'}</dc:language>
+    <dc:publisher>${esc(book.publisher || 'Libria')}</dc:publisher>
     <dc:date>${book.year}-01-01</dc:date>
     <meta property="dcterms:modified">${new Date().toISOString().split('.')[0]}Z</meta>
   </metadata>
   <manifest>
-    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="css" href="styles.css" media-type="text/css"/>
 ${coverManifest}
+${epubFontManifest}
+${imageManifest}
 ${manifest}
   </manifest>
-  <spine toc="ncx">
+  <spine>
 ${coverSpine}
 ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
   </spine>
@@ -96,8 +149,8 @@ ${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
     zip.file('OEBPS/content.opf', opf);
 
     const dropCapStyles = tweaks.dropCap ? `.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }` : '';
-    zip.file('OEBPS/styles.css', `body { font-family: serif; padding: 5%; line-height: 1.5; }
-h1, h2 { text-align: center; }
+    zip.file('OEBPS/styles.css', `${fontFaceCss}body { font-family: ${bodyFontFamily}, serif; padding: 5%; line-height: 1.5; }
+h1, h2 { font-family: ${titleFontFamily}, serif; text-align: center; }
 p { text-indent: 1.5em; margin: 0; text-align: justify; }
 .first-p { text-indent: 0; }
 .kp-list { margin: 0.5em 0; padding-left: 1.5em; }
@@ -113,10 +166,10 @@ ${dropCapStyles}`);
 
     let navLinks = '';
     chapters.forEach((c, i) => {
-      navLinks += `<li><a href="chapters/${c.id}.xhtml">${c.title}</a></li>`;
+      navLinks += `<li><a href="chapters/${c.id}.xhtml">${this.escapeHtml(c.title)}</a></li>`;
       let content = '';
       c.body.forEach(b => {
-        const raw = b.html || this.escapeHtml(b.text || '');
+        const raw = this.xhtmlSafe(b.html || this.escapeHtml(b.text || ''));
         switch (b.type) {
           case 'halftitle':     content += `<h1 class="kp-halftitle">${raw}</h1>`; break;
           case 'title':         content += `<h1 class="kp-title">${raw}</h1>`; break;
@@ -135,8 +188,9 @@ ${dropCapStyles}`);
           case 'image': {
             if (b.src && assets[b.src]) {
               const imgStyle = this.imageStyle(b);
+              const ext = this.imageExt(assets[b.src]);
               const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
-              content += `<figure style="text-align:center;margin:1em 0"><img src="${assets[b.src]}" style="${imgStyle}" alt=""/>${cap}</figure>`;
+              content += `<figure style="text-align:center;margin:1em 0"><img src="../images/img-${b.src}.${ext}" style="${imgStyle}" alt=""/>${cap}</figure>`;
             }
             break;
           }
@@ -156,82 +210,90 @@ ${dropCapStyles}`);
         content += `</div>`;
       }
       zip.file(`OEBPS/chapters/${c.id}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>${this.escapeHtml(c.title)}</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
 <body>${content}</body></html>`);
     });
 
+    const tocLabelMap: Record<string, string> = { es: 'Contenidos', en: 'Contents', fr: 'Table des matières', it: 'Indice', pt: 'Sumário' };
+    const tocLabel = tocLabelMap[(book.lang ?? 'es').slice(0, 2)] ?? 'Contents';
     zip.file('OEBPS/nav.xhtml', `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
-<body><nav epub:type="toc"><h1>Contenidos</h1><ol>${navLinks}</ol></nav></body></html>`);
+<head><title>${tocLabel}</title></head>
+<body><nav epub:type="toc"><h1>${tocLabel}</h1><ol>${navLinks}</ol></nav></body></html>`);
 
+    this.store.setExporting(true, this.ts.instant('sidebar.exportingEpub'));
     const content = await zip.generateAsync({ type: 'blob' });
     this.downloadFile(content, `${book.title}.epub`);
+    } finally {
+      this.store.setExporting(false);
+    }
   }
 
   async exportPdf() {
-    const book = this.store.book();
-    if (!book) return;
-
-    const chapters = this.store.chapters();
-    const t = this.store.tweaks();
-    const bodyFontFamily = this.store.bookFontFamily();
-    const titleFontFamily = this.store.titleFontFamily();
-
-    const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.store.assets());
-    const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
-
-    const pdfOptions: Record<string, any> = {
-      pageSize,
-      printBackground: true,
-      // Horizontal margins come from CSS @page :left/:right.
-      // Vertical margins (with header/footer space) come from printToPDF options.
-      margins: {
-        marginType: 'custom',
-        top: t.marginTop / 25.4,
-        bottom: t.marginBottom / 25.4,
-        left: 0,
-        right: 0,
-      },
-    };
-
-    if (t.showHeader || t.showPageNumbers) {
-      pdfOptions['displayHeaderFooter'] = true;
-      const showHdr = t.showHeader;
-      const showPN = t.showPageNumbers;
-      const pnp = t.pageNumberPosition;
-      const esc = (s: string) => this.escapeHtml(s);
-      if (showHdr || (showPN && pnp === 'top-edges')) {
-        const parts: string[] = [];
-        if (showPN && pnp === 'top-edges') {
-          parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
-        }
-        if (showHdr) {
-          parts.push(`<span style="flex:1;text-align:center;font-style:italic;">${esc(t.headerText || book.title)}</span>`);
-        }
-        if (showPN && pnp === 'top-edges') {
-          parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
-        }
-        pdfOptions['headerTemplate'] =
-          `<div style="font-size:9pt;font-family:serif;color:#555;padding:0 1cm;width:100%;height:${t.marginTop}mm;display:flex;align-items:center;justify-content:center;">${parts.join('')}</div>`;
-      } else {
-        pdfOptions['headerTemplate'] = '<div></div>';
-      }
-      if (showPN && pnp !== 'top-edges') {
-        const justify = pnp === 'bottom-edges' ? 'space-between' : 'center';
-        pdfOptions['footerTemplate'] =
-          `<div style="font-size:9pt;font-family:serif;padding:0 1cm;width:100%;height:${t.marginBottom}mm;display:flex;align-items:center;justify-content:${justify};">
-            <span class="pageNumber"></span>${pnp === 'bottom-edges' ? '<span class="pageNumber"></span>' : ''}</div>`;
-      } else {
-        pdfOptions['footerTemplate'] = '<div></div>';
-      }
-    }
-
+    this.store.setExporting(true, this.ts.instant('sidebar.exportingPdf'));
     try {
+      const book = this.store.book();
+      if (!book) return;
+
+      const chapters = this.store.chapters();
+      const t = this.store.tweaks();
+      const bodyFontFamily = this.store.bookFontFamily();
+      const titleFontFamily = this.store.titleFontFamily();
+
+      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.store.assets());
+      const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
+
+      const pdfOptions: Record<string, any> = {
+        pageSize,
+        printBackground: true,
+        margins: {
+          marginType: 'custom',
+          top: t.marginTop / 25.4,
+          bottom: t.marginBottom / 25.4,
+          left: 0,
+          right: 0,
+        },
+      };
+
+      if (t.showHeader || t.showPageNumbers) {
+        pdfOptions['displayHeaderFooter'] = true;
+        const showHdr = t.showHeader;
+        const showPN = t.showPageNumbers;
+        const pnp = t.pageNumberPosition;
+        const esc = (s: string) => this.escapeHtml(s);
+        if (showHdr || (showPN && pnp === 'top-edges')) {
+          const parts: string[] = [];
+          if (showPN && pnp === 'top-edges') {
+            parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
+          }
+          if (showHdr) {
+            parts.push(`<span style="flex:1;text-align:center;font-style:italic;">${esc(t.headerText || book.title)}</span>`);
+          }
+          if (showPN && pnp === 'top-edges') {
+            parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
+          }
+          pdfOptions['headerTemplate'] =
+            `<div style="font-size:9pt;font-family:serif;color:#555;padding:0 1cm;width:100%;height:${t.marginTop}mm;display:flex;align-items:center;justify-content:center;">${parts.join('')}</div>`;
+        } else {
+          pdfOptions['headerTemplate'] = '<div></div>';
+        }
+        if (showPN && pnp !== 'top-edges') {
+          const justify = pnp === 'bottom-edges' ? 'space-between' : 'center';
+          pdfOptions['footerTemplate'] =
+            `<div style="font-size:9pt;font-family:serif;padding:0 1cm;width:100%;height:${t.marginBottom}mm;display:flex;align-items:center;justify-content:${justify};">
+              <span class="pageNumber"></span>${pnp === 'bottom-edges' ? '<span class="pageNumber"></span>' : ''}</div>`;
+        } else {
+          pdfOptions['footerTemplate'] = '<div></div>';
+        }
+      }
+
       const pdfData = await (window as any).electronAPI.printFromHTML(html, pdfOptions);
       const blob = new Blob([pdfData], { type: 'application/pdf' });
       this.downloadFile(blob, `${book.title}.pdf`);
     } catch (error) {
       console.error('PDF export failed', error);
+    } finally {
+      this.store.setExporting(false);
     }
   }
 
@@ -609,234 +671,278 @@ ${bodyContent}
 </html>`;
   }
 
+  private async loadEpubFonts(
+    zip: JSZip,
+    bookFontKey: string,
+    titleFontKey: string,
+  ): Promise<{ fontFaceCss: string; fontManifest: string }> {
+    const keys = [...new Set([bookFontKey, titleFontKey])].filter(k => EPUB_FONT_MAP[k]);
+    let fontFaceCss = '';
+    let fontManifest = '';
+
+    for (const key of keys) {
+      const def = EPUB_FONT_MAP[key];
+      for (const f of def.files) {
+        try {
+          const resp = await fetch(`fonts/${f.filename}`);
+          if (!resp.ok) continue;
+          const buf = await resp.arrayBuffer();
+          zip.file(`OEBPS/fonts/${f.filename}`, buf);
+          const id = `font-${f.filename.replace(/\W/g, '-')}`;
+          fontManifest += `    <item id="${id}" href="fonts/${f.filename}" media-type="font/woff2"/>\n`;
+          fontFaceCss += `@font-face { font-family: '${def.family}'; src: url('fonts/${f.filename}') format('woff2'); font-style: ${f.style}; font-weight: ${f.weight}; }\n`;
+        } catch {
+          // font file unavailable, skip
+        }
+      }
+    }
+
+    return { fontFaceCss, fontManifest };
+  }
+
   private escapeHtml(str: string): string {
     return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  private xhtmlSafe(str: string): string {
+    return str.replace(/<br\s*\/?>/gi, '<br/>').replace(/&nbsp;/g, '&#160;');
+  }
+
   async exportDocx() {
-    const book = this.store.book();
-    const chapters = this.store.chapters();
-    const t = this.store.tweaks();
-    const prefs = this.store.exportPrefs();
-    const assets = this.store.assets();
-    if (!book) return;
+    this.store.setExporting(true, this.ts.instant('sidebar.exportingDocx'));
+    try {
+      const book = this.store.book();
+      const chapters = this.store.chapters();
+      const t = this.store.tweaks();
+      const prefs = this.store.exportPrefs();
+      const assets = this.store.assets();
+      if (!book) return;
 
-    const children: (Paragraph | TableOfContents | Table)[] = [];
+      const children: (Paragraph | TableOfContents | Table)[] = [];
 
-    if (prefs.includeCover && assets['cover']) {
-      const coverBlob = this.dataUrlToBlob(assets['cover']);
-      const coverBuf = await coverBlob.arrayBuffer();
-      const ext = this.imageExt(assets['cover']);
-      children.push(new Paragraph({
-        alignment: 'center',
-        spacing: { before: 3000, after: 100 },
-              children: [new ImageRun({ type: ext as any, data: coverBuf, transformation: { width: 400, height: 600 } })],
-      }));
-    }
-
-    if (prefs.includeTOC) {
-      children.push(new TableOfContents('Table of Contents', { hyperlink: true }));
-    }
-
-    const bodyFont = t.customBookFont || this.fontName(t.bookFont);
-    const titleFont = t.customTitleFont || this.fontName(t.titleFont);
-    const tAlign = this.align(t.titleAlignment);
-    const bodyAlign = (t.justifyText ? 'both' : 'left') as any;
-    const fs = Math.round(t.fontSize * 2);
-    const ts = Math.round(t.titleFontSize * 2);
-    const lsp = Math.round(t.lineHeight * 240);
-    const pg = Math.round(t.paragraphSpacing * 20);
-    const ind = t.indentFirstLine ? Math.round(t.indentSize * 567) : 0;
-    const glyph = this.sceneGlyphText(t.sceneBreakType);
-
-    for (const ch of chapters) {
-      if (ch.forceOddPage && children.length > 0) {
-        children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+      if (prefs.includeCover && assets['cover']) {
+        const coverBlob = this.dataUrlToBlob(assets['cover']);
+        const coverBuf = await coverBlob.arrayBuffer();
+        const ext = this.imageExt(assets['cover']);
+        children.push(new Paragraph({
+          alignment: 'center',
+          spacing: { before: 3000, after: 100 },
+          children: [new ImageRun({ type: ext as any, data: coverBuf, transformation: { width: 400, height: 600 } })],
+        }));
       }
 
-      for (const b of ch.body) {
-        switch (b.type) {
-          case 'halftitle':
-            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.2), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 1200));
-            break;
-          case 'title':
-            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.8), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 200));
-            break;
-          case 'subtitle':
-            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.9), italics: true }, tAlign, 0, 600));
-            break;
-          case 'author':
-            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.85) }, 'center', 0, 200));
-            break;
-          case 'publisher':
-            children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.7) }, 'center', 1200, 0));
-            break;
-          case 'dedication': {
-            const lines = (b.text ?? '').split('\n');
-            for (const line of lines) {
-              children.push(new Paragraph({
-                alignment: 'center',
-                spacing: { after: 100 },
-                children: [new TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
-              }));
-            }
-            break;
-          }
-          case 'chapter-num':
-            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.7), bold: t.titleBold, italics: t.titleItalic }, tAlign, 0, 80));
-            break;
-          case 'chapter-title':
-            children.push(this.p(b, { font: titleFont, size: ts, bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 400));
-            break;
-          case 'h1':
-            children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.85), bold: t.titleBold, italics: t.titleItalic }, tAlign, 400, 200));
-            break;
-          case 'first-p':
-            children.push(new Paragraph({
-              alignment: bodyAlign,
-              spacing: { line: lsp, after: pg },
-              indent: { firstLine: 0 },
-              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, smallCaps: true }),
-            }));
-            break;
-          case 'p':
-            children.push(new Paragraph({
-              alignment: bodyAlign,
-              spacing: { line: lsp, after: pg },
-              indent: { firstLine: ind },
-              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs }),
-            }));
-            break;
-          case 'blockquote':
-            children.push(new Paragraph({
-              alignment: 'left',
-              indent: { left: 720 },
-              spacing: { line: lsp, before: 200, after: 200 },
-              children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
-            }));
-            break;
-          case 'scene-break':
-            children.push(new Paragraph({
-              alignment: 'center',
-              spacing: { before: 400, after: 400 },
-              children: [new TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
-            }));
-            break;
-          case 'page-break':
-            children.push(new Paragraph({ children: [], pageBreakBefore: true }));
-            break;
-          case 'image': {
-            const imgKey = b.src;
-            if (imgKey && assets[imgKey]) {
-              const imgBlob = this.dataUrlToBlob(assets[imgKey]);
-              const imgBuf = await imgBlob.arrayBuffer();
-              const ext = this.imageExt(assets[imgKey]);
-              const dims = b.width && b.height
-                ? { width: b.width, height: b.height }
-                : { width: 460, height: 600 };
-              children.push(new Paragraph({
-                alignment: 'center',
-                spacing: { before: 200, after: b.caption ? 0 : 200 },
-                children: [new ImageRun({ type: ext as any, data: imgBuf, transformation: { width: dims.width, height: dims.height } })],
-              }));
-              if (b.caption) {
+      if (prefs.includeTOC) {
+        children.push(new TableOfContents('Table of Contents', { hyperlink: true }));
+      }
+
+      const bodyFont = t.customBookFont || this.fontName(t.bookFont);
+      const titleFont = t.customTitleFont || this.fontName(t.titleFont);
+      const tAlign = this.align(t.titleAlignment);
+      const bodyAlign = (t.justifyText ? 'both' : 'left') as any;
+      const fs = Math.round(t.fontSize * 2);
+      const ts = Math.round(t.titleFontSize * 2);
+      const lsp = Math.round(t.lineHeight * 240);
+      const pg = Math.round(t.paragraphSpacing * 20);
+      const ind = t.indentFirstLine ? Math.round(t.indentSize * 567) : 0;
+      const glyph = this.sceneGlyphText(t.sceneBreakType);
+
+      for (const ch of chapters) {
+        if (ch.forceOddPage && children.length > 0) {
+          children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+        }
+
+        for (const b of ch.body) {
+          switch (b.type) {
+            case 'halftitle':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.2), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 1200));
+              break;
+            case 'title':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 1.8), bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 200));
+              break;
+            case 'subtitle':
+              children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.9), italics: true }, tAlign, 0, 600));
+              break;
+            case 'author':
+              children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.85) }, 'center', 0, 200));
+              break;
+            case 'publisher':
+              children.push(this.p(b, { font: bodyFont, size: Math.round(fs * 0.7) }, 'center', 1200, 0));
+              break;
+            case 'dedication': {
+              const lines = (b.text ?? '').split('\n');
+              for (const line of lines) {
                 children.push(new Paragraph({
                   alignment: 'center',
-                  spacing: { before: 60, after: 200 },
-                  children: [new TextRun({ text: b.caption, size: 20, color: '555555' })],
+                  spacing: { after: 100 },
+                  children: [new TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
                 }));
               }
+              break;
             }
-            break;
-          }
-          case 'list-unordered':
-          case 'list-ordered': {
-            const items = (b.html || b.text || '').split('</li>').filter(s => s.trim());
-            for (const item of items) {
-              const itemText = item.replace(/<[^>]+>/g, '').trim();
-              if (!itemText) continue;
+            case 'chapter-num':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.7), bold: t.titleBold, italics: t.titleItalic }, tAlign, 0, 80));
+              break;
+            case 'chapter-title':
+              children.push(this.p(b, { font: titleFont, size: ts, bold: t.titleBold, italics: t.titleItalic, underline: t.titleUnderline }, tAlign, 0, 400));
+              break;
+            case 'h1':
+              children.push(this.p(b, { font: titleFont, size: Math.round(ts * 0.85), bold: t.titleBold, italics: t.titleItalic }, tAlign, 400, 200));
+              break;
+            case 'first-p':
+              children.push(new Paragraph({
+                alignment: bodyAlign,
+                spacing: { line: lsp, after: pg },
+                indent: { firstLine: 0 },
+                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, smallCaps: true }),
+              }));
+              break;
+            case 'p':
+              children.push(new Paragraph({
+                alignment: bodyAlign,
+                spacing: { line: lsp, after: pg },
+                indent: { firstLine: ind },
+                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs }),
+              }));
+              break;
+            case 'blockquote':
               children.push(new Paragraph({
                 alignment: 'left',
-                spacing: { line: lsp, after: 60 },
-                indent: { left: 720, hanging: 360 },
-                bullet: b.type === 'list-unordered' ? { level: 0 } : undefined,
-                children: [new TextRun({ text: itemText, font: bodyFont, size: fs })],
+                indent: { left: 720 },
+                spacing: { line: lsp, before: 200, after: 200 },
+                children: this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
               }));
+              break;
+            case 'scene-break':
+              children.push(new Paragraph({
+                alignment: 'center',
+                spacing: { before: 400, after: 400 },
+                children: [new TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
+              }));
+              break;
+            case 'page-break':
+              children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+              break;
+            case 'image': {
+              const imgKey = b.src;
+              if (imgKey && assets[imgKey]) {
+                const imgBlob = this.dataUrlToBlob(assets[imgKey]);
+                const imgBuf = await imgBlob.arrayBuffer();
+                const ext = this.imageExt(assets[imgKey]);
+                const dims = b.width && b.height
+                  ? { width: b.width, height: b.height }
+                  : { width: 460, height: 600 };
+                const transformation: IMediaTransformation = {
+                  width: dims.width,
+                  height: dims.height,
+                  ...(b.rotation ? { rotation: b.rotation } : {}),
+                  ...(b.flipH || b.flipV ? { flip: { horizontal: !!b.flipH, vertical: !!b.flipV } } : {}),
+                };
+                children.push(new Paragraph({
+                  alignment: 'center',
+                  spacing: { before: 200, after: b.caption ? 0 : 200 },
+                  children: [new ImageRun({ type: ext as any, data: imgBuf, transformation })],
+                }));
+                if (b.caption) {
+                  children.push(new Paragraph({
+                    alignment: 'center',
+                    spacing: { before: 60, after: 200 },
+                    children: [new TextRun({ text: b.caption, size: 20, color: '555555' })],
+                  }));
+                }
+              }
+              break;
             }
-            break;
-          }
-          case 'table': {
-            const rows = (b.html || '').match(/<tr>.*?<\/tr>/gi) || [];
-            const tableRows: TableRow[] = [];
-            for (const rowHtml of rows) {
-              const cells = rowHtml.match(/<t[dh][^>]*>.*?<\/t[dh]>/gi) || [];
-              const rowChildren: TableCell[] = [];
-              for (const cellHtml of cells) {
-                const cellText = cellHtml.replace(/<[^>]+>/g, '').trim();
-                rowChildren.push(new TableCell({
-                  children: [new Paragraph({
-                    alignment: 'left',
-                    children: [new TextRun({ text: cellText || ' ', font: bodyFont, size: fs })],
-                  })],
+            case 'list-unordered':
+            case 'list-ordered': {
+              const items = (b.html || b.text || '').split('</li>').filter(s => s.trim());
+              for (const item of items) {
+                const itemText = item.replace(/<[^>]+>/g, '').trim();
+                if (!itemText) continue;
+                children.push(new Paragraph({
+                  alignment: 'left',
+                  spacing: { line: lsp, after: 60 },
+                  indent: { left: 720, hanging: 360 },
+                  bullet: b.type === 'list-unordered' ? { level: 0 } : undefined,
+                  children: [new TextRun({ text: itemText, font: bodyFont, size: fs })],
                 }));
               }
-              if (rowChildren.length) {
-                tableRows.push(new TableRow({ children: rowChildren }));
+              break;
+            }
+            case 'table': {
+              const rows = (b.html || '').match(/<tr>.*?<\/tr>/gi) || [];
+              const tableRows: TableRow[] = [];
+              for (const rowHtml of rows) {
+                const cells = rowHtml.match(/<t[dh][^>]*>.*?<\/t[dh]>/gi) || [];
+                const rowChildren: TableCell[] = [];
+                for (const cellHtml of cells) {
+                  const cellText = cellHtml.replace(/<[^>]+>/g, '').trim();
+                  rowChildren.push(new TableCell({
+                    children: [new Paragraph({
+                      alignment: 'left',
+                      children: [new TextRun({ text: cellText || ' ', font: bodyFont, size: fs })],
+                    })],
+                  }));
+                }
+                if (rowChildren.length) {
+                  tableRows.push(new TableRow({ children: rowChildren }));
+                }
               }
+              if (tableRows.length) {
+                children.push(new Table({
+                  rows: tableRows,
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                }));
+              }
+              break;
             }
-            if (tableRows.length) {
-              children.push(new Table({
-                rows: tableRows,
-                width: { size: 100, type: WidthType.PERCENTAGE },
-              }));
-            }
-            break;
+            default:
+              break;
           }
-          default:
-            break;
         }
-      }
-      const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
-      if (fnsSorted.length) {
-        children.push(new Paragraph({
-          alignment: 'left',
-          spacing: { before: 400, after: 100 },
-          children: [new TextRun({ text: 'Notas', font: bodyFont, size: fs, bold: true })],
-        }));
-        children.push(new Paragraph({
-          alignment: 'left',
-          spacing: { before: 0, after: 200 },
-          children: [new TextRun({ text: '————————————————', font: bodyFont, size: fs })],
-        }));
-        fnsSorted.forEach((fn: any, fi: number) => {
+        const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
+        if (fnsSorted.length) {
           children.push(new Paragraph({
             alignment: 'left',
-            spacing: { before: 40, after: 40 },
-            children: [
-              new TextRun({ text: `${fi + 1}. `, font: bodyFont, size: Math.round(fs * 0.85), superScript: true }),
-              new TextRun({ text: fn.content || '', font: bodyFont, size: Math.round(fs * 0.85) }),
-            ],
+            spacing: { before: 400, after: 100 },
+            children: [new TextRun({ text: 'Notas', font: bodyFont, size: fs, bold: true })],
           }));
-        });
+          children.push(new Paragraph({
+            alignment: 'left',
+            spacing: { before: 0, after: 200 },
+            children: [new TextRun({ text: '————————————————', font: bodyFont, size: fs })],
+          }));
+          fnsSorted.forEach((fn: any, fi: number) => {
+            children.push(new Paragraph({
+              alignment: 'left',
+              spacing: { before: 40, after: 40 },
+              children: [
+                new TextRun({ text: `${fi + 1}. `, font: bodyFont, size: Math.round(fs * 0.85), superScript: true }),
+                new TextRun({ text: fn.content || '', font: bodyFont, size: Math.round(fs * 0.85) }),
+              ],
+            }));
+          });
+        }
       }
-    }
 
-    const doc = new Document({
-      title: book.title,
-      description: book.subtitle || '',
-      creator: book.author || '',
-      styles: {
-        default: {
-          document: {
-            run: { font: bodyFont, size: fs },
+      const doc = new Document({
+        title: book.title,
+        description: book.subtitle || '',
+        creator: book.author || '',
+        styles: {
+          default: {
+            document: {
+              run: { font: bodyFont, size: fs },
+            },
           },
         },
-      },
-      sections: [{ children }],
-    });
+        sections: [{ children }],
+      });
 
-    const blob = await Packer.toBlob(doc);
-    this.downloadFile(blob, `${book.title}.docx`);
+      const blob = await Packer.toBlob(doc);
+      this.downloadFile(blob, `${book.title}.docx`);
+    } finally {
+      this.store.setExporting(false);
+    }
   }
 
   private p(b: { text?: string; html?: string }, opts: {

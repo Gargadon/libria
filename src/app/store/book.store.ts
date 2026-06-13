@@ -34,6 +34,8 @@ export interface BookState {
   replaceQuery: string;
   personalConfig: PersonalConfig;
   isSaving: boolean;
+  isExporting: boolean;
+  exportStatus: string;
   writingGoals: WritingGoals;
 }
 
@@ -101,16 +103,18 @@ const initialState: BookState = {
   replaceQuery: '',
   personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es', mode: 'light' },
   isSaving: false,
+  isExporting: false,
+  exportStatus: '',
   writingGoals: { targetWords: 0, deadline: '' }
 };
 
 function uiLocale(lang: string): string {
-  const map: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT' };
+  const map: Record<string, string> = { en: 'en-US', fr: 'fr-FR', it: 'it-IT', pt: 'pt-BR' };
   return map[lang] || 'es-ES';
 }
 
 function untitledLabel(lang: string): string {
-  const map: Record<string, string> = { en: 'Untitled', fr: 'Sans titre', it: 'Senza titolo' };
+  const map: Record<string, string> = { en: 'Untitled', fr: 'Sans titre', it: 'Senza titolo', pt: 'Sem título' };
   return map[lang] || 'Sin título';
 }
 
@@ -208,6 +212,7 @@ export const BookStore = signalStore(
       if (lang.startsWith('fr-')) return 'fr';
       if (lang.startsWith('it-')) return 'it';
       if (lang.startsWith('de-')) return 'de';
+      if (lang.startsWith('pt-')) return 'pt';
       return lang;
     })
   })),
@@ -276,6 +281,7 @@ export const BookStore = signalStore(
         fr: { title: 'Nouveau livre', chapter: 'Chapitre 1', docLang: 'fr-FR' },
         it: { title: 'Nuovo libro',   chapter: 'Capitolo 1', docLang: 'it-IT' },
         de: { title: 'Neues Buch',    chapter: 'Kapitel 1',  docLang: 'de-DE' },
+        pt: { title: 'Novo Livro',    chapter: 'Capítulo 1', docLang: 'pt-BR' },
       };
       const labels = newProjectLabels[lang] || { title: 'Nuevo Libro', chapter: 'Capítulo 1', docLang: 'es-MX' };
       const newBook: Book = {
@@ -458,6 +464,9 @@ export const BookStore = signalStore(
     },
     setIsSaving(isSaving: boolean) {
       patchState(store, { isSaving });
+    },
+    setExporting(isExporting: boolean, exportStatus = '') {
+      patchState(store, { isExporting, exportStatus });
     },
     addChapter(kind: ChapterKind = 'chapter') {
       patchState(store, (state) => {

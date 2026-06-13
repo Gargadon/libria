@@ -147,6 +147,12 @@ export interface SearchResult {
   after: string;
 }
 
+export interface RecentProject {
+  path: string;
+  title: string;
+  date: string;
+}
+
 export interface PersonalConfig {
   avatar: string;
   userName: string;

@@ -540,6 +540,13 @@ export class EditorComponent {
     }, 1000);
 
     this.store.updateChapterBlock(chapterId, blockIndex, text, html);
+    // Clear stale errors for this block so old underlines don't show at wrong positions
+    const current = this.blockErrors();
+    if (current[blockIndex]) {
+      const next = { ...current };
+      delete next[blockIndex];
+      this.blockErrors.set(next);
+    }
     this.scheduleSpellCheck();
   }
 

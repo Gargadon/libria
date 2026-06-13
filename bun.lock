@@ -17,6 +17,7 @@
         "@types/hyphen": "^1.14.0",
         "blob-stream": "^0.1.3",
         "buffer": "^6.0.3",
+        "dictionary-pt": "^4.0.0",
         "docx": "^9.6.1",
         "file-saver": "^2.0.5",
         "hyphen": "^1.14.1",
@@ -803,6 +804,8 @@
     "dictionary-fr": ["dictionary-fr@3.0.0", "", {}, "sha512-fhDRX1cRyHPA69GJg8R4XgNYgSQvbNHj3kr5UqvEG1OS5pJqH6P3GbO7wpTCwvr5KMQ0NxGIsXps9P5NyXRVEg=="],
 
     "dictionary-it": ["dictionary-it@2.0.0", "", {}, "sha512-klTygBjKRYKEeDmqLfDpI9eDCj334TQhbq2zExKREV4CMPiUsnXnO/0CGMTiRTRL+Wk+qXd0fKfEZbgw+gnjHw=="],
+
+    "dictionary-pt": ["dictionary-pt@4.0.0", "", {}, "sha512-ryJRhAtsaunBWw9grYXmVFftfab8+BCQ5wwh7fUzWO0oYEeMuR1lW2ubu1AHdvxOL32XP+u5wW/XhbFuoFuq8Q=="],
 
     "dingbat-to-unicode": ["dingbat-to-unicode@1.0.1", "", {}, "sha512-98l0sW87ZT58pU4i61wa2OHwxbiYSbuxsCBozaVnYX2iCnr3bLM3fIes1/ej7h1YdOKuKt/MLs706TVnALA65w=="],
 

@@ -68,6 +68,16 @@
                 "glob": "index.dic",
                 "input": "node_modules/dictionary-it",
                 "output": "/dictionaries/it/"
+              },
+              {
+                "glob": "index.aff",
+                "input": "node_modules/dictionary-pt",
+                "output": "/dictionaries/pt/"
+              },
+              {
+                "glob": "index.dic",
+                "input": "node_modules/dictionary-pt",
+                "output": "/dictionaries/pt/"
               }
             ],
             "styles": [
