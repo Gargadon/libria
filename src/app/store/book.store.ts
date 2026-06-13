@@ -34,6 +34,8 @@ export interface BookState {
   replaceQuery: string;
   personalConfig: PersonalConfig;
   isSaving: boolean;
+  isExporting: boolean;
+  exportStatus: string;
   writingGoals: WritingGoals;
 }
 
@@ -101,6 +103,8 @@ const initialState: BookState = {
   replaceQuery: '',
   personalConfig: { avatar: '', userName: '', previewWidth: 460, language: 'es', mode: 'light' },
   isSaving: false,
+  isExporting: false,
+  exportStatus: '',
   writingGoals: { targetWords: 0, deadline: '' }
 };
 
@@ -460,6 +464,9 @@ export const BookStore = signalStore(
     },
     setIsSaving(isSaving: boolean) {
       patchState(store, { isSaving });
+    },
+    setExporting(isExporting: boolean, exportStatus = '') {
+      patchState(store, { isExporting, exportStatus });
     },
     addChapter(kind: ChapterKind = 'chapter') {
       patchState(store, (state) => {

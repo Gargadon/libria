@@ -39,7 +39,7 @@ export class SpellCheckService {
       pt: 'pt',
       'pt-br': 'pt',
     };
-    const dictLang = langMap[lang] || 'en';
+    const dictLang = langMap[lang.toLowerCase()] || 'en';
 
     if (this.currentLang === dictLang && this.nspell) {
       this.ready.set(true);

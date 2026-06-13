@@ -138,8 +138,12 @@ import { environment } from '../../../environments/environment';
               }
             </div>
             
-            <button class="sb__action-btn" (click)="triggerImport()">
-              <span class="material-symbols-outlined">publish</span>
+            <button class="sb__action-btn" (click)="triggerImport()" [disabled]="importing()">
+              @if (importing()) {
+                <span class="sb__spinner"></span>
+              } @else {
+                <span class="material-symbols-outlined">publish</span>
+              }
               {{ 'sidebar.importFile' | translate }}
             </button>
             <input type="file" #importInput hidden (change)="onImportFile($event)" accept=".docx,.txt">
@@ -527,7 +531,7 @@ import { environment } from '../../../environments/environment';
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.ebook' | translate }}</div>
                 <div class="sb__export-desc">{{ 'sidebar.ebookDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportService.exportEpub()">{{ 'sidebar.generateEPUB' | translate }}</button>
+                <button class="sb__btn-primary" (click)="exportService.exportEpub()" [disabled]="store.isExporting()">{{ 'sidebar.generateEPUB' | translate }}</button>
               </div>
             </div>
 
@@ -536,7 +540,7 @@ import { environment } from '../../../environments/environment';
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
                 <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportPdf()">{{ 'sidebar.generatePDF' | translate }}</button>
+                <button class="sb__btn-primary" (click)="exportPdf()" [disabled]="store.isExporting()">{{ 'sidebar.generatePDF' | translate }}</button>
               </div>
             </div>
 
@@ -545,7 +549,7 @@ import { environment } from '../../../environments/environment';
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.word' | translate }}</div>
                 <div class="sb__export-desc">{{ 'sidebar.wordDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportService.exportDocx()">{{ 'sidebar.generateDOCX' | translate }}</button>
+                <button class="sb__btn-primary" (click)="exportService.exportDocx()" [disabled]="store.isExporting()">{{ 'sidebar.generateDOCX' | translate }}</button>
               </div>
             </div>
 
@@ -777,6 +781,15 @@ import { environment } from '../../../environments/environment';
           (confirm)="onConfirmDelete()"
         ></app-confirm-modal>
       }
+
+      @if (store.isExporting()) {
+        <div class="sb__export-overlay">
+          <div class="sb__export-modal">
+            <div class="sb__export-spinner"></div>
+            <div class="sb__export-status">{{ store.exportStatus() }}</div>
+          </div>
+        </div>
+      }
     </aside>
 
     <ng-template #groupTemplate let-label="label" let-items="items" let-numbered="numbered">
@@ -840,18 +853,23 @@ export class SidebarComponent implements OnInit {
     this.importInput.nativeElement.click();
   }
 
+  readonly importing = signal(false);
+
   async onImportFile(event: any) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.name.endsWith('.docx')) {
-      await this.importService.importDocx(file);
-    } else if (file.name.endsWith('.txt')) {
-      await this.importService.importTxt(file);
+    this.importing.set(true);
+    try {
+      if (file.name.endsWith('.docx')) {
+        await this.importService.importDocx(file);
+      } else if (file.name.endsWith('.txt')) {
+        await this.importService.importTxt(file);
+      }
+    } finally {
+      this.importing.set(false);
+      event.target.value = '';
     }
-    
-    // Clear input for next time
-    event.target.value = '';
   }
 
   readonly currentLang = computed(() => {

@@ -1,29 +1,38 @@
 # TODO — Libria: Ruta hacia un editor y maquetador completo
 
-Estado actual: **v1.3.0** · Angular 21 + Electron 42 · Última revisión: 2026-06-09
+Estado actual: **v1.3.0** · Angular 21 + Electron 42 · Última revisión: 2026-06-13
 
 ---
 
 ## 🔴 CRÍTICO — Gaps que bloquean uso profesional
 
-### 1. Subrayado visual del corrector ortográfico
-El `SpellCheckService` existe y el panel funciona, pero el editor no muestra subrayado rojo en tiempo real bajo las palabras con error. Sin esto el corrector es inútil para el flujo normal de escritura.
-- Renderizar `Misspelling[]` como decoraciones `<mark>` o `data-*` dentro del bloque `contenteditable`
-- El estado `spellErrors` ya llega al bloque pero no se pinta nada visible
+### ~~1. Subrayado visual del corrector ortográfico~~ ✅ RESUELTO
+La infraestructura completa está implementada y funcional:
+- `SpellCheckService` con nspell + diccionarios Hunspell (es, en, fr, it, pt) ✔️
+- `ContenteditableDirective` con `updateSpellUnderlines()` y `wrapRange()` para envolver errores en `<span class="spell-err">` ✔️
+- CSS `.spell-err` con subrayado ondulado rojo (claro/oscuro) ✔️
+- `runSpellCheck()` con debounce de 1500ms tras cada entrada ✔️
+- `stripSpellErrors()` elimina marcadores al guardar para evitar persistencia en el modelo ✔️
+- Panel de navegación de errores con anterior/siguiente/ignorar/reemplazar ✔️
+- **Fix aplicado**: Normalización de `currentText` en la directiva para que coincida con el `innerText` usado por el corrector (evita desfase de posiciones con `<br>`) ✔️
+- **Fix aplicado**: `lang.toLowerCase()` en `loadDictionary()` para soportar variantes como `es-MX`, `pt-BR` ✔️
 
 ### ~~2. UI para imagen de portada~~ ✅ RESUELTO
 La UI ya existía (upload, preview, delete en Propiedades). Se añadió un indicador de estado en el panel de Exportación: muestra thumbnail si hay portada cargada, o aviso con enlace directo a Propiedades si `includeCover` está activo pero no hay imagen.
 
 ### ~~3. EPUB: fuentes no embebidas~~ ✅ RESUELTO
-Se añadió `EPUB_FONT_MAP` con los 6 archivos `.woff2` del subconjunto latino de cada fuente (Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat). `loadEpubFonts()` carga los binarios, los añade al ZIP bajo `OEBPS/fonts/`, genera `@font-face` en el CSS y los declara en el manifiesto OPF. El EPUB ahora incluye las fuentes elegidas en Tweaks.
+Se añadió `EPUB_FONT_MAP` con los 6 archivos `.woff2` del subconjunto latino de cada fuente. `loadEpubFonts()` carga los binarios, los añade al ZIP bajo `OEBPS/fonts/`, genera `@font-face` en el CSS y los declara en el manifiesto OPF.
 
 ### ~~4. EPUB: idioma hardcodeado~~ ✅ RESUELTO
 `<dc:language>` usa `book.lang ?? 'es'` en lugar del `'es'` fijo.
 
-### 5. UI para metas de escritura
-`WritingGoals` existe en el modelo y en el estado, pero no hay ninguna sección en la interfaz para configurar palabras objetivo ni deadline. El campo `writingGoals` no tiene pantalla.
-- Panel en la sección de Manuscrito o Metadatos con progreso visual (barra/porcentaje)
-- Indicador de palabras escritas hoy vs. objetivo diario
+### ~~5. UI para metas de escritura~~ ✅ RESUELTO
+UI completa implementada en la vista de Manuscrito:
+- Barra de progreso con porcentaje (`wordsProgress()`) y conteo actual/objetivo ✔️
+- Indicador de días restantes hasta deadline con advertencia a ≤7 días ✔️
+- Editor inline en el pie del sidebar: meta de palabras + fecha límite ✔️
+- Persistencia en archivo `.libria` via `LibriaDocument.writingGoals` ✔️
+- Traducciones en los 6 idiomas (es, en, fr, it, de, pt) ✔️
 
 ---
 
@@ -51,7 +60,7 @@ Solo existe `h1` como nivel de sección. Los libros de no ficción, manuales y e
 - Exportar correctamente como `<h3>/<h4>` en EPUB y `Heading2/3` en DOCX
 
 ### 10. Notas al pie reales en DOCX
-Actualmente las notas al pie se exportan como sección "Notas" al final del capítulo en el DOCX. Microsoft Word tiene su propio sistema de footnotes en el `<w:footnotes>` del XML, que es lo que usan editores y correctores profesionales.
+Actualmente las notas al pie se exportan como sección "Notas" al final del capítulo en el DOCX.
 - Usar el soporte de `docx` library para footnotes reales (`FootnoteReferenceRun`)
 - Las notas al pie del EPUB ya funcionan correctamente
 
@@ -94,7 +103,7 @@ Las editoriales profesionales usan encabezados diferentes en páginas pares e im
 ## 🟢 NICE TO HAVE — Pulido y diferenciación
 
 ### 17. Ornamentos de capítulo
-Un elemento decorativo entre el número de capítulo y el título (fleuron, viñeta, línea ornamental) es una marca de calidad editorial visible. El tipo `sceneBreakType` podría extenderse aquí.
+Un elemento decorativo entre el número de capítulo y el título (fleuron, viñeta, línea ornamental) es una marca de calidad editorial visible.
 - Opciones: ninguno, línea, fleuron SVG, asterisco decorativo
 - Visible en editor + todos los modos de exportación
 
@@ -104,7 +113,7 @@ Elegir `bookFont` y `titleFont` por separado requiere criterio tipográfico. La 
 - Un clic aplica ambas fuentes + ajustes de tamaño coherentes
 
 ### 19. Drag-and-drop para reordenar capítulos
-El botón de subir/bajar capítulo existe pero en proyectos de 30+ capítulos es tedioso. La reordenación visual por arrastre es el estándar de cualquier herramienta de escritura.
+El botón de subir/bajar capítulo existe pero en proyectos de 30+ capítulos es tedioso.
 - CDK DragDrop en el sidebar para capítulos del mismo `kind`
 - Animación suave, persistencia inmediata al soltar
 
@@ -129,10 +138,14 @@ Actualmente los títulos son siempre negros. Una sola opción de color de acento
 - Campo `Tweaks.titleColor` (hex)
 - Aplicable en editor y en todos los exports
 
-### 24. Verificación básica del EPUB generado
-El EPUB puede ser inválido sin que el usuario lo sepa (namespace faltante, caracteres ilegales en XML, etc.).
-- Validación mínima post-generación: estructura ZIP, bien formado XML, `mimetype` sin compresión
-- Advertencia no bloqueante si algo falla
+### ~~24. Verificación básica del EPUB generado~~ ✅ RESUELTO
+~~El EPUB puede ser inválido sin que el usuario lo sepa (namespace faltante, caracteres ilegales en XML, etc.).~~
+Se implementó saneo completo de la salida XML:
+- `escapeHtml` en todos los metadatos del OPF (evita `&` sin escapar) ✔️
+- `xhtmlSafe()` para contenido de capítulos: `<br>` → `<br/>`, `&nbsp;` → `&#160;` ✔️
+- `<head>` con `<title>` en todos los XHTML (nav, cover, chapters) ✔️
+- `font/woff2` como media-type correcto ✔️
+- Rutas de fuentes relativas correctas desde `OEBPS/styles.css` ✔️
 
 ---
 
@@ -143,13 +156,15 @@ El EPUB puede ser inválido sin que el usuario lo sepa (namespace faltante, cara
 | Tablas en editor | ✅ Completo (UI + row/col controls + export) |
 | Listas ordenadas/no ordenadas | ✅ Completo (UI + export) |
 | Notas al pie | ✅ Modelo + export EPUB/PDF/DOCX (como apéndice); ⚠️ sin superíndice visible en editor |
-| Corrector ortográfico visual | ⚠️ Panel existe, underlines en editor no implementados |
-| Portada en exportación | ⚠️ Export funciona si `assets['cover']` existe; sin UI dedicada |
-| Metas de escritura | ⚠️ Modelo existe, sin UI |
+| Corrector ortográfico visual | ✅ Completo (directiva con underlines, panel de navegación, diccionarios Hunspell) |
+| Portada en exportación | ✅ Export funciona si `assets['cover']` existe; con UI de upload/preview/delete |
+| Metas de escritura | ✅ Completo (barra de progreso, deadline, editor inline, persistencia) |
 | Estadísticas de sesión | ❌ No implementado |
 | Comparación de versiones | ❌ Solo undo/redo en memoria |
 | Plantillas de proyecto | ❌ No implementado |
 | Exportación Markdown | ❌ No implementado |
 | Exportación HTML estático | ❌ No implementado |
 | Modo presentación/lectura | ❌ No implementado |
-| EPUB con fuentes embebidas | ❌ Usa `font-family: serif` genérico |
+| EPUB con fuentes embebidas | ✅ `EPUB_FONT_MAP` con 6 fuentes, carga y manifiesto completos |
+| EPUB sintaxis válida | ✅ Saneo XML completo, pasa epubcheck sin errores |
+| EPUB imágenes embebidas | ✅ Como archivos individuales en `OEBPS/images/`, no base64 inline |

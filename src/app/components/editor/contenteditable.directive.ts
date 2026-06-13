@@ -55,7 +55,7 @@ export class ContenteditableDirective implements OnInit, OnChanges {
         el.textContent = text;
       }
     }
-    this.currentText = el.textContent ?? '';
+    this.currentText = ((el as any).innerText ?? el.textContent ?? '').replace(/\n$/, '');
   }
 
   private updateSpellUnderlines(): void {
