@@ -1,6 +1,6 @@
 # TODO — Libria: Ruta hacia un editor y maquetador completo
 
-Estado actual: **v1.3.0** · Angular 21 + Electron 42 · Última revisión: 2026-06-13
+Estado actual: **v1.5.0 "May Alcott"** · Angular 21 + Electron 42 · Última revisión: 2026-06-13
 
 ---
 
@@ -38,40 +38,43 @@ UI completa implementada en la vista de Manuscrito:
 
 ## 🟠 IMPORTANTE — Necesario para libros no ficción y técnicos
 
-### 6. Bloque: código (`code`)
-Sin un bloque `pre`/`code` con fuente monoespaciada y fondo diferenciado, Libria no sirve para libros técnicos, de programación o cualquier manual con comandos.
-- Nuevo tipo de bloque `code` en el editor, con renderizado `<pre><code>`
-- Exportar como `<pre>` en EPUB/PDF y como `CodeBlock` en DOCX
+### ~~6. Bloque: código (`code`)~~ ✅ RESUELTO
+Implementado en toda la pipeline. Monoespaciado, fondo gris, `white-space: pre-wrap`.
+- Nuevo tipo de bloque `code` con renderizado `<pre><code>` en editor y preview
+- Exporta como `<pre class="kp-code">` en EPUB/PDF y Paragraph con `shading` en DOCX
+- Estilos SCSS en editor, preview (device), export CSS (EPUB y print)
 
-### 7. Bloque: epígrafe (`epigraph`)
-El epígrafe (cita con atribución al inicio de un capítulo) es uno de los elementos más comunes en novela y ensayo literario. No es igual a `blockquote`.
-- Nuevo tipo `epigraph` con campo de texto principal + campo de atribución (`—Autor, Obra`)
-- Estilo diferenciado: centrado, itálica, sangría, tamaño reducido
+### ~~7. Bloque: epígrafe (`epigraph`)~~ ✅ RESUELTO
+Cita con atribución editable, con campo `Block.attribution` en el modelo.
+- Nuevo tipo `epigraph` con bloquequote + cite atribución
+- Editor con dos contenteditable: cita y atribución
+- Export a EPUB, PDF y DOCX con formato centrado e itálica
 
-### 8. Bloque: poesía/verso (`verse`)
-El bloque `p` no preserva saltos de línea deliberados. Sin un bloque `verse` es imposible incluir poemas o letras con integridad tipográfica.
-- Nuevo tipo `verse`: `white-space: pre-line`, sin justificado, sin sangría
-- Exportar como `<div style="white-space:pre-line">` en EPUB
+### ~~8. Bloque: poesía/verso (`verse`)~~ ✅ RESUELTO
+`white-space: pre-line`, sin justificado ni sangría.
+- Editor con `<pre class="bk-verse"><code contenteditable>`
+- Export a EPUB/PDF como `<pre class="kp-verse">` y DOCX como Paragraph con font mono
 
-### 9. Bloques de encabezado h2 y h3
-Solo existe `h1` como nivel de sección. Los libros de no ficción, manuales y ensayos necesitan jerarquía de hasta 3 niveles.
-- Agregar tipos `h2` y `h3` en el editor y en el selector de bloque
-- Estilos diferenciados (tamaños decrecientes basados en `titleFontSize`)
-- Exportar correctamente como `<h3>/<h4>` en EPUB y `Heading2/3` en DOCX
+### ~~9. Bloques de encabezado h2 y h3~~ ✅ RESUELTO
+Jerarquía de secciones completa hasta 3 niveles.
+- Selector de bloque con opciones `h2` / `h3`
+- Tamaños escalados: h1=100%, h2=85%, h3=72% de `titleFontSize`
+- Export correcto: `<h3>`/`<h4>` en EPUB, `<h3/h4>` en PDF, Paragraph con `titleFont` en DOCX
 
-### 10. Notas al pie reales en DOCX
-Actualmente las notas al pie se exportan como sección "Notas" al final del capítulo en el DOCX.
-- Usar el soporte de `docx` library para footnotes reales (`FootnoteReferenceRun`)
-- Las notas al pie del EPUB ya funcionan correctamente
+### ~~10. Notas al pie reales en DOCX~~ ✅ RESUELTO
+Reemplaza el apéndice "Notas" al final del capítulo por footnotes OpenXML reales.
+- `FootnoteReferenceRun` inline en párrafos que contienen `<sup data-fn="...">`
+- `doc.FootNotes.View.createFootNote()` para definiciones al pie
+- Fallback silencioso si la API no está disponible
 
 ---
 
 ## 🟡 PRODUCTIVIDAD — Mejoras que hacen la diferencia en uso diario
 
-### 11. Marcadores inline de notas al pie en el editor
-Cuando existe una nota al pie referenciada (`data-fn="id"`), el editor no muestra el número superíndice al lado del texto. El autor no puede ver visualmente dónde están sus referencias sin exportar.
-- Renderizar `<sup class="fn-ref">N</sup>` en el editor basado en el orden de footnotes del capítulo
-- Al hacer clic en el superíndice, enfocar/abrir el panel de notas al pie
+### ~~11. Marcadores inline de notas al pie en el editor~~ ✅ RESUELTO
+- Efecto `_footnoteWatch` sincroniza `<sup class="fn-ref" data-fn="...">[N]</sup>` en el HTML de cada bloque automáticamente
+- Click en el marcador → scroll al panel de notas al pie
+- Estilo `.fn-ref` con color de acento y cursor pointer
 
 ### 12. Plantillas de proyecto
 No hay forma de empezar con estructura prearmada. El autor tiene que crear todos los capítulos manualmente cada vez.
@@ -152,13 +155,17 @@ Se implementó saneo completo de la salida XML:
 ## Estado de las funcionalidades ya documentadas en CLAUDE.md
 
 | Funcionalidad | Estado real (jun 2026) |
-|---|---|
+|---|---|---|
 | Tablas en editor | ✅ Completo (UI + row/col controls + export) |
 | Listas ordenadas/no ordenadas | ✅ Completo (UI + export) |
-| Notas al pie | ✅ Modelo + export EPUB/PDF/DOCX (como apéndice); ⚠️ sin superíndice visible en editor |
+| Notas al pie | ✅ Modelo + export EPUB/PDF/DOCX (footnotes reales en DOCX) + superíndices visibles en editor |
 | Corrector ortográfico visual | ✅ Completo (directiva con underlines, panel de navegación, diccionarios Hunspell) |
 | Portada en exportación | ✅ Export funciona si `assets['cover']` existe; con UI de upload/preview/delete |
 | Metas de escritura | ✅ Completo (barra de progreso, deadline, editor inline, persistencia) |
+| Bloques h2/h3 | ✅ Completo (selector, editor, preview, EPUB, PDF, DOCX) |
+| Bloque code | ✅ Completo (`<pre><code>`, monoespaciado, fondo, todos los exports) |
+| Bloque epigraph | ✅ Completo (cita + atribución, todos los exports) |
+| Bloque verse | ✅ Completo (pre-line, mono en exports, todos los formatos) |
 | Estadísticas de sesión | ❌ No implementado |
 | Comparación de versiones | ❌ Solo undo/redo en memoria |
 | Plantillas de proyecto | ❌ No implementado |

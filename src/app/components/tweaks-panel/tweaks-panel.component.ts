@@ -120,6 +120,23 @@ import { TranslateModule } from '@ngx-translate/core';
             >{{ 'sidebar.no' | translate }}</button>
           </div>
         </div>
+
+        <div class="tp__section">{{ 'tweaks.export' | translate }}</div>
+        <div class="tp__row">
+          <div class="tp__label">{{ 'sidebar.pdfx' | translate }}</div>
+          <div class="tp__radio">
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="store.tweaks.pdfxCompliant()"
+              (click)="store.updateTweak('pdfxCompliant', true)"
+            >{{ 'sidebar.yes' | translate }}</button>
+            <button
+              class="tp__opt"
+              [class.tp__opt--on]="!store.tweaks.pdfxCompliant()"
+              (click)="store.updateTweak('pdfxCompliant', false)"
+            >{{ 'sidebar.no' | translate }}</button>
+          </div>
+        </div>
         </div>
         </div>  `
 })

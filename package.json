@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -21,7 +21,11 @@
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
     "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev --ozone-platform=x11\"",
-    "electron:build": "bun run build && electron-builder"
+    "electron:build": "bun run build && electron-builder",
+    "download:gs": "node scripts/download-ghostscript.mjs",
+    "download:gs:linux": "node scripts/download-ghostscript.mjs linux",
+    "download:gs:mac": "node scripts/download-ghostscript.mjs mac",
+    "download:gs:win": "node scripts/download-ghostscript.mjs win"
   },
   "private": true,
   "dependencies": {
@@ -104,21 +108,52 @@
         "deb",
         "pacman"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "depends": [
+        "ghostscript"
+      ],
+      "extraResources": [
+        {
+          "from": "build/bin/linux",
+          "to": "gs/bin",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "mac": {
       "target": [
         "dmg"
       ],
-      "icon": "build/icon-512.png"
+      "icon": "build/icon-512.png",
+      "extraResources": [
+        {
+          "from": "build/bin/mac",
+          "to": "gs/bin",
+          "filter": ["**/*"]
+        }
+      ]
     },
     "win": {
       "compression": "maximum",
       "target": [
         "nsis"
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.ico",
+      "extraResources": [
+        {
+          "from": "build/bin/win",
+          "to": "gs/bin",
+          "filter": ["**/*"]
+        }
+      ]
     },
+    "extraResources": [
+      {
+        "from": "build/licenses",
+        "to": "licenses",
+        "filter": ["**/*"]
+      }
+    ],
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

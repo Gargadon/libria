@@ -1,0 +1,5 @@
+This application contains Ghostscript, which is licensed under the
+GNU Affero General Public License, version 3.
+
+See AGPL-3.0.txt for the full license text.
+See NOTICE-GHOSTSCRIPT.txt for copyright and source information.

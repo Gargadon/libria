@@ -1909,7 +1909,7 @@ app-welcome {
   --p-gap: 1em;
 }
 
-.ed__doc--indent .bk-p+.bk-p {
+.ed__doc--indent .ed__block-container:has(.bk-p, .bk-first) + .ed__block-container .bk-p {
   text-indent: var(--indent-size, 0.5cm);
 }
 
@@ -2421,6 +2421,17 @@ app-welcome {
   background: var(--rule)
 }
 
+.fn-ref {
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 1;
+  color: var(--accent);
+  cursor: pointer;
+}
+.fn-ref:hover {
+  text-decoration: underline;
+}
+
 .ed__fnpanel {
   border-top: 1px solid var(--rule);
   padding: 12px 16px;
@@ -2563,6 +2574,68 @@ app-welcome {
   margin: 0 0 32px;
   text-align: center;
   font-weight: 400
+}
+.bk-h2 {
+  font-family: var(--display);
+  font-size: 24px;
+  margin: 0 0 24px;
+  text-align: center;
+  font-weight: 400
+}
+.bk-h3 {
+  font-family: var(--display);
+  font-size: 20px;
+  margin: 0 0 20px;
+  text-align: center;
+  font-weight: 400
+}
+.bk-epigraph {
+  text-align: center;
+  margin: 1.5em 0;
+}
+.bk-epigraph__q {
+  font-style: italic;
+  margin: 0;
+  border: none;
+  padding: 0;
+  text-align: center;
+}
+.bk-epigraph__att {
+  display: block;
+  margin-top: 0.5em;
+  font-size: 0.9em;
+  color: var(--ink);
+  opacity: .7;
+  font-style: normal;
+  outline: none;
+}
+.bk-verse {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  white-space: pre-line;
+  line-height: 1.7;
+  margin: 1em 0;
+  outline: none;
+}
+.bk-verse code {
+  font-family: inherit;
+  outline: none;
+}
+.bk-code {
+  background: #f5f3f1;
+  padding: 16px;
+  border-radius: 4px;
+  margin: 1em 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+.bk-code code {
+  font-family: inherit;
+  outline: none;
 }
 
 .bk-first {
@@ -3117,12 +3190,20 @@ app-welcome {
 .kp-chnum,
 .kp-first,
 .kp-h1,
+.kp-h2,
+.kp-h3,
+.kp-epigraph,
+.kp-verse,
+.kp-code,
 .kp-break {
   break-inside: avoid;
 }
 
 .kp-chtitle,
-.kp-chnum {
+.kp-chnum,
+.kp-h1,
+.kp-h2,
+.kp-h3 {
   break-after: avoid;
 }
 
@@ -3142,7 +3223,8 @@ app-welcome {
 }
 
 /* Dynamic Layout Overrides (Print Preview) */
-.kp--indent .kp-p {
+.kp--indent .kp-p + .kp-p,
+.kp--indent .kp-first + .kp-p {
   text-indent: var(--indent-size, 0.5cm);
 }
 
@@ -3308,6 +3390,59 @@ app-welcome {
   font-size: 14px;
   font-weight: 400;
   margin: 0 0 18px
+}
+.kp-h2 {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  margin: 0 0 14px
+}
+.kp-h3 {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 400;
+  margin: 0 0 12px
+}
+.kp-code {
+  background: #f5f3f1;
+  padding: 12px;
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  margin: 0.8em 0;
+}
+.kp-code code {
+  font-family: inherit;
+}
+.kp-epigraph {
+  text-align: center;
+  margin: 1.2em 0;
+}
+.kp-epigraph__q {
+  font-style: italic;
+  font-size: 0.9em;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+.kp-epigraph__att {
+  display: block;
+  margin-top: 0.4em;
+  font-size: 0.85em;
+  color: #5a554d;
+}
+.kp-verse {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  white-space: pre-line;
+  line-height: 1.6;
+  margin: 0.8em 0;
+}
+.kp-verse code {
+  font-family: inherit;
 }
 
 /* Paginator Slider */

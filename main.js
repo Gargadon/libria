@@ -2,6 +2,39 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electro
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
+const { spawnSync } = require('child_process');
+
+function findGsPath() {
+  const plat = process.platform;
+  const isWin = plat === 'win32';
+  const binary = isWin ? 'gswin64c.exe' : 'gs';
+
+  // 1. Bundled with the app (electron-builder extraResources)
+  const bundled = path.join(process.resourcesPath, 'gs', 'bin', binary);
+  if (fs.existsSync(bundled)) return bundled;
+
+  // 2. Dev/build directory
+  const platDir = plat === 'win32' ? 'win' : plat === 'darwin' ? 'mac' : 'linux';
+  const devPath = path.join(__dirname, 'build', 'bin', platDir, binary);
+  if (fs.existsSync(devPath)) return devPath;
+
+  // 3. System-installed (brew, apt, choco, built from source)
+  const which = spawnSync(isWin ? 'where' : 'which', [binary]);
+  if (which.status === 0) {
+    const out = which.stdout.toString().trim().split('\n')[0];
+    if (fs.existsSync(out)) return out;
+  }
+
+  // 4. Common Homebrew location on Apple Silicon
+  if (plat === 'darwin') {
+    const brewPaths = ['/opt/homebrew/bin/gs', '/usr/local/bin/gs'];
+    for (const p of brewPaths) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+
+  return null;
+}
 
 let mainWindow;
 let fileToOpen = null;
@@ -468,8 +501,8 @@ async function applyForceRecto(win, options) {
 
 // Clean HTML-based PDF export: render content in a dedicated hidden window
 // to avoid fighting with the main UI's CSS/DOM complexity.
+// Optionally post-process with Ghostscript for PDF/X compliance.
 ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
-  // Inject local WOFF2 fonts from public/fonts.css (works offline, no CDN needed).
   const isDev = process.argv.includes('--dev');
   const fontsBase = isDev
     ? path.join(__dirname, 'public')
@@ -496,12 +529,49 @@ ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
 
   try {
     await win.loadFile(tmpFile);
-    // Wait for fonts and layout to settle, 3 s max
     await win.webContents.executeJavaScript(
       'new Promise(r => { document.fonts.ready.then(r).catch(r); setTimeout(r, 3000); })'
     );
     await applyForceRecto(win, options);
-    const pdf = await win.webContents.printToPDF(options);
+    let pdf = await win.webContents.printToPDF(options);
+
+    // Ghostscript PDF/X-3 post-processing (CMYK conversion)
+    // Ghostscript is AGPL-3.0 — see resources/licenses/ in the packaged app.
+    if (options.pdfx) {
+      const gs = findGsPath();
+      if (!gs) {
+        console.warn('[printFromHTML] Ghostscript not found — skipping PDF/X');
+        return pdf;
+      }
+      const tmpPdf = path.join(app.getPath('userData'), `libria-gs-in-${Date.now()}.pdf`);
+      const outPdf = path.join(app.getPath('userData'), `libria-gs-out-${Date.now()}.pdf`);
+      fs.writeFileSync(tmpPdf, Buffer.from(pdf));
+
+      const gsArgs = [
+        '-dPDFX',
+        '-dNOPAUSE',
+        '-dBATCH',
+        '-sDEVICE=pdfwrite',
+        `-sOutputFile=${outPdf}`,
+        '-dCompatibilityLevel=1.7',
+        '-sColorConversionStrategy=CMYK',
+        '-sColorConversionStrategyForImages=CMYK',
+        '-dProcessColorModel=/DeviceCMYK',
+        '-dUseCIEColor',
+        '-dRenderIntent=3',
+        tmpPdf,
+      ];
+
+      const r = spawnSync(gs, gsArgs, { timeout: 60000 });
+      if (r.status !== 0) {
+        console.error('[printFromHTML] Ghostscript failed:', r.stderr.toString());
+        return pdf;
+      }
+      pdf = new Uint8Array(fs.readFileSync(outPdf));
+      try { fs.unlinkSync(tmpPdf); } catch (_) {}
+      try { fs.unlinkSync(outPdf); } catch (_) {}
+    }
+
     return pdf;
   } catch (err) {
     console.error('[printFromHTML] Error:', err);

@@ -19,18 +19,31 @@ jobs:
           - os: macos-latest
             arch: universal
             target: mac
+            builderFlags: '--mac'
           - os: windows-latest
             arch: x64
             target: win
+            builderFlags: '--win'
           - os: windows-latest
             arch: arm64
             target: win
+            builderFlags: '--win'
           - os: ubuntu-latest
             arch: x64
-            target: linux
+            target: linux-appimage
+            builderFlags: '--linux AppImage'
+          - os: ubuntu-latest
+            arch: x64
+            target: linux-packages
+            builderFlags: '--linux deb pacman'
           - os: ubuntu-latest
             arch: arm64
-            target: linux
+            target: linux-appimage
+            builderFlags: '--linux AppImage'
+          - os: ubuntu-latest
+            arch: arm64
+            target: linux-packages
+            builderFlags: '--linux deb pacman'
 
     steps:
       - uses: actions/checkout@v6
@@ -44,6 +57,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libarchive-tools liblzma-dev
+
+      - name: Install and bundle Ghostscript (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ghostscript
+          mkdir -p build/bin/mac
+          cp "$(brew --prefix ghostscript)/bin/gs" build/bin/mac/gs
+          chmod +x build/bin/mac/gs
+
+      - name: Install Ghostscript (Windows)
+        if: runner.os == 'Windows'
+        run: bun run download:gs:win
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -63,11 +88,19 @@ jobs:
           sips -z 512  512  build/icon-512.png --out build/icon.iconset/icon_512x512.png
           iconutil -c icns build/icon.iconset -o build/icon.icns
 
+      - name: Bundle Ghostscript (AppImage)
+        if: runner.os == 'Linux' && endsWith(matrix.target, 'appimage')
+        run: |
+          sudo apt-get install -y ghostscript
+          mkdir -p build/bin/linux
+          cp "$(which gs)" build/bin/linux/gs
+          chmod +x build/bin/linux/gs
+
       - name: Build Angular
         run: bun run build
 
       - name: Build Electron
-        run: bunx electron-builder --${{ matrix.target }} --${{ matrix.arch }} --publish never
+        run: bunx electron-builder ${{ matrix.builderFlags }} --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,7 +108,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist/installers
-          find release -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.pacman' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest*.yml' -o -name 'latest*.yaml' \) -exec cp {} dist/installers/ \;
+          find release -type f \( -name '*.dmg' -o -name '*Setup*.exe' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.pacman' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest*.yml' -o -name 'latest*.yaml' \) -exec cp {} dist/installers/ \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
