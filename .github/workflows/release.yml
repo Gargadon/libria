@@ -108,7 +108,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist/installers
-          find release -type f \( -name '*.dmg' -o -name '*Setup*.exe' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.pacman' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest*.yml' -o -name 'latest*.yaml' \) -exec cp {} dist/installers/ \;
+          find release -type f \( -name '*.dmg' -o -name 'libria-*.exe' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.pacman' -o -name '*.zip' -o -name '*.blockmap' -o -name 'latest*.yml' -o -name 'latest*.yaml' \) -exec cp {} dist/installers/ \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
