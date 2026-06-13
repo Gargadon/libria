@@ -109,9 +109,6 @@
         "pacman"
       ],
       "icon": "build/icon.png",
-      "depends": [
-        "ghostscript"
-      ],
       "extraResources": [
         {
           "from": "build/bin/linux",
@@ -119,6 +116,12 @@
           "filter": ["**/*"]
         }
       ]
+    },
+    "deb": {
+      "depends": ["ghostscript"]
+    },
+    "pacman": {
+      "depends": ["ghostscript"]
     },
     "mac": {
       "target": [
