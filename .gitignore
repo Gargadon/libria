@@ -45,6 +45,12 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+# Ghostscript binaries (downloaded per-platform)
+/build/bin/linux/gs
+/build/bin/mac/gs
+/build/bin/win/gswin64c.exe
+/build/bin/**/*.tar.gz
+
 # Testing
 Kite Wars Comet A.R_ - David Kantun - For Print.*
 Kite_Wars_Comet_A_R.*
