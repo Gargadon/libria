@@ -23,6 +23,8 @@ function extractPattern(mod: PatternModule): any {
 export class HyphenService {
   private hyphenators = new Map<string, any>();
   private loading = new Set<string>();
+  private cache = new Map<string, string>();
+  private readonly CACHE_MAX = 500;
   private store = inject(BookStore);
 
   constructor() {
@@ -68,8 +70,18 @@ export class HyphenService {
       return htmlOrText;
     }
 
+    const textKey = cacheKey + '|' + htmlOrText;
+    const cached = this.cache.get(textKey);
+    if (cached !== undefined) return cached;
+
     try {
-      return hyphenator(htmlOrText);
+      const result = hyphenator(htmlOrText);
+      if (this.cache.size >= this.CACHE_MAX) {
+        const first = this.cache.keys().next().value;
+        if (first !== undefined) this.cache.delete(first);
+      }
+      this.cache.set(textKey, result);
+      return result;
     } catch {
       return htmlOrText;
     }

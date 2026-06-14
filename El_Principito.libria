@@ -1,5 +1,5 @@
 {
-  "libriaVersion": "1.3.0",
+  "libriaVersion": "1.5.1",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -50,7 +50,8 @@
     "smartQuotes": true,
     "smartDashes": true,
     "smartEllipsis": true,
-    "smartOpeningSigns": true
+    "smartOpeningSigns": true,
+    "pdfxCompliant": false
   },
   "session": {
     "lastActiveChapterId": "ch-1"
@@ -115,7 +116,8 @@
         },
         {
           "type": "first-p",
-          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
         },
         {
           "type": "image",

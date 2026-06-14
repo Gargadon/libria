@@ -86,43 +86,45 @@ export class SpellCheckService {
     return this.nspell.suggest(word).slice(0, 8);
   }
 
-  checkChapter(body: Block[], lang: string = 'en'): Promise<Misspelling[]> {
-    return new Promise(async (resolve) => {
-      await this.loadDictionary(lang);
+  async checkChapter(body: Block[], lang: string = 'en'): Promise<Misspelling[]> {
+    await this.loadDictionary(lang);
 
-      if (!this.nspell) {
-        resolve([]);
-        return;
-      }
+    if (!this.nspell) return [];
 
-      const results: Misspelling[] = [];
+    const results: Misspelling[] = [];
+    const wordCache = new Map<string, boolean>();
+    const wordChars = this.nspell.wordCharacters();
+    const regex = new RegExp(`[${wordChars}]+|[${wordChars}]+(?:'[${wordChars}]+)?`, 'g');
 
-      for (let i = 0; i < body.length; i++) {
-        const block = body[i];
-        const text = block.text || '';
+    for (let i = 0; i < body.length; i++) {
+      const block = body[i];
+      const text = block.text || '';
+      let match: RegExpExecArray | null;
 
-        const wordChars = this.nspell!.wordCharacters();
-        const regex = new RegExp(`[${wordChars}]+|[${wordChars}]+(?:'[${wordChars}]+)?`, 'g');
-        let match: RegExpExecArray | null;
+      while ((match = regex.exec(text)) !== null) {
+        const word = match[0];
+        if (word.length <= 1) continue;
+        const lower = word.toLowerCase();
+        if (this.ignoredWords.has(lower)) continue;
 
-        while ((match = regex.exec(text)) !== null) {
-          const word = match[0];
-          if (word.length <= 1) continue;
-          if (this.ignoredWords.has(word.toLowerCase())) continue;
-          if (!this.isProperNoun(word) && !this.checkWord(word)) {
-            results.push({
-              word,
-              blockIndex: i,
-              start: match.index,
-              end: match.index + word.length,
-              suggestions: this.getSuggestions(word),
-            });
-          }
+        let correct = wordCache.get(lower);
+        if (correct === undefined) {
+          correct = !this.isProperNoun(word) && !this.checkWord(word);
+          wordCache.set(lower, correct);
+        }
+        if (correct) {
+          results.push({
+            word,
+            blockIndex: i,
+            start: match.index,
+            end: match.index + word.length,
+            suggestions: this.getSuggestions(word),
+          });
         }
       }
+    }
 
-      resolve(results);
-    });
+    return results;
   }
 
   private isProperNoun(word: string): boolean {

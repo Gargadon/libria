@@ -803,6 +803,7 @@ import { environment } from '../../../environments/environment';
       <div class="sbg">
         <div class="sbg__label">{{ label }}</div>
         <ul class="sbg__list">
+          @let maxW = store.maxWords();
           @for (c of items; track c.id; let i = $index; let first = $first; let last = $last) {
             <li>
               <button
@@ -830,7 +831,7 @@ import { environment } from '../../../environments/environment';
                     <span
                       class="sbi__fill"
                       [class]="'sbi__fill--' + (c.status || (c.kind === 'chapter' ? 'ok' : 'front'))"
-                      [style.width.%]="c.words ? Math.max(4, Math.round((c.words / store.maxWords()) * 100)) : 6"
+                      [style.width.%]="c.words ? Math.max(4, Math.round((c.words / maxW) * 100)) : 6"
                     ></span>
                   </span>
                   <span class="sbi__meta">
@@ -1165,8 +1166,7 @@ export class SidebarComponent implements OnInit {
   }
 
   goToResult(r: any) {
-    this.store.setActiveChapter(r.chapterId);
-    this.store.setNav('manuscript');
+    this.store.goToSearchResult(r.chapterId, r.blockIndex);
   }
 
   searchFrag(r: any): string {

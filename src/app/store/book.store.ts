@@ -23,6 +23,7 @@ export interface BookState {
     previewOpen: boolean;
     zenMode: boolean;
     activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'attachments';
+    focusBlockIndex: number | null;
   };
   exportPrefs: {
     includeCover: boolean;
@@ -93,6 +94,7 @@ const initialState: BookState = {
     previewOpen: true,
     zenMode: false,
     activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
+    focusBlockIndex: null,
   },
   exportPrefs: {
     includeCover: true,
@@ -153,7 +155,7 @@ export const BookStore = signalStore(
       state.chapters().filter(c => c.kind === 'chapter').length
     ),
     maxWords: computed(() => 
-      Math.max(...state.chapters().map(c => c.words || 0))
+      state.chapters().reduce((max, c) => Math.max(max, c.words || 0), 0)
     ),
     pageSize: computed(() => {
       const size = state.book()?.paperSize || '5x8';
@@ -460,6 +462,17 @@ export const BookStore = signalStore(
     setActiveChapter(id: string) {
       patchState(store, { activeChapterId: id });
     },
+    goToSearchResult(chapterId: string, blockIndex: number) {
+      patchState(store, {
+        activeChapterId: chapterId,
+        ui: { ...store.ui(), activeNav: 'manuscript', focusBlockIndex: blockIndex }
+      });
+    },
+    clearFocusBlock() {
+      patchState(store, (state) => ({
+        ui: { ...state.ui, focusBlockIndex: null }
+      }));
+    },
     markAsSaved() {
       patchState(store, { isDirty: false });
     },
@@ -535,28 +548,27 @@ export const BookStore = signalStore(
       }));
     },
     updateChapterBlock(chapterId: string, blockIndex: number, text: string, html?: string) {
-      patchState(store, (state) => {
-        const chapters = state.chapters.map((c) => {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) => {
           if (c.id !== chapterId) return c;
           
           const editedBlock = c.body[blockIndex];
           const isTitleBlock = editedBlock.type === 'h1' || editedBlock.type === 'chapter-title';
+          const newBody = c.body.map((b, i) =>
+            i === blockIndex ? { ...b, text, html } : b
+          );
+          const words = calculateWords(newBody);
           
           return {
             ...c,
             title: isTitleBlock ? (text || untitledLabel(store.personalConfig().language)) : c.title,
-            body: c.body.map((b, i) =>
-              i === blockIndex ? { ...b, text, html } : b
-            )
+            body: newBody,
+            words,
+            readMin: calculateReadMin(words)
           };
-        });
-        return {
-          chapters: chapters.map(c => 
-            c.id === chapterId ? { ...c, words: calculateWords(c.body), readMin: calculateReadMin(calculateWords(c.body)) } : c
-          ),
-          isDirty: true
-        };
-      });
+        }),
+        isDirty: true
+      }));
     },
     setBlockType(chapterId: string, blockIndex: number, type: string) {
       patchState(store, (state) => ({
@@ -574,49 +586,35 @@ export const BookStore = signalStore(
       }));
     },
     insertBlock(chapterId: string, afterIndex: number, type: string, text: string = '', html?: string) {
-      patchState(store, (state) => {
-        const chapters = state.chapters.map((c) =>
-          c.id === chapterId
-            ? {
-                ...c,
-                body: [
-                  ...c.body.slice(0, afterIndex + 1),
-                  { type, text, ...(html ? { html } : {}) },
-                  ...c.body.slice(afterIndex + 1)
-                ]
-              }
-            : c
-        );
-        return {
-          chapters: chapters.map(c => 
-            c.id === chapterId ? { ...c, words: calculateWords(c.body), readMin: calculateReadMin(calculateWords(c.body)) } : c
-          ),
-          isDirty: true
-        };
-      });
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) => {
+          if (c.id !== chapterId) return c;
+          const newBody = [
+            ...c.body.slice(0, afterIndex + 1),
+            { type, text, ...(html ? { html } : {}) },
+            ...c.body.slice(afterIndex + 1)
+          ];
+          const words = calculateWords(newBody);
+          return { ...c, body: newBody, words, readMin: calculateReadMin(words) };
+        }),
+        isDirty: true
+      }));
     },
     splitBlock(chapterId: string, blockIndex: number, cursorPosition: number) {
-      patchState(store, (state) => {
-        const chapters = state.chapters.map((c) =>
-          c.id === chapterId
-            ? {
-                ...c,
-                body: [
-                  ...c.body.slice(0, blockIndex),
-                  { ...c.body[blockIndex], text: c.body[blockIndex].text?.substring(0, cursorPosition) || '', html: undefined },
-                  { type: 'p', text: c.body[blockIndex].text?.substring(cursorPosition) || '' },
-                  ...c.body.slice(blockIndex + 1)
-                ]
-              }
-            : c
-        );
-        return {
-          chapters: chapters.map(c => 
-            c.id === chapterId ? { ...c, words: calculateWords(c.body), readMin: calculateReadMin(calculateWords(c.body)) } : c
-          ),
-          isDirty: true
-        };
-      });
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) => {
+          if (c.id !== chapterId) return c;
+          const newBody = [
+            ...c.body.slice(0, blockIndex),
+            { ...c.body[blockIndex], text: c.body[blockIndex].text?.substring(0, cursorPosition) || '', html: undefined },
+            { type: 'p', text: c.body[blockIndex].text?.substring(cursorPosition) || '' },
+            ...c.body.slice(blockIndex + 1)
+          ];
+          const words = calculateWords(newBody);
+          return { ...c, body: newBody, words, readMin: calculateReadMin(words) };
+        }),
+        isDirty: true
+      }));
     },
     mergeWithPrevious(chapterId: string, blockIndex: number) {
       patchState(store, (state) => {
@@ -633,29 +631,25 @@ export const BookStore = signalStore(
           ...chapter.body.slice(blockIndex + 1)
         ];
 
-        const updatedChapter = { ...chapter, body: newBody };
+        const words = calculateWords(newBody);
         return {
-          chapters: state.chapters.map(c => 
-            c.id === chapterId ? { ...updatedChapter, words: calculateWords(updatedChapter.body), readMin: calculateReadMin(calculateWords(updatedChapter.body)) } : c
+          chapters: state.chapters.map(c =>
+            c.id === chapterId ? { ...chapter, body: newBody, words, readMin: calculateReadMin(words) } : c
           ),
           isDirty: true
         };
       });
     },
     deleteBlock(chapterId: string, blockIndex: number) {
-      patchState(store, (state) => {
-        const chapters = state.chapters.map(c =>
-          c.id === chapterId
-            ? { ...c, body: c.body.filter((_, i) => i !== blockIndex) }
-            : c
-        );
-        return {
-          chapters: chapters.map(c =>
-            c.id === chapterId ? { ...c, words: calculateWords(c.body), readMin: calculateReadMin(calculateWords(c.body)) } : c
-          ),
-          isDirty: true
-        };
-      });
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((c) => {
+          if (c.id !== chapterId) return c;
+          const newBody = c.body.filter((_, i) => i !== blockIndex);
+          const words = calculateWords(newBody);
+          return { ...c, body: newBody, words, readMin: calculateReadMin(words) };
+        }),
+        isDirty: true
+      }));
     },
     mergeBlockWithNext(chapterId: string, blockIndex: number) {
       patchState(store, (state) => {
@@ -672,10 +666,10 @@ export const BookStore = signalStore(
           ...chapter.body.slice(blockIndex + 2)
         ];
 
-        const updatedChapter = { ...chapter, body: newBody };
+        const words = calculateWords(newBody);
         return {
           chapters: state.chapters.map(c =>
-            c.id === chapterId ? { ...updatedChapter, words: calculateWords(updatedChapter.body), readMin: calculateReadMin(calculateWords(updatedChapter.body)) } : c
+            c.id === chapterId ? { ...chapter, body: newBody, words, readMin: calculateReadMin(words) } : c
           ),
           isDirty: true
         };
@@ -832,7 +826,7 @@ export const BookStore = signalStore(
           const newText = text.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), replaceWith);
           return { ...block, text: newText, html: undefined };
         });
-        return { ...chapter, body: newBody, words: calculateWords(newBody), readMin: calculateReadMin(calculateWords(newBody)) };
+        const words = calculateWords(newBody); return { ...chapter, body: newBody, words, readMin: calculateReadMin(words) };
       });
       
       patchState(store, {

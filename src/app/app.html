@@ -31,11 +31,13 @@
         <app-editor></app-editor>
       </div>
 
-      <div class="resizer" (mousedown)="startResizing($event)"></div>
+      @if (store.ui.previewOpen() && !store.ui.zenMode()) {
+        <div class="resizer" (mousedown)="startResizing($event)"></div>
 
-      <div class="layout__pv">
-        <app-preview></app-preview>
-      </div>
+        <div class="layout__pv">
+          <app-preview></app-preview>
+        </div>
+      }
 
       @if (store.tweaks.sidebar() === 'right') {
         <div class="layout__side">

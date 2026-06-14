@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, HostListener, effect, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, signal, HostListener, effect, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -327,7 +327,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
     }
   `
 })
-export class EditorComponent {
+export class EditorComponent implements OnDestroy {
   readonly store = inject(BookStore);
   readonly translate = inject(TranslateService);
   readonly spellCheck = inject(SpellCheckService);
@@ -349,6 +349,23 @@ export class EditorComponent {
     if (chapter?.footnotes?.length) {
       this.syncFootnoteRefs(chapter);
     }
+  });
+
+  private readonly _focusBlockWatch = effect(() => {
+    const blockIndex = this.store.ui.focusBlockIndex();
+    if (blockIndex === null) return;
+    const chapter = this.store.activeChapter();
+    if (!chapter) return;
+    setTimeout(() => {
+      const el = this._getEditableBlock(blockIndex);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+        this.lastFocusedIndex = blockIndex;
+        this.focusedBlockIndex.set(blockIndex);
+      }
+      this.store.clearFocusBlock();
+    }, 100);
   });
 
   getBlockErrors(blockIndex: number): Misspelling[] {
@@ -466,10 +483,12 @@ export class EditorComponent {
 
 
   lastFocusedIndex = -1;
+  private _savedCaretOffset = 0;
   readonly focusedBlockIndex = signal(-1);
   /** Prevents onInput from firing during programmatic splits/merges */
   private _suppressInput = false;
   private _inputTimeout: any;
+  private _storeUpdateTimeout: any;
   private _tableInputTimeout: any;
 
   // ─── Drag selection across blocks ────────────────────────────────────────────
@@ -572,8 +591,6 @@ export class EditorComponent {
   onInput(chapterId: string, blockIndex: number, event: Event) {
     if (this._suppressInput) return;
     const element = event.target as HTMLElement;
-    const text = element.innerText.replace(/\n$/, '');
-    const html = this.stripSpellErrors(element.innerHTML);
 
     if (!this._inputTimeout) {
       this.store.saveSnapshot();
@@ -583,15 +600,19 @@ export class EditorComponent {
       this._inputTimeout = null;
     }, 1000);
 
-    this.store.updateChapterBlock(chapterId, blockIndex, text, html);
-    // Clear stale errors for this block so old underlines don't show at wrong positions
-    const current = this.blockErrors();
-    if (current[blockIndex]) {
-      const next = { ...current };
-      delete next[blockIndex];
-      this.blockErrors.set(next);
-    }
-    this.scheduleSpellCheck();
+    clearTimeout(this._storeUpdateTimeout);
+    this._storeUpdateTimeout = setTimeout(() => {
+      const text = element.innerText.replace(/\n$/, '');
+      const html = this.stripSpellErrors(element.innerHTML);
+      this.store.updateChapterBlock(chapterId, blockIndex, text, html);
+      const current = this.blockErrors();
+      if (current[blockIndex]) {
+        const next = { ...current };
+        delete next[blockIndex];
+        this.blockErrors.set(next);
+      }
+      this.scheduleSpellCheck();
+    }, 200);
   }
 
   onToggleSpellCheck(): void {
@@ -708,19 +729,16 @@ export class EditorComponent {
     const blockType = chapter?.body[blockIndex]?.type;
     const isNative = blockType && this._nativeBlocks.has(blockType);
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+    if ((event.ctrlKey || event.metaKey) && (event.key.toLowerCase() === 'z' || event.key.toLowerCase() === 'y')) {
       event.preventDefault();
-      if (event.shiftKey) {
+      const el = event.target as HTMLElement;
+      this._savedCaretOffset = this._getCaretOffset(el);
+      el?.blur();
+      if (event.key.toLowerCase() === 'y' || event.shiftKey) {
         this.store.redo();
       } else {
         this.store.undo();
       }
-      this._focusAfterHistory();
-      return;
-    }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') {
-      event.preventDefault();
-      this.store.redo();
       this._focusAfterHistory();
       return;
     }
@@ -752,7 +770,6 @@ export class EditorComponent {
           : (isOpening ? '“' : '”');
 
         document.execCommand('insertText', false, quote);
-        this.onInput(chapterId, blockIndex, event);
         break;
       }
 
@@ -771,7 +788,6 @@ export class EditorComponent {
         const apostrophe = isOpening ? '‘' : '’';
 
         document.execCommand('insertText', false, apostrophe);
-        this.onInput(chapterId, blockIndex, event);
         break;
       }
 
@@ -788,7 +804,6 @@ export class EditorComponent {
           event.preventDefault();
           document.execCommand('delete', false);
           document.execCommand('insertText', false, '—');
-          this.onInput(chapterId, blockIndex, event);
           return;
         }
 
@@ -796,7 +811,6 @@ export class EditorComponent {
         if (this.store.tweaks.smartDashes() && offset === 0 && this.store.domLang() === 'es') {
           event.preventDefault();
           document.execCommand('insertText', false, '—');
-          this.onInput(chapterId, blockIndex, event);
           return;
         }
         break;
@@ -816,7 +830,6 @@ export class EditorComponent {
           document.execCommand('delete', false);
           document.execCommand('delete', false);
           document.execCommand('insertText', false, '…');
-          this.onInput(chapterId, blockIndex, event);
         }
         break;
       }
@@ -836,7 +849,6 @@ export class EditorComponent {
           document.execCommand('delete', false);
           const sign = event.key === '?' ? '¿' : '¡';
           document.execCommand('insertText', false, sign);
-          this.onInput(chapterId, blockIndex, event);
         }
         break;
       }
@@ -1457,15 +1469,22 @@ export class EditorComponent {
   }
 
   private _focusAfterHistory() {
+    const savedOffset = this._savedCaretOffset;
     setTimeout(() => {
       let idx = this.lastFocusedIndex;
       if (idx < 0) idx = 0;
       const el = this._getEditableBlock(idx) || this._getEditableBlock(0);
       if (el) {
         el.focus();
-        this._placeCursorAt(el, el.textContent?.length || 0);
+        this._placeCursorAt(el, Math.min(savedOffset, el.textContent?.length ?? 0));
       }
     }, 50);
+  }
+
+  ngOnDestroy() {
+    clearTimeout(this._inputTimeout);
+    clearTimeout(this._storeUpdateTimeout);
+    clearTimeout(this._tableInputTimeout);
   }
 }
 

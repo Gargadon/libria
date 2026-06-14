@@ -17,7 +17,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
     <section class="pv" [class.app--sb-right]="store.tweaks.sidebar() === 'right'">
       <!-- PROFESSIONAL PDF GENERATOR (Hidden on screen, visible on print) -->
       <div class="print-generator" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h">
-        @for (chapter of store.chapters(); track chapter.id; let idx = $index) {
+        @for (chapter of chapters(); track chapter.id; let idx = $index) {
           @if (shouldInsertBlankPage(idx)) {
             <div class="print__page print__page--blank"></div>
           }
@@ -205,7 +205,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
           <div class="kp-wrapper" style="flex: 1; min-height: 0; position: relative;">
             <div class="kp-slider" [style.--page-index]="globalPage()">
               <div class="kp-flow" #kpFlow>
-                @for (c of store.chapters(); track c.id; let idx = $index) {
+                @for (c of chapters(); track c.id; let idx = $index) {
                   @if (mode() === 'print' && shouldInsertBlankPage(idx)) {
                     <div class="kp kp--blank" style="break-before: column;"></div>
                   }
@@ -298,19 +298,19 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                 [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h4> }
               @case ('first-p') { 
                 <p class="kp-first" [attr.lang]="store.domLang()" [class.has-dropcap]="store.tweaks.dropCap()">
-                  @if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml((b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text)"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
+                  @if (b.html) {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.html))"></span>} @else {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml((b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text))"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
                 </p> 
               }
-              @case ('p') { <p class="kp-p" [attr.lang]="store.domLang()">@if (b.html) {<span [innerHTML]="hyphenService.hyphenateHtml(b.html)"></span>} @else {<span [innerHTML]="hyphenService.hyphenateHtml(b.text || '')"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
-              @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote> }
+              @case ('p') { <p class="kp-p" [attr.lang]="store.domLang()">@if (b.html) {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.html))"></span>} @else {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.text || ''))"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
+              @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</blockquote> }
               @case ('epigraph') {
                 <div class="kp-epigraph">
-                  <blockquote class="kp-epigraph__q">@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</blockquote>
+                  <blockquote class="kp-epigraph__q">@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</blockquote>
                   @if (b.attribution) {<cite class="kp-epigraph__att">— {{ b.attribution }}</cite>}
                 </div>
               }
-              @case ('verse') { <pre class="kp-verse"><code>@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</code></pre> }
-              @case ('code') { <pre class="kp-code"><code>@if (b.html) {<span [innerHTML]="b.html"></span>} @else {{{ b.text }}}</code></pre> }
+              @case ('verse') { <pre class="kp-verse"><code>@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</code></pre> }
+              @case ('code') { <pre class="kp-code"><code>@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</code></pre> }
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
               @case ('image') {
@@ -319,10 +319,10 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
                 }
               }
               @case ('list-unordered') {
-                <ul class="kp-list" [innerHTML]="b.html || b.text"></ul>
+                <ul class="kp-list" [innerHTML]="trustHtml(b.html || b.text)"></ul>
               }
               @case ('list-ordered') {
-                <ol class="kp-list" [innerHTML]="b.html || b.text"></ol>
+                <ol class="kp-list" [innerHTML]="trustHtml(b.html || b.text)"></ol>
               }
               @case ('table') {
                 <div class="kp-table-wrap" [innerHTML]="safeHtml(b.html || b.text)"></div>
@@ -379,9 +379,16 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
   readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
+  private _chaptersDebounce: any = null;
+  readonly chapters = signal<Chapter[]>([]);
+
   safeHtml(html: string) {
     const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
     return this.sanitizer.bypassSecurityTrustHtml(normalized);
+  }
+
+  trustHtml(html: string) {
+    return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 
   imageTransform(b: Block): string {
@@ -529,6 +536,15 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         if (m === 'print') {
           setTimeout(() => this.autoZoom(), 50);
         }
+      });
+    });
+
+    // Debounced chapters for preview (avoids re-render on every keystroke)
+    effect(() => {
+      const ch = this.store.chapters();
+      untracked(() => {
+        clearTimeout(this._chaptersDebounce);
+        this._chaptersDebounce = setTimeout(() => this.chapters.set(ch), 200);
       });
     });
 
@@ -720,13 +736,13 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   }
 
   shouldInsertBlankPage(chapterIdx: number): boolean {
-    const ch = this.store.chapters()[chapterIdx];
+    const ch = this.chapters()[chapterIdx];
     if (!ch) return false;
     return this.bookLayout().chapters[ch.id]?.hasBlankBefore || false;
   }
 
   isChapterEven(chapterIdx: number): boolean {
-    const ch = this.store.chapters()[chapterIdx];
+    const ch = this.chapters()[chapterIdx];
     if (!ch) return false;
 
     // Prefer real measurement if available
@@ -739,7 +755,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   }
 
   chapterStartPage(chapterIdx: number): number {
-    const ch = this.store.chapters()[chapterIdx];
+    const ch = this.chapters()[chapterIdx];
     if (!ch) return 1;
 
     // Prefer real measurement if available

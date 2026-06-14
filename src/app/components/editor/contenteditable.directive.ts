@@ -44,6 +44,10 @@ export class ContenteditableDirective implements OnInit, OnChanges {
   }
 
   private writeContent(el: HTMLElement): void {
+    if (el === document.activeElement) {
+      this.currentText = ((el as any).innerText ?? el.textContent ?? '').replace(/\n$/, '');
+      return;
+    }
     const html = this.contenteditableHtml ?? '';
     if (html) {
       if (el.innerHTML !== html) {
@@ -60,6 +64,7 @@ export class ContenteditableDirective implements OnInit, OnChanges {
 
   private updateSpellUnderlines(): void {
     const el = this.elRef.nativeElement;
+    if (el === document.activeElement) return;
     this.clearUnderlines(el);
     const errors = this.spellErrors;
     if (!errors?.length) return;
