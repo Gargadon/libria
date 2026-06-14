@@ -1179,7 +1179,7 @@ ${bodyContent}
 
     while ((m = re.exec(raw)) !== null) {
       if (m[3] !== undefined) {
-        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, '\u00A0');
         runs.push(new TextRun({
           text,
           font: opts.font,
@@ -1221,7 +1221,7 @@ ${bodyContent}
 
     while ((m = re.exec(raw)) !== null) {
       if (m[3] !== undefined) {
-        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+        const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, '\u00A0');
         children.push(new TextRun({
           text,
           font: opts.font,
