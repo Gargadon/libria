@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -113,15 +113,21 @@
         {
           "from": "build/bin/linux",
           "to": "gs/bin",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
     "deb": {
-      "depends": ["ghostscript"]
+      "depends": [
+        "ghostscript"
+      ]
     },
     "pacman": {
-      "depends": ["ghostscript"]
+      "depends": [
+        "ghostscript"
+      ]
     },
     "mac": {
       "target": [
@@ -133,7 +139,9 @@
         {
           "from": "build/bin/mac",
           "to": "gs/bin",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -147,7 +155,9 @@
         {
           "from": "build/bin/win",
           "to": "gs/bin",
-          "filter": ["**/*"]
+          "filter": [
+            "**/*"
+          ]
         }
       ]
     },
@@ -155,7 +165,9 @@
       {
         "from": "build/licenses",
         "to": "licenses",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "nsis": {
