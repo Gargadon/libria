@@ -282,37 +282,9 @@ ${dropCapStyles}`);
         },
       };
 
-      if (t.showHeader || t.showPageNumbers) {
-        pdfOptions['displayHeaderFooter'] = true;
-        const showHdr = t.showHeader;
-        const showPN = t.showPageNumbers;
-        const pnp = t.pageNumberPosition;
-        const esc = (s: string) => this.escapeHtml(s);
-        if (showHdr || (showPN && pnp === 'top-edges')) {
-          const parts: string[] = [];
-          if (showPN && pnp === 'top-edges') {
-            parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
-          }
-          if (showHdr) {
-            parts.push(`<span style="flex:1;text-align:center;font-style:italic;">${esc(t.headerText || book.title)}</span>`);
-          }
-          if (showPN && pnp === 'top-edges') {
-            parts.push(`<span class="pageNumber" style="flex-shrink:0;"></span>`);
-          }
-          pdfOptions['headerTemplate'] =
-            `<div style="font-size:9pt;font-family:serif;color:#555;padding:0 1cm;width:100%;height:${t.marginTop}mm;display:flex;align-items:center;justify-content:center;">${parts.join('')}</div>`;
-        } else {
-          pdfOptions['headerTemplate'] = '<div></div>';
-        }
-        if (showPN && pnp !== 'top-edges') {
-          const justify = pnp === 'bottom-edges' ? 'space-between' : 'center';
-          pdfOptions['footerTemplate'] =
-            `<div style="font-size:9pt;font-family:serif;padding:0 1cm;width:100%;height:${t.marginBottom}mm;display:flex;align-items:center;justify-content:${justify};">
-              <span class="pageNumber"></span>${pnp === 'bottom-edges' ? '<span class="pageNumber"></span>' : ''}</div>`;
-        } else {
-          pdfOptions['footerTemplate'] = '<div></div>';
-        }
-      }
+      // We use CSS @page margin boxes for headers and footers instead of legacy printToPDF templates
+      pdfOptions['displayHeaderFooter'] = false;
+
 
       const pdfData = await (window as any).electronAPI.printFromHTML(html, pdfOptions);
       const blob = new Blob([pdfData], { type: 'application/pdf' });
@@ -399,6 +371,89 @@ html::-webkit-scrollbar { display: none; }
 }
 .kp-quote { margin-left: 0.5px; }` : '';
 
+    let marginBoxesCss = '';
+    if (!fontsHref) {
+      const showHdr = t.showHeader;
+      const showPN = t.showPageNumbers;
+      const pnp = t.pageNumberPosition;
+      const esc = (s: string) => this.escapeHtml(s);
+      const headerVal = esc(t.headerText || book.title);
+
+      const headerFooterStyle = `
+        font-family: ${bodyFontFamily};
+        font-size: 9pt;
+        color: #555;
+        font-weight: normal;
+        font-style: normal;
+      `;
+
+      marginBoxesCss = `
+@page :first {
+  @top-left { content: none !important; }
+  @top-center { content: none !important; }
+  @top-right { content: none !important; }
+  @bottom-left { content: none !important; }
+  @bottom-center { content: none !important; }
+  @bottom-right { content: none !important; }
+}
+      `;
+
+      if (showHdr) {
+        marginBoxesCss += `
+@page {
+  @top-center {
+    content: "${headerVal}";
+    ${headerFooterStyle}
+    font-style: italic;
+  }
+}
+        `;
+      }
+
+      if (showPN) {
+        if (pnp === 'bottom-center') {
+          marginBoxesCss += `
+@page {
+  @bottom-center {
+    content: counter(page);
+    ${headerFooterStyle}
+  }
+}
+          `;
+        } else if (pnp === 'bottom-edges') {
+          marginBoxesCss += `
+@page :left {
+  @bottom-left {
+    content: counter(page);
+    ${headerFooterStyle}
+  }
+}
+@page :right {
+  @bottom-right {
+    content: counter(page);
+    ${headerFooterStyle}
+  }
+}
+          `;
+        } else if (pnp === 'top-edges') {
+          marginBoxesCss += `
+@page :left {
+  @top-left {
+    content: counter(page);
+    ${headerFooterStyle}
+  }
+}
+@page :right {
+  @top-right {
+    content: counter(page);
+    ${headerFooterStyle}
+  }
+}
+          `;
+        }
+      }
+    }
+
     const css = `
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -413,6 +468,8 @@ html::-webkit-scrollbar { display: none; }
   margin-left: ${t.marginInner}mm;
   margin-right: ${t.marginOuter}mm;
 }
+
+${marginBoxesCss}
 
 body {
   font-family: ${bodyFontFamily};
