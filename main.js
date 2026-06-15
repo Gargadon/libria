@@ -540,8 +540,7 @@ ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
     if (options.pdfx) {
       const gs = findGsPath();
       if (!gs) {
-        console.warn('[printFromHTML] Ghostscript not found — skipping PDF/X');
-        return pdf;
+        throw new Error('Ghostscript no encontrado. Es necesario para exportar PDF profesional. Instálalo con: sudo pacman -S ghostscript');
       }
       const tmpPdf = path.join(app.getPath('userData'), `libria-gs-in-${Date.now()}.pdf`);
       const outPdf = path.join(app.getPath('userData'), `libria-gs-out-${Date.now()}.pdf`);

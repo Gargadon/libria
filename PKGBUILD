@@ -34,9 +34,6 @@ package() {
   cp main.js preload.js package.json "${_dest}/"
   cp -r build/licenses "${_dest}/licenses"
 
-  # Ghostscript empaquetado
-  install -Dm755 build/bin/linux/gs "${_dest}/gs/bin/gs"
-
   # Script de lanzamiento
   install -dm755 "${pkgdir}/usr/bin"
   cat > "${pkgdir}/usr/bin/libria" << 'SCRIPT'

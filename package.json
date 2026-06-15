@@ -108,16 +108,7 @@
         "deb",
         "pacman"
       ],
-      "icon": "build/icon.png",
-      "extraResources": [
-        {
-          "from": "build/bin/linux",
-          "to": "gs/bin",
-          "filter": [
-            "**/*"
-          ]
-        }
-      ]
+      "icon": "build/icon.png"
     },
     "deb": {
       "depends": [
