@@ -1,18 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { Chapter, Block } from '../models/book.models';
-import * as mammoth from 'mammoth';
-
 @Injectable({
   providedIn: 'root'
 })
 export class ImportService {
   private readonly store = inject(BookStore);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _mammoth: any;
 
   async importDocx(file: File) {
+    if (!this._mammoth) this._mammoth = await import('mammoth');
     const arrayBuffer = await file.arrayBuffer();
-    // Mammoth works in the browser if you provide the arrayBuffer
-    const result = await mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+    const result = await this._mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
     const html = result.value;
 // ... (rest of code)
     // Parse HTML to Libria Blocks

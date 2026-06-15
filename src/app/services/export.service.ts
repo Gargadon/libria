@@ -3,24 +3,18 @@ import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../store/book.store';
 import { sortFootnotesByPosition, Block } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
-import JSZip from 'jszip';
-import {
-  Document,
-  Packer,
+import { AssetService } from './asset.service';
+import type JSZip from 'jszip';
+import type {
   Paragraph,
   TextRun,
-  ImageRun,
   TableOfContents,
-  HeadingLevel,
-  UnderlineType,
   Table,
   TableRow,
   TableCell,
-  WidthType,
   FootnoteReferenceRun,
-  type IMediaTransformation,
+  IMediaTransformation,
 } from 'docx';
-import { saveAs } from 'file-saver';
 
 const EPUB_FONT_MAP: Record<string, {
   family: string;
@@ -59,14 +53,24 @@ export class ExportService {
   private readonly store = inject(BookStore);
   private readonly ts = inject(TranslateService);
   private readonly hyphenService = inject(HyphenService);
+  private readonly assetService = inject(AssetService);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _jszip: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _docx: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _saveAs: any;
 
   async exportEpub() {
     this.store.setExporting(true, this.ts.instant('sidebar.exportingEpub'));
     try {
+      if (!this._jszip) this._jszip = ((await import('jszip')) as any).default ?? (await import('jszip'));
+      const JSZip = this._jszip;
       const zip = new JSZip();
       const book = this.store.book();
       const chapters = this.store.chapters();
-      const assets = this.store.assets();
+      const assets = this.assetService.getAll();
       const prefs = this.store.exportPrefs();
       const tweaks = this.store.tweaks();
       const bodyFontFamily = this.store.bookFontFamily();
@@ -105,22 +109,25 @@ export class ExportService {
 </html>`);
     }
 
-    let manifest = '';
-    let spine = '';
+    const manifestParts: string[] = [];
+    const spineParts: string[] = [];
     chapters.forEach((c, i) => {
-      manifest += `    <item id="chapter_${i}" href="chapters/${c.id}.xhtml" media-type="application/xhtml+xml"/>\n`;
-      spine += `    <itemref idref="chapter_${i}"/>\n`;
+      manifestParts.push(`    <item id="chapter_${i}" href="chapters/${c.id}.xhtml" media-type="application/xhtml+xml"/>\n`);
+      spineParts.push(`    <itemref idref="chapter_${i}"/>\n`);
     });
+    const manifest = manifestParts.join('');
+    const spine = spineParts.join('');
 
     const imageKeys = new Set<string>();
     chapters.forEach(c => c.body.forEach(b => { if (b.type === 'image' && b.src && assets[b.src]) imageKeys.add(b.src); }));
-    let imageManifest = '';
+    const imageManifestParts: string[] = [];
     imageKeys.forEach(key => {
       const ext = this.imageExt(assets[key]);
       const blob = this.dataUrlToBlob(assets[key]);
       zip.file(`OEBPS/images/img-${key}.${ext}`, blob);
-      imageManifest += `    <item id="img-${key}" href="images/img-${key}.${ext}" media-type="image/${ext === 'jpg' ? 'jpeg' : ext}"/>\n`;
+      imageManifestParts.push(`    <item id="img-${key}" href="images/img-${key}.${ext}" media-type="image/${ext === 'jpg' ? 'jpeg' : ext}"/>\n`);
     });
+    const imageManifest = imageManifestParts.join('');
 
     const esc = (s: string) => this.escapeHtml(s);
     const opf = `<?xml version="1.0" encoding="UTF-8"?>
@@ -172,64 +179,66 @@ p + p { text-indent: 1.5em; }
 .kp-code code { font-family: inherit; }
 ${dropCapStyles}`);
 
-    let navLinks = '';
+    const navLinkParts: string[] = [];
     chapters.forEach((c, i) => {
-      navLinks += `<li><a href="chapters/${c.id}.xhtml">${this.escapeHtml(c.title)}</a></li>`;
-      let content = '';
+      navLinkParts.push(`<li><a href="chapters/${c.id}.xhtml">${this.escapeHtml(c.title)}</a></li>`);
+      const contentParts: string[] = [];
       c.body.forEach(b => {
         const raw = this.xhtmlSafe(b.html || this.escapeHtml(b.text || ''));
         switch (b.type) {
-          case 'halftitle':     content += `<h1 class="kp-halftitle">${raw}</h1>`; break;
-          case 'title':         content += `<h1 class="kp-title">${raw}</h1>`; break;
-          case 'subtitle':      content += `<div class="kp-sub">${raw}</div>`; break;
-          case 'author':        content += `<div class="kp-author">${raw}</div>`; break;
-          case 'publisher':     content += `<div class="kp-pub">${raw}</div>`; break;
-          case 'dedication':    content += `<div class="kp-ded">${raw}</div>`; break;
-          case 'chapter-num':   content += `<div class="kp-chnum">${raw}</div>`; break;
-          case 'chapter-title': content += `<h2>${raw}</h2>`; break;
-          case 'h1':            content += `<h2 class="kp-h1">${raw}</h2>`; break;
-          case 'h2':            content += `<h3 class="kp-h2">${raw}</h3>`; break;
-          case 'h3':            content += `<h4 class="kp-h3">${raw}</h4>`; break;
-          case 'first-p':       content += `<p class="first-p">${raw}</p>`; break;
-          case 'p':             content += `<p>${raw}</p>`; break;
-          case 'blockquote':    content += `<blockquote>${raw}</blockquote>`; break;
+          case 'halftitle':     contentParts.push(`<h1 class="kp-halftitle">${raw}</h1>`); break;
+          case 'title':         contentParts.push(`<h1 class="kp-title">${raw}</h1>`); break;
+          case 'subtitle':      contentParts.push(`<div class="kp-sub">${raw}</div>`); break;
+          case 'author':        contentParts.push(`<div class="kp-author">${raw}</div>`); break;
+          case 'publisher':     contentParts.push(`<div class="kp-pub">${raw}</div>`); break;
+          case 'dedication':    contentParts.push(`<div class="kp-ded">${raw}</div>`); break;
+          case 'chapter-num':   contentParts.push(`<div class="kp-chnum">${raw}</div>`); break;
+          case 'chapter-title': contentParts.push(`<h2>${raw}</h2>`); break;
+          case 'h1':            contentParts.push(`<h2 class="kp-h1">${raw}</h2>`); break;
+          case 'h2':            contentParts.push(`<h3 class="kp-h2">${raw}</h3>`); break;
+          case 'h3':            contentParts.push(`<h4 class="kp-h3">${raw}</h4>`); break;
+          case 'first-p':       contentParts.push(`<p class="first-p">${raw}</p>`); break;
+          case 'p':             contentParts.push(`<p>${raw}</p>`); break;
+          case 'blockquote':    contentParts.push(`<blockquote>${raw}</blockquote>`); break;
           case 'epigraph': {
             const att = this.escapeHtml(b.attribution || '');
-            content += `<div class="kp-epigraph"><blockquote>${raw}</blockquote>${att ? `<cite>— ${att}</cite>` : ''}</div>`;
+            contentParts.push(`<div class="kp-epigraph"><blockquote>${raw}</blockquote>${att ? `<cite>— ${att}</cite>` : ''}</div>`);
             break;
           }
-          case 'verse':         content += `<pre class="kp-verse"><code>${raw}</code></pre>`; break;
-          case 'code':          content += `<pre class="kp-code"><code>${raw}</code></pre>`; break;
-          case 'scene-break':   content += `<p style="text-align:center;margin:1em 0;color:#888">${this.sceneGlyphText(tweaks.sceneBreakType) || '* * *'}</p>`; break;
-          case 'page-break':    content += `<div style="page-break-after:always"></div>`; break;
+          case 'verse':         contentParts.push(`<pre class="kp-verse"><code>${raw}</code></pre>`); break;
+          case 'code':          contentParts.push(`<pre class="kp-code"><code>${raw}</code></pre>`); break;
+          case 'scene-break':   contentParts.push(`<p style="text-align:center;margin:1em 0;color:#888">${this.sceneGlyphText(tweaks.sceneBreakType) || '* * *'}</p>`); break;
+          case 'page-break':    contentParts.push(`<div style="page-break-after:always"></div>`); break;
           case 'image': {
             if (b.src && assets[b.src]) {
               const imgStyle = this.imageStyle(b);
               const ext = this.imageExt(assets[b.src]);
               const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
-              content += `<figure style="text-align:center;margin:1em 0"><img src="../images/img-${b.src}.${ext}" style="${imgStyle}" alt=""/>${cap}</figure>`;
+              contentParts.push(`<figure style="text-align:center;margin:1em 0"><img src="../images/img-${b.src}.${ext}" style="${imgStyle}" alt=""/>${cap}</figure>`);
             }
             break;
           }
-          case 'list-unordered': content += `<ul class="kp-list">${raw}</ul>`; break;
-          case 'list-ordered':   content += `<ol class="kp-list">${raw}</ol>`; break;
-          case 'table':          content += `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`; break;
-          default:              content += `<p>[${b.type}]</p>`; break;
+          case 'list-unordered': contentParts.push(`<ul class="kp-list">${raw}</ul>`); break;
+          case 'list-ordered':   contentParts.push(`<ol class="kp-list">${raw}</ol>`); break;
+          case 'table':          contentParts.push(`<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`); break;
+          default:              contentParts.push(`<p>[${b.type}]</p>`); break;
         }
       });
       const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
       if (sortedFns.length) {
-        content += `<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`;
+        contentParts.push(`<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`);
         sortedFns.forEach((fn: any, fi: number) => {
           const fnText = this.escapeHtml(fn.content || '');
-          content += `<div class="kp-fnpanel-item"><span class="kp-fnpanel-num">${fi + 1}.</span> <span class="kp-fnpanel-text">${fnText}</span></div>`;
+          contentParts.push(`<div class="kp-fnpanel-item"><span class="kp-fnpanel-num">${fi + 1}.</span> <span class="kp-fnpanel-text">${fnText}</span></div>`);
         });
-        content += `</div>`;
+        contentParts.push(`</div>`);
       }
+      const content = contentParts.join('');
       zip.file(`OEBPS/chapters/${c.id}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>${this.escapeHtml(c.title)}</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
 <body>${content}</body></html>`);
     });
+    const navLinks = navLinkParts.join('');
 
     const tocLabelMap: Record<string, string> = { es: 'Contenidos', en: 'Contents', fr: 'Table des matières', it: 'Indice', pt: 'Sumário' };
     const tocLabel = tocLabelMap[(book.lang ?? 'es').slice(0, 2)] ?? 'Contents';
@@ -257,7 +266,7 @@ ${dropCapStyles}`);
       const bodyFontFamily = this.store.bookFontFamily();
       const titleFontFamily = this.store.titleFontFamily();
 
-      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.store.assets());
+      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.assetService.getAll());
       const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
 
       const pdfOptions: Record<string, any> = {
@@ -790,12 +799,13 @@ ${bodyContent}
 
   async exportDocx() {
     this.store.setExporting(true, this.ts.instant('sidebar.exportingDocx'));
+    if (!this._docx) this._docx = await import('docx');
     try {
       const book = this.store.book();
       const chapters = this.store.chapters();
       const t = this.store.tweaks();
       const prefs = this.store.exportPrefs();
-      const assets = this.store.assets();
+      const assets = this.assetService.getAll();
       if (!book) return;
 
       const children: (Paragraph | TableOfContents | Table)[] = [];
@@ -804,15 +814,15 @@ ${bodyContent}
         const coverBlob = this.dataUrlToBlob(assets['cover']);
         const coverBuf = await coverBlob.arrayBuffer();
         const ext = this.imageExt(assets['cover']);
-        children.push(new Paragraph({
+        children.push(new this._docx.Paragraph({
           alignment: 'center',
           spacing: { before: 3000, after: 100 },
-          children: [new ImageRun({ type: ext as any, data: coverBuf, transformation: { width: 400, height: 600 } })],
+          children: [new this._docx.ImageRun({ type: ext as any, data: coverBuf, transformation: { width: 400, height: 600 } })],
         }));
       }
 
       if (prefs.includeTOC) {
-        children.push(new TableOfContents('Table of Contents', { hyperlink: true }));
+        children.push(new this._docx.TableOfContents('Table of Contents', { hyperlink: true }));
       }
 
       const bodyFont = t.customBookFont || this.fontName(t.bookFont);
@@ -830,7 +840,7 @@ ${bodyContent}
 
       for (const ch of chapters) {
         if (ch.forceOddPage && children.length > 0) {
-          children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+          children.push(new this._docx.Paragraph({ children: [], pageBreakBefore: true }));
         }
         
         let prevIsBody = false;
@@ -871,10 +881,10 @@ ${bodyContent}
             case 'dedication': {
               const lines = (b.text ?? '').split('\n');
               for (const line of lines) {
-                children.push(new Paragraph({
+                children.push(new this._docx.Paragraph({
                   alignment: 'center',
                   spacing: { after: 100 },
-                  children: [new TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
+                  children: [new this._docx.TextRun({ text: line || ' ', font: bodyFont, size: fs, italics: true })],
                 }));
               }
               prevIsBody = false;
@@ -901,7 +911,7 @@ ${bodyContent}
               prevIsBody = false;
               break;
             case 'first-p':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: bodyAlign,
                 spacing: { line: lsp, after: pg },
                 indent: { firstLine: 0 },
@@ -910,7 +920,7 @@ ${bodyContent}
               prevIsBody = true;
               break;
             case 'p':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: bodyAlign,
                 spacing: { line: lsp, after: pg },
                 indent: { firstLine: prevIsBody ? ind : 0 },
@@ -919,7 +929,7 @@ ${bodyContent}
               prevIsBody = true;
               break;
             case 'blockquote':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: 'left',
                 indent: { left: 720 },
                 spacing: { line: lsp, before: 200, after: 200 },
@@ -928,23 +938,23 @@ ${bodyContent}
               prevIsBody = false;
               break;
             case 'epigraph':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: 'center',
                 spacing: { line: lsp, before: 300, after: 60 },
                 children: fnIdToNum ? this.blockToChildren(b, { font: bodyFont, size: fs, italics: true }, fnIdToNum) : this.htmlToTextRuns(b, { font: bodyFont, size: fs, italics: true }),
               }));
               if (b.attribution) {
-                children.push(new Paragraph({
+                children.push(new this._docx.Paragraph({
                   alignment: 'center',
                   spacing: { before: 0, after: 300 },
                   indent: { left: 1440 },
-                  children: [new TextRun({ text: `— ${b.attribution}`, font: bodyFont, size: Math.round(fs * 0.85), color: '555555' })],
+                  children: [new this._docx.TextRun({ text: `— ${b.attribution}`, font: bodyFont, size: Math.round(fs * 0.85), color: '555555' })],
                 }));
               }
               prevIsBody = false;
               break;
             case 'verse':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: 'left',
                 spacing: { line: lsp, before: 200, after: 200 },
                 children: fnIdToNum ? this.blockToChildren(b, { font: 'Courier New', size: fs }, fnIdToNum) : this.htmlToTextRuns(b, { font: 'Courier New', size: fs }),
@@ -952,7 +962,7 @@ ${bodyContent}
               prevIsBody = false;
               break;
             case 'code':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: 'left',
                 spacing: { line: lsp, before: 200, after: 200 },
                 indent: { left: 360, right: 360 },
@@ -962,15 +972,15 @@ ${bodyContent}
               prevIsBody = false;
               break;
             case 'scene-break':
-              children.push(new Paragraph({
+              children.push(new this._docx.Paragraph({
                 alignment: 'center',
                 spacing: { before: 400, after: 400 },
-                children: [new TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
+                children: [new this._docx.TextRun({ text: glyph, font: bodyFont, size: fs, color: '888888' })],
               }));
               prevIsBody = false;
               break;
             case 'page-break':
-              children.push(new Paragraph({ children: [], pageBreakBefore: true }));
+              children.push(new this._docx.Paragraph({ children: [], pageBreakBefore: true }));
               prevIsBody = false;
               break;
             case 'image': {
@@ -988,16 +998,16 @@ ${bodyContent}
                   ...(b.rotation ? { rotation: b.rotation } : {}),
                   ...(b.flipH || b.flipV ? { flip: { horizontal: !!b.flipH, vertical: !!b.flipV } } : {}),
                 };
-                children.push(new Paragraph({
+                children.push(new this._docx.Paragraph({
                   alignment: 'center',
                   spacing: { before: 200, after: b.caption ? 0 : 200 },
-                  children: [new ImageRun({ type: ext as any, data: imgBuf, transformation })],
+                  children: [new this._docx.ImageRun({ type: ext as any, data: imgBuf, transformation })],
                 }));
                 if (b.caption) {
-                  children.push(new Paragraph({
+                  children.push(new this._docx.Paragraph({
                     alignment: 'center',
                     spacing: { before: 60, after: 200 },
-                    children: [new TextRun({ text: b.caption, size: 20, color: '555555' })],
+                    children: [new this._docx.TextRun({ text: b.caption, size: 20, color: '555555' })],
                   }));
                 }
               }
@@ -1010,12 +1020,12 @@ ${bodyContent}
               for (const item of items) {
                 const itemText = item.replace(/<[^>]+>/g, '').trim();
                 if (!itemText) continue;
-                children.push(new Paragraph({
+                children.push(new this._docx.Paragraph({
                   alignment: 'left',
                   spacing: { line: lsp, after: 60 },
                   indent: { left: 720, hanging: 360 },
                   bullet: b.type === 'list-unordered' ? { level: 0 } : undefined,
-                  children: [new TextRun({ text: itemText, font: bodyFont, size: fs })],
+                  children: [new this._docx.TextRun({ text: itemText, font: bodyFont, size: fs })],
                 }));
               }
               prevIsBody = false;
@@ -1029,21 +1039,21 @@ ${bodyContent}
                 const rowChildren: TableCell[] = [];
                 for (const cellHtml of cells) {
                   const cellText = cellHtml.replace(/<[^>]+>/g, '').trim();
-                  rowChildren.push(new TableCell({
-                    children: [new Paragraph({
+                  rowChildren.push(new this._docx.TableCell({
+                    children: [new this._docx.Paragraph({
                       alignment: 'left',
-                      children: [new TextRun({ text: cellText || ' ', font: bodyFont, size: fs })],
+                      children: [new this._docx.TextRun({ text: cellText || ' ', font: bodyFont, size: fs })],
                     })],
                   }));
                 }
                 if (rowChildren.length) {
-                  tableRows.push(new TableRow({ children: rowChildren }));
+                  tableRows.push(new this._docx.TableRow({ children: rowChildren }));
                 }
               }
               if (tableRows.length) {
-                children.push(new Table({
+                children.push(new this._docx.Table({
                   rows: tableRows,
-                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  width: { size: 100, type: this._docx.WidthType.PERCENTAGE },
                 }));
               }
               prevIsBody = false;
@@ -1056,7 +1066,7 @@ ${bodyContent}
         }
       }
 
-      const doc = new Document({
+      const doc = new this._docx.Document({
         title: book.title,
         description: book.subtitle || '',
         creator: book.author || '',
@@ -1071,7 +1081,7 @@ ${bodyContent}
       });
 
       await this.addFootnotesToDoc(doc, allFootnoteDefs);
-      const blob = await Packer.toBlob(doc);
+      const blob = await this._docx.Packer.toBlob(doc);
       this.downloadFile(blob, `${book.title}.docx`);
     } finally {
       this.store.setExporting(false);
@@ -1085,8 +1095,8 @@ ${bodyContent}
       if (!fnView?.createFootNote) return;
       for (const fn of footnoteDefs) {
         fnView.createFootNote(fn.id, [
-          new Paragraph({
-            children: [new TextRun({ text: fn.text, size: 20 })],
+          new this._docx.Paragraph({
+            children: [new this._docx.TextRun({ text: fn.text, size: 20 })],
           }),
         ]);
       }
@@ -1098,7 +1108,7 @@ ${bodyContent}
   private p(b: { text?: string; html?: string }, opts: {
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean;
   }, align: string, before = 0, after = 0, fnIdToNum?: Record<string, number>): Paragraph {
-    return new Paragraph({
+    return new this._docx.Paragraph({
       alignment: align as any,
       spacing: { before, after },
       children: fnIdToNum ? this.blockToChildren(b, opts, fnIdToNum) : this.htmlToTextRuns(b, opts),
@@ -1167,7 +1177,7 @@ ${bodyContent}
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
   }): TextRun[] {
     const raw = b.html || this.escapeHtml(b.text ?? '');
-    if (!raw) return [new TextRun({ text: '', font: opts.font, size: opts.size })];
+    if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
 
     const runs: TextRun[] = [];
     const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
@@ -1180,13 +1190,13 @@ ${bodyContent}
     while ((m = re.exec(raw)) !== null) {
       if (m[3] !== undefined) {
         const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, '\u00A0');
-        runs.push(new TextRun({
+        runs.push(new this._docx.TextRun({
           text,
           font: opts.font,
           size: opts.size,
           bold,
           italics: italic,
-          underline: uline ? { type: UnderlineType.SINGLE } : undefined,
+          underline: uline ? { type: this._docx.UnderlineType.SINGLE } : undefined,
           smallCaps: opts.smallCaps && runs.length === 0,
         }));
       } else if (m[1] === '' && m[2] !== 'br') {
@@ -1202,14 +1212,14 @@ ${bodyContent}
       }
     }
 
-    return runs.length ? runs : [new TextRun({ text: '', font: opts.font, size: opts.size })];
+    return runs.length ? runs : [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
   }
 
   private blockToChildren(b: { text?: string; html?: string }, opts: {
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
   }, fnIdToNum: Record<string, number>): (TextRun | FootnoteReferenceRun)[] {
     const raw = b.html || this.escapeHtml(b.text ?? '');
-    if (!raw) return [new TextRun({ text: '', font: opts.font, size: opts.size })];
+    if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
 
     const children: (TextRun | FootnoteReferenceRun)[] = [];
     const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
@@ -1222,13 +1232,13 @@ ${bodyContent}
     while ((m = re.exec(raw)) !== null) {
       if (m[3] !== undefined) {
         const text = m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, '\u00A0');
-        children.push(new TextRun({
+        children.push(new this._docx.TextRun({
           text,
           font: opts.font,
           size: opts.size,
           bold,
           italics: italic,
-          underline: uline ? { type: UnderlineType.SINGLE } : undefined,
+          underline: uline ? { type: this._docx.UnderlineType.SINGLE } : undefined,
           smallCaps: opts.smallCaps && children.length === 0,
         }));
       } else if (m[1] === '' && m[2] !== 'br') {
@@ -1240,7 +1250,7 @@ ${bodyContent}
           const mid = m[0];
           const fnMatch = mid.match(/data-fn="([^"]+)"/);
           if (fnMatch && fnIdToNum[fnMatch[1]]) {
-            children.push(new FootnoteReferenceRun(fnIdToNum[fnMatch[1]]));
+            children.push(new this._docx.FootnoteReferenceRun(fnIdToNum[fnMatch[1]]));
           }
         }
       } else if (m[1] === '/') {
@@ -1251,11 +1261,12 @@ ${bodyContent}
       }
     }
 
-    return children.length ? children : [new TextRun({ text: '', font: opts.font, size: opts.size })];
+    return children.length ? children : [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
   }
 
-  private downloadFile(blob: Blob, filename: string) {
-    saveAs(blob, filename);
+  private async downloadFile(blob: Blob, filename: string) {
+    if (!this._saveAs) this._saveAs = (await import('file-saver')).saveAs;
+    this._saveAs(blob, filename);
   }
 
   private dataUrlToBlob(dataUrl: string): Blob {

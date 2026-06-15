@@ -1,5 +1,6 @@
 import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
+import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
 import { HyphenService } from '../../services/hyphen.service';
@@ -16,6 +17,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
     <section class="pv" [class.app--sb-right]="store.tweaks.sidebar() === 'right'">
       <!-- PROFESSIONAL PDF GENERATOR (Hidden on screen, visible on print) -->
+      @if (mode() === 'print') {
       <div class="print-generator" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h">
         @for (chapter of chapters(); track chapter.id; let idx = $index) {
           @if (shouldInsertBlankPage(idx)) {
@@ -59,6 +61,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
           </div>
         }
       </div>
+      } <!-- end @if mode === 'print' for print-generator -->
 
       <div class="pv__head">
         <div class="pv__tabs">
@@ -314,8 +317,8 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
               @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
               @case ('page-break') { <div class="kp-page-break"><span></span></div> }
               @case ('image') {
-                @if (b.src && store.assets()[b.src]) {
-                  <figure class="kp-image"><img [src]="store.assets()[b.src]" alt="" [style.width.px]="b.width" [style.height.px]="b.height" [style.transform]="imageTransform(b)" style="max-width:100%;height:auto;display:block;margin:0 auto;">@if (b.caption) {<figcaption class="kp-image__cap">{{ b.caption }}</figcaption>}</figure>
+                @if (b.src && assetService.assets()[b.src]) {
+                  <figure class="kp-image"><img [src]="assetService.assets()[b.src]" alt="" [style.width.px]="b.width" [style.height.px]="b.height" [style.transform]="imageTransform(b)" style="max-width:100%;height:auto;display:block;margin:0 auto;">@if (b.caption) {<figcaption class="kp-image__cap">{{ b.caption }}</figcaption>}</figure>
                 }
               }
               @case ('list-unordered') {
@@ -373,6 +376,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
+  readonly assetService = inject(AssetService);
   readonly hyphenService = inject(HyphenService);
   readonly exportService = inject(ExportService);
   readonly sanitizer = inject(DomSanitizer);
@@ -382,13 +386,26 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private _chaptersDebounce: any = null;
   readonly chapters = signal<Chapter[]>([]);
 
+  private _safeHtmlCache = new Map<string, SafeHtml>();
+  private _trustHtmlCache = new Map<string, SafeHtml>();
+
   safeHtml(html: string) {
+    const cached = this._safeHtmlCache.get(html);
+    if (cached !== undefined) return cached;
     const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
-    return this.sanitizer.bypassSecurityTrustHtml(normalized);
+    const result = this.sanitizer.bypassSecurityTrustHtml(normalized);
+    if (this._safeHtmlCache.size > 200) this._safeHtmlCache.clear();
+    this._safeHtmlCache.set(html, result);
+    return result;
   }
 
   trustHtml(html: string) {
-    return this.sanitizer.bypassSecurityTrustHtml(html);
+    const cached = this._trustHtmlCache.get(html);
+    if (cached !== undefined) return cached;
+    const result = this.sanitizer.bypassSecurityTrustHtml(html);
+    if (this._trustHtmlCache.size > 500) this._trustHtmlCache.clear();
+    this._trustHtmlCache.set(html, result);
+    return result;
   }
 
   imageTransform(b: Block): string {
@@ -518,12 +535,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     });
 
     effect(() => {
-      this.store.chapters();
+      this.chapters(); // debounced — not store.chapters() — avoids measureDOM on every keystroke
       this.store.tweaks();
       this.pageSize();
       this.mode();
       untracked(() => {
-        // Only clear if essential settings changed, otherwise just schedule
         this.scheduleMeasure();
       });
     });
@@ -558,7 +574,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const t = this.store.tweaks();
       const bodyFont = this.store.bookFontFamily();
       const titleFont = this.store.titleFontFamily();
-      const assets = this.store.assets();
+      const assets = this.assetService.getAll();
 
       if (!book) return;
 

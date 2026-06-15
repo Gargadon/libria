@@ -1,4 +1,4 @@
-import { Component, inject, effect, signal, HostListener } from '@angular/core';
+import { Component, inject, effect, signal, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
@@ -10,7 +10,6 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { EditorComponent } from './components/editor/editor.component';
 import { PreviewComponent } from './components/preview/preview.component';
 import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.component';
-import { SpellCheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
 
@@ -25,12 +24,12 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
     EditorComponent,
     PreviewComponent,
     TweaksPanelComponent,
-    SpellCheckPanelComponent,
     WelcomeComponent,
     AboutModalComponent,
   ],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
   readonly store = inject(BookStore);

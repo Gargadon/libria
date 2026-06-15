@@ -3,6 +3,7 @@ import { signalStore, withState, withMethods, withComputed, patchState, withHook
 import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
+import { AssetService } from '../services/asset.service';
 import { environment } from '../../environments/environment';
 
 export interface BookState {
@@ -11,14 +12,12 @@ export interface BookState {
   notes: Note[];
   activeChapterId: string;
   tweaks: Tweaks;
-  assets: Record<string, string>;
   past: { chapters: Chapter[], notes: Note[] }[];
   future: { chapters: Chapter[], notes: Note[] }[];
   isDirty: boolean;
   ui: {
     showStyles: boolean;
     showTweaks: boolean;
-    showSpellCheck: boolean;
     sidebarOpen: boolean;
     previewOpen: boolean;
     zenMode: boolean;
@@ -82,14 +81,12 @@ const initialState: BookState = {
     smartOpeningSigns: true,
     pdfxCompliant: false
   },
-  assets: {},
   past: [],
   future: [],
   isDirty: false,
   ui: {
     showStyles: false,
     showTweaks: false,
-    showSpellCheck: false,
     sidebarOpen: true,
     previewOpen: true,
     zenMode: false,
@@ -221,13 +218,20 @@ export const BookStore = signalStore(
   })),
   withMethods((store) => ({
     saveSnapshot() {
-      patchState(store, (state) => ({
-        past: [...state.past.slice(-49), { 
-          chapters: state.chapters, 
-          notes: state.notes 
-        }],
-        future: []
-      }));
+      patchState(store, (state) => {
+        const last = state.past[state.past.length - 1];
+        // Skip if state is identical to last snapshot (same references)
+        if (last && last.chapters === state.chapters && last.notes === state.notes) {
+          return state;
+        }
+        return {
+          past: [...state.past.slice(-19), {
+            chapters: state.chapters,
+            notes: state.notes
+          }],
+          future: []
+        };
+      });
     },
     undo() {
       patchState(store, (state) => {
@@ -263,12 +267,12 @@ export const BookStore = signalStore(
         };
       });
     },
-    loadDocument(doc: LibriaDocument) {
+    loadDocument(doc: LibriaDocument, assetService: AssetService) {
+      assetService.load(doc.assets || {});
       patchState(store, {
         book: doc.metadata,
         chapters: doc.chapters,
         notes: doc.notes || [],
-        assets: doc.assets || {},
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(doc.preferences || {}) },
         writingGoals: doc.writingGoals || initialState.writingGoals,
@@ -333,9 +337,6 @@ export const BookStore = signalStore(
     },
     toggleZenMode() {
       patchState(store, (state) => ({ ui: { ...state.ui, zenMode: !state.ui.zenMode } }));
-    },
-    toggleSpellCheckPanel() {
-      patchState(store, (state) => ({ ui: { ...state.ui, showSpellCheck: !state.ui.showSpellCheck } }));
     },
     togglePreview() {
       patchState(store, (state) => ({ ui: { ...state.ui, previewOpen: !state.ui.previewOpen } }));
@@ -427,7 +428,8 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    closeDocument() {
+    closeDocument(assetService: AssetService) {
+      assetService.clear();
       patchState(store, {
         book: null,
         chapters: [],
@@ -436,7 +438,6 @@ export const BookStore = signalStore(
         isDirty: false,
         past: [],
         future: [],
-        assets: {},
         ui: { ...initialState.ui, activeNav: 'manuscript' }
       });
     },
@@ -758,19 +759,6 @@ export const BookStore = signalStore(
         exportPrefs: { ...state.exportPrefs, ...prefs }
       }));
     },
-    updateAsset(id: string, data: string) {
-      patchState(store, (state) => ({
-        assets: { ...state.assets, [id]: data },
-        isDirty: true
-      }));
-    },
-    deleteAsset(id: string) {
-      patchState(store, (state) => {
-        const assets = { ...state.assets };
-        delete assets[id];
-        return { assets, isDirty: true };
-      });
-    },
     setReplaceQuery(query: string) {
       patchState(store, { replaceQuery: query });
     },
@@ -842,6 +830,7 @@ export const BookStore = signalStore(
     onInit(store) {
       const personalConfigService = inject(PersonalConfigService);
       const spellCheckService = inject(SpellCheckService);
+      const assetService = inject(AssetService);
 
       // Load initial personal config
       const saved = personalConfigService.load();

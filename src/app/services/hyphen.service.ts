@@ -72,11 +72,17 @@ export class HyphenService {
 
     const textKey = cacheKey + '|' + htmlOrText;
     const cached = this.cache.get(textKey);
-    if (cached !== undefined) return cached;
+    if (cached !== undefined) {
+      // LRU: move to end so it's evicted last
+      this.cache.delete(textKey);
+      this.cache.set(textKey, cached);
+      return cached;
+    }
 
     try {
       const result = hyphenator(htmlOrText);
       if (this.cache.size >= this.CACHE_MAX) {
+        // Evict least recently used (first entry in Map)
         const first = this.cache.keys().next().value;
         if (first !== undefined) this.cache.delete(first);
       }

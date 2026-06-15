@@ -53,10 +53,6 @@
     <app-tweaks-panel title="Tweaks"></app-tweaks-panel>
   }
 
-  @if (store.book() && store.ui.showSpellCheck()) {
-    <app-spellcheck-panel></app-spellcheck-panel>
-  }
-
   @if (showAbout()) {
     <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
   }

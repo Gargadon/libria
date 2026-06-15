@@ -1,11 +1,11 @@
 import { Component, inject, computed, signal, HostListener, effect, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
+import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
 import { TableContentDirective } from './table-content.directive';
-import { Block, NoteRole, NoteStatus, Footnote, Misspelling, sortFootnotesByPosition } from '../../models/book.models';
-import { SpellCheckService } from '../../services/spell-check.service';
+import { Block, NoteRole, NoteStatus, Footnote, sortFootnotesByPosition } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
@@ -59,8 +59,6 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
             <button class="ed__t" [attr.title]="'editor.insertImage' | translate" (click)="insertImage()"><span class="material-symbols-outlined">add_photo_alternate</span></button>
             <button class="ed__t" [attr.title]="'editor.insertFootnote' | translate" (click)="insertFootnote()"><span class="material-symbols-outlined">superscript</span></button>
             <span class="ed__tsep"></span>
-            <button class="ed__t" [class.ed__t--on]="store.ui.showSpellCheck()" [attr.title]="'editor.spellCheck' | translate" (click)="onToggleSpellCheck()"><span class="material-symbols-outlined">spellcheck</span></button>
-
             <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
               <i class="ed__statusDot" [class]="'ed__statusDot--' + status()"></i> {{ statusLabel() }}
             </button>
@@ -117,7 +115,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h1> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h1> 
                     }
                     @case ('title') { 
                       <h1 class="bk-title"
@@ -127,31 +125,31 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h1> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h1> 
                     }
                     @case ('subtitle') { 
                       <div class="bk-subtitle"
                         [style.font-family]="store.titleFontFamily()"
                         [style.text-align]="store.tweaks.titleAlignment()"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
                     }
                     @case ('author') { 
                       <div class="bk-author"
                         [style.font-family]="store.titleFontFamily()"
                         [style.text-align]="store.tweaks.titleAlignment()"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
                     }
                     @case ('publisher') { 
                       <div class="bk-publisher"
                         [style.font-family]="store.titleFontFamily()"
                         [style.text-align]="store.tweaks.titleAlignment()"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
                     }
                     @case ('dedication') { 
                       <div class="bk-dedication"
                         [style.font-family]="store.titleFontFamily()"
                         [style.text-align]="store.tweaks.titleAlignment()"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
                     }
                     @case ('chapter-num') { 
                       <div class="bk-chnum" 
@@ -161,7 +159,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></div> 
                     }
                     @case ('chapter-title') { 
                       <h2 class="bk-chtitle" 
@@ -171,7 +169,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h2> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h2> 
                     }                    @case ('h1') { 
                       <h2 class="bk-h1"
                         [style.font-family]="store.titleFontFamily()"
@@ -180,7 +178,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h2> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h2> 
                     }
                     @case ('h2') { 
                       <h3 class="bk-h2"
@@ -190,7 +188,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h3> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h3> 
                     }
                     @case ('h3') { 
                       <h4 class="bk-h3"
@@ -200,38 +198,38 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                         [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
                         [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                         [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h4> 
+                        contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></h4> 
                     }
                     @case ('first-p') { 
                       <p class="bk-first" [class.has-dropcap]="store.tweaks.dropCap()">
-                        <span contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="(b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)" style="outline: none;"></span>
+                        <span contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="(b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)" style="outline: none;"></span>
                       </p> 
                     }
                     @case ('p') { 
-                      <p class="bk-p" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></p> 
+                      <p class="bk-p" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></p> 
                     }
                     @case ('code') { 
-                      <pre class="bk-code"><code spellcheck="false" contenteditable="true" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre> 
+                      <pre class="bk-code"><code spellcheck="false" contenteditable="true" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre> 
                     }
                     @case ('epigraph') {
                       <div class="bk-epigraph">
-                        <blockquote class="bk-epigraph__q" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></blockquote>
+                        <blockquote class="bk-epigraph__q" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></blockquote>
                         <cite class="bk-epigraph__att" contenteditable="true" spellcheck="false" [appContenteditable]="b.attribution" (input)="onAttributionInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)"></cite>
                       </div>
                     }
                     @case ('verse') {
-                      <pre class="bk-verse"><code contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
+                      <pre class="bk-verse"><code contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
                     }
                     @case ('blockquote') { 
-                      <blockquote class="bk-quote" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></blockquote> 
+                      <blockquote class="bk-quote" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></blockquote> 
                     }
                     @case ('scene-break') { <div class="bk-break">{{ store.tweaks.sceneBreakType() === 'asterisks3' ? '* * *' : store.tweaks.sceneBreakType() === 'asterisks' ? '✦ ✦ ✦' : store.tweaks.sceneBreakType() === 'dots' ? '· · ·' : store.tweaks.sceneBreakType() === 'flourish' ? '— o —' : '' }}</div> }
                     @case ('page-break') { <div class="bk-page-break"><span>{{ 'editor.pageBreakLabel' | translate }}</span></div> }
                     @case ('image') {
                       <figure class="bk-image" #imageFigure>
-                        @if (b.src && store.assets()[b.src]) {
+                        @if (b.src && assetService.assets()[b.src]) {
                           <div class="bk-image__wrap">
-                            <img [src]="store.assets()[b.src]" alt="" class="bk-image__img"
+                            <img [src]="assetService.assets()[b.src]" alt="" class="bk-image__img"
                               [style.width.px]="b.width"
                               [style.height.px]="b.height"
                               [style.transform]="imageTransform(b)"
@@ -265,10 +263,10 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                       </figure>
                     }
                     @case ('list-unordered') {
-                      <ul class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ul>
+                      <ul class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ul>
                     }
                     @case ('list-ordered') {
-                      <ol class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" [spellErrors]="getBlockErrors($index)" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ol>
+                      <ol class="bk-list" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></ol>
                     }
                     @case ('table') {
                       <table class="bk-table" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appTableContent]="b.html" (input)="onTableInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></table>
@@ -329,21 +327,8 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
 })
 export class EditorComponent implements OnDestroy {
   readonly store = inject(BookStore);
+  readonly assetService = inject(AssetService);
   readonly translate = inject(TranslateService);
-  readonly spellCheck = inject(SpellCheckService);
-
-  readonly blockErrors = signal<Record<number, Misspelling[]>>({});
-  private spellCheckTimeout: any = null;
-  private chapterSpellCheckTimeout: any = null;
-
-  private readonly _spellWatch = effect(() => {
-    const chapter = this.store.activeChapter();
-    if (chapter) {
-      clearTimeout(this.chapterSpellCheckTimeout);
-      this.chapterSpellCheckTimeout = setTimeout(() => this.runSpellCheck(), 500);
-    }
-  });
-
   private readonly _footnoteWatch = effect(() => {
     const chapter = this.store.activeChapter();
     if (chapter?.footnotes?.length) {
@@ -368,9 +353,6 @@ export class EditorComponent implements OnDestroy {
     }, 100);
   });
 
-  getBlockErrors(blockIndex: number): Misspelling[] {
-    return this.blockErrors()[blockIndex] ?? [];
-  }
   readonly environment = environment;
   readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
@@ -494,6 +476,7 @@ export class EditorComponent implements OnDestroy {
   // ─── Drag selection across blocks ────────────────────────────────────────────
   private _anchorCaret: { node: Node; offset: number } | null = null;
   private _crossBlockSelect = false;
+  private _mouseMoveRafPending = false;
 
   readonly activeBlockType = computed(() => {
     const chapter = this.store.activeChapter();
@@ -522,7 +505,7 @@ export class EditorComponent implements OnDestroy {
           if (!file) continue;
           this._readImageFile(file).then(({ dataUrl, width, height }) => {
             const assetKey = 'img-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-            this.store.updateAsset(assetKey, dataUrl);
+            this.assetService.set(assetKey, dataUrl);
             const ch = this.store.activeChapter();
             const idx = this.lastFocusedIndex >= 0 ? this.lastFocusedIndex : (ch ? ch.body.length - 1 : 0);
             this.store.saveSnapshot();
@@ -603,45 +586,9 @@ export class EditorComponent implements OnDestroy {
     clearTimeout(this._storeUpdateTimeout);
     this._storeUpdateTimeout = setTimeout(() => {
       const text = element.innerText.replace(/\n$/, '');
-      const html = this.stripSpellErrors(element.innerHTML);
+      const html = element.innerHTML;
       this.store.updateChapterBlock(chapterId, blockIndex, text, html);
-      const current = this.blockErrors();
-      if (current[blockIndex]) {
-        const next = { ...current };
-        delete next[blockIndex];
-        this.blockErrors.set(next);
-      }
-      this.scheduleSpellCheck();
     }, 200);
-  }
-
-  onToggleSpellCheck(): void {
-    this.store.toggleSpellCheckPanel();
-  }
-
-  private stripSpellErrors(html: string): string {
-    if (!html.includes('spell-err')) return html;
-    return html.replace(/<span class="spell-err"[^>]*>/gi, '').replace(/<\/span>/gi, '');
-  }
-
-  private scheduleSpellCheck(): void {
-    clearTimeout(this.spellCheckTimeout);
-    this.spellCheckTimeout = setTimeout(() => {
-      this.runSpellCheck();
-    }, 1500);
-  }
-
-  private async runSpellCheck(): Promise<void> {
-    const chapter = this.store.activeChapter();
-    if (!chapter) return;
-    const lang = this.store.book()?.lang ?? 'en';
-    const errors = await this.spellCheck.checkChapter(chapter.body, lang);
-    const byBlock: Record<number, Misspelling[]> = {};
-    for (const err of errors) {
-      if (!byBlock[err.blockIndex]) byBlock[err.blockIndex] = [];
-      byBlock[err.blockIndex].push(err);
-    }
-    this.blockErrors.set(byBlock);
   }
 
   // ─── Mouse handlers for cross-block drag selection ─────────────────────────
@@ -676,37 +623,45 @@ export class EditorComponent implements OnDestroy {
       this._crossBlockSelect = false;
       return;
     }
+    if (this._mouseMoveRafPending) return;
+    this._mouseMoveRafPending = true;
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    requestAnimationFrame(() => {
+      this._mouseMoveRafPending = false;
+      if (!this._anchorCaret) return;
 
-    const currentRange = document.caretRangeFromPoint(event.clientX, event.clientY);
-    if (!currentRange) return;
+      const currentRange = document.caretRangeFromPoint(clientX, clientY);
+      if (!currentRange) return;
 
-    const anchorEditable = this._contenteditableOf(this._anchorCaret.node);
-    const currentEditable = this._contenteditableOf(currentRange.startContainer);
+      const anchorEditable = this._contenteditableOf(this._anchorCaret.node);
+      const currentEditable = this._contenteditableOf(currentRange.startContainer);
 
-    if (anchorEditable !== currentEditable) {
-      this._crossBlockSelect = true;
-    }
-
-    if (this._crossBlockSelect) {
-      const sel = window.getSelection();
-      if (!sel) return;
-
-      const newRange = document.createRange();
-      const cmp = this._anchorCaret.node.compareDocumentPosition(currentRange.startContainer);
-      const isSame = this._anchorCaret.node === currentRange.startContainer;
-      const isForward = !!(cmp & Node.DOCUMENT_POSITION_FOLLOWING) || isSame;
-
-      if (isForward) {
-        newRange.setStart(this._anchorCaret.node, this._anchorCaret.offset);
-        newRange.setEnd(currentRange.startContainer, currentRange.startOffset);
-      } else {
-        newRange.setStart(currentRange.startContainer, currentRange.startOffset);
-        newRange.setEnd(this._anchorCaret.node, this._anchorCaret.offset);
+      if (anchorEditable !== currentEditable) {
+        this._crossBlockSelect = true;
       }
 
-      sel.removeAllRanges();
-      sel.addRange(newRange);
-    }
+      if (this._crossBlockSelect) {
+        const sel = window.getSelection();
+        if (!sel) return;
+
+        const newRange = document.createRange();
+        const cmp = this._anchorCaret.node.compareDocumentPosition(currentRange.startContainer);
+        const isSame = this._anchorCaret.node === currentRange.startContainer;
+        const isForward = !!(cmp & Node.DOCUMENT_POSITION_FOLLOWING) || isSame;
+
+        if (isForward) {
+          newRange.setStart(this._anchorCaret.node, this._anchorCaret.offset);
+          newRange.setEnd(currentRange.startContainer, currentRange.startOffset);
+        } else {
+          newRange.setStart(currentRange.startContainer, currentRange.startOffset);
+          newRange.setEnd(this._anchorCaret.node, this._anchorCaret.offset);
+        }
+
+        sel.removeAllRanges();
+        sel.addRange(newRange);
+      }
+    });
   }
 
   @HostListener('mouseup', ['$event'])
@@ -1021,12 +976,6 @@ export class EditorComponent implements OnDestroy {
         break;
       }
 
-      // ── F7: toggle spell check panel ────────────────────────────────────
-      case 'F7': {
-        event.preventDefault();
-        this.onToggleSpellCheck();
-        break;
-      }
     }
   }
 
@@ -1352,7 +1301,7 @@ export class EditorComponent implements OnDestroy {
       if (!file) return;
       this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, dataUrl);
+        this.assetService.set(assetKey, dataUrl);
         const chapterId = this.store.activeChapterId();
         const index = this.lastFocusedIndex >= 0
           ? this.lastFocusedIndex
@@ -1373,7 +1322,7 @@ export class EditorComponent implements OnDestroy {
       if (!file) return;
       this._readImageFile(file).then(({ dataUrl, width, height }) => {
         const assetKey = 'img-' + Date.now().toString(36);
-        this.store.updateAsset(assetKey, dataUrl);
+        this.assetService.set(assetKey, dataUrl);
         this.store.saveSnapshot();
         this.store.updateImageSize(chapterId, blockIndex, width, height);
         this.store.setImageSrc(chapterId, blockIndex, assetKey);

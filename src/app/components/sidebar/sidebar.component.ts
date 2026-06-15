@@ -1,5 +1,6 @@
 import { Component, inject, computed, signal, HostListener, OnInit, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
+import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Book, ChapterKind } from '../../models/book.models';
@@ -424,9 +425,9 @@ import { environment } from '../../../environments/environment';
           <div class="sb__content sb__content--padding">
             <div class="sb__section">{{ 'sidebar.cover' | translate }}</div>
             <div class="sb__cover-zone">
-              @if (store.assets()['cover']) {
+              @if (assetService.assets()['cover']) {
                 <div class="sb__cover-preview">
-                  <img [src]="store.assets()['cover']" [alt]="'sidebar.cover' | translate">
+                  <img [src]="assetService.assets()['cover']" [alt]="'sidebar.cover' | translate">
                   <button class="sb__cover-del" (click)="removeCover()">×</button>
                 </div>
               } @else {
@@ -562,9 +563,9 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
             @if (store.exportPrefs.includeCover()) {
-              @if (store.assets()['cover']) {
+              @if (assetService.assets()['cover']) {
                 <div class="sb__cover-chip sb__cover-chip--ok">
-                  <img [src]="store.assets()['cover']" class="sb__cover-chip-img" alt="">
+                  <img [src]="assetService.assets()['cover']" class="sb__cover-chip-img" alt="">
                   <span>{{ 'sidebar.coverReady' | translate }}</span>
                 </div>
               } @else {
@@ -849,6 +850,7 @@ import { environment } from '../../../environments/environment';
 })
 export class SidebarComponent implements OnInit {
   readonly store = inject(BookStore);
+  readonly assetService = inject(AssetService);
   readonly exportService = inject(ExportService);
   readonly importService = inject(ImportService);
   readonly spellCheckService = inject(SpellCheckService);
@@ -975,14 +977,14 @@ export class SidebarComponent implements OnInit {
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
-        this.store.updateAsset('cover', e.target.result);
+        this.assetService.set('cover', e.target.result);
       };
       reader.readAsDataURL(file);
     }
   }
 
   removeCover() {
-    this.store.deleteAsset('cover');
+    this.assetService.remove('cover');
   }
 
   onAvatarFile(event: any) {
@@ -1091,8 +1093,7 @@ export class SidebarComponent implements OnInit {
   );
 
   readonly imageAssets = computed(() => {
-    const assets = this.store.assets();
-    const chapter = this.store.activeChapter();
+    const assets = this.assetService.assets();
     return Object.entries(assets)
       .filter(([key]) => key.startsWith('img-'))
       .map(([key, data]) => ({ key, data }));
@@ -1107,7 +1108,7 @@ export class SidebarComponent implements OnInit {
   }
 
   deleteAttachment(assetKey: string) {
-    this.store.deleteAsset(assetKey);
+    this.assetService.remove(assetKey);
   }
 
   editNumber(chapter: any, event: Event) {

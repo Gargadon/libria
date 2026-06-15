@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { BookStore } from '../store/book.store';
+import { AssetService } from './asset.service';
 import { LibriaDocument, RecentProject } from '../models/book.models';
 import { RecentProjectsService } from './recent-projects.service';
 import { environment } from '../../environments/environment';
@@ -7,6 +8,7 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class FileService {
   readonly store = inject(BookStore);
+  readonly assetService = inject(AssetService);
   readonly recentProjects = inject(RecentProjectsService);
   currentPath: string | null = null;
 
@@ -29,7 +31,7 @@ export class FileService {
       },
       chapters: this.store.chapters(),
       notes: this.store.notes(),
-      assets: this.store.assets(),
+      assets: this.assetService.getAll(),
       writingGoals: this.store.writingGoals()
     };
   }
@@ -103,7 +105,7 @@ export class FileService {
     try {
       const api = window.electronAPI!;
       const text = await api.readFile(path);
-      this.store.loadDocument(JSON.parse(text));
+      this.store.loadDocument(JSON.parse(text), this.assetService);
       this.currentPath = path;
       this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
     } catch (err) {
@@ -118,7 +120,7 @@ export class FileService {
         const path = await api.openDialog();
         if (!path) return;
         const text = await api.readFile(path);
-        this.store.loadDocument(JSON.parse(text));
+        this.store.loadDocument(JSON.parse(text), this.assetService);
         this.currentPath = path;
         this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
       } catch (err) {
@@ -137,7 +139,7 @@ export class FileService {
         });
         const file = await handle.getFile();
         const text = await file.text();
-        this.store.loadDocument(JSON.parse(text));
+        this.store.loadDocument(JSON.parse(text), this.assetService);
         (window as any).__libriaFileHandle = handle;
         if (handle.name) {
           this.recentProjects.add(handle.name, this.store.book()?.title || handle.name);
@@ -153,7 +155,7 @@ export class FileService {
         const file = e.target.files[0];
         if (!file) return;
         const text = await file.text();
-        this.store.loadDocument(JSON.parse(text));
+        this.store.loadDocument(JSON.parse(text), this.assetService);
         this.recentProjects.add(file.name, this.store.book()?.title || file.name);
       };
       input.click();
@@ -169,6 +171,6 @@ export class FileService {
   closeProject() {
     this.currentPath = null;
     (window as any).__libriaFileHandle = null;
-    this.store.closeDocument();
+    this.store.closeDocument(this.assetService);
   }
 }
