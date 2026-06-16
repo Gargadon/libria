@@ -2,16 +2,16 @@ import { Component, inject, computed, signal, effect, untracked, ElementRef, Vie
 import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
-import { Chapter, Footnote, Block, sortFootnotesByPosition } from '../../models/book.models';
-import { HyphenService } from '../../services/hyphen.service';
+import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
 import { ExportService } from '../../services/export.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { BlockViewComponent } from '../block-view/block-view.component';
 
 @Component({
   selector: 'app-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, BlockViewComponent],
   template: `
     <style [innerHTML]="printStyles()"></style>
 
@@ -242,96 +242,11 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
           [class.kp--justify]="store.tweaks.justifyText()"
           [class.kp-content--hyphen]="store.tweaks.hyphenation()">
           
-          @for (b of chapter.body; track $index) {
-            @let bIdx = $index;
-            @switch (b.type) {
-              @case ('halftitle') { <h1 class="kp-halftitle"
-                [style.font-family]="store.titleFontFamily()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                [style.text-align]="store.tweaks.titleAlignment()">{{ b.text }}</h1> }
-              @case ('title') { <h1 class="kp-title"
-                [style.font-family]="store.titleFontFamily()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
-                [style.text-align]="store.tweaks.titleAlignment()">{{ b.text }}</h1> }
-              @case ('subtitle') { <div class="kp-sub">{{ b.text }}</div> }
-              @case ('author') { <div class="kp-author">{{ b.text }}</div> }
-              @case ('publisher') { <div class="kp-pub">{{ b.text }}</div> }
-              @case ('dedication') { 
-                <div class="kp-ded">
-                  @for (line of b.text?.split('\\n'); track $index) {
-                    <div>{{ line }}</div>
-                  }
-                </div> 
-              }
-              @case ('chapter-num') { <div class="kp-chnum" 
-                [style.font-family]="store.titleFontFamily()"
-                [style.font-size.px]="ptToPx(store.tweaks.titleFontSize()) * 0.8"
-                [style.text-align]="store.tweaks.titleAlignment()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</div> }
-              @case ('chapter-title') { <h2 class="kp-chtitle" 
-                [style.font-family]="store.titleFontFamily()"
-                [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
-                [style.text-align]="store.tweaks.titleAlignment()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
-              @case ('h1') { <h2 class="kp-h1" 
-                [style.font-family]="store.titleFontFamily()"
-                [style.text-align]="store.tweaks.titleAlignment()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h2> }
-              @case ('h2') { <h3 class="kp-h2"
-                [style.font-family]="store.titleFontFamily()"
-                [style.text-align]="store.tweaks.titleAlignment()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h3> }
-              @case ('h3') { <h4 class="kp-h3"
-                [style.font-family]="store.titleFontFamily()"
-                [style.text-align]="store.tweaks.titleAlignment()"
-                [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
-                [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
-                [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'">{{ b.text }}</h4> }
-              @case ('first-p') { 
-                <p class="kp-first" [attr.lang]="store.domLang()" [class.has-dropcap]="store.tweaks.dropCap()">
-                  @if (b.html) {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.html))"></span>} @else {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml((b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text))"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container>
-                </p> 
-              }
-              @case ('p') { <p class="kp-p" [attr.lang]="store.domLang()">@if (b.html) {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.html))"></span>} @else {<span [innerHTML]="trustHtml(hyphenService.hyphenateHtml(b.text || ''))"></span>} <ng-container *ngTemplateOutlet="noteRefTpl; context: { chapter, bIdx, showNotes }"></ng-container></p> }
-              @case ('blockquote') { <blockquote class="kp-quote">@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</blockquote> }
-              @case ('epigraph') {
-                <div class="kp-epigraph">
-                  <blockquote class="kp-epigraph__q">@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</blockquote>
-                  @if (b.attribution) {<cite class="kp-epigraph__att">— {{ b.attribution }}</cite>}
-                </div>
-              }
-              @case ('verse') { <pre class="kp-verse"><code>@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</code></pre> }
-              @case ('code') { <pre class="kp-code"><code>@if (b.html) {<span [innerHTML]="trustHtml(b.html)"></span>} @else {{{ b.text }}}</code></pre> }
-              @case ('scene-break') { <div class="kp-break">{{ sceneBreakGlyph() }}</div> }
-              @case ('page-break') { <div class="kp-page-break"><span></span></div> }
-              @case ('image') {
-                @if (b.src && assetService.assets()[b.src]) {
-                  <figure class="kp-image"><img [src]="assetService.assets()[b.src]" alt="" [style.width.px]="b.width" [style.height.px]="b.height" [style.transform]="imageTransform(b)" style="max-width:100%;height:auto;display:block;margin:0 auto;">@if (b.caption) {<figcaption class="kp-image__cap">{{ b.caption }}</figcaption>}</figure>
-                }
-              }
-              @case ('list-unordered') {
-                <ul class="kp-list" [innerHTML]="trustHtml(b.html || b.text)"></ul>
-              }
-              @case ('list-ordered') {
-                <ol class="kp-list" [innerHTML]="trustHtml(b.html || b.text)"></ol>
-              }
-              @case ('table') {
-                <div class="kp-table-wrap" [innerHTML]="safeHtml(b.html || b.text)"></div>
-              }
-              @default {
-                <div>[{{ b.type }}]</div>
+          @for (b of chapter.body; track $index; let bIdx = $index) {
+            <app-block-view [block]="b" [blockIndex]="bIdx" />
+            @if (showNotes) {
+              @for (n of blockNotes(chapter.id, bIdx); track n.id) {
+                <span class="kp-note-ref">[*]</span>
               }
             }
           }
@@ -364,57 +279,18 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
         </div>
       </ng-template>
 
-      <ng-template #noteRefTpl let-chapter="chapter" let-bIdx="bIdx" let-showNotes="showNotes">
-        @if (showNotes) {
-          @for (n of blockNotes(chapter.id, bIdx); track n.id) {
-            <span class="kp-note-ref">[*]</span>
-          }
-        }
-      </ng-template>
     </section>
   `,
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
   readonly assetService = inject(AssetService);
-  readonly hyphenService = inject(HyphenService);
   readonly exportService = inject(ExportService);
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
-  readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
   private _chaptersDebounce: any = null;
   readonly chapters = signal<Chapter[]>([]);
-
-  private _safeHtmlCache = new Map<string, SafeHtml>();
-  private _trustHtmlCache = new Map<string, SafeHtml>();
-
-  safeHtml(html: string) {
-    const cached = this._safeHtmlCache.get(html);
-    if (cached !== undefined) return cached;
-    const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
-    const result = this.sanitizer.bypassSecurityTrustHtml(normalized);
-    if (this._safeHtmlCache.size > 200) this._safeHtmlCache.clear();
-    this._safeHtmlCache.set(html, result);
-    return result;
-  }
-
-  trustHtml(html: string) {
-    const cached = this._trustHtmlCache.get(html);
-    if (cached !== undefined) return cached;
-    const result = this.sanitizer.bypassSecurityTrustHtml(html);
-    if (this._trustHtmlCache.size > 500) this._trustHtmlCache.clear();
-    this._trustHtmlCache.set(html, result);
-    return result;
-  }
-
-  imageTransform(b: Block): string {
-    const parts: string[] = [];
-    if (b.rotation && b.rotation !== 0) parts.push(`rotate(${b.rotation}deg)`);
-    if (b.flipH) parts.push('scaleX(-1)');
-    if (b.flipV) parts.push('scaleY(-1)');
-    return parts.join(' ') || 'none';
-  }
 
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
@@ -466,6 +342,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   readonly chapterNotes = (id: string) => this.store.notes().filter(n => n.chapterId === id);
   readonly blockNotes = (id: string, idx: number) => this.store.notes().filter(n => n.chapterId === id && n.blockIndex === idx);
+  readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
   readonly printStyles = computed(() => {
     const size = this.store.pageSize();
@@ -730,11 +607,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     this.realChapterPages.set(chapterPages);
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
   }
-
-  readonly sceneBreakGlyph = computed(() => {
-    const t = this.store.tweaks.sceneBreakType();
-    return t === 'asterisks' ? '✦ ✦ ✦' : t === 'asterisks3' ? '* * *' : t === 'dots' ? '· · ·' : t === 'flourish' ? '— o —' : '';
-  });
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
 

@@ -9,6 +9,7 @@ import { Block, NoteRole, NoteStatus, Footnote, sortFootnotesByPosition } from '
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
+import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockStyles, ptToPx } from '../../utils/block-maps';
 
 @Component({
   selector: 'app-editor',
@@ -223,7 +224,7 @@ import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
                     @case ('blockquote') { 
                       <blockquote class="bk-quote" contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></blockquote> 
                     }
-                    @case ('scene-break') { <div class="bk-break">{{ store.tweaks.sceneBreakType() === 'asterisks3' ? '* * *' : store.tweaks.sceneBreakType() === 'asterisks' ? '✦ ✦ ✦' : store.tweaks.sceneBreakType() === 'dots' ? '· · ·' : store.tweaks.sceneBreakType() === 'flourish' ? '— o —' : '' }}</div> }
+                    @case ('scene-break') { <div class="bk-break">{{ sceneBreakGlyph(store.tweaks.sceneBreakType()) }}</div> }
                     @case ('page-break') { <div class="bk-page-break"><span>{{ 'editor.pageBreakLabel' | translate }}</span></div> }
                     @case ('image') {
                       <figure class="bk-image" #imageFigure>
@@ -357,6 +358,8 @@ export class EditorComponent implements OnDestroy {
   readonly sortFootnotesByPosition = sortFootnotesByPosition;
 
   ptToPx(pt: number): number { return pt * 96 / 72; }
+  sceneBreakGlyph(t: string): string { return sbGlyph(t); }
+  imageTransform(b: Block): string { return imgTransform(b); }
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;
@@ -1369,14 +1372,6 @@ export class EditorComponent implements OnDestroy {
   onAttributionInput(chapterId: string, blockIndex: number, event: Event) {
     const el = event.target as HTMLElement;
     this.store.updateBlockAttribution(chapterId, blockIndex, el.innerText);
-  }
-
-  imageTransform(b: Block): string {
-    const parts: string[] = [];
-    if (b.rotation && b.rotation !== 0) parts.push(`rotate(${b.rotation}deg)`);
-    if (b.flipH) parts.push('scaleX(-1)');
-    if (b.flipV) parts.push('scaleY(-1)');
-    return parts.join(' ') || 'none';
   }
 
   rotateImage(chapterId: string, blockIndex: number, b: Block, delta: number) {

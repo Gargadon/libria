@@ -4,6 +4,8 @@ import { BookStore } from '../store/book.store';
 import { sortFootnotesByPosition, Block } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import { AssetService } from './asset.service';
+import { blockToHtml, chapterFootnotesHtml } from '../utils/block-html';
+import { pageSizeCss, pageSizeInches, sceneBreakGlyph, escapeHtml as _escapeHtml, xhtmlSafe, ptToPx, imageExt as _imageExt } from '../utils/block-maps';
 import type JSZip from 'jszip';
 import type {
   Paragraph,
@@ -296,18 +298,6 @@ ${dropCapStyles}`);
     }
   }
 
-  private pageSizeToInches(size: string): { width: number; height: number } {
-    const map: Record<string, { width: number; height: number }> = {
-      '5x8':   { width: 5,     height: 8     },
-      '6x9':   { width: 6,     height: 9     },
-      'Letter':{ width: 8.5,   height: 11    },
-      'A5':    { width: 5.827, height: 8.268 },
-      'A4':    { width: 8.268, height: 11.693},
-      'A6':    { width: 4.134, height: 5.827 },
-    };
-    return map[size] || map['5x8'];
-  }
-
   buildPrintHtml(
     book: any,
     chapters: any[],
@@ -317,25 +307,10 @@ ${dropCapStyles}`);
     fontsHref?: string,
     assets: Record<string, string> = {},
   ): string {
-    const pageSizeCss: Record<string, string> = {
-      '5x8':   '5in 8in',
-      '6x9':   '6in 9in',
-      'Letter':'8.5in 11in',
-      'A5':    '148mm 210mm',
-      'A4':    '210mm 297mm',
-      'A6':    '105mm 148mm',
-    };
-    const pageSize = pageSizeCss[book.paperSize || '5x8'] || '5in 8in';
+    const pageSize = pageSizeCss(book.paperSize || '5x8');
 
     // Fonts are injected by the main process from public/fonts.css (local WOFF2).
-    const sceneGlyph: Record<string, string> = {
-      asterisks: '✦ ✦ ✦',
-      asterisks3: '* * *',
-      dots: '· · ·',
-      flourish: '— o —',
-      none: '',
-    };
-    const brk = sceneGlyph[t.sceneBreakType] ?? '* * *';
+    const brk = sceneBreakGlyph(t.sceneBreakType);
 
     const pGap   = `${(t.paragraphSpacing / t.fontSize).toFixed(3)}em`;
     const indent = t.indentFirstLine ? `${t.indentSize}cm` : '0';
@@ -735,63 +710,13 @@ ${t.dropCap ? `
         idx > 0 && ch.forceOddPage ? 'ch--recto' : '',
       ].filter(Boolean).join(' ');
 
-      const body = ch.body.map((b: any) => {
-        const raw: string = b.html ?? this.escapeHtml(b.text ?? '');
-        const hyph = (s: string) => this.hyphenService.hyphenateHtml(s);
-        switch (b.type) {
-          case 'halftitle':     return `<h1 class="kp-halftitle">${raw}</h1>`;
-          case 'title':         return `<h1 class="kp-title">${raw}</h1>`;
-          case 'subtitle':      return `<div class="kp-sub">${raw}</div>`;
-          case 'author':        return `<div class="kp-author">${raw}</div>`;
-          case 'publisher':     return `<div class="kp-pub">${raw}</div>`;
-          case 'dedication': {
-            const lines = (b.text ?? '').split('\n')
-              .map((l: string) => `<div>${this.escapeHtml(l) || '&nbsp;'}</div>`)
-              .join('');
-            return `<div class="kp-ded">${lines}</div>`;
-          }
-          case 'chapter-num':   return `<div class="kp-chnum">${raw}</div>`;
-          case 'chapter-title': return `<h2 class="kp-chtitle">${raw}</h2>`;
-          case 'h1':            return `<h2 class="kp-h1">${raw}</h2>`;
-          case 'h2':            return `<h3 class="kp-h2">${raw}</h3>`;
-          case 'h3':            return `<h4 class="kp-h3">${raw}</h4>`;
-          case 'first-p': {
-            const dc = t.dropCap ? ' has-dropcap' : '';
-            return `<p class="kp-first${dc}">${hyph(raw)}</p>`;
-          }
-          case 'p':             return `<p class="kp-p">${hyph(raw)}</p>`;
-          case 'blockquote':    return `<blockquote class="kp-quote">${hyph(raw)}</blockquote>`;
-          case 'epigraph': {
-            const att = b.attribution ? this.escapeHtml(b.attribution) : '';
-            return `<div class="kp-epigraph"><blockquote class="kp-epigraph__q">${hyph(raw)}</blockquote>${att ? `<cite class="kp-epigraph__att">— ${att}</cite>` : ''}</div>`;
-          }
-          case 'verse':         return `<pre class="kp-verse"><code>${raw}</code></pre>`;
-          case 'code':          return `<pre class="kp-code"><code>${raw}</code></pre>`;
-          case 'scene-break':   return `<div class="kp-break">${brk}</div>`;
-          case 'page-break':    return `<div class="kp-page-break"></div>`;
-          case 'image': {
-            const imgSrc = b.src ? (assets[b.src] ?? '') : '';
-            const imgStyle = this.imageStyle(b);
-            const cap = b.caption ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${this.escapeHtml(b.caption)}</figcaption>` : '';
-            return imgSrc ? `<figure class="kp-image"><img src="${imgSrc}" style="${imgStyle}" alt="">${cap}</figure>` : '';
-          }
-          case 'list-unordered': return `<ul class="kp-list">${raw}</ul>`;
-          case 'list-ordered':   return `<ol class="kp-list">${raw}</ol>`;
-          case 'table':          return `<div class="kp-table-wrap">${this.tableHtml(raw)}</div>`;
-          default:              return '';
-        }
-      }).join('\n');
+      const body = ch.body.map((b: any) => blockToHtml(b, {
+        tweaks: t,
+        assets,
+        hyphenateHtml: (s: string) => this.hyphenService.hyphenateHtml(s),
+      })).join('\n');
 
-      let fnHtml = '';
-      const fnsSorted = sortFootnotesByPosition(ch.footnotes, ch.body);
-      if (fnsSorted.length) {
-        fnHtml = `<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`;
-        fnsSorted.forEach((fn: any, fi: number) => {
-          const fnText = this.escapeHtml(fn.content || '');
-          fnHtml += `<div class="kp-fnpanel-item"><span class="kp-fnpanel-num">${fi + 1}.</span> <span class="kp-fnpanel-text">${fnText}</span></div>`;
-        });
-        fnHtml += `</div>`;
-      }
+      const fnHtml = chapterFootnotesHtml(ch.footnotes, ch.body);
       return `<div class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
     }).join('\n\n');
 
@@ -846,9 +771,10 @@ ${bodyContent}
     return { fontFaceCss, fontManifest };
   }
 
-  private escapeHtml(str: string): string {
-    return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+  private escapeHtml(str: string): string { return _escapeHtml(str); }
+  private sceneGlyphText(type: string): string { return sceneBreakGlyph(type); }
+  private imageExt(dataUrl: string) { return _imageExt(dataUrl); }
+  private pageSizeToInches(size: string): { width: number; height: number } { return pageSizeInches(size); }
 
   private xhtmlSafe(str: string): string {
     return str.replace(/<br\s*\/?>/gi, '<br/>').replace(/&nbsp;/g, '&#160;');
@@ -1172,17 +1098,6 @@ ${bodyContent}
     });
   }
 
-  private sceneGlyphText(type: string): string {
-    const m: Record<string, string> = {
-      asterisks: '✦ ✦ ✦',
-      asterisks3: '* * *',
-      dots: '· · ·',
-      flourish: '— o —',
-      none: '',
-    };
-    return m[type] ?? '* * *';
-  }
-
   private imageStyle(b: Block): string {
     const parts = ['max-width:100%;display:block;margin:0 auto'];
     if (b.width && b.height) {
@@ -1213,14 +1128,6 @@ ${bodyContent}
       montserrat: 'Montserrat',
     };
     return m[key] || 'Spectral';
-  }
-
-  private imageExt(dataUrl: string) {
-    const m = dataUrl.match(/^data:image\/(\w+);/);
-    const ext = m?.[1] ?? 'png';
-    if (ext === 'jpeg') return 'jpg';
-    if (ext === 'svg+xml') return 'png';
-    return ext;
   }
 
   private align(val: string) {
