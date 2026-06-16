@@ -1322,7 +1322,10 @@ ${bodyContent}
   }
 
   private async downloadFile(blob: Blob, filename: string) {
-    if (!this._saveAs) this._saveAs = (await import('file-saver')).saveAs;
+    if (!this._saveAs) {
+      const mod: any = await import('file-saver');
+      this._saveAs = mod.saveAs ?? mod.default?.saveAs ?? mod.default;
+    }
     this._saveAs(blob, filename);
   }
 
