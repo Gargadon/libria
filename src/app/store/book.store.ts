@@ -269,12 +269,13 @@ export const BookStore = signalStore(
     },
     loadDocument(doc: LibriaDocument, assetService: AssetService) {
       assetService.load(doc.assets || {});
+      const personalMode = store.personalConfig().mode;
       patchState(store, {
         book: doc.metadata,
         chapters: doc.chapters,
         notes: doc.notes || [],
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
-        tweaks: { ...store.tweaks(), ...(doc.preferences || {}) },
+        tweaks: { ...store.tweaks(), ...(doc.preferences || {}), mode: personalMode },
         writingGoals: doc.writingGoals || initialState.writingGoals,
         isDirty: false,
         ui: initialState.ui

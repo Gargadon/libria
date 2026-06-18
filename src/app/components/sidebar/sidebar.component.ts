@@ -537,7 +537,7 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <div class="sb__export-card">
-              <div class="sb__export-icon" style="background: var(--terra); color: white;">PDF</div>
+              <div class="sb__export-icon" style="background: var(--terra); color: var(--paper);">PDF</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
                 <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>

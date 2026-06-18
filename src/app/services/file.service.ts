@@ -22,10 +22,11 @@ export class FileService {
   }
 
   private buildDoc(): LibriaDocument {
+    const { mode: _mode, ...rest } = this.store.tweaks();
     return {
       libriaVersion: environment.version,
       metadata: this.store.book(),
-      preferences: this.store.tweaks(),
+      preferences: { ...rest, mode: undefined as any },
       session: {
         lastActiveChapterId: this.store.activeChapterId()
       },

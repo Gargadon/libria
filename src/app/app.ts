@@ -61,6 +61,17 @@ export class App {
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);
 
+    // Apply saved theme mode immediately before first render
+    try {
+      const raw = localStorage.getItem('libria-personal-config');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved.mode === 'dark') {
+          document.body.classList.add('app--dark');
+        }
+      }
+    } catch {}
+
     effect(() => {
       const lang = this.store.personalConfig().language;
       if (lang) {
@@ -93,6 +104,11 @@ export class App {
         : (book.title.replace(/\s+/g, '_') + '.libria');
       const prefix = this.store.isDirty() ? '* ' : '';
       document.title = 'Libria - ' + prefix + fileName;
+    });
+
+    effect(() => {
+      const mode = this.store.tweaks().mode;
+      document.body.classList.toggle('app--dark', mode === 'dark');
     });
   }
 

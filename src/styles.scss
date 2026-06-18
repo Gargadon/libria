@@ -1248,7 +1248,7 @@ app-welcome {
 
 .sb__btn-primary {
   background: var(--ink);
-  color: white;
+  color: var(--paper);
   border: 0;
   border-radius: 6px;
   padding: 6px 12px;
@@ -1946,7 +1946,7 @@ app-welcome {
   position: absolute;
   right: 100%;
   margin-right: 12px;
-  top: 0;
+  top: 4px;
   display: none;
   flex-direction: column;
   align-items: stretch;
@@ -1956,6 +1956,8 @@ app-welcome {
   padding: 2px;
   z-index: 10;
   white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .ed__block-actions::after {
@@ -1980,6 +1982,12 @@ app-welcome {
   color: var(--ink-soft);
   cursor: pointer;
   outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ed__block-actions select::selection {
+  background: transparent;
 }
 
 .ed__end {

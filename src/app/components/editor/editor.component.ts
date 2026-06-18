@@ -673,6 +673,14 @@ export class EditorComponent implements OnDestroy {
     this._crossBlockSelect = false;
   }
 
+  @HostListener('keydown', ['$event'])
+  onEditorKeyDown(event: KeyboardEvent) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      this._selectAllBlocks();
+    }
+  }
+
   // ─── Key handler ────────────────────────────────────────────────────────────
 
   private _nativeBlocks = new Set(['list-ordered', 'list-unordered', 'table']);
@@ -700,12 +708,6 @@ export class EditorComponent implements OnDestroy {
       this._focusAfterHistory();
       return;
     }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-      event.preventDefault();
-      this._selectAllBlocks();
-      return;
-    }
-
     const el = event.target as HTMLElement;
 
     switch (event.key) {
@@ -1061,15 +1063,33 @@ export class EditorComponent implements OnDestroy {
     const doc = document.querySelector('.ed__doc');
     if (!doc) return;
 
-    const editables = doc.querySelectorAll<HTMLElement>('[contenteditable="true"]');
-    if (editables.length === 0) return;
-
     const sel = window.getSelection();
     if (!sel) return;
 
+    const walker = document.createTreeWalker(
+      doc,
+      NodeFilter.SHOW_TEXT,
+      (node: Node) => {
+        let el = (node as Text).parentElement;
+        while (el) {
+          if (el.getAttribute?.('contenteditable') === 'true') return NodeFilter.FILTER_ACCEPT;
+          el = el.parentElement;
+        }
+        return NodeFilter.FILTER_SKIP;
+      }
+    );
+
+    const textNodes: Text[] = [];
+    let n: Text | null;
+    while ((n = walker.nextNode() as Text | null)) {
+      textNodes.push(n);
+    }
+
+    if (textNodes.length === 0) return;
+
     const range = document.createRange();
-    range.setStart(editables[0], 0);
-    range.setEnd(editables[editables.length - 1], editables[editables.length - 1].childNodes.length);
+    range.setStart(textNodes[0], 0);
+    range.setEnd(textNodes[textNodes.length - 1], textNodes[textNodes.length - 1].length);
 
     sel.removeAllRanges();
     sel.addRange(range);
