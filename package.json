@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -44,6 +44,7 @@
     "dictionary-pt": "^4.0.0",
     "docx": "^9.6.1",
     "electron": "^42.4.1",
+    "electron-updater": "^6.8.9",
     "file-saver": "^2.0.5",
     "hyphen": "^1.14.1",
     "jszip": "^3.10.1",

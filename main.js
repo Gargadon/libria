@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { spawnSync } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 
 function findGsPath() {
   const plat = process.platform;
@@ -103,6 +104,9 @@ function createWindow() {
 
   // --- Spell checker setup ---
   const session = mainWindow.webContents.session;
+  session.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'local-fonts');
+  });
   session.setSpellCheckerEnabled(true);
   session.setSpellCheckerLanguages(['es-ES']);
   const customWords = loadCustomDictionary();
@@ -270,10 +274,69 @@ function setupHyphenation() {
   }
 }
 
+function setupAutoUpdater() {
+  // Never auto-download — we ask the user first
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+
+  autoUpdater.on('update-available', (info) => {
+    const isLinux = process.platform === 'linux';
+
+    if (isLinux) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Nueva versión disponible',
+        message: `Libria ${info.version} está disponible`,
+        detail: 'Busca la nueva versión en tu gestor de paquetes o descárgala desde:\ngithub.com/Gargadon/libria/releases',
+        buttons: ['Entendido'],
+      });
+      return;
+    }
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      title: 'Nueva versión disponible',
+      message: `Libria ${info.version} está disponible`,
+      detail: `Versión actual: ${app.getVersion()}\n\n${info.releaseNotes || ''}`.trim(),
+      buttons: ['Descargar e instalar', 'Más tarde'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.downloadUpdate();
+    });
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Listo para instalar',
+      message: 'La actualización se instalará al reiniciar Libria',
+      buttons: ['Reiniciar ahora', 'Más tarde'],
+      defaultId: 0,
+      cancelId: 1,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.quitAndInstall();
+      } else {
+        autoUpdater.autoInstallOnAppQuit = true;
+      }
+    });
+  });
+
+  // Errors silenciosos — no interrumpir al usuario si falla la conexión
+  autoUpdater.on('error', (err) => {
+    console.error('[updater]', err.message);
+  });
+
+  // Comprobar 5 segundos después de arrancar para no bloquear la carga
+  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+}
+
 app.whenReady().then(() => {
   setupHyphenation();
   buildMenu();
   createWindow();
+  if (app.isPackaged) setupAutoUpdater();
 });
 
 app.on('window-all-closed', () => {

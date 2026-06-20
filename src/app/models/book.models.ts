@@ -32,6 +32,8 @@ export function sortFootnotesByPosition(footnotes: Footnote[] | undefined, body:
   });
 }
 
+export type ChapterTemplateId = 'title-page' | 'credits' | 'dedication' | 'acknowledgments' | 'toc';
+
 export interface Chapter {
   id: string;
   kind: ChapterKind;
@@ -43,6 +45,7 @@ export interface Chapter {
   forceOddPage?: boolean;
   body: Block[];
   footnotes?: Footnote[];
+  templateId?: ChapterTemplateId;
 }
 
 export interface Book {

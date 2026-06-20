@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../store/book.store';
-import { sortFootnotesByPosition, Block } from '../models/book.models';
+import { sortFootnotesByPosition, Block, Chapter } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import { AssetService } from './asset.service';
+import { FontService } from './font.service';
 import { blockToHtml, chapterFootnotesHtml } from '../utils/block-html';
 import { pageSizeCss, pageSizeInches, sceneBreakGlyph, escapeHtml as _escapeHtml, xhtmlSafe, ptToPx, imageExt as _imageExt } from '../utils/block-maps';
 import type JSZip from 'jszip';
@@ -56,6 +57,7 @@ export class ExportService {
   private readonly ts = inject(TranslateService);
   private readonly hyphenService = inject(HyphenService);
   private readonly assetService = inject(AssetService);
+  private readonly fontService = inject(FontService);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _jszip: any;
@@ -71,9 +73,10 @@ export class ExportService {
       const JSZip = this._jszip;
       const zip = new JSZip();
       const book = this.store.book();
-      const chapters = this.store.chapters();
-      const assets = this.assetService.getAll();
       const prefs = this.store.exportPrefs();
+      const allChapters = this.store.chapters();
+      const chapters = this.resolveChapters(allChapters, prefs);
+      const assets = this.assetService.getAll();
       const tweaks = this.store.tweaks();
       const bodyFontFamily = this.store.bookFontFamily();
       const titleFontFamily = this.store.titleFontFamily();
@@ -84,7 +87,7 @@ export class ExportService {
 
       this.store.setExporting(true, this.ts.instant('sidebar.exportingFonts'));
       const { fontFaceCss, fontManifest: epubFontManifest } =
-        await this.loadEpubFonts(zip, tweaks.bookFont ?? '', tweaks.titleFont ?? '');
+        await this.loadEpubFonts(zip, tweaks.bookFont ?? '', tweaks.titleFont ?? '', tweaks.customBookFont, tweaks.customTitleFont);
     zip.file('META-INF/container.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
@@ -153,7 +156,8 @@ ${manifest}
   </manifest>
   <spine>
 ${coverSpine}
-${prefs.includeTOC ? '    <itemref idref="nav"/>\n' : ''}${spine}
+    <itemref idref="nav"/>
+${spine}
   </spine>
 </package>`;
     zip.file('OEBPS/content.opf', opf);
@@ -179,12 +183,29 @@ p + p { text-indent: 1.5em; }
 .kp-verse { font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-line; line-height: 1.6; margin: 1em 0; }
 .kp-code { background: #f5f3f1; padding: 1em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
 .kp-code code { font-family: inherit; }
+.kp-toc { list-style: none; padding: 0; margin: 1em 0; }
+.kp-toc-item { padding: 0.35em 0; font-size: 1em; }
+.kp-toc-item a { text-decoration: none; color: inherit; }
+.kp-toc-item--front { color: #555; }
+.kp-toc-item--back { color: #555; }
+.kp-toc-num { font-variant-numeric: tabular-nums; margin-right: 0.4em; }
 ${dropCapStyles}`);
 
     const navLinkParts: string[] = [];
     chapters.forEach((c, i) => {
       navLinkParts.push(`<li><a href="chapters/${c.id}.xhtml">${this.escapeHtml(c.title)}</a></li>`);
       const contentParts: string[] = [];
+
+      if (c.templateId === 'toc') {
+        const tocBody = chapters
+          .filter(ch => ch.templateId !== 'toc')
+          .map(ch => {
+            const num = ch.kind === 'chapter' && ch.number != null ? `<span class="kp-toc-num">${ch.number}.</span> ` : '';
+            return `<li class="kp-toc-item kp-toc-item--${ch.kind}"><a href="${ch.id}.xhtml">${num}${this.escapeHtml(ch.title)}</a></li>`;
+          })
+          .join('');
+        contentParts.push(`<h1 class="kp-h1">${this.escapeHtml(c.title)}</h1><nav epub:type="toc"><ol class="kp-toc">${tocBody}</ol></nav>`);
+      } else {
       c.body.forEach(b => {
         const raw = this.xhtmlSafe(b.html || this.escapeHtml(b.text || ''));
         switch (b.type) {
@@ -226,6 +247,7 @@ ${dropCapStyles}`);
           default:              contentParts.push(`<p>[${b.type}]</p>`); break;
         }
       });
+      } // end if templateId !== 'toc'
       const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
       if (sortedFns.length) {
         contentParts.push(`<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`);
@@ -263,12 +285,18 @@ ${dropCapStyles}`);
       const book = this.store.book();
       if (!book) return;
 
-      const chapters = this.store.chapters();
+      const prefs = this.store.exportPrefs();
+      const chapters = this.resolveChapters(this.store.chapters(), prefs);
       const t = this.store.tweaks();
       const bodyFontFamily = this.store.bookFontFamily();
       const titleFontFamily = this.store.titleFontFamily();
 
-      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.assetService.getAll());
+      // Use DOM-measured page positions from print preview (exact); fall back to geometric estimate
+      const measuredMap = this.store.printPageMap();
+      const pageMap = Object.keys(measuredMap).length > 0
+        ? measuredMap
+        : this.estimatePageMap(chapters, book.paperSize || '5x8', t);
+      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.assetService.getAll(), pageMap);
       const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
 
       const pdfOptions: Record<string, any> = {
@@ -306,6 +334,7 @@ ${dropCapStyles}`);
     titleFontFamily: string,
     fontsHref?: string,
     assets: Record<string, string> = {},
+    pageMap?: Record<string, number>,
   ): string {
     const pageSize = pageSizeCss(book.paperSize || '5x8');
 
@@ -703,6 +732,47 @@ ${t.dropCap ? `
 .kp-fnpanel-text {
   flex: 1;
 }
+.kp-toc-heading {
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 1.4em;
+}
+.kp-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.kp-toc-li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 0;
+  border-bottom: 1px dotted #ccc;
+}
+.kp-toc-li--front,
+.kp-toc-li--back {
+  font-size: 0.85em;
+  color: #555;
+  padding-left: 8px;
+}
+.kp-toc-name {
+  flex: 1;
+}
+.kp-toc-num {
+  min-width: 18px;
+  color: #888;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.kp-toc-pg {
+  min-width: 28px;
+  text-align: right;
+  font-size: 0.85em;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
 `;
 
     const chaptersHtml = chapters.map((ch: any, idx: number) => {
@@ -710,13 +780,31 @@ ${t.dropCap ? `
         idx > 0 && ch.forceOddPage ? 'ch--recto' : '',
       ].filter(Boolean).join(' ');
 
-      const body = ch.body.map((b: any) => blockToHtml(b, {
-        tweaks: t,
-        assets,
-        hyphenateHtml: (s: string) => this.hyphenService.hyphenateHtml(s),
-      })).join('\n');
+      let body: string;
+      if (ch.templateId === 'toc') {
+        const tocItems = chapters
+          .filter((c: any) => c.templateId !== 'toc')
+          .map((c: any) => {
+            const page = pageMap?.[c.id];
+            const pgCell = page != null
+              ? `<span class="kp-toc-pg">${page}</span>`
+              : '';
+            const num = c.kind === 'chapter' && c.number != null
+              ? `<span class="kp-toc-num">${c.number}.</span> `
+              : '';
+            return `<li class="kp-toc-li kp-toc-li--${c.kind}"><span class="kp-toc-name">${num}${this.escapeHtml(c.title)}</span>${pgCell}</li>`;
+          })
+          .join('\n');
+        body = `<h2 class="kp-toc-heading" style="font-family:${titleFontFamily}">${this.escapeHtml(ch.title)}</h2>\n<ol class="kp-toc-list">${tocItems}</ol>`;
+      } else {
+        body = ch.body.map((b: any) => blockToHtml(b, {
+          tweaks: t,
+          assets,
+          hyphenateHtml: (s: string) => this.hyphenService.hyphenateHtml(s),
+        })).join('\n');
+      }
 
-      const fnHtml = chapterFootnotesHtml(ch.footnotes, ch.body);
+      const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);
       return `<div class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
     }).join('\n\n');
 
@@ -746,6 +834,8 @@ ${bodyContent}
     zip: JSZip,
     bookFontKey: string,
     titleFontKey: string,
+    customBookFont?: string | null,
+    customTitleFont?: string | null,
   ): Promise<{ fontFaceCss: string; fontManifest: string }> {
     const keys = [...new Set([bookFontKey, titleFontKey])].filter(k => EPUB_FONT_MAP[k]);
     let fontFaceCss = '';
@@ -768,7 +858,49 @@ ${bodyContent}
       }
     }
 
+    // Embed system fonts selected by the user
+    const customFamilies = [...new Set([customBookFont, customTitleFont].filter(Boolean) as string[])];
+    for (const family of customFamilies) {
+      try {
+        const variants = await this.fontService.getFontVariants(family);
+        const safeName = family.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        for (let i = 0; i < variants.length; i++) {
+          const v = variants[i];
+          const ext = this.fontMimeToExt(v.mimeType);
+          const filename = `${safeName}-${v.style}-${v.weight}.${ext}`;
+          zip.file(`OEBPS/fonts/${filename}`, v.buffer);
+          const id = `font-sys-${safeName}-${i}`;
+          const format = this.fontMimeToFormat(v.mimeType);
+          fontManifest += `    <item id="${id}" href="fonts/${filename}" media-type="${v.mimeType}"/>\n`;
+          fontFaceCss += `@font-face { font-family: '${family}'; src: url('fonts/${filename}') format('${format}'); font-style: ${v.style}; font-weight: ${v.weight}; }\n`;
+        }
+      } catch {
+        // system font unavailable, skip
+      }
+    }
+
     return { fontFaceCss, fontManifest };
+  }
+
+  private resolveChapters(all: Chapter[], prefs: { exportMode: 'all' | 'selection'; selectedChapterIds: string[] }): Chapter[] {
+    if (prefs.exportMode === 'selection' && prefs.selectedChapterIds.length > 0) {
+      return all.filter(c => prefs.selectedChapterIds.includes(c.id));
+    }
+    return all;
+  }
+
+  private fontMimeToExt(mime: string): string {
+    if (mime.includes('woff2')) return 'woff2';
+    if (mime.includes('woff')) return 'woff';
+    if (mime.includes('otf') || mime.includes('opentype')) return 'otf';
+    return 'ttf';
+  }
+
+  private fontMimeToFormat(mime: string): string {
+    if (mime.includes('woff2')) return 'woff2';
+    if (mime.includes('woff')) return 'woff';
+    if (mime.includes('otf') || mime.includes('opentype')) return 'opentype';
+    return 'truetype';
   }
 
   private escapeHtml(str: string): string { return _escapeHtml(str); }
@@ -785,9 +917,9 @@ ${bodyContent}
     if (!this._docx) this._docx = await import('docx');
     try {
       const book = this.store.book();
-      const chapters = this.store.chapters();
-      const t = this.store.tweaks();
       const prefs = this.store.exportPrefs();
+      const chapters = this.resolveChapters(this.store.chapters(), prefs);
+      const t = this.store.tweaks();
       const assets = this.assetService.getAll();
       if (!book) return;
 
@@ -804,9 +936,6 @@ ${bodyContent}
         }));
       }
 
-      if (prefs.includeTOC) {
-        children.push(new this._docx.TableOfContents('Table of Contents', { hyperlink: true }));
-      }
 
       const bodyFont = t.customBookFont || this.fontName(t.bookFont);
       const titleFont = t.customTitleFont || this.fontName(t.titleFont);
@@ -1234,6 +1363,33 @@ ${bodyContent}
       this._saveAs = mod.saveAs ?? mod.default?.saveAs ?? mod.default;
     }
     this._saveAs(blob, filename);
+  }
+
+  private estimatePageMap(chapters: any[], paperSize: string, t: { fontSize: number, lineHeight: number, marginTop: number, marginBottom: number, marginInner: number, marginOuter: number }): Record<string, number> {
+    const pageDimMap: Record<string, [number, number]> = {
+      '5x8': [5, 8], '6x9': [6, 9], 'A5': [5.83, 8.27],
+      'A4': [8.27, 11.69], 'A6': [4.13, 5.83], 'Letter': [8.5, 11]
+    };
+    const [pw, ph] = pageDimMap[paperSize] ?? [5, 8];
+    const fs = t.fontSize || 12;
+    const textW = pw - (t.marginInner + t.marginOuter) / 25.4;
+    const textH = ph - (t.marginTop + t.marginBottom) / 25.4;
+    const lineHeightIn = (fs * (t.lineHeight || 1.6)) / 72;
+    const linesPerPage = Math.floor(textH / lineHeightIn);
+    // ~10 chars/inch at 12pt for serif fonts (Lora/Spectral); scales inversely with font size
+    const charsPerLine = textW * (10 * (12 / fs));
+    const wpp = Math.max(30, (charsPerLine / 5.5) * linesPerPage);
+
+    const map: Record<string, number> = {};
+    let page = 1;
+    for (const ch of chapters) {
+      map[ch.id] = page;
+      if (ch.templateId === 'toc') { page += 1; continue; }
+      const breaks = (ch.body || []).filter((b: any) => b.type === 'page-break').length;
+      page += Math.max(1, Math.ceil((ch.words || 1) / wpp), breaks + 1);
+      if (ch.forceOddPage && page % 2 === 0) page++;
+    }
+    return map;
   }
 
   private dataUrlToBlob(dataUrl: string): Blob {

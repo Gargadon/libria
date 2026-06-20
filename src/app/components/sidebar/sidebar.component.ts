@@ -3,15 +3,18 @@ import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Book, ChapterKind } from '../../models/book.models';
+import { Book, ChapterKind, ChapterTemplateId } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { ExportService } from '../../services/export.service';
 import { ImportService } from '../../services/import.service';
 import { SpellCheckService } from '../../services/spell-check.service';
+import { FontService } from '../../services/font.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
 
 import { environment } from '../../../environments/environment';
+
+const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'inter', 'montserrat'];
 
 @Component({
   selector: 'app-sidebar',
@@ -132,7 +135,20 @@ import { environment } from '../../../environments/environment';
               <button class="sb__add" (click)="toggleAddMenu($event)">{{ 'sidebar.addElement' | translate }}</button>
               @if (showAddMenu()) {
                 <div class="sb__add-menu">
-                  <div class="sb__add-item" (click)="add('front')">{{ 'sidebar.addFront' | translate }}</div>
+                  <div class="sb__add-item sb__add-item--group" (click)="toggleFrontSubmenu($event)">
+                    <span>{{ 'sidebar.addFront' | translate }}</span>
+                    <span class="sb__add-arrow" [class.sb__add-arrow--open]="showFrontSubmenu()">›</span>
+                  </div>
+                  @if (showFrontSubmenu()) {
+                    <div class="sb__add-submenu">
+                      <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('title-page')">{{ 'sidebar.templateTitlePage' | translate }}</div>
+                      <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('credits')">{{ 'sidebar.templateCredits' | translate }}</div>
+                      <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('dedication')">{{ 'sidebar.templateDedication' | translate }}</div>
+                      <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('acknowledgments')">{{ 'sidebar.templateAcknowledgments' | translate }}</div>
+                      <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('toc')">{{ 'sidebar.templateToc' | translate }}</div>
+                      <div class="sb__add-item sb__add-item--sub sb__add-item--sep" (click)="add('front')">{{ 'sidebar.addFrontBlank' | translate }}</div>
+                    </div>
+                  }
                   <div class="sb__add-item" (click)="add('chapter')">{{ 'sidebar.addChapter' | translate }}</div>
                   <div class="sb__add-item" (click)="add('back')">{{ 'sidebar.addBack' | translate }}</div>
                 </div>
@@ -167,8 +183,8 @@ import { environment } from '../../../environments/environment';
             <div class="sb__section">{{ 'sidebar.bodyTypography' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
-              <select class="sb__select sb__select--font" 
-                      [value]="store.tweaks.customBookFont() !== null ? '__custom__' : store.tweaks.bookFont()" 
+              <select class="sb__select sb__select--font"
+                      [value]="bookFontSelectVal()"
                       (change)="onBookFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
@@ -180,10 +196,17 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                @if (systemFontFamilies().length > 0) {
+                  <optgroup [label]="'sidebar.systemFonts' | translate">
+                    @for (family of systemFontFamilies(); track family) {
+                      <option [value]="family" [style.fontFamily]="family">{{ family }}</option>
+                    }
+                  </optgroup>
+                }
                 <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
-            @if (store.tweaks.customBookFont() !== null) {
+            @if (showCustomBookFontInput()) {
               <div class="sb__row sb__row--col">
                 <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
                 <input class="sb__input" type="text" [ngModel]="store.tweaks.customBookFont()" (ngModelChange)="store.updateTweak('customBookFont', $event)" placeholder="Georgia">
@@ -330,7 +353,7 @@ import { environment } from '../../../environments/environment';
             <div class="sb__section">{{ 'sidebar.titleTypography' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
-              <select class="sb__select sb__select--font" [value]="store.tweaks.customTitleFont() !== null ? '__custom__' : store.tweaks.titleFont()" (change)="onTitleFontSelect($any($event.target).value)">
+              <select class="sb__select sb__select--font" [value]="titleFontSelectVal()" (change)="onTitleFontSelect($any($event.target).value)">
                 <optgroup [label]="'sidebar.serif' | translate">
                   <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
                   <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
@@ -341,10 +364,17 @@ import { environment } from '../../../environments/environment';
                   <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
                   <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
                 </optgroup>
+                @if (systemFontFamilies().length > 0) {
+                  <optgroup [label]="'sidebar.systemFonts' | translate">
+                    @for (family of systemFontFamilies(); track family) {
+                      <option [value]="family" [style.fontFamily]="family">{{ family }}</option>
+                    }
+                  </optgroup>
+                }
                 <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
               </select>
             </div>
-            @if (store.tweaks.customTitleFont() !== null) {
+            @if (showCustomTitleFontInput()) {
               <div class="sb__row sb__row--col">
                 <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
                 <input class="sb__input" type="text" [ngModel]="store.tweaks.customTitleFont()" (ngModelChange)="store.updateTweak('customTitleFont', $event)" placeholder="Georgia">
@@ -527,69 +557,115 @@ import { environment } from '../../../environments/environment';
             <div class="sb__author">{{ 'sidebar.exportDesc' | translate }}</div>
           </div>
           <div class="sb__content sb__content--padding">
-            <div class="sb__export-card">
-              <div class="sb__export-icon">EPUB</div>
-              <div class="sb__export-info">
-                <div class="sb__export-name">{{ 'sidebar.ebook' | translate }}</div>
-                <div class="sb__export-desc">{{ 'sidebar.ebookDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportService.exportEpub()" [disabled]="store.isExporting()">{{ 'sidebar.generateEPUB' | translate }}</button>
+
+            <!-- Modo de exportación -->
+            <div class="sb__section">{{ 'sidebar.exportScope' | translate }}</div>
+            <div class="sb__row">
+              <div class="sb__radio">
+                <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.exportMode() === 'all'" (click)="store.updateExportPrefs({ exportMode: 'all' })">{{ 'sidebar.exportAll' | translate }}</button>
+                <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.exportMode() === 'selection'" (click)="store.updateExportPrefs({ exportMode: 'selection' })">{{ 'sidebar.exportSelection' | translate }}</button>
               </div>
             </div>
 
-            <div class="sb__export-card">
-              <div class="sb__export-icon" style="background: var(--terra); color: var(--paper);">PDF</div>
-              <div class="sb__export-info">
-                <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
-                <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportPdf()" [disabled]="store.isExporting()">{{ 'sidebar.generatePDF' | translate }}</button>
+            <!-- Lista de capítulos (solo en modo selección) -->
+            @if (store.exportPrefs.exportMode() === 'selection') {
+              <div class="sb__chapter-pick">
+                <div class="sb__chapter-pick-head">
+                  <span class="sb__label">{{ 'sidebar.exportPickChapters' | translate }}</span>
+                  <div class="sb__chapter-pick-actions">
+                    <button class="sb__btn-link" (click)="selectAllChapters()">{{ 'sidebar.exportSelectAll' | translate }}</button>
+                    <button class="sb__btn-link" (click)="store.updateExportPrefs({ selectedChapterIds: [] })">{{ 'sidebar.exportSelectNone' | translate }}</button>
+                  </div>
+                </div>
+                @for (ch of store.chapters(); track ch.id) {
+                  <label class="sb__chapter-pick-item">
+                    <input type="checkbox"
+                      [checked]="store.exportPrefs.selectedChapterIds().includes(ch.id)"
+                      (change)="toggleExportChapter(ch.id, $any($event.target).checked)">
+                    <span class="sb__chapter-pick-label">
+                      @if (ch.number) { <span class="sb__chapter-pick-num">{{ ch.number }}</span> }
+                      {{ ch.title || ('sidebar.untitled' | translate) }}
+                    </span>
+                  </label>
+                }
               </div>
-            </div>
+            }
+
+            <!-- Formatos disponibles -->
+            <div class="sb__section">{{ 'sidebar.exportFormat' | translate }}</div>
+
+            @if (store.exportPrefs.exportMode() === 'all') {
+              <div class="sb__export-card">
+                <div class="sb__export-icon">EPUB</div>
+                <div class="sb__export-info">
+                  <div class="sb__export-name">{{ 'sidebar.ebook' | translate }}</div>
+                  <div class="sb__export-desc">{{ 'sidebar.ebookDesc' | translate }}</div>
+                  <button class="sb__btn-primary" (click)="exportService.exportEpub()" [disabled]="store.isExporting()">{{ 'sidebar.generateEPUB' | translate }}</button>
+                </div>
+              </div>
+
+              <div class="sb__export-card">
+                <div class="sb__export-icon" style="background: var(--terra); color: var(--paper);">PDF</div>
+                <div class="sb__export-info">
+                  <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
+                  <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
+                  <button class="sb__btn-primary" (click)="exportPdf()" [disabled]="store.isExporting()">{{ 'sidebar.generatePDF' | translate }}</button>
+                </div>
+              </div>
+            }
 
             <div class="sb__export-card">
               <div class="sb__export-icon">DOCX</div>
               <div class="sb__export-info">
                 <div class="sb__export-name">{{ 'sidebar.word' | translate }}</div>
                 <div class="sb__export-desc">{{ 'sidebar.wordDesc' | translate }}</div>
-                <button class="sb__btn-primary" (click)="exportService.exportDocx()" [disabled]="store.isExporting()">{{ 'sidebar.generateDOCX' | translate }}</button>
+                <button class="sb__btn-primary"
+                  (click)="exportService.exportDocx()"
+                  [disabled]="store.isExporting() || (store.exportPrefs.exportMode() === 'selection' && store.exportPrefs.selectedChapterIds().length === 0)">
+                  {{ 'sidebar.generateDOCX' | translate }}
+                </button>
               </div>
             </div>
 
-            <div class="sb__section">{{ 'sidebar.exportOptions' | translate }}</div>
-            <div class="sb__row">
-              <div class="sb__label">{{ 'sidebar.includeCover' | translate }}</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.includeCover()" (click)="store.updateExportPrefs({ includeCover: true })">{{ 'sidebar.yes' | translate }}</button>
-                <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeCover()" (click)="store.updateExportPrefs({ includeCover: false })">{{ 'sidebar.no' | translate }}</button>
+            <!-- Opciones -->
+            @if (store.exportPrefs.exportMode() === 'all') {
+              <div class="sb__section">{{ 'sidebar.exportOptions' | translate }}</div>
+              <div class="sb__row">
+                <div class="sb__label">{{ 'sidebar.includeCover' | translate }}</div>
+                <div class="sb__radio">
+                  <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.includeCover()" (click)="store.updateExportPrefs({ includeCover: true })">{{ 'sidebar.yes' | translate }}</button>
+                  <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeCover()" (click)="store.updateExportPrefs({ includeCover: false })">{{ 'sidebar.no' | translate }}</button>
+                </div>
               </div>
-            </div>
-            @if (store.exportPrefs.includeCover()) {
-              @if (assetService.assets()['cover']) {
-                <div class="sb__cover-chip sb__cover-chip--ok">
-                  <img [src]="assetService.assets()['cover']" class="sb__cover-chip-img" alt="">
-                  <span>{{ 'sidebar.coverReady' | translate }}</span>
-                </div>
-              } @else {
-                <div class="sb__cover-chip sb__cover-chip--warn">
-                  <span class="material-symbols-outlined">warning</span>
-                  <span>{{ 'sidebar.coverNotSet' | translate }}</span>
-                  <button class="sb__btn-link" (click)="store.setNav('metadata')">{{ 'sidebar.coverGoTo' | translate }}</button>
-                </div>
+              @if (store.exportPrefs.includeCover()) {
+                @if (assetService.assets()['cover']) {
+                  <div class="sb__cover-chip sb__cover-chip--ok">
+                    <img [src]="assetService.assets()['cover']" class="sb__cover-chip-img" alt="">
+                    <span>{{ 'sidebar.coverReady' | translate }}</span>
+                  </div>
+                } @else {
+                  <div class="sb__cover-chip sb__cover-chip--warn">
+                    <span class="material-symbols-outlined">warning</span>
+                    <span>{{ 'sidebar.coverNotSet' | translate }}</span>
+                    <button class="sb__btn-link" (click)="store.setNav('metadata')">{{ 'sidebar.coverGoTo' | translate }}</button>
+                  </div>
+                }
               }
+              <div class="sb__row">
+                <div class="sb__label">{{ 'sidebar.includeNotes' | translate }}</div>
+                <div class="sb__radio">
+                  <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: true })">{{ 'sidebar.yes' | translate }}</button>
+                  <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: false })">{{ 'sidebar.no' | translate }}</button>
+                </div>
+              </div>
+              <div class="sb__row">
+                <div class="sb__label">{{ 'sidebar.pdfx' | translate }}</div>
+                <div class="sb__radio">
+                  <button class="sb__opt" [class.sb__opt--on]="store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', true)">{{ 'sidebar.yes' | translate }}</button>
+                  <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', false)">{{ 'sidebar.no' | translate }}</button>
+                </div>
+              </div>
             }
-            <div class="sb__row">
-              <div class="sb__label">{{ 'sidebar.includeNotes' | translate }}</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: true })">{{ 'sidebar.yes' | translate }}</button>
-                <button class="sb__opt" [class.sb__opt--on]="!store.exportPrefs.includeNotes()" (click)="store.updateExportPrefs({ includeNotes: false })">{{ 'sidebar.no' | translate }}</button>
-              </div>
-            </div>
-            <div class="sb__row">
-              <div class="sb__label">{{ 'sidebar.pdfx' | translate }}</div>
-              <div class="sb__radio">
-                <button class="sb__opt" [class.sb__opt--on]="store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', true)">{{ 'sidebar.yes' | translate }}</button>
-                <button class="sb__opt" [class.sb__opt--on]="!store.tweaks.pdfxCompliant()" (click)="store.updateTweak('pdfxCompliant', false)">{{ 'sidebar.no' | translate }}</button>
-              </div>
-            </div>
           </div>
         }
         
@@ -855,7 +931,34 @@ export class SidebarComponent implements OnInit {
   readonly importService = inject(ImportService);
   readonly spellCheckService = inject(SpellCheckService);
   readonly translate = inject(TranslateService);
+  readonly fontService = inject(FontService);
   readonly Math = Math;
+
+  systemFontFamilies = signal<string[]>([]);
+
+  readonly bookFontSelectVal = computed(() => {
+    const custom = this.store.tweaks.customBookFont();
+    if (custom === null) return this.store.tweaks.bookFont();
+    if (this.systemFontFamilies().includes(custom)) return custom;
+    return '__custom__';
+  });
+
+  readonly titleFontSelectVal = computed(() => {
+    const custom = this.store.tweaks.customTitleFont();
+    if (custom === null) return this.store.tweaks.titleFont();
+    if (this.systemFontFamilies().includes(custom)) return custom;
+    return '__custom__';
+  });
+
+  readonly showCustomBookFontInput = computed(() => {
+    const custom = this.store.tweaks.customBookFont();
+    return custom !== null && !this.systemFontFamilies().includes(custom);
+  });
+
+  readonly showCustomTitleFontInput = computed(() => {
+    const custom = this.store.tweaks.customTitleFont();
+    return custom !== null && !this.systemFontFamilies().includes(custom);
+  });
 
   @ViewChild('importInput') importInput!: ElementRef<HTMLInputElement>;
 
@@ -892,6 +995,7 @@ export class SidebarComponent implements OnInit {
   newDictWord = '';
 
   showAddMenu = signal(false);
+  showFrontSubmenu = signal(false);
   showGoalsEditor = signal(false);
 
   // Modal states
@@ -914,6 +1018,7 @@ export class SidebarComponent implements OnInit {
   ngOnInit() {
     this.initLocalMetadata();
     this.loadDictWords();
+    this.fontService.loadSystemFonts().then(families => this.systemFontFamilies.set(families));
   }
 
   async loadDictWords() {
@@ -1041,27 +1146,43 @@ export class SidebarComponent implements OnInit {
     this.translate.use(lang);
   }
 
+  selectAllChapters() {
+    const ids = this.store.chapters().map(c => c.id);
+    this.store.updateExportPrefs({ selectedChapterIds: ids });
+  }
+
+  toggleExportChapter(id: string, checked: boolean) {
+    const current = this.store.exportPrefs.selectedChapterIds();
+    const next = checked ? [...current, id] : current.filter(x => x !== id);
+    this.store.updateExportPrefs({ selectedChapterIds: next });
+  }
+
   onBookFontSelect(val: string) {
     if (val === '__custom__') {
       this.store.updateTweak('customBookFont', '');
-    } else {
+    } else if (BUNDLED_FONT_KEYS.includes(val)) {
       this.store.updateTweak('bookFont', val as any);
       this.store.updateTweak('customBookFont', null);
+    } else {
+      this.store.updateTweak('customBookFont', val);
     }
   }
 
   onTitleFontSelect(val: string) {
     if (val === '__custom__') {
       this.store.updateTweak('customTitleFont', '');
-    } else {
+    } else if (BUNDLED_FONT_KEYS.includes(val)) {
       this.store.updateTweak('titleFont', val as any);
       this.store.updateTweak('customTitleFont', null);
+    } else {
+      this.store.updateTweak('customTitleFont', val);
     }
   }
 
   @HostListener('document:click')
   onDocumentClick() {
     this.showAddMenu.set(false);
+    this.showFrontSubmenu.set(false);
   }
 
   toggleAddMenu(event: Event) {
@@ -1077,9 +1198,21 @@ export class SidebarComponent implements OnInit {
     this.store.setWritingGoals({ ...this.store.writingGoals(), deadline: value || '' });
   }
 
+  toggleFrontSubmenu(event: Event) {
+    event.stopPropagation();
+    this.showFrontSubmenu.update(v => !v);
+  }
+
   add(kind: ChapterKind) {
     this.store.addChapter(kind);
     this.showAddMenu.set(false);
+    this.showFrontSubmenu.set(false);
+  }
+
+  addFromTemplate(templateId: ChapterTemplateId) {
+    this.store.addChapterFromTemplate(templateId);
+    this.showAddMenu.set(false);
+    this.showFrontSubmenu.set(false);
   }
 
   readonly frontChapters = computed(() =>

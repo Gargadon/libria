@@ -78,6 +78,19 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
               [class.ed__doc--indent]="store.tweaks.indentFirstLine()"
               [class.ed__doc--justify]="store.tweaks.justifyText()"
               [class.ed__doc--hyphen]="store.tweaks.hyphenation()">
+              @if (chapter.templateId === 'toc') {
+                <div class="ed__toc-preview">
+                  <div class="ed__toc-label">{{ 'editor.tocPreviewLabel' | translate }}</div>
+                  @for (c of tocChapters(); track c.id) {
+                    <div class="ed__toc-entry" [class.ed__toc-entry--front]="c.kind === 'front'" [class.ed__toc-entry--back]="c.kind === 'back'">
+                      @if (c.kind === 'chapter' && c.number != null) {
+                        <span class="ed__toc-num">{{ c.number }}</span>
+                      }
+                      <span class="ed__toc-title">{{ c.title }}</span>
+                    </div>
+                  }
+                </div>
+              } @else {
               @for (b of chapter.body; track $index) {
                 <div class="ed__block-container" [class.ed__block-container--has-note]="blockNotes().has($index)">
                   @if (blockNotes().has($index)) {
@@ -278,6 +291,7 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
                   }
                 </div>
               }
+              }
               <div class="ed__end">{{ 'editor.endFragment' | translate }}</div>
             </article>
 
@@ -360,6 +374,10 @@ export class EditorComponent implements OnDestroy {
   ptToPx(pt: number): number { return pt * 96 / 72; }
   sceneBreakGlyph(t: string): string { return sbGlyph(t); }
   imageTransform(b: Block): string { return imgTransform(b); }
+
+  readonly tocChapters = computed(() =>
+    this.store.chapters().filter(c => c.templateId !== 'toc')
+  );
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;

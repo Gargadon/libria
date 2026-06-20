@@ -1,6 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, Chapter, ChapterKind, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
+import { Book, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
@@ -27,7 +27,8 @@ export interface BookState {
   exportPrefs: {
     includeCover: boolean;
     includeNotes: boolean;
-    includeTOC: boolean;
+    exportMode: 'all' | 'selection';
+    selectedChapterIds: string[];
   };
   searchQuery: string;
   searchResults: SearchResult[];
@@ -37,6 +38,8 @@ export interface BookState {
   isExporting: boolean;
   exportStatus: string;
   writingGoals: WritingGoals;
+  // Measured start pages from the print preview DOM (1-indexed); empty until preview is opened
+  printPageMap: Record<string, number>;
 }
 
 const initialState: BookState = {
@@ -96,7 +99,8 @@ const initialState: BookState = {
   exportPrefs: {
     includeCover: true,
     includeNotes: false,
-    includeTOC: true
+    exportMode: 'all' as 'all' | 'selection',
+    selectedChapterIds: [] as string[],
   },
   searchQuery: '',
   searchResults: [],
@@ -105,7 +109,8 @@ const initialState: BookState = {
   isSaving: false,
   isExporting: false,
   exportStatus: '',
-  writingGoals: { targetWords: 0, deadline: '' }
+  writingGoals: { targetWords: 0, deadline: '' },
+  printPageMap: {}
 };
 
 function uiLocale(lang: string): string {
@@ -518,6 +523,78 @@ export const BookStore = signalStore(
         };
       });
     },
+    addChapterFromTemplate(templateId: ChapterTemplateId) {
+      patchState(store, (state) => {
+        const book = state.book;
+        const lang = store.personalConfig().language;
+        const titleMap: Record<ChapterTemplateId, Record<string, string>> = {
+          'title-page':      { es: 'Portadilla', en: 'Title Page', fr: 'Page de titre', it: 'Frontespizio', pt: 'Folha de rosto', de: 'Titelseite' },
+          'credits':         { es: 'Créditos', en: 'Credits', fr: 'Crédits', it: 'Crediti', pt: 'Créditos', de: 'Impressum' },
+          'dedication':      { es: 'Dedicatoria', en: 'Dedication', fr: 'Dédicace', it: 'Dedica', pt: 'Dedicatória', de: 'Widmung' },
+          'acknowledgments': { es: 'Agradecimientos', en: 'Acknowledgments', fr: 'Remerciements', it: 'Ringraziamenti', pt: 'Agradecimentos', de: 'Danksagung' },
+          'toc':             { es: 'Contenido', en: 'Contents', fr: 'Table des matières', it: 'Indice', pt: 'Sumário', de: 'Inhalt' },
+        };
+        const l = lang.slice(0, 2);
+        const title = titleMap[templateId][l] ?? titleMap[templateId]['en'];
+
+        const bodyMap: Record<ChapterTemplateId, () => Chapter['body']> = {
+          'title-page': () => [
+            { type: 'title',     text: book?.title     ?? '' },
+            { type: 'subtitle',  text: book?.subtitle  ?? '' },
+            { type: 'author',    text: (book?.authors ?? []).join(', ') || book?.author || '' },
+            { type: 'publisher', text: book?.publisher ?? '' },
+          ],
+          'credits': () => {
+            const allRights: Record<string, string> = {
+              es: 'Todos los derechos reservados.',
+              en: 'All rights reserved.',
+              fr: 'Tous droits réservés.',
+              it: 'Tutti i diritti riservati.',
+              pt: 'Todos os direitos reservados.',
+              de: 'Alle Rechte vorbehalten.',
+            };
+            return [
+              { type: 'p', text: `© ${book?.year ?? new Date().getFullYear()} ${book?.author ?? ''}` },
+              { type: 'p', text: book?.isbn ? `ISBN: ${book.isbn}` : 'ISBN: ' },
+              { type: 'p', text: book?.publisher ?? '' },
+              { type: 'p', text: allRights[l] ?? allRights['en'] },
+            ];
+          },
+          'dedication': () => [
+            { type: 'dedication', text: '' },
+          ],
+          'acknowledgments': () => [
+            { type: 'h1', text: title },
+            { type: 'p',  text: '' },
+          ],
+          'toc': () => [],
+        };
+
+        const newChapter: Chapter = {
+          id: 'ch-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+          kind: 'front',
+          title,
+          words: 0,
+          readMin: 0,
+          status: 'front' as any,
+          templateId,
+          body: bodyMap[templateId](),
+        };
+
+        const chapters = state.chapters;
+        const lastFront = [...chapters].reverse().find(c => c.kind === 'front');
+        const insertAt = lastFront ? chapters.lastIndexOf(lastFront) + 1 : 0;
+        return {
+          chapters: [
+            ...chapters.slice(0, insertAt),
+            newChapter,
+            ...chapters.slice(insertAt),
+          ],
+          activeChapterId: newChapter.id,
+          isDirty: true,
+        };
+      });
+    },
     addChapters(newChapters: Chapter[]) {
       patchState(store, (state) => ({
         chapters: [...state.chapters, ...newChapters],
@@ -745,8 +822,11 @@ export const BookStore = signalStore(
       }));
     },
     updateTweak<K extends keyof Tweaks>(key: K, value: Tweaks[K]) {
+      const UI_ONLY_TWEAKS: (keyof Tweaks)[] = ['sidebar', 'mode', 'spellcheck'];
+      const dirty = !UI_ONLY_TWEAKS.includes(key);
       patchState(store, (state) => ({
-        tweaks: { ...state.tweaks, [key]: value }
+        tweaks: { ...state.tweaks, [key]: value },
+        ...(dirty ? { isDirty: true } : {})
       }));
     },
     setThemeMode(mode: 'light' | 'dark') {
@@ -768,6 +848,9 @@ export const BookStore = signalStore(
     },
     setWritingGoals(goals: WritingGoals) {
       patchState(store, { writingGoals: goals, isDirty: true });
+    },
+    setPrintPageMap(map: Record<string, number>) {
+      patchState(store, { printPageMap: map });
     },
     search(query: string) {
       if (!query.trim()) {

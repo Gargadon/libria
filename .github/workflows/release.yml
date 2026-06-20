@@ -35,7 +35,7 @@ jobs:
           - os: ubuntu-latest
             arch: x64
             target: linux-packages
-            builderFlags: '--linux deb pacman'
+            builderFlags: '--linux deb'
           - os: ubuntu-latest
             arch: arm64
             target: linux-appimage
@@ -43,7 +43,7 @@ jobs:
           - os: ubuntu-latest
             arch: arm64
             target: linux-packages
-            builderFlags: '--linux deb pacman'
+            builderFlags: '--linux deb'
 
     steps:
       - uses: actions/checkout@v6
@@ -56,7 +56,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-tools liblzma-dev
+          sudo apt-get install -y ghostscript libarchive-tools liblzma-dev
 
       - name: Install and bundle Ghostscript (macOS)
         if: runner.os == 'macOS'

@@ -242,6 +242,28 @@ import { BlockViewComponent } from '../block-view/block-view.component';
           [class.kp--justify]="store.tweaks.justifyText()"
           [class.kp-content--hyphen]="store.tweaks.hyphenation()">
           
+          @if (chapter.templateId === 'toc') {
+            <div class="kp-toc-wrap">
+              <h2 class="kp-toc-heading" [style.font-family]="store.titleFontFamily()">{{ chapter.title }}</h2>
+              <ol class="kp-toc-list">
+                @for (c of tocChapters(); track c.id) {
+                  <li class="kp-toc-li"
+                      [class.kp-toc-li--front]="c.kind === 'front'"
+                      [class.kp-toc-li--back]="c.kind === 'back'"
+                      [class.kp-toc-li--link]="mode() !== 'print'"
+                      (click)="navigateToChapter(c.id)">
+                    @if (c.kind === 'chapter' && c.number != null) {
+                      <span class="kp-toc-num">{{ c.number }}.</span>
+                    }
+                    <span class="kp-toc-title">{{ c.title }}</span>
+                    @if (mode() === 'print') {
+                      <span class="kp-toc-pg">{{ bookLayout().chapters[c.id]?.startPage }}</span>
+                    }
+                  </li>
+                }
+              </ol>
+            </div>
+          } @else {
           @for (b of chapter.body; track $index; let bIdx = $index) {
             <app-block-view [block]="b" [blockIndex]="bIdx" />
             @if (showNotes) {
@@ -249,6 +271,7 @@ import { BlockViewComponent } from '../block-view/block-view.component';
                 <span class="kp-note-ref">[*]</span>
               }
             }
+          }
           }
 
           @if (showNotes) {
@@ -306,30 +329,59 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
   realChapterPages = signal<Record<string, number>>({});
+  // Chapter start pages measured from the print iframe DOM (0-indexed column = page - 1)
+  printPageOffsets = signal<Record<string, number>>({});
+
+  readonly tocChapters = computed(() =>
+    this.chapters().filter(c => c.templateId !== 'toc')
+  );
 
   readonly bookLayout = computed(() => {
     const chapters = this.store.chapters();
+    const mode = this.mode();
+
+    // Print mode: use real DOM measurements when the print iframe has been rendered
+    if (mode === 'print') {
+      const printOffsets = this.printPageOffsets();
+      if (Object.keys(printOffsets).length > 0) {
+        const layout: Record<string, { startPage: number, pages: number, hasBlankBefore: boolean }> = {};
+        for (let i = 0; i < chapters.length; i++) {
+          const ch = chapters[i];
+          const off = printOffsets[ch.id];
+          if (off !== undefined) {
+            const nextOff = i < chapters.length - 1 ? printOffsets[chapters[i + 1].id] : undefined;
+            const pages = nextOff !== undefined
+              ? Math.max(1, nextOff - off)
+              : Math.max(1, this.measuredTotalPages() - off);
+            layout[ch.id] = { startPage: off + 1, pages, hasBlankBefore: false };
+          } else {
+            const prevEnd = i > 0
+              ? (layout[chapters[i - 1].id]?.startPage ?? 1) + (layout[chapters[i - 1].id]?.pages ?? 1)
+              : 1;
+            layout[ch.id] = { startPage: prevEnd, pages: this.estimateChapterPages(ch), hasBlankBefore: false };
+          }
+        }
+        return { chapters: layout, total: this.measuredTotalPages() };
+      }
+    }
+
+    // Kindle/iPhone or no print measurements yet — use realChapterPages + estimates
+    const realPagesMap = mode !== 'print' ? this.realChapterPages() : {};
     const layout: Record<string, { startPage: number, pages: number, hasBlankBefore: boolean }> = {};
     let currentP = 1;
 
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];
-      const realPages = this.realChapterPages()[ch.id];
+      const realPages = realPagesMap[ch.id];
       const pages = realPages !== undefined ? realPages : this.estimateChapterPages(ch);
       let blank = false;
 
-      // Force Odd: if current page is even (2, 4, 6...), add a blank
       if (ch.forceOddPage && currentP % 2 === 0) {
         blank = true;
         currentP++;
       }
 
-      layout[ch.id] = {
-        startPage: currentP,
-        pages: pages,
-        hasBlankBefore: blank
-      };
-
+      layout[ch.id] = { startPage: currentP, pages, hasBlankBefore: blank };
       currentP += pages;
     }
     return { chapters: layout, total: currentP - 1 };
@@ -455,11 +507,16 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
       if (!book) return;
 
+      const layout = this.bookLayout();
       untracked(() => {
         clearTimeout(this.printHtmlTimeout);
         this.printHtmlTimeout = setTimeout(() => {
           const fontsHref = new URL('fonts.css', document.baseURI).href;
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets);
+          const pageMap: Record<string, number> = {};
+          for (const [id, info] of Object.entries(layout.chapters)) {
+            pageMap[id] = info.startPage;
+          }
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap);
           this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
         }, 300);
       });
@@ -498,6 +555,25 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const total = Math.max(1, Math.ceil(flow.scrollWidth / pageW));
       this.measuredTotalPages.set(total);
       this.scrollIframeToPage(this.globalPage());
+
+      // Measure actual start page of each chapter from the rendered DOM
+      const chEls = Array.from(flow.querySelectorAll<HTMLElement>('.ch[data-id]'));
+      const newOffsets: Record<string, number> = {};
+      for (const el of chEls) {
+        const id = el.dataset['id'];
+        if (id) newOffsets[id] = Math.round((el.offsetLeft - flow.offsetLeft) / pageW);
+      }
+      // Only set if values changed — prevents re-render loop
+      const curr = this.printPageOffsets();
+      const changed = Object.keys(newOffsets).length !== Object.keys(curr).length ||
+        Object.keys(newOffsets).some(k => newOffsets[k] !== curr[k]);
+      if (changed) {
+        this.printPageOffsets.set(newOffsets);
+        // Convert to 1-indexed and persist in store so the PDF export can use them
+        const pageMap1: Record<string, number> = {};
+        for (const [id, off] of Object.entries(newOffsets)) pageMap1[id] = off + 1;
+        this.store.setPrintPageMap(pageMap1);
+      }
     };
 
     measure();
@@ -608,16 +684,46 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
   }
 
+  navigateToChapter(chapterId: string): void {
+    if (this.mode() === 'print') return;
+    const offset = this.realPageOffsets()[chapterId];
+    if (offset !== undefined) {
+      this.globalPage.set(offset);
+    } else {
+      const startPage = this.bookLayout().chapters[chapterId]?.startPage ?? 1;
+      this.globalPage.set(startPage - 1);
+    }
+  }
+
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
 
   private estimateChapterPages(c: Chapter): number {
     const m = this.mode();
     const paperSize = this.store.book()?.paperSize || '5x8';
-    const wppBase = m === 'kindle' ? 180 : m === 'iphone' ? 140 :
-      (paperSize === '6x9' ? 350 : (paperSize === 'A4' || paperSize === 'Letter') ? 500 : paperSize === 'A6' ? 150 : 250);
-    const fs = (m === 'kindle' || m === 'iphone') ? (this.store.tweaks.fontSize() + this.deviceFontSizeOffset()) : this.store.tweaks.fontSize();
-    const fsFactor = 12 / fs;
-    const wpp = wppBase * fsFactor;
+    const fs = this.store.tweaks.fontSize();
+
+    let wpp: number;
+    if (m === 'kindle' || m === 'iphone') {
+      const wppBase = m === 'kindle' ? 180 : 140;
+      const deviceFs = fs + this.deviceFontSizeOffset();
+      wpp = wppBase * (12 / deviceFs);
+    } else {
+      // Print: compute wpp from actual page geometry
+      const pageDimMap: Record<string, [number, number]> = {
+        '5x8': [5, 8], '6x9': [6, 9], 'A5': [5.83, 8.27],
+        'A4': [8.27, 11.69], 'A6': [4.13, 5.83], 'Letter': [8.5, 11]
+      };
+      const [pw, ph] = pageDimMap[paperSize] ?? [5, 8];
+      const t = this.store.tweaks;
+      const textW = pw - (t.marginInner() + t.marginOuter()) / 25.4;
+      const textH = ph - (t.marginTop() + t.marginBottom()) / 25.4;
+      const lineHeightIn = (fs * t.lineHeight()) / 72;
+      const linesPerPage = Math.floor(textH / lineHeightIn);
+      // ~10 chars/inch at 12pt for serif fonts (Lora/Spectral); scales inversely with font size
+      const charsPerLine = textW * (10 * (12 / fs));
+      wpp = Math.max(30, (charsPerLine / 5.5) * linesPerPage);
+    }
+
     const wordPages = Math.ceil((c.words || 1) / wpp);
     const pageBreaks = c.body.filter(b => b.type === 'page-break').length;
     return Math.max(1, wordPages, pageBreaks + 1);
