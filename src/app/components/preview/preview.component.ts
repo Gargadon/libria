@@ -679,8 +679,14 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       }
     }
 
-    this.realPageOffsets.set(chapterOffsets);
-    this.realChapterPages.set(chapterPages);
+    const prevOffsets = this.realPageOffsets();
+    const offsetsChanged =
+      Object.keys(chapterOffsets).length !== Object.keys(prevOffsets).length ||
+      Object.keys(chapterOffsets).some(k => chapterOffsets[k] !== prevOffsets[k]);
+    if (offsetsChanged) {
+      this.realPageOffsets.set(chapterOffsets);
+      this.realChapterPages.set(chapterPages);
+    }
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
   }
 

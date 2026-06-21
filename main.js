@@ -285,6 +285,18 @@ function showLinuxUpdateNotice(latestVersion) {
   });
 }
 
+function isNewerVersion(remote, current) {
+  const r = remote.split('.').map(Number);
+  const c = current.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const rv = r[i] || 0;
+    const cv = c[i] || 0;
+    if (rv > cv) return true;
+    if (rv < cv) return false;
+  }
+  return false;
+}
+
 function checkVersionViaGitHub() {
   const https = require('https');
   const options = {
@@ -299,7 +311,7 @@ function checkVersionViaGitHub() {
       try {
         const release = JSON.parse(data);
         const latest = (release.tag_name || '').replace(/^v/, '');
-        if (latest && latest !== app.getVersion()) {
+        if (latest && isNewerVersion(latest, app.getVersion())) {
           showLinuxUpdateNotice(latest);
         }
       } catch (_) { /* JSON parse error — ignore */ }
