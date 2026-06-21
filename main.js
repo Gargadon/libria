@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { spawnSync } = require('child_process');
-const { autoUpdater } = require('electron-updater');
+let autoUpdater = null;
+try { autoUpdater = require('electron-updater').autoUpdater; } catch (_) { /* system install without bundled node_modules */ }
 
 function findGsPath() {
   const plat = process.platform;
@@ -274,25 +275,53 @@ function setupHyphenation() {
   }
 }
 
+function showLinuxUpdateNotice(latestVersion) {
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Nueva versión disponible',
+    message: `Libria ${latestVersion} está disponible`,
+    detail: 'Actualiza desde tu gestor de paquetes o descarga el instalador en:\ngithub.com/Gargadon/libria/releases',
+    buttons: ['Entendido'],
+  });
+}
+
+function checkVersionViaGitHub() {
+  const https = require('https');
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/Gargadon/libria/releases/latest',
+    headers: { 'User-Agent': `Libria/${app.getVersion()}` },
+  };
+  https.get(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      try {
+        const release = JSON.parse(data);
+        const latest = (release.tag_name || '').replace(/^v/, '');
+        if (latest && latest !== app.getVersion()) {
+          showLinuxUpdateNotice(latest);
+        }
+      } catch (_) { /* JSON parse error — ignore */ }
+    });
+  }).on('error', (err) => { console.error('[updater]', err.message); });
+}
+
 function setupAutoUpdater() {
-  // Never auto-download — we ask the user first
+  // Linux sin electron-updater (AUR, deb, pacman): check manual vía GitHub API
+  if (!autoUpdater) {
+    setTimeout(checkVersionViaGitHub, 5000);
+    return;
+  }
+
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
 
   autoUpdater.on('update-available', (info) => {
-    const isLinux = process.platform === 'linux';
-
-    if (isLinux) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Nueva versión disponible',
-        message: `Libria ${info.version} está disponible`,
-        detail: 'Busca la nueva versión en tu gestor de paquetes o descárgala desde:\ngithub.com/Gargadon/libria/releases',
-        buttons: ['Entendido'],
-      });
+    if (process.platform === 'linux') {
+      showLinuxUpdateNotice(info.version);
       return;
     }
-
     dialog.showMessageBox(mainWindow, {
       type: 'question',
       title: 'Nueva versión disponible',
@@ -315,20 +344,13 @@ function setupAutoUpdater() {
       defaultId: 0,
       cancelId: 1,
     }).then(({ response }) => {
-      if (response === 0) {
-        autoUpdater.quitAndInstall();
-      } else {
-        autoUpdater.autoInstallOnAppQuit = true;
-      }
+      if (response === 0) autoUpdater.quitAndInstall();
+      else autoUpdater.autoInstallOnAppQuit = true;
     });
   });
 
-  // Errors silenciosos — no interrumpir al usuario si falla la conexión
-  autoUpdater.on('error', (err) => {
-    console.error('[updater]', err.message);
-  });
+  autoUpdater.on('error', (err) => { console.error('[updater]', err.message); });
 
-  // Comprobar 5 segundos después de arrancar para no bloquear la carga
   setTimeout(() => autoUpdater.checkForUpdates(), 5000);
 }
 
