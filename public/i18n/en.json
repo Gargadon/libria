@@ -297,6 +297,7 @@
   "about.tagline": "Your next great story starts here.",
   "about.copyright": "© 2026 David Kantún. All rights reserved.",
   "about.close": "Close",
+  "about.checkForUpdates": "Check for Updates",
   "confirm.title": "Confirm Action",
   "confirm.defaultMessage": "Are you sure you want to perform this action?",
   "confirm.cancel": "Cancel",
@@ -358,5 +359,16 @@
   "spellcheck.noSuggestions": "No suggestions",
   "spellcheck.ignore": "Ignore",
   "spellcheck.ignoreAll": "Ignore All",
-  "spellcheck.addToDictionary": "Add to Dictionary"
+  "spellcheck.addToDictionary": "Add to Dictionary",
+  "sidebar.themes": "Book Theme",
+  "themes.classic": "Classic",
+  "themes.modern": "Modern",
+  "themes.minimalist": "Minimalist",
+  "sidebar.saveAsTheme": "Save current settings as theme…",
+  "sidebar.themeNamePlaceholder": "Theme name",
+  "sidebar.confirmSaveTheme": "Save",
+  "sidebar.cancelSaveTheme": "Cancel",
+  "sidebar.importTheme": "Import",
+  "sidebar.exportTheme": "Export theme",
+  "sidebar.deleteTheme": "Delete theme"
 }

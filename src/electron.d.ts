@@ -18,6 +18,9 @@ interface ElectronAPI {
   getCustomDictionary(): Promise<string[]>;
   addWordToDictionary(word: string): Promise<boolean>;
   removeWordFromDictionary(word: string): Promise<boolean>;
+
+  // Auto-updater
+  checkForUpdates(): void;
 }
 
 interface Window {

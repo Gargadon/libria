@@ -52,7 +52,14 @@ import { environment } from '../../../environments/environment';
 
           <p class="about__copy">{{ 'about.copyright' | translate }}</p>
 
-          <button class="about__close" (click)="close.emit()">{{ 'about.close' | translate }}</button>
+          <div class="about__actions">
+            <button class="about__btn about__btn--secondary" (click)="checkUpdates()">
+              {{ 'about.checkForUpdates' | translate }}
+            </button>
+            <button class="about__btn" (click)="close.emit()">
+              {{ 'about.close' | translate }}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -190,12 +197,18 @@ import { environment } from '../../../environments/environment';
       font-size: 10px;
       color: var(--ink-mute);
       letter-spacing: .04em;
-      margin: 14px 0 0;
+      margin: 14px 0 24px;
     }
 
-    .about__close {
-      margin-top: 24px;
-      padding: 8px 28px;
+    .about__actions {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .about__btn {
+      padding: 8px 20px;
       border-radius: 8px;
       background: var(--ink);
       color: var(--paper);
@@ -205,10 +218,21 @@ import { environment } from '../../../environments/environment';
       border: none;
       cursor: pointer;
       transition: background .15s;
+      flex: 1;
     }
 
-    .about__close:hover {
+    .about__btn:hover {
       background: var(--ink-2);
+    }
+
+    .about__btn--secondary {
+      background: var(--paper-2);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+    }
+
+    .about__btn--secondary:hover {
+      background: var(--rule-soft);
     }
   `]
 })
@@ -224,4 +248,11 @@ export class AboutModalComponent {
   readonly arch = (window as any).electronAPI?.arch ?? 'unknown';
   readonly environment = environment;
   readonly editionName = `${environment.edition} Edition`;
+
+  checkUpdates() {
+    const api = (window as any).electronAPI;
+    if (api?.checkForUpdates) {
+      api.checkForUpdates();
+    }
+  }
 }

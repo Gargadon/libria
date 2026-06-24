@@ -22,4 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCustomDictionary: () => ipcRenderer.invoke('spell:get-dictionary'),
   addWordToDictionary: (word) => ipcRenderer.invoke('spell:add-word', word),
   removeWordFromDictionary: (word) => ipcRenderer.invoke('spell:remove-word', word),
+
+  // Auto-updater
+  checkForUpdates: () => ipcRenderer.send('app:check-for-updates'),
 });

@@ -3,7 +3,7 @@ import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Book, ChapterKind, ChapterTemplateId } from '../../models/book.models';
+import { Book, ChapterKind, ChapterTemplateId, BookTheme } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { ExportService } from '../../services/export.service';
 import { ImportService } from '../../services/import.service';
@@ -11,6 +11,8 @@ import { SpellCheckService } from '../../services/spell-check.service';
 import { FontService } from '../../services/font.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
+import { BOOK_THEMES } from '../../data/themes.data';
+import { CustomThemesService } from '../../services/custom-themes.service';
 
 import { environment } from '../../../environments/environment';
 
@@ -180,6 +182,66 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
             <div class="sb__author">{{ 'sidebar.stylesDesc' | translate }}</div>
           </div>
           <div class="sb__content sb__content--padding">
+            <div class="sb__section-row">
+              <span class="sb__section">{{ 'sidebar.themes' | translate }}</span>
+              <button class="sb__theme-import-btn" (click)="importTheme()" [title]="'sidebar.importTheme' | translate">
+                <span class="material-symbols-outlined" style="font-size:16px">upload</span>
+                {{ 'sidebar.importTheme' | translate }}
+              </button>
+            </div>
+            <div class="sb__themes">
+              @for (theme of allThemes(); track theme.id) {
+                <button
+                  class="sb__theme-card"
+                  [class.sb__theme-card--active]="activeThemeId() === theme.id"
+                  [class.sb__theme-card--custom]="theme.isCustom"
+                  (click)="applyTheme(theme)"
+                  [id]="'theme-' + theme.id"
+                >
+                  <span class="sb__theme-preview" [style.fontFamily]="themePreviewFont(theme)">Aa</span>
+                  <span class="sb__theme-name">{{ theme.isCustom ? theme.name : (theme.name | translate) }}</span>
+                  @if (theme.isCustom) {
+                    <span class="sb__theme-actions">
+                      <span class="sb__theme-action" (click)="exportTheme(theme, $event)" [title]="'sidebar.exportTheme' | translate"
+                            role="button" tabindex="0" (keydown.enter)="exportTheme(theme, $event)">
+                        <span class="material-symbols-outlined" style="font-size:14px">download</span>
+                      </span>
+                      <span class="sb__theme-action sb__theme-action--del" (click)="deleteTheme(theme.id, $event)" [title]="'sidebar.deleteTheme' | translate"
+                            role="button" tabindex="0" (keydown.enter)="deleteTheme(theme.id, $event)">
+                        ×
+                      </span>
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+            @if (showSaveThemeInput()) {
+              <div class="sb__theme-save">
+                <input
+                  class="sb__input sb__theme-save-input"
+                  type="text"
+                  [placeholder]="'sidebar.themeNamePlaceholder' | translate"
+                  [value]="newThemeName()"
+                  (input)="newThemeName.set($any($event.target).value)"
+                  (keydown.enter)="confirmSaveTheme()"
+                  (keydown.escape)="showSaveThemeInput.set(false)"
+                  #themeNameInput
+                  autofocus
+                />
+                <div class="sb__theme-save-btns">
+                  <button class="sb__opt sb__opt--on" (click)="confirmSaveTheme()" [disabled]="!newThemeName().trim()">
+                    {{ 'sidebar.confirmSaveTheme' | translate }}
+                  </button>
+                  <button class="sb__opt" (click)="showSaveThemeInput.set(false)">
+                    {{ 'sidebar.cancelSaveTheme' | translate }}
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <button class="sb__btn-link" (click)="showSaveThemeInput.set(true)">
+                + {{ 'sidebar.saveAsTheme' | translate }}
+              </button>
+            }
             <div class="sb__section">{{ 'sidebar.bodyTypography' | translate }}</div>
             <div class="sb__row">
               <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
@@ -933,6 +995,83 @@ export class SidebarComponent implements OnInit {
   readonly translate = inject(TranslateService);
   readonly fontService = inject(FontService);
   readonly Math = Math;
+  readonly themes = BOOK_THEMES;
+
+  /** Keys checked to detect an active theme (excludes UI-only tweaks) */
+  private readonly THEME_KEYS: (keyof BookTheme['tweaks'])[] = [
+    'bookFont', 'titleFont', 'fontSize', 'lineHeight', 'paragraphSpacing',
+    'indentFirstLine', 'indentSize', 'justifyText', 'hyphenation',
+    'dropCap', 'dropCapLines', 'titleAlignment', 'titleFontSize',
+    'titleBold', 'titleItalic', 'titleUnderline', 'sceneBreakType',
+    'showPageNumbers', 'pageNumberPosition', 'showHeader',
+    'marginTop', 'marginBottom', 'marginInner', 'marginOuter'
+  ];
+
+  readonly activeThemeId = computed(() => {
+    const t = this.store.tweaks;
+    for (const theme of BOOK_THEMES) {
+      const match = this.THEME_KEYS.every(key => {
+        const themeVal = (theme.tweaks as any)[key];
+        const storeVal = (t as any)[key]();
+        return themeVal === undefined || themeVal === storeVal;
+      });
+      if (match) return theme.id;
+    }
+    return null;
+  });
+
+  themePreviewFont(theme: BookTheme): string {
+    const font = theme.tweaks.bookFont;
+    switch (font) {
+      case 'eb-garamond': return "'EB Garamond', serif";
+      case 'crimson-pro': return "'Crimson Pro', serif";
+      case 'lora': return "'Lora', serif";
+      case 'spectral': return "'Spectral', serif";
+      case 'inter': return "'Inter', sans-serif";
+      case 'montserrat': return "'Montserrat', sans-serif";
+      default: return 'serif';
+    }
+  }
+
+  applyTheme(theme: BookTheme) {
+    this.store.applyTheme(theme);
+  }
+
+  // ─── Custom themes ───────────────────────────────────────────────────────────
+  readonly customThemesService = inject(CustomThemesService);
+
+  readonly allThemes = computed(() => [
+    ...BOOK_THEMES,
+    ...this.store.customThemes()
+  ]);
+
+  showSaveThemeInput = signal(false);
+  newThemeName = signal('');
+
+  confirmSaveTheme() {
+    const name = this.newThemeName().trim();
+    if (!name) return;
+    this.store.saveCustomTheme(name);
+    this.newThemeName.set('');
+    this.showSaveThemeInput.set(false);
+  }
+
+  deleteTheme(id: string, event: Event) {
+    event.stopPropagation();
+    this.store.deleteCustomTheme(id);
+  }
+
+  async exportTheme(theme: BookTheme, event: Event) {
+    event.stopPropagation();
+    await this.customThemesService.exportTheme(theme);
+  }
+
+  async importTheme() {
+    const theme = await this.customThemesService.importTheme();
+    if (theme) {
+      this.store.addCustomTheme(theme);
+    }
+  }
 
   systemFontFamilies = signal<string[]>([]);
 

@@ -20,13 +20,14 @@ Libria abandona el concepto de "página en blanco" tradicional por un sistema de
 - **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes y más.
 - **Imágenes:** Inserción desde el portapapeles (Ctrl+V), desde el panel de attachments o cargando archivos. Rotación (90°, 180°, 270°), volteo horizontal y vertical, con ajuste automático de orientación EXIF. Las transformaciones se reflejan en todas las previsualizaciones (Kindle, iPhone y Papel).
 - **Reordenación de capítulos:** Botones de subir/bajar en el panel lateral para reposicionar capítulos dentro de su sección (preliminares, cuerpo, posliminares).
-- **Formato de texto:** Negrita, cursiva, subrayado, tachado, superíndice y subíndice.
 - **Búsqueda y reemplazo global:** Vista de contexto con coincidencias resaltadas.
 
 ### Maquetación Tipográfica de Alto Nivel
 
-Un panel de control con más de **40 parámetros ajustables** para ver cómo quedará tu libro mientras lo escribes:
+Un panel de control con parámetros ajustables para ver cómo quedará tu libro mientras lo escribes:
 
+- **Temas de Libro Personalizados:** Creación y diseño de temas propios (guardando la configuración tipográfica actual del panel de maquetación). Los temas personalizados se guardan localmente y pueden **exportarse** (como archivos `.libria-theme`) e **importarse** fácilmente desde la interfaz.
+- **Temas Predefinidos:** Opciones integradas como *Clásico*, *Moderno* y *Minimalista* (este último con ajustes específicos como remoción de márgenes superiores).
 - **Tipografía:** Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat — y cualquier fuente instalada en tu sistema (con campos personalizados para fuente del libro y de títulos).
 - **Control absoluto:** Márgenes (interior/exterior/superior/inferior), interlineado, espaciado de párrafos, sangrías, justificación y alineación.
 - **Detalles profesionales:** Letras capitulares (drop caps), guionización automática en 5 idiomas, **comillas inteligentes**, **guiones em/en**, **puntos suspensivos tipográficos** y **signos de apertura inteligentes**.
@@ -39,7 +40,7 @@ Corrector ortográfico completo sin depender del sistema operativo:
 
 - **Panel de revisión:** Navegación error por error con contexto, sugerencias y acciones (Ignorar, Ignorar todo, Añadir al diccionario). Acceso vía `F7` o botón en la barra de herramientas.
 - **Subrayado en tiempo real:** Los errores ortográficos se subrayan en rojo directamente en el editor mientras escribes, sin perder el cursor ni el formato.
-- **Diccionarios Hunspell:** Soporte para español, inglés, francés e italiano con más de 500 KB–1.3 MB de léxico por idioma.
+- **Diccionarios Hunspell:** Soporte para español, inglés, francés e italiano.
 
 ### Notas al Pie
 
@@ -62,6 +63,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 
 - **Modo Zen:** Ocultación total de la interfaz (topbar, sidebar y previsualización) para escribir sin distracciones. Acceso vía `F11` o botón en la barra.
 - **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
+- **Verificación de actualizaciones:** Botón dedicado en el diálogo de *Acerca de* (About) para verificar manualmente si hay nuevas versiones de la aplicación desde GitHub o mediante el actualizador automático.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
 - **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
 - **Previsualización ocultable:** Alterna la visibilidad del panel de previsualización con `Ctrl+Shift+P` para maximizar el espacio de escritura.
@@ -76,7 +78,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 
 ### Internacionalización
 
-Interfaz disponible en **español, inglés, francés e italiano** — conmutación en vivo desde el panel lateral.
+Interfaz disponible en **español, inglés, francés, italiano, alemán y portugués** — conmutación en vivo desde el panel lateral.
 
 ---
 
@@ -86,16 +88,16 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 
 | Componente | Tecnología |
 | :--- | :--- |
-| **Framework** | [Angular 21](https://angular.dev/) (standalone components) |
+| **Framework** | [Angular 22](https://angular.dev/) (standalone components) |
 | **Gestión de Estado** | [NgRx Signals Store](https://ngrx.io/guide/signals) |
 | **Entorno de Escritorio** | [Electron 42](https://www.electronjs.org/) |
 | **Persistencia** | Formato abierto `.libria` (JSON autocontenido) |
 | **Testing** | [Vitest](https://vitest.dev/) |
 | **Estilos** | SCSS (Sass) por componente |
-| **Lenguaje** | TypeScript 5.9 (Modo Estricto) |
+| **Lenguaje** | TypeScript 6.0 (Modo Estricto) |
 | **Runtime** | [Bun](https://bun.sh/) 1.3.14 |
-| **Corrector ortográfico** | [nspell](https://github.com/wooorm/nspell) + diccionarios Hunspell |
-| **Dependencias clave** | `docx` (generación DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
+| **Corrector ortográfico** | API de corrección integrada + diccionarios Hunspell |
+| **Dependencias clave** | `docx` (generación DOCX), `jszip` (EPUB), `hyphen` (guinado), `mammoth` (importación DOCX) |
 
 ### Arquitectura de Datos
 
@@ -103,8 +105,8 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 
 - **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
 - **Búsqueda Global:** Motor de búsqueda indexado con contexto de coincidencias.
-- **Sistema de Activos:** Panel de attachments para gestionar imágenes embebidas (insertar, eliminar) directamente en el archivo `.libria`.
 - **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización) en LocalStorage.
+- **Temas personalizados:** Carga e inicialización automática de temas del usuario a nivel de estado en el BookStore.
 
 ---
 

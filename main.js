@@ -297,7 +297,7 @@ function isNewerVersion(remote, current) {
   return false;
 }
 
-function checkVersionViaGitHub() {
+function checkVersionViaGitHub(manual = false) {
   const https = require('https');
   const options = {
     hostname: 'api.github.com',
@@ -313,16 +313,47 @@ function checkVersionViaGitHub() {
         const latest = (release.tag_name || '').replace(/^v/, '');
         if (latest && isNewerVersion(latest, app.getVersion())) {
           showLinuxUpdateNotice(latest);
+        } else if (manual) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'Actualizaciones',
+            message: 'Estás al día',
+            detail: `Libria ${app.getVersion()} es la versión más reciente disponible.`,
+            buttons: ['Aceptar'],
+          });
         }
-      } catch (_) { /* JSON parse error — ignore */ }
+      } catch (_) {
+        if (manual) {
+          dialog.showMessageBox(mainWindow, {
+            type: 'error',
+            title: 'Actualizaciones',
+            message: 'Error al buscar actualizaciones',
+            detail: 'No se pudo obtener la última versión desde GitHub.',
+            buttons: ['Aceptar'],
+          });
+        }
+      }
     });
-  }).on('error', (err) => { console.error('[updater]', err.message); });
+  }).on('error', (err) => {
+    console.error('[updater]', err.message);
+    if (manual) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: 'Actualizaciones',
+        message: 'Error al buscar actualizaciones',
+        detail: err.message,
+        buttons: ['Aceptar'],
+      });
+    }
+  });
 }
+
+let manualUpdateCheck = false;
 
 function setupAutoUpdater() {
   // Linux sin electron-updater (AUR, deb, pacman): check manual vía GitHub API
   if (!autoUpdater) {
-    setTimeout(checkVersionViaGitHub, 5000);
+    setTimeout(() => checkVersionViaGitHub(false), 5000);
     return;
   }
 
@@ -330,6 +361,7 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = false;
 
   autoUpdater.on('update-available', (info) => {
+    manualUpdateCheck = false; // Reset flag
     if (process.platform === 'linux') {
       showLinuxUpdateNotice(info.version);
       return;
@@ -347,6 +379,19 @@ function setupAutoUpdater() {
     });
   });
 
+  autoUpdater.on('update-not-available', () => {
+    if (manualUpdateCheck) {
+      manualUpdateCheck = false;
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Actualizaciones',
+        message: 'Estás al día',
+        detail: `Libria ${app.getVersion()} es la versión más reciente disponible.`,
+        buttons: ['Aceptar'],
+      });
+    }
+  });
+
   autoUpdater.on('update-downloaded', () => {
     dialog.showMessageBox(mainWindow, {
       type: 'info',
@@ -361,7 +406,19 @@ function setupAutoUpdater() {
     });
   });
 
-  autoUpdater.on('error', (err) => { console.error('[updater]', err.message); });
+  autoUpdater.on('error', (err) => {
+    console.error('[updater]', err.message);
+    if (manualUpdateCheck) {
+      manualUpdateCheck = false;
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: 'Actualizaciones',
+        message: 'Error al buscar actualizaciones',
+        detail: err.message,
+        buttons: ['Aceptar'],
+      });
+    }
+  });
 
   setTimeout(() => autoUpdater.checkForUpdates(), 5000);
 }
@@ -405,10 +462,18 @@ ipcMain.handle('fs:readFile', async (_event, filePath) => {
   return fs.readFileSync(filePath, 'utf-8');
 });
 
-// ─── Language IPC (rebuild native menu) ────────────────────────────────────────
-
 ipcMain.on('app:set-language', (_event, lang) => {
   buildMenu(lang);
+});
+
+ipcMain.on('app:check-for-updates', () => {
+  if (app.isPackaged && autoUpdater) {
+    manualUpdateCheck = true;
+    autoUpdater.checkForUpdates();
+  } else {
+    // Linux package manager fallback / dev manual check via GitHub API
+    checkVersionViaGitHub(true);
+  }
 });
 
 // ─── Spell checker IPC ──────────────────────────────────────────────────────────

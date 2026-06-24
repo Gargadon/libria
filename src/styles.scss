@@ -878,6 +878,170 @@ app-welcome {
   margin-top: 0;
 }
 
+.sb__themes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.sb__theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px 10px;
+  background: var(--paper-2);
+  border: 1.5px solid var(--rule);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: var(--ink);
+  font-family: inherit;
+  min-width: 0;
+}
+
+.sb__theme-card:hover {
+  border-color: var(--ink-soft);
+  background: var(--paper-3, rgba(0,0,0,0.04));
+  transform: translateY(-1px);
+}
+
+.sb__theme-card--active {
+  border-color: var(--accent, #6366f1);
+  background: color-mix(in srgb, var(--accent, #6366f1) 8%, var(--paper-2));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #6366f1) 25%, transparent);
+}
+
+.sb__theme-card--active:hover {
+  transform: none;
+}
+
+.sb__theme-preview {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.sb__theme-name {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink-mute);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sb__theme-card--active .sb__theme-name {
+  color: var(--accent, #6366f1);
+}
+
+/* Custom card — slightly taller to fit action icons */
+.sb__theme-card--custom {
+  padding-bottom: 6px;
+}
+
+.sb__theme-actions {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.sb__theme-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--ink-mute);
+  line-height: 1;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sb__theme-action:hover {
+  background: rgba(0,0,0,0.08);
+  color: var(--ink);
+}
+
+.sb__theme-action--del:hover {
+  background: rgba(220,50,50,0.12);
+  color: #dc3232;
+}
+
+/* Section row: label + import button side by side */
+.sb__section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 24px 0 12px;
+}
+
+.sb__section-row .sb__section {
+  margin: 0;
+}
+
+.sb__theme-import-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sb__theme-import-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+/* Save-as-theme inline form */
+.sb__theme-save {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.sb__theme-save-input {
+  width: 100%;
+}
+
+.sb__theme-save-btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* Ensure sb__btn-link exists for the save trigger */
+.sb__btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--ink-mute);
+  cursor: pointer;
+  text-align: left;
+  margin: 6px 0 2px;
+  transition: color 0.15s;
+}
+
+.sb__btn-link:hover {
+  color: var(--accent, #6366f1);
+}
+
 .sb__cover-zone {
   margin-bottom: 24px;
 }

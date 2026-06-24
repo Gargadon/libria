@@ -167,6 +167,8 @@ import { BlockViewComponent } from '../block-view/block-view.component';
                   <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
                 }
               </div>
+            } @else {
+              <div [style.height.mm]="store.tweaks.marginTop()" style="margin:0;flex-shrink:0;"></div>
             }
 
             <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
@@ -186,6 +188,8 @@ import { BlockViewComponent } from '../block-view/block-view.component';
                 style="margin:0;flex-shrink:0;">
                 <span>{{ globalPage() + 1 }}</span>
               </div>
+            } @else if (!showPN2) {
+              <div [style.height.mm]="store.tweaks.marginBottom()" style="margin:0;flex-shrink:0;"></div>
             }
           </div>
         </div>

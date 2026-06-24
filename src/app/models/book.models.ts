@@ -103,6 +103,15 @@ export interface Tweaks {
   smartOpeningSigns: boolean;
 }
 
+export interface BookTheme {
+  id: string;
+  /** i18n key, e.g. 'themes.classic', or a free string for custom themes */
+  name: string;
+  tweaks: Partial<Tweaks>;
+  /** true = user-created theme; undefined/false = built-in preset */
+  isCustom?: boolean;
+}
+
 export type NoteRole = 'author' | 'editor' | 'corrector' | 'publisher';
 export type NoteStatus = 'unresolved' | 'resolved' | 'not-applicable';
 

@@ -1,9 +1,10 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
+import { Book, BookTheme, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
+import { CustomThemesService } from '../services/custom-themes.service';
 import { environment } from '../../environments/environment';
 
 export interface BookState {
@@ -40,6 +41,7 @@ export interface BookState {
   writingGoals: WritingGoals;
   // Measured start pages from the print preview DOM (1-indexed); empty until preview is opened
   printPageMap: Record<string, number>;
+  customThemes: BookTheme[];
 }
 
 const initialState: BookState = {
@@ -110,7 +112,8 @@ const initialState: BookState = {
   isExporting: false,
   exportStatus: '',
   writingGoals: { targetWords: 0, deadline: '' },
-  printPageMap: {}
+  printPageMap: {},
+  customThemes: [],
 };
 
 function uiLocale(lang: string): string {
@@ -829,6 +832,38 @@ export const BookStore = signalStore(
         ...(dirty ? { isDirty: true } : {})
       }));
     },
+    applyTheme(theme: BookTheme) {
+      patchState(store, (state) => ({
+        tweaks: { ...state.tweaks, ...theme.tweaks },
+        isDirty: true
+      }));
+    },
+    saveCustomTheme(name: string): BookTheme {
+      const customThemesService = inject(CustomThemesService);
+      const UI_ONLY: (keyof Tweaks)[] = ['sidebar', 'mode', 'spellcheck'];
+      const tweaksCopy = Object.fromEntries(
+        Object.entries(store.tweaks()).filter(([k]) => !UI_ONLY.includes(k as keyof Tweaks))
+      ) as Partial<Tweaks>;
+      const theme: BookTheme = {
+        id: crypto.randomUUID(),
+        name,
+        tweaks: tweaksCopy,
+        isCustom: true
+      };
+      const updated = customThemesService.save(theme);
+      patchState(store, { customThemes: updated });
+      return theme;
+    },
+    addCustomTheme(theme: BookTheme): void {
+      const customThemesService = inject(CustomThemesService);
+      const updated = customThemesService.save(theme);
+      patchState(store, { customThemes: updated });
+    },
+    deleteCustomTheme(id: string): void {
+      const customThemesService = inject(CustomThemesService);
+      const updated = customThemesService.delete(id);
+      patchState(store, { customThemes: updated });
+    },
     setThemeMode(mode: 'light' | 'dark') {
       patchState(store, (state) => ({
         tweaks: { ...state.tweaks, mode },
@@ -913,12 +948,19 @@ export const BookStore = signalStore(
   withHooks({
     onInit(store) {
       const personalConfigService = inject(PersonalConfigService);
+      const customThemesService = inject(CustomThemesService);
       const spellCheckService = inject(SpellCheckService);
       const assetService = inject(AssetService);
 
       // Load initial personal config
       const saved = personalConfigService.load();
       patchState(store, { personalConfig: saved });
+
+      // Load custom themes from localStorage
+      const savedThemes = customThemesService.load();
+      if (savedThemes.length) {
+        patchState(store, { customThemes: savedThemes });
+      }
 
       // Apply saved theme mode (personal preference overrides book setting)
       const tweaks = store.tweaks();

@@ -296,6 +296,7 @@
   "about.tagline": "Sua próxima grande história começa aqui.",
   "about.copyright": "© 2026 David Kantún. Todos os direitos reservados.",
   "about.close": "Fechar",
+  "about.checkForUpdates": "Verificar atualizações",
   "confirm.title": "Confirmar ação",
   "confirm.defaultMessage": "Tem certeza de que deseja realizar esta ação?",
   "confirm.cancel": "Cancelar",
@@ -356,5 +357,17 @@
   "spellcheck.noSuggestions": "Sem sugestões",
   "spellcheck.ignore": "Ignorar",
   "spellcheck.ignoreAll": "Ignorar tudo",
-  "spellcheck.addToDictionary": "Adicionar ao dicionário"
+  "spellcheck.addToDictionary": "Adicionar ao dicionário",
+  "sidebar.themes": "Tema do livro",
+  "themes.classic": "Clássico",
+  "themes.modern": "Moderno",
+  "themes.minimalist": "Minimalista",
+  "sidebar.saveAsTheme": "Salvar configurações como tema…",
+  "sidebar.themeNamePlaceholder": "Nome do tema",
+  "sidebar.confirmSaveTheme": "Salvar",
+  "sidebar.cancelSaveTheme": "Cancelar",
+  "sidebar.importTheme": "Importar",
+  "sidebar.exportTheme": "Exportar tema",
+  "sidebar.deleteTheme": "Excluir tema"
 }
+
