@@ -1,6 +1,7 @@
 import { Component, input, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import DOMPurify from 'dompurify';
 import { Block, Chapter } from '../../models/book.models';
 import { sceneBreakGlyph, imageTransform, escapeHtml } from '../../utils/block-maps';
 import { BookStore } from '../../store/book.store';
@@ -139,24 +140,31 @@ export class BlockViewComponent {
     return this.hyphenService.hyphenateHtml(raw);
   }
 
+  private readonly PURIFY_CONFIG = {
+    ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'span', 'sub', 'sup', 'br', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'blockquote', 'cite'],
+    ALLOWED_ATTR: ['class', 'style']
+  };
+
   safeHtml(html: string | undefined): SafeHtml | null {
     if (!html) return null;
-    const cached = this._safeHtmlCache.get(html);
+    const cleanHtml = DOMPurify.sanitize(html, this.PURIFY_CONFIG);
+    const cached = this._safeHtmlCache.get(cleanHtml);
     if (cached !== undefined) return cached;
-    const normalized = html.startsWith('<table') ? html : '<table>' + html + '</table>';
+    const normalized = cleanHtml.startsWith('<table') ? cleanHtml : '<table>' + cleanHtml + '</table>';
     const result = this.sanitizer.bypassSecurityTrustHtml(normalized);
     if (this._safeHtmlCache.size > 200) this._safeHtmlCache.clear();
-    this._safeHtmlCache.set(html, result);
+    this._safeHtmlCache.set(cleanHtml, result);
     return result;
   }
 
   trustHtml(html: string | undefined): SafeHtml | null {
     if (!html) return null;
-    const cached = this._trustHtmlCache.get(html);
+    const cleanHtml = DOMPurify.sanitize(html, this.PURIFY_CONFIG);
+    const cached = this._trustHtmlCache.get(cleanHtml);
     if (cached !== undefined) return cached;
-    const result = this.sanitizer.bypassSecurityTrustHtml(html);
+    const result = this.sanitizer.bypassSecurityTrustHtml(cleanHtml);
     if (this._trustHtmlCache.size > 500) this._trustHtmlCache.clear();
-    this._trustHtmlCache.set(html, result);
+    this._trustHtmlCache.set(cleanHtml, result);
     return result;
   }
 }

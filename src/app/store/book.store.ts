@@ -6,6 +6,7 @@ import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
 import { CustomThemesService } from '../services/custom-themes.service';
 import { environment } from '../../environments/environment';
+import { validateLibriaDocument } from '../utils/document-validator';
 
 export interface BookState {
   book: Book | null;
@@ -276,6 +277,7 @@ export const BookStore = signalStore(
       });
     },
     loadDocument(doc: LibriaDocument, assetService: AssetService) {
+      validateLibriaDocument(doc);
       assetService.load(doc.assets || {});
       const personalMode = store.personalConfig().mode;
       patchState(store, {
