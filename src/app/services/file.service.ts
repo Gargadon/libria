@@ -33,7 +33,9 @@ export class FileService {
       chapters: this.store.chapters(),
       notes: this.store.notes(),
       assets: this.assetService.getAll(),
-      writingGoals: this.store.writingGoals()
+      writingGoals: this.store.writingGoals(),
+      characters: this.store.characters(),
+      locations: this.store.locations()
     };
   }
 

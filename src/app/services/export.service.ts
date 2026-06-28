@@ -1262,29 +1262,58 @@ ${bodyContent}
 
       const contentParts: string[] = [];
 
-      const htmlToOdtXml = (html: string) => {
-        if (!html) return '';
-        // 1. Strip unsupported HTML tags (keep only strong, b, em, i, u, br)
-        let cleanHtml = html.replace(/<(\/)?([a-z0-9]+)([^>]*)>/gi, (match, isClosing, tagName) => {
-          const lowerTag = tagName.toLowerCase();
-          if (['strong', 'b', 'em', 'i', 'u', 'br'].includes(lowerTag)) {
-            return match;
+      const htmlToOdtXml = (htmlText: string, fnMap: Record<string, { num: number; content: string }>) => {
+        if (!htmlText) return '';
+        
+        let xml = '';
+        const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
+        let m: RegExpExecArray | null;
+
+        let bold = false;
+        let italic = false;
+        let uline = false;
+
+        while ((m = re.exec(htmlText)) !== null) {
+          if (m[3] !== undefined) {
+            // Text segment
+            const text = esc(m[3].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&nbsp;/g, '\u00A0'));
+            if (bold || italic || uline) {
+              let styleName = '';
+              if (bold && italic && uline) styleName = 'Bold_Italic_Underline';
+              else if (bold && italic) styleName = 'Bold_Italic';
+              else if (bold && uline) styleName = 'Bold_Underline';
+              else if (italic && uline) styleName = 'Italic_Underline';
+              else if (bold) styleName = 'Bold';
+              else if (italic) styleName = 'Italic';
+              else if (uline) styleName = 'Underline';
+              
+              xml += `<text:span text:style-name="${styleName}">${text}</text:span>`;
+            } else {
+              xml += text;
+            }
+          } else if (m[1] === '' && m[2] !== 'br') {
+            const tag = m[2];
+            if (tag === 'b' || tag === 'strong') bold = true;
+            if (tag === 'i' || tag === 'em') italic = true;
+            if (tag === 'u' || tag === 'ins') uline = true;
+            if (tag === 'sup') {
+              const mid = m[0];
+              const fnMatch = mid.match(/data-fn="([^"]+)"/);
+              if (fnMatch && fnMap[fnMatch[1]]) {
+                const fnInfo = fnMap[fnMatch[1]];
+                const fnContentXml = esc(fnInfo.content);
+                xml += `<text:note text:id="ftn${fnInfo.num}" text:note-class="footnote"><text:note-citation>${fnInfo.num}</text:note-citation><text:note-body><text:p text:style-name="Footnote">${fnContentXml}</text:p></text:note-body></text:note>`;
+              }
+            }
+          } else if (m[1] === '/') {
+            const tag = m[2];
+            if (tag === 'b' || tag === 'strong') bold = false;
+            if (tag === 'i' || tag === 'em') italic = false;
+            if (tag === 'u' || tag === 'ins') uline = false;
+          } else if (m[2] === 'br') {
+            xml += '<text:line-break/>';
           }
-          return '';
-        });
-
-        // 2. Escape XML characters
-        let xml = esc(cleanHtml);
-
-        // 3. Decode the specific tags we want to support
-        xml = xml.replace(/&lt;(strong|b)&gt;/gi, '<text:span text:style-name="Bold">');
-        xml = xml.replace(/&lt;\/(strong|b)&gt;/gi, '</text:span>');
-        xml = xml.replace(/&lt;(em|i)&gt;/gi, '<text:span text:style-name="Italic">');
-        xml = xml.replace(/&lt;\/(em|i)&gt;/gi, '</text:span>');
-        xml = xml.replace(/&lt;u&gt;/gi, '<text:span text:style-name="Underline">');
-        xml = xml.replace(/&lt;\/u&gt;/gi, '</text:span>');
-        xml = xml.replace(/&lt;br\s*\/?&gt;/gi, '<text:line-break/>');
-
+        }
         return xml;
       };
 
@@ -1294,10 +1323,16 @@ ${bodyContent}
           contentParts.push(`<text:p text:style-name="Page_Break"/>`);
         }
 
+        const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
+        const fnMap: Record<string, { num: number; content: string }> = {};
+        sortedFns.forEach((fn, idx) => {
+          fnMap[fn.id] = { num: idx + 1, content: fn.content || '' };
+        });
+
         c.body.forEach((b) => {
           const rawText = b.text || '';
           const htmlText = b.html || esc(rawText);
-          const formatted = htmlToOdtXml(htmlText);
+          const formatted = htmlToOdtXml(htmlText, fnMap);
 
           switch (b.type) {
             case 'halftitle':
@@ -1338,7 +1373,7 @@ ${bodyContent}
               let listXml = '';
               for (const item of items) {
                 const rawItemContent = item.replace(/<li[^>]*>/i, '').trim();
-                const formattedItem = htmlToOdtXml(rawItemContent);
+                const formattedItem = htmlToOdtXml(rawItemContent, fnMap);
                 if (formattedItem) {
                   listXml += `<text:list-item><text:p>${formattedItem}</text:p></text:list-item>`;
                 }
@@ -1383,6 +1418,22 @@ ${bodyContent}
     </style:style>
     <style:style style:name="Underline" style:family="text">
       <style:text-properties style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Bold_Italic" style:family="text">
+      <style:text-properties fo:font-weight="bold" fo:font-style="italic"/>
+    </style:style>
+    <style:style style:name="Bold_Underline" style:family="text">
+      <style:text-properties fo:font-weight="bold" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Italic_Underline" style:family="text">
+      <style:text-properties fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Bold_Italic_Underline" style:family="text">
+      <style:text-properties fo:font-weight="bold" fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Footnote" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.05in"/>
+      <style:text-properties fo:font-size="10pt"/>
     </style:style>
     <style:style style:name="Title" style:family="paragraph" style:parent-style-name="Standard">
       <style:paragraph-properties fo:text-align="center" fo:margin-top="1in" fo:margin-bottom="0.5in"/>

@@ -11,6 +11,7 @@ import { SpellCheckService } from '../../services/spell-check.service';
 import { FontService } from '../../services/font.service';
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
+import { PomodoroService } from '../../services/pomodoro.service';
 import { BOOK_THEMES } from '../../data/themes.data';
 import { CustomThemesService } from '../../services/custom-themes.service';
 
@@ -920,6 +921,214 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
             }
           </div>
         }
+
+        @case ('worldbuilding') {
+          @if (activeWorldElement(); as el) {
+            <!-- DETAILED VIEW OF A SHEET -->
+            <div class="sb__head" style="padding-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <button class="sb__btn-link" style="display: flex; align-items: center; gap: 4px; padding: 0;" (click)="selectedWorldElement.set(null)">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">arrow_back</span>
+                  <span>{{ 'sidebar.goalsDone' | translate }}</span>
+                </button>
+              </div>
+              <div class="sb__title" style="margin-top: 4px;">{{ el.name }}</div>
+              <div class="sb__author" style="text-transform: uppercase; font-size: 10px; font-weight: bold; color: var(--accent); margin-top: 2px;">
+                {{ (selectedWorldElement()?.type === 'character' ? 'sidebar.characters' : 'sidebar.locations') | translate }}
+              </div>
+            </div>
+
+            <div class="sb__content sb__content--padding" style="display: flex; flex-direction: column; gap: 12px; height: calc(100% - 110px); overflow-y: auto; padding-top: 8px;">
+              <div class="sb__row sb__row--col">
+                <label class="sb__label">{{ 'sidebar.chapterTitle' | translate }}</label>
+                <input class="sb__input" type="text" 
+                       [ngModel]="el.name" 
+                       #nameInput
+                       (ngModelChange)="saveWorldElement($event, el.content)">
+              </div>
+
+              <div class="sb__row sb__row--col" style="flex: 1; display: flex; flex-direction: column; min-height: 250px;">
+                <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+                <textarea class="sb__input" style="flex: 1; min-height: 200px; font-family: inherit; font-size: 12px; line-height: 1.5; resize: vertical;"
+                          [ngModel]="el.content"
+                          [placeholder]="'sidebar.contentPlaceholder' | translate"
+                          #contentInput
+                          (ngModelChange)="saveWorldElement(nameInput.value, $event)"></textarea>
+              </div>
+
+              <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px;">
+                <button class="sb__btn-primary" style="width: 100%; background: #ef4444; border-color: #ef4444;" 
+                        (click)="deleteWorldElement(el.id, selectedWorldElement()?.type)">
+                  {{ 'sidebar.deleteElement' | translate }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <!-- LIST VIEW OF SHEETS -->
+            <div class="sb__head">
+              <div class="sb__title">{{ 'sidebar.worldbuildingTitle' | translate }}</div>
+              <div class="sb__author">{{ 'sidebar.worldbuildingDesc' | translate }}</div>
+            </div>
+            
+            <div class="sb__content sb__content--padding">
+              <!-- CHARACTERS SECTION -->
+              <div class="sb__section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 0;">
+                <span>{{ 'sidebar.characters' | translate }}</span>
+                <button class="sb__btn-link" style="font-size: 11px; font-weight: bold; padding: 2px 6px;" (click)="promptAddCharacter()">
+                  {{ 'sidebar.addCharacter' | translate }}
+                </button>
+              </div>
+
+              @if (store.characters().length === 0) {
+                <div class="sb__help" style="margin-bottom: 20px; font-style: italic;">{{ 'sidebar.noCharacters' | translate }}</div>
+              } @else {
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px;">
+                  @for (c of store.characters(); track c.id) {
+                    <div class="sb__card" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;"
+                         (click)="selectedWorldElement.set({ type: 'character', id: c.id })">
+                      <span style="font-weight: bold; font-size: 12px; color: var(--ink);">{{ c.name }}</span>
+                      <span class="material-symbols-outlined" style="font-size: 16px; color: var(--ink-mute);">edit</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- LOCATIONS SECTION -->
+              <div class="sb__section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 16px;">
+                <span>{{ 'sidebar.locations' | translate }}</span>
+                <button class="sb__btn-link" style="font-size: 11px; font-weight: bold; padding: 2px 6px;" (click)="promptAddLocation()">
+                  {{ 'sidebar.addLocation' | translate }}
+                </button>
+              </div>
+
+              @if (store.locations().length === 0) {
+                <div class="sb__help" style="font-style: italic;">{{ 'sidebar.noLocations' | translate }}</div>
+              } @else {
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  @for (l of store.locations(); track l.id) {
+                    <div class="sb__card" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;"
+                         (click)="selectedWorldElement.set({ type: 'location', id: l.id })">
+                      <span style="font-weight: bold; font-size: 12px; color: var(--ink);">{{ l.name }}</span>
+                      <span class="material-symbols-outlined" style="font-size: 16px; color: var(--ink-mute);">edit</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+
+        @case ('productivity') {
+          <div class="sb__head">
+            <div class="sb__title">{{ 'sidebar.productivity' | translate }}</div>
+            <div class="sb__author">{{ 'sidebar.goalsTitle' | translate }}</div>
+          </div>
+          <div class="sb__content sb__content--padding">
+            <!-- 1. PACING CHART -->
+            <div class="sb__section">{{ 'sidebar.pacingChart' | translate }}</div>
+            <div class="sb__help" style="margin-bottom: 12px;">{{ 'sidebar.pacingChartDesc' | translate }}</div>
+            
+            @if (mainChapters().length > 0) {
+              <!-- SVG PACING CHART -->
+              <div class="sb__chart-container" style="background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                <svg viewBox="0 0 300 160" width="100%" height="150" style="display: block;">
+                  <!-- Grid Lines -->
+                  <line x1="30" y1="10" x2="290" y2="10" stroke="var(--rule-soft)" stroke-dasharray="2" />
+                  <line x1="30" y1="70" x2="290" y2="70" stroke="var(--rule-soft)" stroke-dasharray="2" />
+                  <line x1="30" y1="130" x2="290" y2="130" stroke="var(--rule)" />
+
+                  <!-- Y-Axis Labels -->
+                  <text x="5" y="14" font-size="9" fill="var(--ink-mute)" font-family="monospace">{{ maxWords().toLocaleString() }}</text>
+                  <text x="5" y="74" font-size="9" fill="var(--ink-mute)" font-family="monospace">{{ (maxWords() / 2).toLocaleString() }}</text>
+                  <text x="20" y="134" font-size="9" fill="var(--ink-mute)" font-family="monospace">0</text>
+
+                  <!-- Average Line (dashed) -->
+                  @if (averageWords() > 0) {
+                    <line x1="30" 
+                          [attr.y1]="130 - (averageWords() / maxWords()) * 120" 
+                          x2="290" 
+                          [attr.y2]="130 - (averageWords() / maxWords()) * 120" 
+                          stroke="var(--accent)" 
+                          stroke-dasharray="3" 
+                          stroke-width="1.5" />
+                  }
+
+                  <!-- Bars -->
+                  @for (c of mainChapters(); track c.id; let i = $index) {
+                    <!-- Bar rect -->
+                    <rect [attr.x]="30 + i * (260 / mainChapters().length) + 2" 
+                          [attr.y]="130 - (c.words / maxWords()) * 120" 
+                          [attr.width]="(260 / mainChapters().length) - 4" 
+                          [attr.height]="(c.words / maxWords()) * 120" 
+                          [attr.fill]="c.status === 'ok' ? '#10b981' : (c.status === 'outline' ? '#fb923c' : '#facc15')"
+                          style="transition: all 0.3s ease; cursor: help;"
+                          [attr.title]="c.title + ': ' + c.words.toLocaleString() + ' ' + ('sidebar.wordCount' | translate)">
+                    </rect>
+                    <!-- X-Axis Labels -->
+                    @if (mainChapters().length <= 15) {
+                      <text [attr.x]="30 + i * (260 / mainChapters().length) + (130 / mainChapters().length)" 
+                            y="144" 
+                            font-size="8" 
+                            fill="var(--ink-mute)" 
+                            text-anchor="middle"
+                            font-family="inherit">
+                        {{ i + 1 }}
+                      </text>
+                    }
+                  }
+                </svg>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 8px; color: var(--ink-mute);">
+                  <span>{{ 'sidebar.averageChapterLength' | translate }}: <strong>{{ averageWords() | number }}</strong></span>
+                </div>
+              </div>
+            } @else {
+              <div class="sb__help" style="text-align: center; padding: 24px 0;">{{ 'sidebar.emptyManuscript' | translate }}</div>
+            }
+
+            <!-- 2. POMODORO WIDGET -->
+            <div class="sb__section">{{ 'sidebar.pomodoroSettings' | translate }}</div>
+            
+            <div class="sb__row sb__row--col" style="margin-bottom: 12px;">
+              <label class="sb__label">{{ 'sidebar.focusMins' | translate }} ({{ pomo.focusDuration() }}m)</label>
+              <input class="sb__range" type="range" min="5" max="60" step="5" 
+                     style="width: 100%; margin: 8px 0;"
+                     [ngModel]="pomo.focusDuration()" 
+                     (ngModelChange)="pomo.focusDuration.set($event)">
+            </div>
+            
+            <div class="sb__row sb__row--col" style="margin-bottom: 12px;">
+              <label class="sb__label">{{ 'sidebar.shortBreakMins' | translate }} ({{ pomo.shortBreakDuration() }}m)</label>
+              <input class="sb__range" type="range" min="1" max="30" step="1" 
+                     style="width: 100%; margin: 8px 0;"
+                     [ngModel]="pomo.shortBreakDuration()" 
+                     (ngModelChange)="pomo.shortBreakDuration.set($event)">
+            </div>
+
+            <div class="sb__row sb__row--col" style="margin-bottom: 16px;">
+              <label class="sb__label">{{ 'sidebar.longBreakMins' | translate }} ({{ pomo.longBreakDuration() }}m)</label>
+              <input class="sb__range" type="range" min="5" max="45" step="5" 
+                     style="width: 100%; margin: 8px 0;"
+                     [ngModel]="pomo.longBreakDuration()" 
+                     (ngModelChange)="pomo.longBreakDuration.set($event)">
+            </div>
+
+            <!-- 3. DAILY TARGET CALCULATIONS -->
+            @if (store.writingGoals.targetWords() > 0 && store.daysToDeadline() !== null) {
+              <div class="sb__section">{{ 'sidebar.goalsTitle' | translate }}</div>
+              <div class="sb__row sb__row--col" style="background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px; padding: 12px;">
+                <div style="font-size: 11px; color: var(--ink-mute); margin-bottom: 4px;">
+                  {{ 'sidebar.dailyGoalRequired' | translate }}
+                </div>
+                <div style="font-size: 20px; font-weight: bold; color: var(--accent);">
+                  {{ dailyTargetWords() | number }}
+                </div>
+                <div style="font-size: 10px; color: var(--ink-mute); margin-top: 4px;">
+                  {{ 'sidebar.dailyGoalRequiredSuffix' | translate }}
+                </div>
+              </div>
+            }
+          </div>
+        }
       }
       @if (showInputModal()) {
         <app-input-modal
@@ -1006,6 +1215,7 @@ export class SidebarComponent implements OnInit {
   readonly importService = inject(ImportService);
   readonly spellCheckService = inject(SpellCheckService);
   readonly translate = inject(TranslateService);
+  readonly pomo = inject(PomodoroService);
   readonly fontService = inject(FontService);
   readonly Math = Math;
   readonly themes = BOOK_THEMES;
@@ -1159,7 +1369,7 @@ export class SidebarComponent implements OnInit {
   modalValue = signal<string | number>('');
   modalInputType = signal('text');
   modalTargetId = signal('');
-  modalAction = signal<'title' | 'number'>('title');
+  modalAction = signal<'title' | 'number' | 'add-character' | 'add-location'>('title');
 
   confirmMessage = signal('');
   confirmTargetId = signal('');
@@ -1377,6 +1587,26 @@ export class SidebarComponent implements OnInit {
     this.store.chapters().filter(c => c.kind === 'back')
   );
 
+  readonly maxWords = computed(() => {
+    const counts = this.mainChapters().map(c => c.words);
+    return Math.max(100, ...counts);
+  });
+  readonly averageWords = computed(() => {
+    const chapters = this.mainChapters();
+    if (chapters.length === 0) return 0;
+    const total = chapters.reduce((sum, c) => sum + c.words, 0);
+    return Math.round(total / chapters.length);
+  });
+  readonly dailyTargetWords = computed(() => {
+    const target = this.store.writingGoals.targetWords();
+    const current = this.store.totalWords();
+    const days = this.store.daysToDeadline();
+    if (target <= 0 || days === null || days <= 0) return 0;
+    const remaining = target - current;
+    if (remaining <= 0) return 0;
+    return Math.round(remaining / days);
+  });
+
   readonly imageAssets = computed(() => {
     const assets = this.assetService.assets();
     return Object.entries(assets)
@@ -1423,12 +1653,19 @@ export class SidebarComponent implements OnInit {
 
   onInputSubmit(value: string | number) {
     const id = this.modalTargetId();
-    if (this.modalAction() === 'title') {
+    const action = this.modalAction();
+    if (action === 'title') {
       const title = value.toString().trim();
       if (title) this.store.updateChapterMeta(id, { title });
-    } else {
+    } else if (action === 'number') {
       const num = parseInt(value.toString(), 10);
       if (!isNaN(num)) this.store.updateChapterMeta(id, { number: num });
+    } else if (action === 'add-character') {
+      const name = value.toString().trim();
+      if (name) this.store.addCharacter(name);
+    } else if (action === 'add-location') {
+      const name = value.toString().trim();
+      if (name) this.store.addLocation(name);
     }
     this.showInputModal.set(false);
   }
@@ -1460,6 +1697,60 @@ export class SidebarComponent implements OnInit {
     const match = r.match.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const after = r.after.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return (r.before ? '…' : '') + before + '<mark>' + match + '</mark>' + after + (r.after.length >= 40 ? '…' : '');
+  }
+
+  selectedWorldElement = signal<{ type: 'character' | 'location'; id: string } | null>(null);
+
+  activeWorldElement = computed(() => {
+    const sel = this.selectedWorldElement();
+    if (!sel) return null;
+    if (sel.type === 'character') {
+      return this.store.characters().find(c => c.id === sel.id) || null;
+    } else {
+      return this.store.locations().find(l => l.id === sel.id) || null;
+    }
+  });
+
+  saveWorldElement(name: string, content: string) {
+    const sel = this.selectedWorldElement();
+    if (!sel) return;
+    if (sel.type === 'character') {
+      this.store.updateCharacter(sel.id, name, content);
+    } else {
+      this.store.updateLocation(sel.id, name, content);
+    }
+  }
+
+  deleteWorldElement(id: string, type: 'character' | 'location' | undefined) {
+    if (!type) return;
+    if (confirm(this.translate.instant('sidebar.deleteConfirm', { title: this.activeWorldElement()?.name || '' }))) {
+      if (type === 'character') {
+        this.store.deleteCharacter(id);
+      } else {
+        this.store.deleteLocation(id);
+      }
+      this.selectedWorldElement.set(null);
+    }
+  }
+
+  promptAddCharacter() {
+    this.modalTitle.set(this.translate.instant('sidebar.addCharacter'));
+    this.modalLabel.set(this.translate.instant('sidebar.charNamePlaceholder'));
+    this.modalValue.set('');
+    this.modalInputType.set('text');
+    this.modalTargetId.set('');
+    this.modalAction.set('add-character');
+    this.showInputModal.set(true);
+  }
+
+  promptAddLocation() {
+    this.modalTitle.set(this.translate.instant('sidebar.addLocation'));
+    this.modalLabel.set(this.translate.instant('sidebar.locNamePlaceholder'));
+    this.modalValue.set('');
+    this.modalInputType.set('text');
+    this.modalTargetId.set('');
+    this.modalAction.set('add-location');
+    this.showInputModal.set(true);
   }
 
   exportEpub() {

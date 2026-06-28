@@ -4999,3 +4999,57 @@ body.print-digital {
   font-family: var(--mono);
   text-align: center;
 }
+
+/* ── Pomodoro Timer Widget ── */
+.tb__pomodoro-widget {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tb__pomodoro-btn {
+  width: auto;
+  height: 32px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin-right: 4px;
+}
+
+.tb__pomodoro-btn:hover {
+  background: var(--paper-2);
+  border-color: var(--ink-mute);
+}
+
+.tb__pomodoro-btn--active {
+  animation: pomo-pulse 2s infinite ease-in-out;
+}
+
+.tb__pomodoro-btn--focus {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tb__pomodoro-btn--break {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+@keyframes pomo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.tb__pomodoro-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+}

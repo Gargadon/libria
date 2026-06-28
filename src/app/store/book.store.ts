@@ -1,6 +1,6 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, BookTheme, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote } from '../models/book.models';
+import { Book, BookTheme, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote, CharacterSheet, LocationSheet } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
@@ -23,7 +23,7 @@ export interface BookState {
     sidebarOpen: boolean;
     previewOpen: boolean;
     zenMode: boolean;
-    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'attachments';
+    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'attachments' | 'productivity' | 'worldbuilding';
     focusBlockIndex: number | null;
   };
   exportPrefs: {
@@ -43,6 +43,8 @@ export interface BookState {
   // Measured start pages from the print preview DOM (1-indexed); empty until preview is opened
   printPageMap: Record<string, number>;
   customThemes: BookTheme[];
+  characters: CharacterSheet[];
+  locations: LocationSheet[];
 }
 
 const initialState: BookState = {
@@ -50,6 +52,8 @@ const initialState: BookState = {
   chapters: [],
   notes: [],
   activeChapterId: '',
+  characters: [],
+  locations: [],
   tweaks: {
     sidebar: 'right',
     mode: 'light',
@@ -96,7 +100,7 @@ const initialState: BookState = {
     sidebarOpen: true,
     previewOpen: true,
     zenMode: false,
-    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings',
+    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings' | 'attachments' | 'productivity' | 'worldbuilding',
     focusBlockIndex: null,
   },
   exportPrefs: {
@@ -284,6 +288,8 @@ export const BookStore = signalStore(
         book: doc.metadata,
         chapters: doc.chapters,
         notes: doc.notes || [],
+        characters: doc.characters || [],
+        locations: doc.locations || [],
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(doc.preferences || {}), mode: personalMode },
         writingGoals: doc.writingGoals || initialState.writingGoals,
@@ -331,6 +337,8 @@ export const BookStore = signalStore(
         book: newBook,
         chapters: [firstChapter],
         notes: [],
+        characters: [],
+        locations: [],
         activeChapterId: firstChapter.id,
         isDirty: true,
         past: [],
@@ -436,6 +444,52 @@ export const BookStore = signalStore(
     updateBookMetadata(metadata: Partial<Book>) {
       patchState(store, (state) => ({
         book: state.book ? { ...state.book, ...metadata } : null,
+        isDirty: true
+      }));
+    },
+    addCharacter(name: string) {
+      const newChar: CharacterSheet = {
+        id: 'char-' + Date.now().toString(36),
+        name,
+        content: ''
+      };
+      patchState(store, (state) => ({
+        characters: [...state.characters, newChar],
+        isDirty: true
+      }));
+    },
+    updateCharacter(id: string, name: string, content: string) {
+      patchState(store, (state) => ({
+        characters: state.characters.map(c => c.id === id ? { ...c, name, content } : c),
+        isDirty: true
+      }));
+    },
+    deleteCharacter(id: string) {
+      patchState(store, (state) => ({
+        characters: state.characters.filter(c => c.id !== id),
+        isDirty: true
+      }));
+    },
+    addLocation(name: string) {
+      const newLoc: LocationSheet = {
+        id: 'loc-' + Date.now().toString(36),
+        name,
+        content: ''
+      };
+      patchState(store, (state) => ({
+        locations: [...state.locations, newLoc],
+        isDirty: true
+      }));
+    },
+    updateLocation(id: string, name: string, content: string) {
+      patchState(store, (state) => ({
+        locations: state.locations.map(l => l.id === id ? { ...l, name, content } : l),
+        isDirty: true
+      }));
+    },
+    deleteLocation(id: string) {
+      patchState(store, (state) => ({
+        locations: state.locations.filter(l => l.id !== id),
         isDirty: true
       }));
     },

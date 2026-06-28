@@ -175,6 +175,18 @@ export interface PersonalConfig {
   mode: 'light' | 'dark';
 }
 
+export interface CharacterSheet {
+  id: string;
+  name: string;
+  content: string;
+}
+
+export interface LocationSheet {
+  id: string;
+  name: string;
+  content: string;
+}
+
 export interface LibriaDocument {
   libriaVersion: string;
   metadata: Book | null;
@@ -186,4 +198,6 @@ export interface LibriaDocument {
   notes?: Note[];
   assets?: Record<string, string>;
   writingGoals?: WritingGoals;
+  characters?: CharacterSheet[];
+  locations?: LocationSheet[];
 }

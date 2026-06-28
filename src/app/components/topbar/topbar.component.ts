@@ -4,6 +4,8 @@ import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
+import { sceneBreakGlyph } from '../../utils/block-maps';
+import { PomodoroService } from '../../services/pomodoro.service';
 
 @Component({
   selector: 'app-topbar',
@@ -211,6 +213,12 @@ import { environment } from '../../../environments/environment';
           <button class="tb__nav__b"
             [class.tb__nav__b--on]="store.ui.activeNav() === 'attachments'"
             (click)="store.setNav('attachments')">{{ 'topbar.attachments' | translate }}</button>
+          <button class="tb__nav__b"
+            [class.tb__nav__b--on]="store.ui.activeNav() === 'productivity'"
+            (click)="store.setNav('productivity')">{{ 'topbar.productivity' | translate }}</button>
+          <button class="tb__nav__b"
+            [class.tb__nav__b--on]="store.ui.activeNav() === 'worldbuilding'"
+            (click)="store.setNav('worldbuilding')">{{ 'topbar.worldbuilding' | translate }}</button>
         </nav>
       }
 
@@ -246,6 +254,8 @@ import { environment } from '../../../environments/environment';
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">{{ 'topbar.layout' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">{{ 'topbar.properties' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'attachments'" (click)="store.setNav('attachments'); closeMenus()">{{ 'topbar.attachments' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'productivity'" (click)="store.setNav('productivity'); closeMenus()">{{ 'topbar.productivity' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'worldbuilding'" (click)="store.setNav('worldbuilding'); closeMenus()">{{ 'topbar.worldbuilding' | translate }}</button>
               </div>
             }
           </div>
@@ -289,6 +299,61 @@ import { environment } from '../../../environments/environment';
                 <button class="tb__compact-item" (click)="store.redo(); closeMenus()">
                   <span class="material-symbols-outlined">redo</span> {{ 'topbar.redo' | translate }}
                 </button>
+              </div>
+            }
+          </div>
+
+          <!-- POMODORO TIMER WIDGET -->
+          <div class="tb__pomodoro-widget" (click)="$event.stopPropagation()">
+            <button class="tb__pomodoro-btn" 
+                    [class.tb__pomodoro-btn--active]="pomo.isActive()"
+                    [class.tb__pomodoro-btn--focus]="pomo.mode() === 'focus'"
+                    [class.tb__pomodoro-btn--break]="pomo.mode() !== 'focus'"
+                    [attr.title]="'Pomodoro'" 
+                    (click)="toggleMenu('pomodoro', $event)">
+              <span class="material-symbols-outlined" style="font-size: 18px;" [style.color]="pomo.isActive() ? 'var(--accent)' : 'inherit'">{{ pomo.isActive() ? 'timer' : 'timer_off' }}</span>
+              <span class="tb__pomodoro-time" style="font-size: 12px; font-weight: bold; font-family: monospace;">{{ pomo.getFormattedTime() }}</span>
+            </button>
+            @if (openMenu() === 'pomodoro') {
+              <div class="tb__compact-dropdown tb__pomodoro-dropdown" style="right: 0; left: auto; min-width: 220px; padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--rule); background: var(--paper); color: var(--ink);">
+                <div class="tb__pomo-title" style="margin-bottom: 8px; display: flex; justify-content: center;">
+                  @if (pomo.mode() === 'focus') {
+                    <span class="tb__pomo-badge tb__pomo-badge--focus" style="background: var(--accent); color: var(--paper); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.focusing' | translate }}</span>
+                  } @else if (pomo.mode() === 'short-break') {
+                    <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.shortBreak' | translate }}</span>
+                  } @else {
+                    <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.longBreak' | translate }}</span>
+                  }
+                </div>
+
+                <div class="tb__pomo-timer-display" style="font-size: 32px; font-weight: bold; text-align: center; margin: 12px 0; font-family: monospace; letter-spacing: 1px;">{{ pomo.getFormattedTime() }}</div>
+
+                <div class="tb__pomo-controls" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                  @if (!pomo.isActive()) {
+                    <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;" (click)="pomo.start()">
+                      <span class="material-symbols-outlined" style="font-size: 18px;">play_arrow</span> {{ 'pomodoro.start' | translate }}
+                    </button>
+                  } @else {
+                    <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ef4444; border-color: #ef4444;" (click)="pomo.pause()">
+                      <span class="material-symbols-outlined" style="font-size: 18px;">pause</span> {{ 'pomodoro.pause' | translate }}
+                    </button>
+                  }
+                  <button class="tb__pomo-btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px; background: none; border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; color: var(--ink); font-family: inherit; font-size: 12px;" (click)="pomo.reset()">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">restart_alt</span> {{ 'pomodoro.reset' | translate }}
+                  </button>
+                </div>
+
+                <div class="tb__dropdown-sep" style="margin: 8px 0; height: 1px; background: var(--rule);"></div>
+
+                <div class="tb__pomo-mode-select" style="display: flex; gap: 4px; margin-bottom: 12px;">
+                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'focus' ? 'var(--accent)' : 'none'" [style.color]="pomo.mode() === 'focus' ? 'var(--paper)' : 'var(--ink)'" (click)="pomo.setMode('focus')">{{ 'pomodoro.modeFocus' | translate }}</button>
+                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'short-break' ? '#10b981' : 'none'" [style.color]="pomo.mode() === 'short-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('short-break')">{{ 'pomodoro.modeShort' | translate }}</button>
+                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'long-break' ? '#3b82f6' : 'none'" [style.color]="pomo.mode() === 'long-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('long-break')">{{ 'pomodoro.modeLong' | translate }}</button>
+                </div>
+
+                <div class="tb__pomo-stats" style="font-size: 10px; text-align: center; color: var(--ink-mute);">
+                  {{ 'pomodoro.completedSessions' | translate }}: <strong>{{ pomo.focusCount() }}</strong>
+                </div>
               </div>
             }
           </div>
@@ -435,10 +500,13 @@ export class TopbarComponent {
     this.store.setNav('metadata');
   }
 
-  // --- COMPACT MENUS ---
-  openMenu = signal<'nav' | 'file' | 'edit' | null>(null);
+  // --- POMODORO TIMER SERVICE ---
+  readonly pomo = inject(PomodoroService);
 
-  toggleMenu(menu: 'nav' | 'file' | 'edit', event: MouseEvent) {
+  // --- COMPACT MENUS ---
+  openMenu = signal<'nav' | 'file' | 'edit' | 'pomodoro' | null>(null);
+
+  toggleMenu(menu: 'nav' | 'file' | 'edit' | 'pomodoro', event: MouseEvent) {
     event.stopPropagation();
     this.openMenu.update(current => current === menu ? null : menu);
   }
