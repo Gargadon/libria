@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.7.3",
+  "version": "1.8.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {

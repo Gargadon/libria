@@ -47,7 +47,8 @@ Corrector ortográfico completo sin depender del sistema operativo:
 Sistema completo de notas al pie para libros técnicos y de no ficción:
 
 - **Inserción inline:** Referencias numéricas en el texto con contenido expandible.
-- **Exportación:** Panel de notas al pie generado automáticamente en EPUB.
+- **Exportación EPUB:** Panel de notas al pie generado automáticamente en EPUB.
+- **Exportación ODT:** Soporte de notas al pie nativas en formato ODT para procesadores de texto.
 - **Ordenación:** Notas ordenadas por posición dentro del capítulo.
 
 ### Flujo Editorial y Revisión
@@ -59,9 +60,17 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Hilos de conversación:** Respuestas anidadas para discutir cambios estilísticos o estructurales.
 - **Control de estado:** Marca notas como resueltas o no aplicables.
 
+### Fichas Creativas (Worldbuilding)
+
+- **Sin plantillas rígidas:** Fichas de personajes y lugares totalmente libres de campos obligatorios para mantener el control completo de la obra en manos del escritor.
+- **Edición integrada:** Permite registrar y redactar descripciones, trasfondos o notas para cada personaje o lugar directamente en el panel lateral.
+- **Persistencia:** Almacenamiento directo en el formato abierto `.libria`.
+
 ### Experiencia de Escritura
 
 - **Modo Zen:** Ocultación total de la interfaz (topbar, sidebar y previsualización) para escribir sin distracciones. Acceso vía `F11` o botón en la barra.
+- **Temporizador Pomodoro:** Control de ciclos de enfoque y descansos (cortos y largos) con alertas sonoras integradas en la barra superior.
+- **Gráfica de rendimiento (Pacing):** Visualización del conteo de palabras por capítulo en formato SVG dinámico, con cálculo de meta de palabras diaria en base a fechas límite.
 - **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
 - **Verificación de actualizaciones:** Botón dedicado en el diálogo de *Acerca de* (About) para verificar manualmente si hay nuevas versiones de la aplicación desde GitHub o mediante el actualizador automático.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
