@@ -689,6 +689,19 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
               </div>
             </div>
 
+            <div class="sb__export-card">
+              <div class="sb__export-icon" style="background: #3a8a58; color: var(--paper);">ODT</div>
+              <div class="sb__export-info">
+                <div class="sb__export-name">{{ 'sidebar.odt' | translate }}</div>
+                <div class="sb__export-desc">{{ 'sidebar.odtDesc' | translate }}</div>
+                <button class="sb__btn-primary"
+                  (click)="exportService.exportOdt()"
+                  [disabled]="store.isExporting() || (store.exportPrefs.exportMode() === 'selection' && store.exportPrefs.selectedChapterIds().length === 0)">
+                  {{ 'sidebar.generateODT' | translate }}
+                </button>
+              </div>
+            </div>
+
             <!-- Opciones -->
             @if (store.exportPrefs.exportMode() === 'all') {
               <div class="sb__section">{{ 'sidebar.exportOptions' | translate }}</div>

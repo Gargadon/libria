@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy, output, NgZone } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
@@ -20,6 +20,168 @@ import { environment } from '../../../environments/environment';
           <div class="tb__brandN">Libria</div>
           <div class="tb__brandV">{{ editionLabel }}</div>
         </div>
+
+        @if (showWebMenu) {
+          <span class="tb__sep"></span>
+          <!-- Full Horizontal Menu Bar (Visible on >= 1360px) -->
+          <div class="tb__sysmenu tb__sysmenu--full" (click)="$event.stopPropagation()">
+            <!-- Archivo -->
+            <div style="position: relative;">
+              <div class="tb__sysmenu-item" (click)="toggleIntegrated('file', $event)">
+                {{ 'electron.menu.file' | translate }}
+              </div>
+              @if (activeIntegratedMenu() === 'file') {
+                <div class="tb__dropdown">
+                  <button class="tb__dropdown-item" (click)="newDoc(); closeIntegrated()">
+                    {{ 'electron.menu.fileNew' | translate }}
+                  </button>
+                  <button class="tb__dropdown-item" (click)="openDoc(); closeIntegrated()">
+                    {{ 'electron.menu.fileOpen' | translate }}
+                  </button>
+                  <button class="tb__dropdown-item" 
+                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       (click)="store.book() && saveDoc(); store.book() && closeIntegrated()">
+                    {{ 'electron.menu.fileSave' | translate }}
+                  </button>
+                  <button class="tb__dropdown-item" 
+                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       (click)="store.book() && saveDocAs(); store.book() && closeIntegrated()">
+                    {{ 'electron.menu.fileSaveAs' | translate }}
+                  </button>
+                  <div class="tb__dropdown-sep"></div>
+                  <button class="tb__dropdown-item" 
+                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       (click)="store.book() && closeDoc(); store.book() && closeIntegrated()">
+                    {{ 'topbar.closeDoc' | translate }}
+                  </button>
+                  @if (isElectron) {
+                    <div class="tb__dropdown-sep"></div>
+                    <button class="tb__dropdown-item" (click)="quitApp(); closeIntegrated()">
+                      {{ 'electron.menu.fileQuit' | translate }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Editar -->
+            <div style="position: relative;">
+              <div class="tb__sysmenu-item" 
+                   [class.tb__sysmenu-item--disabled]="!store.book()"
+                   (click)="store.book() && toggleIntegrated('edit', $event)">
+                {{ 'electron.menu.edit' | translate }}
+              </div>
+              @if (store.book() && activeIntegratedMenu() === 'edit') {
+                <div class="tb__dropdown">
+                  <button class="tb__dropdown-item" (click)="store.undo(); closeIntegrated()">
+                    {{ 'electron.menu.editUndo' | translate }}
+                  </button>
+                  <button class="tb__dropdown-item" (click)="store.redo(); closeIntegrated()">
+                    {{ 'electron.menu.editRedo' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Ver -->
+            <div style="position: relative;">
+              <div class="tb__sysmenu-item" 
+                   [class.tb__sysmenu-item--disabled]="!store.book()"
+                   (click)="store.book() && toggleIntegrated('view', $event)">
+                {{ 'electron.menu.view' | translate }}
+              </div>
+              @if (store.book() && activeIntegratedMenu() === 'view') {
+                <div class="tb__dropdown">
+                  <button class="tb__dropdown-item" (click)="store.search(''); store.setNav('search'); closeIntegrated()">
+                    {{ 'electron.menu.viewSearch' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Ayuda -->
+            <div style="position: relative;">
+              <div class="tb__sysmenu-item" (click)="toggleIntegrated('help', $event)">
+                {{ 'electron.menu.help' | translate }}
+              </div>
+              @if (activeIntegratedMenu() === 'help') {
+                <div class="tb__dropdown">
+                  <button class="tb__dropdown-item" (click)="openAbout(); closeIntegrated()">
+                    {{ 'electron.menu.helpAbout' | translate }}
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Hamburger Button (Visible on < 1360px) -->
+          <div class="tb__compact-menu tb__sysmenu--compact" (click)="$event.stopPropagation()">
+            <button class="tb__action" [attr.title]="'electron.menu.file' | translate" (click)="toggleIntegratedHamburger($event)">
+              <span class="material-symbols-outlined">menu</span>
+            </button>
+            @if (openIntegratedHamburger()) {
+              <div class="tb__compact-dropdown" style="left: 0; right: auto; min-width: 240px; max-height: 80vh; overflow-y: auto;">
+                <div class="tb__dropdown-header">{{ 'electron.menu.file' | translate }}</div>
+                <button class="tb__compact-item" (click)="newDoc(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">note_add</span> {{ 'electron.menu.fileNew' | translate }}
+                </button>
+                <button class="tb__compact-item" (click)="openDoc(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">folder_open</span> {{ 'electron.menu.fileOpen' | translate }}
+                </button>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && saveDoc(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">save</span> {{ 'electron.menu.fileSave' | translate }}
+                </button>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && saveDocAs(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">save_as</span> {{ 'electron.menu.fileSaveAs' | translate }}
+                </button>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && closeDoc(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
+                </button>
+                @if (isElectron) {
+                  <button class="tb__compact-item" (click)="quitApp(); closeIntegratedHamburger()">
+                    <span class="material-symbols-outlined">logout</span> {{ 'electron.menu.fileQuit' | translate }}
+                  </button>
+                }
+
+                <div class="tb__dropdown-sep"></div>
+
+                <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.edit' | translate }}</div>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && store.undo(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">undo</span> {{ 'electron.menu.editUndo' | translate }}
+                </button>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && store.redo(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">redo</span> {{ 'electron.menu.editRedo' | translate }}
+                </button>
+
+                <div class="tb__dropdown-sep"></div>
+
+                <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.view' | translate }}</div>
+                <button class="tb__compact-item" 
+                        [disabled]="!store.book()" 
+                        (click)="store.book() && store.search(''); store.book() && store.setNav('search'); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">search</span> {{ 'electron.menu.viewSearch' | translate }}
+                </button>
+
+                <div class="tb__dropdown-sep"></div>
+
+                <div class="tb__dropdown-header">{{ 'electron.menu.help' | translate }}</div>
+                <button class="tb__compact-item" (click)="openAbout(); closeIntegratedHamburger()">
+                  <span class="material-symbols-outlined">info</span> {{ 'electron.menu.helpAbout' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        }
 
         @if (store.book(); as book) {
           <div class="tb__bookchip">
@@ -193,6 +355,8 @@ export class TopbarComponent {
   @HostListener('document:click')
   onDocumentClick() {
     this.closeMenus();
+    this.closeIntegrated();
+    this.closeIntegratedHamburger();
   }
 
   newDoc() {
@@ -232,31 +396,37 @@ export class TopbarComponent {
     }
   }
 
+  private readonly ngZone = inject(NgZone);
+
   constructor() {
     const api = (window as any).electronAPI;
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
-        switch (action) {
-          case 'new': this.newDoc(); break;
-          case 'open': this.openDoc(); break;
-          case 'save': this.saveDoc(); break;
-          case 'saveAs': this.saveDocAs(); break;
-          case 'close': this.closeDoc(); break;
-          case 'undo': this.store.undo(); break;
-          case 'redo': this.store.redo(); break;
-          case 'search': this.store.search(''); this.store.setNav('search'); break;
-        }
+        this.ngZone.run(() => {
+          switch (action) {
+            case 'new': this.newDoc(); break;
+            case 'open': this.openDoc(); break;
+            case 'save': this.saveDoc(); break;
+            case 'saveAs': this.saveDocAs(); break;
+            case 'close': this.closeDoc(); break;
+            case 'undo': this.store.undo(); break;
+            case 'redo': this.store.redo(); break;
+            case 'search': this.store.search(''); this.store.setNav('search'); break;
+          }
+        });
       });
     }
 
     if (api?.onCloseRequested) {
       api.onCloseRequested(() => {
-        if (this.store.isDirty()) {
-          this.pendingAction.set('close');
-          this.showExitModal.set(true);
-        } else {
-          api.confirmClose();
-        }
+        this.ngZone.run(() => {
+          if (this.store.isDirty()) {
+            this.pendingAction.set('close');
+            this.showExitModal.set(true);
+          } else {
+            api.confirmClose();
+          }
+        });
       });
     }
   }
@@ -275,6 +445,54 @@ export class TopbarComponent {
 
   closeMenus() {
     this.openMenu.set(null);
+  }
+
+  // --- INTEGRATED FALLBACK MENU ---
+  aboutRequested = output<void>();
+  readonly isElectron = !!(window as any).electronAPI;
+  readonly showWebMenu = (() => {
+    const api = (window as any).electronAPI;
+    if (!api) return true;
+    return !!api.useIntegratedMenu;
+  })();
+
+  activeIntegratedMenu = signal<'file' | 'edit' | 'view' | 'help' | null>(null);
+
+  toggleIntegrated(menu: 'file' | 'edit' | 'view' | 'help', event: MouseEvent) {
+    event.stopPropagation();
+    this.activeIntegratedMenu.update(current => current === menu ? null : menu);
+  }
+
+  closeIntegrated() {
+    this.activeIntegratedMenu.set(null);
+  }
+
+  openAbout() {
+    this.aboutRequested.emit();
+  }
+
+  quitApp() {
+    if (this.store.isDirty()) {
+      this.pendingAction.set('close');
+      this.showExitModal.set(true);
+    } else {
+      const api = (window as any).electronAPI;
+      if (api?.confirmClose) {
+        api.confirmClose();
+      }
+    }
+  }
+
+  // --- INTEGRATED COMPACT HAMBURGER MENU ---
+  openIntegratedHamburger = signal(false);
+
+  toggleIntegratedHamburger(event: MouseEvent) {
+    event.stopPropagation();
+    this.openIntegratedHamburger.update(current => !current);
+  }
+
+  closeIntegratedHamburger() {
+    this.openIntegratedHamburger.set(false);
   }
 
   // --- DATA LOSS GUARD LOGIC ---

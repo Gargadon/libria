@@ -12,7 +12,7 @@
      [style.--serif]="store.tweaks.customBookFont() ? store.bookFontFamily() : null"
      [style.--display]="store.tweaks.customTitleFont() ? store.titleFontFamily() : null"
      [attr.data-screen-label]="'app.title' | translate">
-  <app-topbar></app-topbar>
+  <app-topbar (aboutRequested)="showAbout.set(true)"></app-topbar>
   
   <div class="layout" [class.layout--empty]="!store.book()"
        [class.layout--sb-closed]="!store.ui.sidebarOpen()"

@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -105,17 +105,11 @@
       ],
       "target": [
         "AppImage",
-        "deb",
-        "pacman"
+        "deb"
       ],
       "icon": "build/icon.png"
     },
     "deb": {
-      "depends": [
-        "ghostscript"
-      ]
-    },
-    "pacman": {
       "depends": [
         "ghostscript"
       ]

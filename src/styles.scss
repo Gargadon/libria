@@ -431,6 +431,52 @@ app-welcome {
   margin: 6px 0
 }
 
+.tb__sysmenu-item--disabled {
+  color: var(--ink-mute) !important;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.tb__dropdown-item--disabled {
+  color: var(--ink-mute) !important;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+button.tb__dropdown-item {
+  background: none;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  display: block;
+}
+
+.tb__dropdown-header {
+  padding: 6px 16px 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+  color: var(--ink-mute);
+}
+
+.tb__dropdown-header--disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 1359px) {
+  .tb__sysmenu--full {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1360px) {
+  .tb__sysmenu--compact {
+    display: none !important;
+  }
+}
+
 
 .tb__bookchip {
   display: flex;

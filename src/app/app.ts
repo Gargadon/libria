@@ -1,4 +1,4 @@
-import { Component, inject, effect, signal, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, effect, signal, HostListener, ChangeDetectionStrategy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
@@ -36,6 +36,7 @@ export class App {
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
   private readonly autosave = inject(AutosaveService);
+  private readonly ngZone = inject(NgZone);
 
   isResizing = false;
   showAbout = signal(false);
@@ -84,12 +85,16 @@ export class App {
     const api = (window as any).electronAPI;
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
-        if (action === 'about') this.showAbout.set(true);
+        this.ngZone.run(() => {
+          if (action === 'about') this.showAbout.set(true);
+        });
       });
     }
     if (api?.onFileOpen) {
       api.onFileOpen((filePath: string) => {
-        this.fileService.openLibriaFileByPath(filePath);
+        this.ngZone.run(() => {
+          this.fileService.openLibriaFileByPath(filePath);
+        });
       });
     }
 

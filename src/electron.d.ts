@@ -12,6 +12,7 @@ interface ElectronAPI {
 
   platform: string;
   arch: string;
+  useIntegratedMenu?: boolean;
 
   // Spell checker
   setSpellCheckerLanguage(lang: string): Promise<void>;

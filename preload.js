@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   platform: process.platform,
   arch: process.arch,
+  useIntegratedMenu: process.platform === 'linux' && process.env.XDG_SESSION_TYPE === 'wayland' && !(process.argv && process.argv.includes('--ozone-platform=x11')),
 
   // Spell checker
   setSpellCheckerLanguage: (lang) => ipcRenderer.invoke('spell:set-language', lang),

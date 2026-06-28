@@ -1,6 +1,20 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+app.setName('Libria');
+if (process.platform === 'linux') {
+  const isX11 = process.argv.includes('--ozone-platform=x11') ||
+                (app.commandLine && typeof app.commandLine.hasSwitch === 'function' && app.commandLine.hasSwitch('ozone-platform') && app.commandLine.getSwitchValue('ozone-platform') === 'x11');
+  if (!isX11 && process.env.XDG_SESSION_TYPE === 'wayland') {
+    process.env.UBUNTU_MENUPROXY = '0';
+    process.env.KDE_NO_GLOBAL_MENU = '1';
+  }
+  if (typeof app.setDesktopName === 'function') {
+    app.setDesktopName('libria.desktop');
+  }
+}
+
 const { pathToFileURL } = require('url');
 const { spawnSync } = require('child_process');
 let autoUpdater = null;
@@ -275,8 +289,12 @@ function setupHyphenation() {
   }
 }
 
+function getDialogParent() {
+  return process.platform === 'linux' ? null : mainWindow;
+}
+
 function showLinuxUpdateNotice(latestVersion) {
-  dialog.showMessageBox(mainWindow, {
+  dialog.showMessageBox(getDialogParent(), {
     type: 'info',
     title: 'Nueva versión disponible',
     message: `Libria ${latestVersion} está disponible`,
@@ -316,7 +334,7 @@ function checkVersionViaGitHub(manual = false) {
         if (latest && isNewerVersion(latest, app.getVersion())) {
           showLinuxUpdateNotice(latest);
         } else if (manual) {
-          dialog.showMessageBox(mainWindow, {
+          dialog.showMessageBox(getDialogParent(), {
             type: 'info',
             title: 'Actualizaciones',
             message: 'Estás al día',
@@ -326,7 +344,7 @@ function checkVersionViaGitHub(manual = false) {
         }
       } catch (_) {
         if (manual) {
-          dialog.showMessageBox(mainWindow, {
+          dialog.showMessageBox(getDialogParent(), {
             type: 'error',
             title: 'Actualizaciones',
             message: 'Error al buscar actualizaciones',
@@ -342,7 +360,7 @@ function checkVersionViaGitHub(manual = false) {
     req.destroy();
     console.error('[updater] Request timed out');
     if (manual) {
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(getDialogParent(), {
         type: 'error',
         title: 'Actualizaciones',
         message: 'Error al buscar actualizaciones',
@@ -355,7 +373,7 @@ function checkVersionViaGitHub(manual = false) {
     if (timedOut) return;
     console.error('[updater]', err.message);
     if (manual) {
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(getDialogParent(), {
         type: 'error',
         title: 'Actualizaciones',
         message: 'Error al buscar actualizaciones',
@@ -384,7 +402,7 @@ function setupAutoUpdater() {
       showLinuxUpdateNotice(info.version);
       return;
     }
-    dialog.showMessageBox(mainWindow, {
+    dialog.showMessageBox(getDialogParent(), {
       type: 'question',
       title: 'Nueva versión disponible',
       message: `Libria ${info.version} está disponible`,
@@ -400,7 +418,7 @@ function setupAutoUpdater() {
   autoUpdater.on('update-not-available', () => {
     if (manualUpdateCheck) {
       manualUpdateCheck = false;
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(getDialogParent(), {
         type: 'info',
         title: 'Actualizaciones',
         message: 'Estás al día',
@@ -411,7 +429,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('update-downloaded', () => {
-    dialog.showMessageBox(mainWindow, {
+    dialog.showMessageBox(getDialogParent(), {
       type: 'info',
       title: 'Listo para instalar',
       message: 'La actualización se instalará al reiniciar Libria',
@@ -428,7 +446,7 @@ function setupAutoUpdater() {
     console.error('[updater]', err.message);
     if (manualUpdateCheck) {
       manualUpdateCheck = false;
-      dialog.showMessageBox(mainWindow, {
+      dialog.showMessageBox(getDialogParent(), {
         type: 'error',
         title: 'Actualizaciones',
         message: 'Error al buscar actualizaciones',
@@ -438,7 +456,11 @@ function setupAutoUpdater() {
     }
   });
 
-  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+  setTimeout(() => {
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error('[updater] Error during automatic update check:', err.message);
+    });
+  }, 5000);
 }
 
 app.whenReady().then(() => {
@@ -487,7 +509,9 @@ ipcMain.on('app:set-language', (_event, lang) => {
 ipcMain.on('app:check-for-updates', () => {
   if (app.isPackaged && autoUpdater) {
     manualUpdateCheck = true;
-    autoUpdater.checkForUpdates();
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error('[updater] Error during manual update check:', err.message);
+    });
   } else {
     // Linux package manager fallback / dev manual check via GitHub API
     checkVersionViaGitHub(true);
