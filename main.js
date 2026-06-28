@@ -299,12 +299,14 @@ function isNewerVersion(remote, current) {
 
 function checkVersionViaGitHub(manual = false) {
   const https = require('https');
+  const TIMEOUT_MS = 10000;
   const options = {
     hostname: 'api.github.com',
     path: '/repos/Gargadon/libria/releases/latest',
     headers: { 'User-Agent': `Libria/${app.getVersion()}` },
   };
-  https.get(options, (res) => {
+  let timedOut = false;
+  const req = https.get(options, (res) => {
     let data = '';
     res.on('data', (chunk) => { data += chunk; });
     res.on('end', () => {
@@ -334,7 +336,23 @@ function checkVersionViaGitHub(manual = false) {
         }
       }
     });
-  }).on('error', (err) => {
+  });
+  req.setTimeout(TIMEOUT_MS, () => {
+    timedOut = true;
+    req.destroy();
+    console.error('[updater] Request timed out');
+    if (manual) {
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: 'Actualizaciones',
+        message: 'Error al buscar actualizaciones',
+        detail: 'La solicitud tardó demasiado. Verifica tu conexión a internet.',
+        buttons: ['Aceptar'],
+      });
+    }
+  });
+  req.on('error', (err) => {
+    if (timedOut) return;
     console.error('[updater]', err.message);
     if (manual) {
       dialog.showMessageBox(mainWindow, {

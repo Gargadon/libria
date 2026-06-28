@@ -101,7 +101,8 @@ function imageStyle(b: Block): string {
   } else {
     parts.push('height:auto');
   }
-  parts.push(imageTransform(b.rotation, b.flipH, b.flipV));
+  const xf = imageTransform(b.rotation, b.flipH, b.flipV);
+  if (xf) parts.push(`transform:${xf}`);
   return parts.join(';');
 }
 
