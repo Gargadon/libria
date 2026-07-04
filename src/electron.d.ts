@@ -9,6 +9,8 @@ interface ElectronAPI {
   onCloseRequested(callback: () => void): void;
   confirmClose(): void;
   onFileOpen(callback: (filePath: string) => void): void;
+  getPendingPath(): Promise<string | null>;
+  onUpdateAvailable(callback: (version: string) => void): void;
 
   platform: string;
   arch: string;

@@ -40,6 +40,7 @@ export class App {
 
   isResizing = false;
   showAbout = signal(false);
+  updateVersion = signal('');
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -83,6 +84,13 @@ export class App {
     });
 
     const api = (window as any).electronAPI;
+    if (api?.onUpdateAvailable) {
+      api.onUpdateAvailable((version: string) => {
+        this.ngZone.run(() => {
+          this.updateVersion.set(version);
+        });
+      });
+    }
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
         this.ngZone.run(() => {
@@ -96,6 +104,16 @@ export class App {
           this.fileService.openLibriaFileByPath(filePath);
         });
       });
+      // Pick up any file path that arrived before the listener was registered
+      if (api.getPendingPath) {
+        api.getPendingPath().then((filePath: string | null) => {
+          if (filePath) {
+            this.ngZone.run(() => {
+              this.fileService.openLibriaFileByPath(filePath);
+            });
+          }
+        });
+      }
     }
 
     effect(() => {

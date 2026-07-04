@@ -15,6 +15,23 @@ if (process.platform === 'linux') {
   }
 }
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      const filePath = commandLine.find(a => a.endsWith('.libria'));
+      if (filePath) mainWindow.webContents.send('file:open', filePath);
+    } else {
+      const filePath = commandLine.find(a => a.endsWith('.libria'));
+      if (filePath) pendingFilePath = filePath;
+    }
+  });
+}
+
 const { pathToFileURL } = require('url');
 const { spawnSync } = require('child_process');
 let autoUpdater = null;
@@ -54,6 +71,7 @@ function findGsPath() {
 
 let mainWindow;
 let fileToOpen = null;
+let pendingFilePath = null;
 const customDictPath = path.join(app.getPath('userData'), 'custom-dictionary.json');
 
 function loadCustomDictionary() {
@@ -180,13 +198,16 @@ function createWindow() {
   });
 
   mainWindow.webContents.on('did-finish-load', () => {
-    const filePath = fileToOpen ?? getFileArgument();
-    if (filePath) {
-      mainWindow.webContents.send('file:open', filePath);
-      fileToOpen = null;
-    }
+    pendingFilePath = fileToOpen ?? getFileArgument();
+    fileToOpen = null;
   });
 }
+
+ipcMain.handle('file:getPendingPath', () => {
+  const p = pendingFilePath;
+  pendingFilePath = null;
+  return p;
+});
 
 ipcMain.on('app:confirm-close', () => {
   mainWindow._forceClose = true;
@@ -290,7 +311,7 @@ function setupHyphenation() {
 }
 
 function getDialogParent() {
-  return process.platform === 'linux' ? null : mainWindow;
+  return mainWindow;
 }
 
 function showLinuxUpdateNotice(latestVersion) {
@@ -331,8 +352,14 @@ function checkVersionViaGitHub(manual = false) {
       try {
         const release = JSON.parse(data);
         const latest = (release.tag_name || '').replace(/^v/, '');
-        if (latest && isNewerVersion(latest, app.getVersion())) {
-          showLinuxUpdateNotice(latest);
+        const hasUpdate = latest && isNewerVersion(latest, app.getVersion());
+        if (hasUpdate) {
+          if (manual) {
+            showLinuxUpdateNotice(latest);
+          } else {
+            // Automatic check: notify renderer for non-blocking in-app toast
+            mainWindow?.webContents.send('update:available', latest);
+          }
         } else if (manual) {
           dialog.showMessageBox(getDialogParent(), {
             type: 'info',
