@@ -57,6 +57,20 @@
     <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
   }
 
+  <!-- Update notification banner -->
+  @if (updateVersion()) {
+    <div class="update-banner">
+      <span>Libria {{ updateVersion() }} está disponible.</span>
+      <button class="update-banner__close" (click)="updateVersion.set('')">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+  }
+
+  @if (checkResult()) {
+    <div class="check-result">{{ checkResult() }}</div>
+  }
+
   <!-- Subtle saving indicator -->
   <div class="subtle-loader" [class.subtle-loader--on]="store.isSaving()">
     <div class="subtle-loader__bar"></div>

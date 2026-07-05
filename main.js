@@ -315,13 +315,7 @@ function getDialogParent() {
 }
 
 function showLinuxUpdateNotice(latestVersion) {
-  dialog.showMessageBox(getDialogParent(), {
-    type: 'info',
-    title: 'Nueva versión disponible',
-    message: `Libria ${latestVersion} está disponible`,
-    detail: 'Actualiza desde tu gestor de paquetes o descarga el instalador en:\ngithub.com/Gargadon/libria/releases',
-    buttons: ['Entendido'],
-  });
+  mainWindow?.webContents.send('update:available', latestVersion);
 }
 
 function isNewerVersion(remote, current) {
@@ -361,23 +355,11 @@ function checkVersionViaGitHub(manual = false) {
             mainWindow?.webContents.send('update:available', latest);
           }
         } else if (manual) {
-          dialog.showMessageBox(getDialogParent(), {
-            type: 'info',
-            title: 'Actualizaciones',
-            message: 'Estás al día',
-            detail: `Libria ${app.getVersion()} es la versión más reciente disponible.`,
-            buttons: ['Aceptar'],
-          });
+          mainWindow?.webContents.send('update:check-result', 'uptodate');
         }
       } catch (_) {
         if (manual) {
-          dialog.showMessageBox(getDialogParent(), {
-            type: 'error',
-            title: 'Actualizaciones',
-            message: 'Error al buscar actualizaciones',
-            detail: 'No se pudo obtener la última versión desde GitHub.',
-            buttons: ['Aceptar'],
-          });
+          mainWindow?.webContents.send('update:check-result', 'error');
         }
       }
     });
@@ -387,26 +369,14 @@ function checkVersionViaGitHub(manual = false) {
     req.destroy();
     console.error('[updater] Request timed out');
     if (manual) {
-      dialog.showMessageBox(getDialogParent(), {
-        type: 'error',
-        title: 'Actualizaciones',
-        message: 'Error al buscar actualizaciones',
-        detail: 'La solicitud tardó demasiado. Verifica tu conexión a internet.',
-        buttons: ['Aceptar'],
-      });
+      mainWindow?.webContents.send('update:check-result', 'timeout');
     }
   });
   req.on('error', (err) => {
     if (timedOut) return;
     console.error('[updater]', err.message);
     if (manual) {
-      dialog.showMessageBox(getDialogParent(), {
-        type: 'error',
-        title: 'Actualizaciones',
-        message: 'Error al buscar actualizaciones',
-        detail: err.message,
-        buttons: ['Aceptar'],
-      });
+      mainWindow?.webContents.send('update:check-result', 'error');
     }
   });
 }

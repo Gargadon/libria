@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onFileOpen: (callback) => ipcRenderer.on('file:open', (_event, filePath) => callback(filePath)),
   getPendingPath: () => ipcRenderer.invoke('file:getPendingPath'),
   onUpdateAvailable: (callback) => ipcRenderer.on('update:available', (_event, version) => callback(version)),
+  onUpdateCheckResult: (callback) => ipcRenderer.on('update:check-result', (_event, result) => callback(result)),
 
   setLanguage: (lang) => ipcRenderer.send('app:set-language', lang),
 

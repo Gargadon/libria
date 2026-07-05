@@ -5053,3 +5053,62 @@ body.print-digital {
   right: 0;
   z-index: 1000;
 }
+
+/* ===== Update banner ===== */
+.update-banner {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  color: var(--ink);
+  z-index: 9000;
+}
+
+.update-banner__close {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  border-radius: 4px;
+}
+
+.update-banner__close:hover {
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.update-banner__close .material-symbols-outlined {
+  font-size: 18px;
+}
+
+/* ===== Check result toast ===== */
+.check-result {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  z-index: 9000;
+  animation: check-fade 4s ease forwards;
+}
+
+@keyframes check-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+}

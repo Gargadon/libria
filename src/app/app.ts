@@ -41,6 +41,7 @@ export class App {
   isResizing = false;
   showAbout = signal(false);
   updateVersion = signal('');
+  checkResult = signal('');
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -88,6 +89,19 @@ export class App {
       api.onUpdateAvailable((version: string) => {
         this.ngZone.run(() => {
           this.updateVersion.set(version);
+        });
+      });
+    }
+    if (api?.onUpdateCheckResult) {
+      api.onUpdateCheckResult((result: string) => {
+        this.ngZone.run(() => {
+          const messages: Record<string, string> = {
+            uptodate: 'Ya tienes la versión más reciente.',
+            error: 'Error al buscar actualizaciones.',
+            timeout: 'La solicitud tardó demasiado. Verifica tu conexión.',
+          };
+          this.checkResult.set(messages[result] || '');
+          setTimeout(() => this.checkResult.set(''), 4000);
         });
       });
     }
