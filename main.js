@@ -103,8 +103,7 @@ app.on('open-file', (event, filePath) => {
 });
 
 function getFileArgument() {
-  const args = process.argv.slice(app.isPackaged ? 1 : 2);
-  return args.find((a) => a.endsWith('.libria')) ?? null;
+  return process.argv.find((a) => a.endsWith('.libria')) ?? null;
 }
 
 function createWindow() {
@@ -197,10 +196,11 @@ function createWindow() {
     }
   });
 
-  mainWindow.webContents.on('did-finish-load', () => {
-    pendingFilePath = fileToOpen ?? getFileArgument();
-    fileToOpen = null;
-  });
+  // Set pending file path immediately — before loadFile() — so Angular
+  // can retrieve it via getPendingPath() on boot, avoiding the race
+  // between did-finish-load and Angular's constructor.
+  pendingFilePath = fileToOpen ?? getFileArgument();
+  fileToOpen = null;
 }
 
 ipcMain.handle('file:getPendingPath', () => {
