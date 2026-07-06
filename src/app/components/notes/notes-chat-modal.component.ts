@@ -111,9 +111,9 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
         <!-- New note composer -->
         <div class="ncm__composer">
           <div class="ncm__composer-meta">
-            <input class="ncm__input-name" [(ngModel)]="authorName"
+            <input class="ncm__input-name" [ngModel]="authorName()" (ngModelChange)="authorName.set($event)"
                    [attr.placeholder]="'notes.namePlaceholder' | translate" autocomplete="off">
-            <select class="ncm__select-role" [(ngModel)]="authorRole">
+            <select class="ncm__select-role" [ngModel]="authorRole()" (ngModelChange)="authorRole.set($event)">
               <option value="author">{{ 'notes.roleAuthor' | translate }}</option>
               <option value="editor">{{ 'notes.roleEditor' | translate }}</option>
               <option value="corrector">{{ 'notes.roleCorrector' | translate }}</option>
@@ -121,7 +121,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
             </select>
           </div>
           <div class="ncm__composer-body">
-            <textarea class="ncm__textarea" [(ngModel)]="noteContent"
+            <textarea class="ncm__textarea" [ngModel]="noteContent()" (ngModelChange)="noteContent.set($event)"
                       [attr.placeholder]="'notes.notePlaceholder' | translate" rows="3"
                       (keydown.enter)="$any($event).shiftKey ? null : sendNote($any($event))">
             </textarea>
@@ -538,9 +538,9 @@ export class NotesChatModalComponent implements OnInit {
   chapterId  = input.required<string>();
   close      = output<void>();
 
-  authorName  = '';
-  authorRole: NoteRole = 'author';
-  noteContent = '';
+  authorName = signal('');
+  authorRole = signal<NoteRole>('author');
+  noteContent = signal('');
 
   replyingTo  = signal('');
   replyContent = '';
@@ -550,30 +550,30 @@ export class NotesChatModalComponent implements OnInit {
   );
 
   canSend = computed(() =>
-    this.authorName.trim().length > 0 && this.noteContent.trim().length > 0
+    this.authorName().trim().length > 0 && this.noteContent().trim().length > 0
   );
 
   ngOnInit() {
     const saved = sessionStorage.getItem('libria_note_author');
     const savedRole = sessionStorage.getItem('libria_note_role');
-    if (saved) this.authorName = saved;
-    if (savedRole) this.authorRole = savedRole as NoteRole;
+    if (saved) this.authorName.set(saved);
+    if (savedRole) this.authorRole.set(savedRole as NoteRole);
   }
 
   sendNote(event?: KeyboardEvent) {
     if (event) event.preventDefault();
     if (!this.canSend()) return;
-    sessionStorage.setItem('libria_note_author', this.authorName);
-    sessionStorage.setItem('libria_note_role', this.authorRole);
-    this.store.addNote(this.chapterId(), this.blockIndex(), this.authorRole, this.authorName, this.noteContent);
-    this.noteContent = '';
+    sessionStorage.setItem('libria_note_author', this.authorName());
+    sessionStorage.setItem('libria_note_role', this.authorRole());
+    this.store.addNote(this.chapterId(), this.blockIndex(), this.authorRole(), this.authorName(), this.noteContent());
+    this.noteContent.set('');
     this.fileService.saveLibriaFile();
   }
 
   saveReply(noteId: string, event?: KeyboardEvent) {
     if (event) event.preventDefault();
     if (!this.replyContent.trim()) return;
-    this.store.addReply(noteId, this.authorRole, this.authorName || 'Usuario', this.replyContent);
+    this.store.addReply(noteId, this.authorRole(), this.authorName() || 'Usuario', this.replyContent);
     this.replyContent = '';
     this.replyingTo.set('');
     this.fileService.saveLibriaFile();

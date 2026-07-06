@@ -1,4 +1,4 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, untracked } from '@angular/core';
 
 export type PomodoroMode = 'focus' | 'short-break' | 'long-break';
 
@@ -17,9 +17,13 @@ export class PomodoroService {
   private timerInterval: any = null;
 
   constructor() {
-    // Automatically reset timer when settings or mode change and timer is inactive
+    // Reset timer when duration/mode settings change, but NOT on pause
     effect(() => {
-      if (!this.isActive()) {
+      this.focusDuration();
+      this.shortBreakDuration();
+      this.longBreakDuration();
+      this.mode();
+      if (untracked(() => !this.isActive())) {
         this.resetTimeForMode();
       }
     }, { allowSignalWrites: true });
