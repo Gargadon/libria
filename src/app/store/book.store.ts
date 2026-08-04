@@ -292,7 +292,7 @@ export const BookStore = signalStore(
         locations: doc.locations || [],
         activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(doc.preferences || {}), mode: personalMode },
-        writingGoals: doc.writingGoals || initialState.writingGoals,
+        writingGoals: { ...initialState.writingGoals, ...(doc.writingGoals || {}) },
         isDirty: false,
         ui: initialState.ui
       });
