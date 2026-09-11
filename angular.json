@@ -78,6 +78,11 @@
                 "glob": "index.dic",
                 "input": "node_modules/dictionary-pt",
                 "output": "/dictionaries/pt/"
+              },
+              {
+                "glob": "**/*",
+                "input": "node_modules/@vivliostyle/viewer/lib",
+                "output": "/vivliostyle/"
               }
             ],
             "styles": [

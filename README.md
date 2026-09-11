@@ -82,7 +82,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Importar:** Desde DOCX (con formato) y TXT (texto plano).
 - **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC, tipografía embebida y soporte completo de listas, tablas y notas al pie.
 - **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido (negrita, cursiva, imágenes), tweaks tipográficos aplicados, portada y TOC opcionales.
-- **Exportación PDF:** Formato de impresión nativo vía CSS print con maquetación y estilos aplicados.
+- **Exportación PDF profesional:** Composición con Vivliostyle, CSS Paged Media, páginas recto/verso, cajas de margen, numeración real del índice y estilos tipográficos aplicados.
 - **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas, imágenes y objetivos de escritura.
 
 ### Internacionalización
@@ -100,13 +100,14 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 | **Framework** | [Angular 22](https://angular.dev/) (standalone components) |
 | **Gestión de Estado** | [NgRx Signals Store](https://ngrx.io/guide/signals) |
 | **Entorno de Escritorio** | [Electron 42](https://www.electronjs.org/) |
+| **Motor de composición PDF** | [Vivliostyle](https://vivliostyle.org/) 11 |
 | **Persistencia** | Formato abierto `.libria` (JSON autocontenido) |
 | **Testing** | [Vitest](https://vitest.dev/) |
 | **Estilos** | SCSS (Sass) por componente |
 | **Lenguaje** | TypeScript 6.0 (Modo Estricto) |
 | **Runtime** | [Bun](https://bun.sh/) 1.3.14 |
 | **Corrector ortográfico** | API de corrección integrada + diccionarios Hunspell |
-| **Dependencias clave** | `docx` (generación DOCX), `jszip` (EPUB), `hyphen` (guinado), `mammoth` (importación DOCX) |
+| **Dependencias clave** | `@vivliostyle/cli` (PDF), `docx` (DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
 
 ### Arquitectura de Datos
 
@@ -125,6 +126,8 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 
 - **Node.js**: 18.0 o superior
 - **Bun**: 1.3.14 o superior
+
+La primera exportación PDF puede descargar automáticamente el navegador de renderizado administrado por Vivliostyle. Las exportaciones posteriores reutilizan esa instalación local.
 
 ### Instalación y Ejecución
 
@@ -180,7 +183,6 @@ Cada aportación, por pequeña que sea, ayuda a mantener el proyecto vivo. ¡Gra
 
 ## Licencia
 
-Este proyecto está bajo la Licencia **MIT**. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la **GNU Affero General Public License v3.0**. Consulta el archivo [LICENSE](LICENSE) para más detalles. Vivliostyle, integrado como motor de composición PDF, también se distribuye bajo AGPLv3.
 
 ---
-

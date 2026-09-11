@@ -5,7 +5,7 @@ import { sortFootnotesByPosition, Block, Chapter } from '../models/book.models';
 import { HyphenService } from './hyphen.service';
 import { AssetService } from './asset.service';
 import { FontService } from './font.service';
-import { blockToHtml, chapterFootnotesHtml } from '../utils/block-html';
+import { blockToHtml, chapterFootnotesHtml, sanitizeRichHtml } from '../utils/block-html';
 import { pageSizeCss, pageSizeInches, sceneBreakGlyph, escapeHtml as _escapeHtml, xhtmlSafe, ptToPx, imageExt as _imageExt } from '../utils/block-maps';
 import type JSZip from 'jszip';
 import type {
@@ -207,7 +207,7 @@ ${dropCapStyles}`);
         contentParts.push(`<h1 class="kp-h1">${this.escapeHtml(c.title)}</h1><nav epub:type="toc"><ol class="kp-toc">${tocBody}</ol></nav>`);
       } else {
       c.body.forEach(b => {
-        const raw = this.xhtmlSafe(b.html || this.escapeHtml(b.text || ''));
+        const raw = this.xhtmlSafe(b.html ? sanitizeRichHtml(b.html) : this.escapeHtml(b.text || ''));
         switch (b.type) {
           case 'halftitle':     contentParts.push(`<h1 class="kp-halftitle">${raw}</h1>`); break;
           case 'title':         contentParts.push(`<h1 class="kp-title">${raw}</h1>`); break;
@@ -259,7 +259,7 @@ ${dropCapStyles}`);
       }
       const content = contentParts.join('');
       zip.file(`OEBPS/chapters/${c.id}.xhtml`, `<?xml version="1.0" encoding="UTF-8"?>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>${this.escapeHtml(c.title)}</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>${this.escapeHtml(c.title)}</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
 <body>${content}</body></html>`);
     });
     const navLinks = navLinkParts.join('');
@@ -291,12 +291,9 @@ ${dropCapStyles}`);
       const bodyFontFamily = this.store.bookFontFamily();
       const titleFontFamily = this.store.titleFontFamily();
 
-      // Use DOM-measured page positions from print preview (exact); fall back to geometric estimate
-      const measuredMap = this.store.printPageMap();
-      const pageMap = Object.keys(measuredMap).length > 0
-        ? measuredMap
-        : this.estimatePageMap(chapters, book.paperSize || '5x8', t);
-      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.assetService.getAll(), pageMap);
+      // Vivliostyle resolves pagination and target-counter() while composing the PDF.
+      // Preview measurements are intentionally not used for the final artifact.
+      const html = this.buildPrintHtml(book, chapters, t, bodyFontFamily, titleFontFamily, undefined, this.assetService.getAll());
       const pageSize = this.pageSizeToInches(book.paperSize || '5x8');
 
       const pdfOptions: Record<string, any> = {
@@ -335,8 +332,10 @@ ${dropCapStyles}`);
     fontsHref?: string,
     assets: Record<string, string> = {},
     pageMap?: Record<string, number>,
+    pagedPreview = false,
   ): string {
     const pageSize = pageSizeCss(book.paperSize || '5x8');
+    const screenPreview = !!fontsHref && !pagedPreview;
 
     // Fonts are injected by the main process from public/fonts.css (local WOFF2).
     const brk = sceneBreakGlyph(t.sceneBreakType);
@@ -352,7 +351,7 @@ ${dropCapStyles}`);
     const titleD = t.titleUnderline ? 'underline' : 'none';
     const tAlign = t.titleAlignment ?? 'center';
 
-    const screenCss = fontsHref ? `
+    const screenCss = screenPreview ? `
 html, body { height: 100vh; margin: 0; padding: 0; overflow: hidden; scrollbar-width: none; }
 html::-webkit-scrollbar { display: none; }
 .pv-clip {
@@ -376,7 +375,7 @@ html::-webkit-scrollbar { display: none; }
 .kp-quote { margin-left: 0.5px; }` : '';
 
     let marginBoxesCss = '';
-    if (!fontsHref) {
+    if (!fontsHref || pagedPreview) {
       const showHdr = t.showHeader;
       const showPN = t.showPageNumbers;
       const pnp = t.pageNumberPosition;
@@ -484,8 +483,9 @@ body {
 }
 
 /* ── Chapter separators ── */
-.ch { break-before: ${fontsHref ? 'column' : 'page'}; break-inside: auto; }
+.ch { break-before: ${screenPreview ? 'column' : 'page'}; break-inside: auto; }
 .ch:first-child { break-before: auto; }
+.ch--recto { break-before: ${screenPreview ? 'column' : 'recto'}; }
 
 /* ── Paragraphs ── */
 .kp-p {
@@ -683,8 +683,8 @@ ${t.dropCap ? `
 .kp-page-break {
   display: block;
   height: 0;
-  break-after: ${fontsHref ? 'column' : 'page'};
-  ${!fontsHref ? 'page-break-after: always;' : ''}
+  break-after: ${screenPreview ? 'column' : 'page'};
+  ${!screenPreview ? 'page-break-after: always;' : ''}
 }
 .kp-list {
   margin: 0.5em 0;
@@ -750,6 +750,22 @@ ${t.dropCap ? `
   padding: 3px 0;
   border-bottom: 1px dotted #ccc;
 }
+.kp-toc-link {
+  color: inherit;
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  text-decoration: none;
+}
+.kp-toc-link::after {
+  content: ${screenPreview ? "''" : "leader('.') target-counter(attr(href), page)"};
+  flex: 1;
+  margin-left: 0.45em;
+  text-align: right;
+  font-size: 0.85em;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
 .kp-toc-li--front,
 .kp-toc-li--back {
   font-size: 0.85em;
@@ -775,6 +791,7 @@ ${t.dropCap ? `
 }
 `;
 
+    const printIds = new Map(chapters.map((ch: any, idx: number) => [ch.id, `libria-chapter-${idx + 1}`]));
     const chaptersHtml = chapters.map((ch: any, idx: number) => {
       const cls = ['ch',
         idx > 0 && ch.forceOddPage ? 'ch--recto' : '',
@@ -786,13 +803,13 @@ ${t.dropCap ? `
           .filter((c: any) => c.templateId !== 'toc')
           .map((c: any) => {
             const page = pageMap?.[c.id];
-            const pgCell = page != null
+            const pgCell = screenPreview && page != null
               ? `<span class="kp-toc-pg">${page}</span>`
               : '';
             const num = c.kind === 'chapter' && c.number != null
               ? `<span class="kp-toc-num">${c.number}.</span> `
               : '';
-            return `<li class="kp-toc-li kp-toc-li--${c.kind}"><span class="kp-toc-name">${num}${this.escapeHtml(c.title)}</span>${pgCell}</li>`;
+            return `<li class="kp-toc-li kp-toc-li--${c.kind}"><a class="kp-toc-link" href="#${printIds.get(c.id)}"><span class="kp-toc-name">${num}${this.escapeHtml(c.title)}</span>${pgCell}</a></li>`;
           })
           .join('\n');
         body = `<h2 class="kp-toc-heading" style="font-family:${titleFontFamily}">${this.escapeHtml(ch.title)}</h2>\n<ol class="kp-toc-list">${tocItems}</ol>`;
@@ -805,7 +822,7 @@ ${t.dropCap ? `
       }
 
       const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);
-      return `<div class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
+      return `<div id="${printIds.get(ch.id)}" class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
     }).join('\n\n');
 
     let fontTags = '';
@@ -813,7 +830,7 @@ ${t.dropCap ? `
       const base = new URL('.', fontsHref).href;
       fontTags = `  <base href="${base}">\n  <link rel="stylesheet" href="fonts.css">\n`;
     }
-    const bodyContent = fontsHref
+    const bodyContent = screenPreview
       ? `<div class="pv-clip"><div class="pv-slider"><div class="pv-flow">\n${chaptersHtml}\n</div></div></div>`
       : chaptersHtml;
     return `<!DOCTYPE html>
@@ -1128,7 +1145,7 @@ ${bodyContent}
             }
             case 'list-unordered':
             case 'list-ordered': {
-              const items = (b.html || b.text || '').split('</li>').filter(s => s.trim());
+              const items = (b.html ? sanitizeRichHtml(b.html) : b.text || '').split('</li>').filter(s => s.trim());
               for (const item of items) {
                 const itemText = item.replace(/<[^>]+>/g, '').trim();
                 if (!itemText) continue;
@@ -1144,7 +1161,7 @@ ${bodyContent}
               break;
             }
             case 'table': {
-              const rows = (b.html || '').match(/<tr>.*?<\/tr>/gi) || [];
+              const rows = (b.html ? sanitizeRichHtml(b.html) : '').match(/<tr>.*?<\/tr>/gi) || [];
               const tableRows: TableRow[] = [];
               for (const rowHtml of rows) {
                 const cells = rowHtml.match(/<t[dh][^>]*>.*?<\/t[dh]>/gi) || [];
@@ -1331,7 +1348,7 @@ ${bodyContent}
 
         c.body.forEach((b) => {
           const rawText = b.text || '';
-          const htmlText = b.html || esc(rawText);
+          const htmlText = b.html ? sanitizeRichHtml(b.html) : esc(rawText);
           const formatted = htmlToOdtXml(htmlText, fnMap);
 
           switch (b.type) {
@@ -1369,7 +1386,7 @@ ${bodyContent}
               break;
             case 'list-unordered':
             case 'list-ordered': {
-              const items = (b.html || b.text || '').split('</li>').filter(s => s.trim());
+              const items = (b.html ? sanitizeRichHtml(b.html) : b.text || '').split('</li>').filter(s => s.trim());
               let listXml = '';
               for (const item of items) {
                 const rawItemContent = item.replace(/<li[^>]*>/i, '').trim();
@@ -1559,7 +1576,7 @@ ${bodyContent}
   private htmlToTextRuns(b: { text?: string; html?: string }, opts: {
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
   }): TextRun[] {
-    const raw = b.html || this.escapeHtml(b.text ?? '');
+    const raw = b.html ? sanitizeRichHtml(b.html) : this.escapeHtml(b.text ?? '');
     if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
 
     const runs: TextRun[] = [];
@@ -1601,7 +1618,7 @@ ${bodyContent}
   private blockToChildren(b: { text?: string; html?: string }, opts: {
     font: string; size: number; bold?: boolean; italics?: boolean; underline?: boolean; smallCaps?: boolean;
   }, fnIdToNum: Record<string, number>): (TextRun | FootnoteReferenceRun)[] {
-    const raw = b.html || this.escapeHtml(b.text ?? '');
+    const raw = b.html ? sanitizeRichHtml(b.html) : this.escapeHtml(b.text ?? '');
     if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
 
     const children: (TextRun | FootnoteReferenceRun)[] = [];

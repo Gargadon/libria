@@ -28,6 +28,7 @@
     "download:gs:win": "node scripts/download-ghostscript.mjs win"
   },
   "private": true,
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@angular/common": "^22.0.2",
     "@angular/compiler": "^22.0.2",
@@ -40,6 +41,7 @@
     "@ngx-translate/http-loader": "^17.0.0",
     "@types/dompurify": "^3.2.0",
     "@types/hyphen": "^1.14.0",
+    "@vivliostyle/cli": "^11.3.0",
     "blob-stream": "^0.1.3",
     "buffer": "^6.0.3",
     "docx": "^9.6.1",

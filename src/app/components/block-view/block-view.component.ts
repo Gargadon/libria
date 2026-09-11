@@ -103,7 +103,7 @@ import { HyphenService } from '../../services/hyphen.service';
       }
       @case ('list-unordered') { <ul class="kp-list" [innerHTML]="safeHtml(block().html || block().text)"></ul> }
       @case ('list-ordered') { <ol class="kp-list" [innerHTML]="safeHtml(block().html || block().text)"></ol> }
-      @case ('table') { <div class="kp-table-wrap" [innerHTML]="safeHtml(block().html || block().text)"></div> }
+      @case ('table') { <div class="kp-table-wrap" [innerHTML]="safeTableHtml(block().html || block().text)"></div> }
       @default { <div>[{{ block().type }}]</div> }
     }
   `,
@@ -150,11 +150,19 @@ export class BlockViewComponent {
     const cleanHtml = DOMPurify.sanitize(html, this.PURIFY_CONFIG);
     const cached = this._safeHtmlCache.get(cleanHtml);
     if (cached !== undefined) return cached;
-    const normalized = cleanHtml.startsWith('<table') ? cleanHtml : '<table>' + cleanHtml + '</table>';
-    const result = this.sanitizer.bypassSecurityTrustHtml(normalized);
+    const result = this.sanitizer.bypassSecurityTrustHtml(cleanHtml);
     if (this._safeHtmlCache.size > 200) this._safeHtmlCache.clear();
     this._safeHtmlCache.set(cleanHtml, result);
     return result;
+  }
+
+  safeTableHtml(html: string | undefined): SafeHtml | null {
+    if (!html) return null;
+    const cleanHtml = DOMPurify.sanitize(html, this.PURIFY_CONFIG);
+    const normalized = cleanHtml.trimStart().startsWith('<table')
+      ? cleanHtml
+      : `<table>${cleanHtml}</table>`;
+    return this.sanitizer.bypassSecurityTrustHtml(normalized);
   }
 
   trustHtml(html: string | undefined): SafeHtml | null {

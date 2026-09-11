@@ -6,7 +6,7 @@ import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
 import { CustomThemesService } from '../services/custom-themes.service';
 import { environment } from '../../environments/environment';
-import { validateLibriaDocument } from '../utils/document-validator';
+import { migrateLibriaDocument, validateLibriaDocument } from '../utils/document-validator';
 
 export interface BookState {
   book: Book | null;
@@ -281,18 +281,19 @@ export const BookStore = signalStore(
       });
     },
     loadDocument(doc: LibriaDocument, assetService: AssetService) {
-      validateLibriaDocument(doc);
-      assetService.load(doc.assets || {});
+      const migrated = migrateLibriaDocument(doc);
+      validateLibriaDocument(migrated);
+      assetService.load(migrated.assets || {});
       const personalMode = store.personalConfig().mode;
       patchState(store, {
-        book: doc.metadata,
-        chapters: doc.chapters,
-        notes: doc.notes || [],
-        characters: doc.characters || [],
-        locations: doc.locations || [],
-        activeChapterId: doc.session?.lastActiveChapterId || doc.chapters[0]?.id || '',
-        tweaks: { ...store.tweaks(), ...(doc.preferences || {}), mode: personalMode },
-        writingGoals: { ...initialState.writingGoals, ...(doc.writingGoals || {}) },
+        book: migrated.metadata,
+        chapters: migrated.chapters,
+        notes: migrated.notes || [],
+        characters: migrated.characters || [],
+        locations: migrated.locations || [],
+        activeChapterId: migrated.session?.lastActiveChapterId || migrated.chapters[0]?.id || '',
+        tweaks: { ...store.tweaks(), ...(migrated.preferences || {}), mode: personalMode },
+        writingGoals: { ...initialState.writingGoals, ...(migrated.writingGoals || {}) },
         isDirty: false,
         ui: initialState.ui
       });

@@ -1,8 +1,10 @@
 interface ElectronAPI {
-  saveDialog(defaultName: string): Promise<string | null>;
-  openDialog(): Promise<string | null>;
+  saveDialog(defaultName: string, kind?: 'document' | 'theme'): Promise<string | null>;
+  openDialog(kind?: 'document' | 'theme'): Promise<string | null>;
   writeFile(filePath: string, content: string): Promise<void>;
   readFile(filePath: string): Promise<string>;
+  getFontsCss(): Promise<string>;
+  showError(title: string, content: string): Promise<void>;
   printToPDF(options: object): Promise<Uint8Array>;
   printFromHTML(html: string, options: object): Promise<Uint8Array>;
   onMenuAction(callback: (action: string) => void): void;

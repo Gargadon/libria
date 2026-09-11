@@ -4,7 +4,7 @@ import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
 import { ExportService } from '../../services/export.service';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { BlockViewComponent } from '../block-view/block-view.component';
 
 @Component({
@@ -138,59 +138,23 @@ import { BlockViewComponent } from '../block-view/block-view.component';
             }
           </div>
 
-          <!-- THE PAPEL (Single Page Preview) -->
+          <!-- THE PAPEL: Vivliostyle owns the complete page, including
+               mirrored margins, headers, footers and page numbers. -->
           <div class="print__page" *ngIf="mode() === 'print'"
             [style.transform]="'scale(' + printZoom() + ')'"
             [style.transform-origin]="'top left'"
             [style.padding-top.px]="0"
             [style.padding-bottom.px]="0"
-            [style.padding-left.mm]="isEvenPage() ? store.tweaks.marginOuter() : store.tweaks.marginInner()"
-            [style.padding-right.mm]="isEvenPage() ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
-
-            @let showHdr2 = store.tweaks.showHeader();
-            @let showPN2 = store.tweaks.showPageNumbers();
-            @let pnp2 = store.tweaks.pageNumberPosition();
-            @let isEven2 = isEvenPage();
-            @if (showHdr2 || (showPN2 && pnp2 === 'top-edges')) {
-              <div class="print__header"
-                [style.height.mm]="store.tweaks.marginTop()"
-                [class.print__header--edge-even]="showPN2 && pnp2 === 'top-edges' && isEven2"
-                [class.print__header--edge-odd]="showPN2 && pnp2 === 'top-edges' && !isEven2"
-                style="margin:0;flex-shrink:0;">
-                @if (showPN2 && pnp2 === 'top-edges') {
-                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
-                }
-                @if (showHdr2) {
-                  <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
-                }
-                @if (showPN2 && pnp2 === 'top-edges' && !isEven2) {
-                  <span class="print__hdr-pagenum">{{ globalPage() + 1 }}</span>
-                }
-              </div>
-            } @else {
-              <div [style.height.mm]="store.tweaks.marginTop()" style="margin:0;flex-shrink:0;"></div>
-            }
-
-            <div class="print__content" style="flex: 1; position: relative; overflow: hidden;">
-              <iframe #printIframe
-                [srcdoc]="printIframeHtml()"
+            [style.padding-left.px]="0"
+            [style.padding-right.px]="0">
+            <div class="print__content print__content--vivliostyle" style="position: relative; overflow: hidden;">
+              <iframe *ngIf="vivliostyleViewerUrl()" #printIframe
+                [src]="vivliostyleViewerUrl()"
                 scrolling="no"
                 style="width:100%;height:100%;border:none;display:block;"
-                (load)="onIframeLoad()"
+                (load)="onVivliostyleLoad()"
               ></iframe>
             </div>
-
-            @if (showPN2 && pnp2 !== 'top-edges') {
-              <div class="print__footer"
-                [style.height.mm]="store.tweaks.marginBottom()"
-                [class.print__footer--edge-even]="pnp2 === 'bottom-edges' && isEven2"
-                [class.print__footer--edge-odd]="pnp2 === 'bottom-edges' && !isEven2"
-                style="margin:0;flex-shrink:0;">
-                <span>{{ globalPage() + 1 }}</span>
-              </div>
-            } @else if (!showPN2) {
-              <div [style.height.mm]="store.tweaks.marginBottom()" style="margin:0;flex-shrink:0;"></div>
-            }
           </div>
         </div>
       </div>
@@ -328,7 +292,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private printHtmlTimeout?: any;
 
   printIframeHtml = signal<SafeHtml>('');
+  vivliostyleViewerUrl = signal<SafeResourceUrl>('');
   iframeContentHeight = signal(0);
+  private vivliostyleObjectUrl = '';
+  private vivliostyleMeasureTimeout?: any;
+  private vivliostyleLoadGeneration = 0;
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
@@ -520,8 +488,25 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
           for (const [id, info] of Object.entries(layout.chapters)) {
             pageMap[id] = info.startPage;
           }
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap);
-          this.printIframeHtml.set(this.sanitizer.bypassSecurityTrustHtml(html));
+          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap, true);
+          const generation = ++this.vivliostyleLoadGeneration;
+          clearTimeout(this.vivliostyleMeasureTimeout);
+          const electronFontsCss = (window as any).electronAPI?.getFontsCss?.();
+          const fontsCssPromise = electronFontsCss instanceof Promise
+            ? electronFontsCss.catch(() => '')
+            : fetch(fontsHref).then(response => response.ok ? response.text() : '').catch(() => '');
+          fontsCssPromise.then((fontCss: string) => {
+            if (generation !== this.vivliostyleLoadGeneration) return;
+            const sourceHtml = fontCss
+              ? html.replace('</head>', `<style id="libria-preview-fonts">${fontCss.replace(/font-display:\s*swap/g, 'font-display: block')}</style></head>`)
+              : html;
+            if (this.vivliostyleObjectUrl) URL.revokeObjectURL(this.vivliostyleObjectUrl);
+            this.vivliostyleObjectUrl = URL.createObjectURL(new Blob([sourceHtml], { type: 'text/html' }));
+            const viewerUrl = new URL('vivliostyle/index.html', document.baseURI);
+            // Vivliostyle's viewer reads the hash parameters literally.
+            viewerUrl.hash = `src=${this.vivliostyleObjectUrl}&bookMode=false&renderAllPages=true&spread=false`;
+            this.vivliostyleViewerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl.href));
+          });
         }, 300);
       });
     });
@@ -544,69 +529,76 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.resizeObserver) this.resizeObserver.disconnect();
     clearTimeout(this.measureTimeout);
     clearTimeout(this.printHtmlTimeout);
+    clearTimeout(this.vivliostyleMeasureTimeout);
+    if (this.vivliostyleObjectUrl) URL.revokeObjectURL(this.vivliostyleObjectUrl);
   }
 
-  onIframeLoad() {
+  onVivliostyleLoad() {
     const iframe = this.printIframeEl?.nativeElement;
     if (!iframe?.contentDocument || !iframe?.contentWindow) return;
+    const doc = iframe.contentDocument;
+    let chromeStyle = doc.getElementById('libria-vivliostyle-preview-style');
+    if (!chromeStyle) {
+      chromeStyle = doc.createElement('style');
+      chromeStyle.id = 'libria-vivliostyle-preview-style';
+      chromeStyle.textContent = `
+        /* Libria owns preview navigation; keep Vivliostyle's controls hidden. */
+        #vivliostyle-menu-bar,
+        #vivliostyle-page-slider-bar,
+        #vivliostyle-page-navigation-up,
+        #vivliostyle-page-navigation-down,
+        #vivliostyle-page-navigation-left,
+        #vivliostyle-page-navigation-right,
+        #vivliostyle-welcome {
+          display: none !important;
+        }
+        #vivliostyle-viewer-viewport {
+          top: 0 !important;
+          bottom: 0 !important;
+          margin-top: 0 !important;
+          margin-bottom: 0 !important;
+        }
+      `;
+      doc.head.appendChild(chromeStyle);
+    }
+    const slider = doc.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
+    const total = Number(slider?.max || 1);
+    this.measuredTotalPages.set(Math.max(1, total));
+    this.globalPage.set(Math.max(0, Math.min(this.globalPage(), total - 1)));
 
+    // A long document paginates asynchronously. Wait until the Viewer has
+    // published its final page count instead of trusting the initial value 1.
+    let attempts = 0;
+    let stableCount = 0;
+    let previousTotal = 0;
     const measure = () => {
-      const flow = iframe.contentDocument?.querySelector('.pv-flow') as HTMLElement | null;
-      if (!flow) return;
-      const pageW = iframe.contentWindow!.innerWidth;
-      if (pageW <= 0) return;
-      this.fixRectoChapters(flow, pageW);
-      const total = Math.max(1, Math.ceil(flow.scrollWidth / pageW));
-      this.measuredTotalPages.set(total);
-      this.scrollIframeToPage(this.globalPage());
-
-      // Measure actual start page of each chapter from the rendered DOM
-      const chEls = Array.from(flow.querySelectorAll<HTMLElement>('.ch[data-id]'));
-      const newOffsets: Record<string, number> = {};
-      for (const el of chEls) {
-        const id = el.dataset['id'];
-        if (id) newOffsets[id] = Math.round((el.offsetLeft - flow.offsetLeft) / pageW);
-      }
-      // Only set if values changed — prevents re-render loop
-      const curr = this.printPageOffsets();
-      const changed = Object.keys(newOffsets).length !== Object.keys(curr).length ||
-        Object.keys(newOffsets).some(k => newOffsets[k] !== curr[k]);
-      if (changed) {
-        this.printPageOffsets.set(newOffsets);
-        // Convert to 1-indexed and persist in store so the PDF export can use them
-        const pageMap1: Record<string, number> = {};
-        for (const [id, off] of Object.entries(newOffsets)) pageMap1[id] = off + 1;
-        this.store.setPrintPageMap(pageMap1);
+      const currentIframe = this.printIframeEl?.nativeElement;
+      const currentSlider = currentIframe?.contentDocument?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
+      const currentTotal = Number(currentSlider?.max || 1);
+      this.measuredTotalPages.set(Math.max(1, currentTotal));
+      this.globalPage.set(Math.max(0, Math.min(this.globalPage(), currentTotal - 1)));
+      stableCount = currentTotal === previousTotal ? stableCount + 1 : 0;
+      previousTotal = currentTotal;
+      // The Viewer first exposes a partial count (often 16) while it is still
+      // composing. Keep polling until the count has stabilized or the safety
+      // limit is reached.
+      // Keep the initial partial value (commonly 16) from becoming the final
+      // value. Large books may take several seconds to finish composition.
+      if ((stableCount < 12 || attempts < 20) && attempts++ < 80) {
+        this.vivliostyleMeasureTimeout = setTimeout(measure, 250);
       }
     };
-
-    measure();
-    iframe.contentDocument.fonts?.ready.then(() => measure());
+    clearTimeout(this.vivliostyleMeasureTimeout);
+    this.vivliostyleMeasureTimeout = setTimeout(measure, 250);
   }
 
-  private fixRectoChapters(flow: HTMLElement, pageW: number) {
-    // Remove previously auto-inserted blank pages
-    Array.from(flow.querySelectorAll('.ch--auto-blank')).forEach(el => el.remove());
-
-    // Process recto chapters in document order; accessing offsetLeft forces synchronous layout
-    const rectoChapters = Array.from(flow.querySelectorAll('.ch--recto')) as HTMLElement[];
-    for (const el of rectoChapters) {
-      // Column 0 = page 1 (odd/recto), col 1 = page 2 (even/verso), etc.
-      const col = Math.round((el.offsetLeft - flow.offsetLeft) / pageW);
-      if (col % 2 !== 0) {
-        const blank = flow.ownerDocument!.createElement('div');
-        blank.className = 'ch ch--auto-blank';
-        flow.insertBefore(blank, el);
-      }
-    }
-  }
-
-  private scrollIframeToPage(page: number) {
+  private navigateVivliostyle(direction: 'next' | 'previous') {
     const iframe = this.printIframeEl?.nativeElement;
     if (!iframe?.contentDocument) return;
-    const slider = iframe.contentDocument.querySelector('.pv-slider') as HTMLElement | null;
-    if (!slider) return;
-    slider.style.setProperty('--pi', String(page));
+    const selector = direction === 'next'
+      ? '#vivliostyle-page-navigation-right'
+      : '#vivliostyle-page-navigation-left';
+    (iframe.contentDocument.querySelector(selector) as HTMLElement | null)?.click();
   }
 
   public toPixels(value: string): number {
@@ -777,7 +769,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.globalPage() < max - 1) {
       this.globalPage.update(p => p + 1);
       if (this.mode() === 'print') {
-        this.scrollIframeToPage(this.globalPage());
+        this.navigateVivliostyle('next');
       } else {
         this.syncActiveChapter();
       }
@@ -787,7 +779,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.globalPage() > 0) {
       this.globalPage.update(p => p - 1);
       if (this.mode() === 'print') {
-        this.scrollIframeToPage(this.globalPage());
+        this.navigateVivliostyle('previous');
       } else {
         this.syncActiveChapter();
       }

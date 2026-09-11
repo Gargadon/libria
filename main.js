@@ -2,6 +2,44 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electro
 const path = require('path');
 const fs = require('fs');
 
+const MAX_DOCUMENT_BYTES = 100 * 1024 * 1024;
+const ALLOWED_FILE_EXTENSIONS = new Set(['.libria', '.libria-theme', '.json']);
+
+function assertTrustedRenderer(event) {
+  if (!mainWindow || event.sender !== mainWindow.webContents) {
+    throw new Error('Solicitud IPC no autorizada');
+  }
+}
+
+function validateUserFilePath(filePath, operation) {
+  if (typeof filePath !== 'string' || !path.isAbsolute(filePath) || filePath.includes('\0')) {
+    throw new Error('Ruta de archivo inválida');
+  }
+  const resolved = path.resolve(filePath);
+  if (!ALLOWED_FILE_EXTENSIONS.has(path.extname(resolved).toLowerCase())) {
+    throw new Error(`Extensión no permitida para ${operation}`);
+  }
+  return resolved;
+}
+
+function writeFileAtomically(filePath, content) {
+  const directory = path.dirname(filePath);
+  const temporaryPath = path.join(directory, `.${path.basename(filePath)}.${process.pid}.tmp`);
+  const fd = fs.openSync(temporaryPath, 'w', 0o600);
+  try {
+    fs.writeFileSync(fd, content, 'utf8');
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
+  }
+  try {
+    fs.renameSync(temporaryPath, filePath);
+  } catch (error) {
+    try { fs.unlinkSync(temporaryPath); } catch (_) {}
+    throw error;
+  }
+}
+
 app.setName('Libria');
 if (process.platform === 'linux') {
   const isX11 = process.argv.includes('--ozone-platform=x11') ||
@@ -117,6 +155,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   });
 
@@ -209,7 +248,8 @@ ipcMain.handle('file:getPendingPath', () => {
   return p;
 });
 
-ipcMain.on('app:confirm-close', () => {
+ipcMain.on('app:confirm-close', (_event) => {
+  assertTrustedRenderer(_event);
   mainWindow._forceClose = true;
   mainWindow.close();
 });
@@ -475,35 +515,77 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-ipcMain.handle('dialog:save', async (_event, defaultName) => {
+ipcMain.handle('dialog:save', async (_event, defaultName, kind = 'document') => {
+  assertTrustedRenderer(_event);
+  const isTheme = kind === 'theme';
   const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName,
-    filters: [{ name: 'Documento Libria', extensions: ['libria'] }],
+    filters: [{ name: isTheme ? 'Tema Libria' : 'Documento Libria', extensions: [isTheme ? 'libria-theme' : 'libria'] }],
   });
   return result.canceled ? null : result.filePath;
 });
 
-ipcMain.handle('dialog:open', async () => {
+ipcMain.handle('dialog:open', async (_event, kind = 'document') => {
+  assertTrustedRenderer(_event);
+  const isTheme = kind === 'theme';
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
-    filters: [{ name: 'Documento Libria', extensions: ['libria', 'json'] }],
+    filters: [{ name: isTheme ? 'Tema Libria' : 'Documento Libria', extensions: isTheme ? ['libria-theme', 'json'] : ['libria', 'json'] }],
   });
   return result.canceled ? null : result.filePaths[0];
 });
 
 ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
-  fs.writeFileSync(filePath, content, 'utf-8');
+  assertTrustedRenderer(_event);
+  const safePath = validateUserFilePath(filePath, 'escritura');
+  if (typeof content !== 'string' || Buffer.byteLength(content, 'utf8') > MAX_DOCUMENT_BYTES) {
+    throw new Error('Contenido de archivo demasiado grande o inválido');
+  }
+  writeFileAtomically(safePath, content);
 });
 
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
-  return fs.readFileSync(filePath, 'utf-8');
+  assertTrustedRenderer(_event);
+  const safePath = validateUserFilePath(filePath, 'lectura');
+  const stat = fs.statSync(safePath);
+  if (!stat.isFile() || stat.size > MAX_DOCUMENT_BYTES) {
+    throw new Error('Archivo demasiado grande o inválido');
+  }
+  return fs.readFileSync(safePath, 'utf-8');
+});
+
+ipcMain.handle('fonts:getCss', async (_event) => {
+  assertTrustedRenderer(_event);
+  const fontsBase = process.argv.includes('--dev')
+    ? path.join(__dirname, 'public')
+    : path.join(__dirname, 'dist', 'libria', 'browser');
+  const fontsCssPath = path.join(fontsBase, 'fonts.css');
+  if (!fs.existsSync(fontsCssPath)) return '';
+  const fontsDir = path.join(fontsBase, 'fonts');
+  const fontsCss = fs.readFileSync(fontsCssPath, 'utf-8');
+  // The preview source is a blob document. Make its bundled fonts
+  // self-contained so font loading does not depend on file:// or on the
+  // system-installed font set.
+  return fontsCss.replace(/url\((['"]?)fonts\/([^)'"\\]+)\1\)/g, (match, quote, filename) => {
+    const fontPath = path.join(fontsDir, filename);
+    if (!fs.existsSync(fontPath)) return match;
+    const mime = path.extname(filename).toLowerCase() === '.woff' ? 'font/woff' : 'font/woff2';
+    return `url(data:${mime};base64,${fs.readFileSync(fontPath).toString('base64')})`;
+  });
+});
+
+ipcMain.handle('dialog:error', async (_event, title, content) => {
+  assertTrustedRenderer(_event);
+  dialog.showErrorBox(String(title || 'Libria'), String(content || 'Ocurrió un error.'));
 });
 
 ipcMain.on('app:set-language', (_event, lang) => {
+  assertTrustedRenderer(_event);
   buildMenu(lang);
 });
 
-ipcMain.on('app:check-for-updates', () => {
+ipcMain.on('app:check-for-updates', (_event) => {
+  assertTrustedRenderer(_event);
   if (app.isPackaged && autoUpdater) {
     manualUpdateCheck = true;
     autoUpdater.checkForUpdates().catch(err => {
@@ -518,14 +600,19 @@ ipcMain.on('app:check-for-updates', () => {
 // ─── Spell checker IPC ──────────────────────────────────────────────────────────
 
 ipcMain.handle('spell:set-language', async (_event, lang) => {
+  assertTrustedRenderer(_event);
+  if (typeof lang !== 'string' || !/^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(lang)) throw new Error('Idioma inválido');
   mainWindow?.webContents.session.setSpellCheckerLanguages([lang]);
 });
 
-ipcMain.handle('spell:get-dictionary', async () => {
+ipcMain.handle('spell:get-dictionary', async (_event) => {
+  assertTrustedRenderer(_event);
   return loadCustomDictionary();
 });
 
 ipcMain.handle('spell:add-word', async (_event, word) => {
+  assertTrustedRenderer(_event);
+  if (typeof word !== 'string' || word.length === 0 || word.length > 100) return false;
   const added = mainWindow?.webContents.session.addWordToSpellCheckerDictionary(word);
   if (added) {
     const words = loadCustomDictionary();
@@ -538,6 +625,8 @@ ipcMain.handle('spell:add-word', async (_event, word) => {
 });
 
 ipcMain.handle('spell:remove-word', async (_event, word) => {
+  assertTrustedRenderer(_event);
+  if (typeof word !== 'string' || word.length === 0 || word.length > 100) return false;
   const removed = mainWindow?.webContents.session.removeWordFromSpellCheckerDictionary(word);
   if (removed) {
     const words = loadCustomDictionary();
@@ -552,158 +641,12 @@ ipcMain.handle('spell:remove-word', async (_event, word) => {
 
 // ─── PDF ────────────────────────────────────────────────────────────────────────
 
-// Inserts blank pages before .ch--recto chapters that land on a verso (even)
-// page so they start on a recto (odd) page.
-//
-// Root cause of the old offsetTop approach: break-before:page is IGNORED by
-// Chromium in screen (non-print) mode, so chapters flowed without page breaks
-// and offsetTop didn't represent actual print page positions.
-//
-// Fix: use a temporary multi-column layout where break-before:column IS
-// respected in screen mode, identical to how the preview's fixRectoChapters()
-// works. Measure offsetLeft / columnWidth = accurate page (column) index, then
-// restore the normal layout and insert full-height blank divs before chapters
-// that land on verso pages.
-async function applyForceRecto(win, options) {
-  const rectoCount = await win.webContents.executeJavaScript(
-    `document.querySelectorAll('.ch--recto').length`
-  );
-  console.log('[forceRecto] .ch--recto elements found:', rectoCount);
-  if (!rectoCount) return;
-
-  const cfg = await win.webContents.executeJavaScript(`
-    (function() {
-      try { return JSON.parse(document.getElementById('libria-cfg').textContent); }
-      catch(e) { return {mi: 20, mo: 20}; }
-    })()
-  `);
-  console.log('[forceRecto] config:', cfg);
-
-  const pageW   = options.pageSize.width;
-  const pageH   = options.pageSize.height;
-  const mTop    = (options.margins && options.margins.top)    || 0;
-  const mBottom = (options.margins && options.margins.bottom) || 0;
-  const mInner  = (cfg.mi || 20) / 25.4;
-  const mOuter  = (cfg.mo || 20) / 25.4;
-  const contentW = (pageW - mInner - mOuter) * 96;
-  const contentH = (pageH - mTop - mBottom) * 96;
-  console.log('[forceRecto] pageW=%s pageH=%s contentW=%s contentH=%s', pageW, pageH, contentW.toFixed(1), contentH.toFixed(1));
-
-  // Resize body to print content width for accurate reflow
-  await win.webContents.executeJavaScript(`
-    document.documentElement.style.width    = '${contentW}px';
-    document.documentElement.style.maxWidth = '${contentW}px';
-    document.body.style.width    = '${contentW}px';
-    document.body.style.maxWidth = '${contentW}px';
-    document.body.style.margin   = '0';
-    document.body.style.padding  = '0';
-    void document.body.offsetHeight;
-  `);
-  await new Promise(r => setTimeout(r, 200));
-
-  // Phase 1: measure chapter page positions using a temporary multi-column layout.
-  // break-before:column IS respected in screen mode, so each chapter correctly
-  // starts at a new column (= page). This mirrors fixRectoChapters() in the preview.
-  const report = await win.webContents.executeJavaScript(`
-    (function() {
-      const cW = ${contentW};
-      const cH = ${contentH};
-
-      // Wrap all body content in a multi-column flow container
-      const flow = document.createElement('div');
-      flow.style.cssText =
-        'width:' + cW + 'px;' +
-        'height:' + cH + 'px;' +
-        'column-fill:auto;' +
-        'column-width:' + cW + 'px;' +
-        'column-gap:0;' +
-        'overflow:visible;';
-      const bodyChildren = Array.from(document.body.childNodes);
-      bodyChildren.forEach(function(c) { flow.appendChild(c); });
-      document.body.appendChild(flow);
-
-      // Switch chapters to column breaks (respected in screen mode)
-      const allCh = Array.from(document.querySelectorAll('.ch'));
-      allCh.forEach(function(ch, i) {
-        ch.dataset.frBreak = ch.style.breakBefore || '';
-        if (i > 0) ch.style.setProperty('break-before', 'column');
-      });
-      // Also switch in-chapter manual page breaks
-      Array.from(document.querySelectorAll('.kp-page-break')).forEach(function(el) {
-        el.dataset.frBreak = el.style.breakAfter || '';
-        el.style.setProperty('break-after', 'column');
-      });
-
-      void document.body.offsetHeight; // flush layout
-
-      // Read column (page) positions for recto chapters
-      const rectoChapters = Array.from(document.querySelectorAll('.ch--recto'));
-      let added = 0;
-      const log = [];
-      rectoChapters.forEach(function(ch) {
-        const rawCol = Math.round((ch.offsetLeft - flow.offsetLeft) / cW);
-        const colIdx = rawCol + added; // adjust for blanks already decided
-        const needsBlank = colIdx % 2 !== 0; // odd 0-based index = even page = verso
-        log.push({ rawCol, colIdx, needsBlank });
-        if (needsBlank) added++;
-      });
-
-      // Restore original break values and remove flow wrapper
-      allCh.forEach(function(ch) {
-        const orig = ch.dataset.frBreak;
-        if (orig) ch.style.setProperty('break-before', orig);
-        else ch.style.removeProperty('break-before');
-        delete ch.dataset.frBreak;
-      });
-      Array.from(document.querySelectorAll('.kp-page-break')).forEach(function(el) {
-        const orig = el.dataset.frBreak;
-        if (orig) el.style.setProperty('break-after', orig);
-        else el.style.removeProperty('break-after');
-        delete el.dataset.frBreak;
-      });
-      const flowChildren = Array.from(flow.childNodes);
-      flowChildren.forEach(function(c) { document.body.appendChild(c); });
-      flow.remove();
-
-      void document.body.offsetHeight; // flush layout
-
-      return log;
-    })()
-  `);
-  console.log('[forceRecto] chapter positions:', JSON.stringify(report));
-
-  // Phase 2: insert full-height blank pages before chapters that need to move to recto
-  const needsAny = report.some(function(r) { return r.needsBlank; });
-  if (needsAny) {
-    await win.webContents.executeJavaScript(`
-      (function() {
-        const cH = ${contentH};
-        const log = ${JSON.stringify(report)};
-        const rectoChapters = Array.from(document.querySelectorAll('.ch--recto'));
-        rectoChapters.forEach(function(ch, i) {
-          if (!log[i] || !log[i].needsBlank) return;
-          // Full-page-height blank: break-before:page starts a new blank page,
-          // height fills it, break-after:page lands the chapter on the next page.
-          const blank = document.createElement('div');
-          blank.style.cssText =
-            'display:block;' +
-            'break-before:page;page-break-before:always;' +
-            'height:' + cH + 'px;' +
-            'break-after:page;page-break-after:always;';
-          ch.parentElement.insertBefore(blank, ch);
-          // Override chapter's CSS break-before:page to prevent a triple break.
-          ch.style.setProperty('break-before', 'auto');
-          ch.style.setProperty('page-break-before', 'auto');
-        });
-      })()
-    `);
-  }
-}
-
-// Clean HTML-based PDF export: render content in a dedicated hidden window
-// to avoid fighting with the main UI's CSS/DOM complexity.
-// Optionally post-process with Ghostscript for PDF/X compliance.
+// Compose the print HTML with Vivliostyle's paged-media engine. Unlike
+// Chromium printToPDF, it implements recto/verso breaks, page selectors,
+// margin boxes and target-counter() as defined by CSS Paged Media.
 ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
+  assertTrustedRenderer(_event);
+  if (typeof html !== 'string' || html.length > MAX_DOCUMENT_BYTES) throw new Error('HTML de impresión inválido');
   const isDev = process.argv.includes('--dev');
   const fontsBase = isDev
     ? path.join(__dirname, 'public')
@@ -711,30 +654,36 @@ ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
   const fontsCssPath = path.join(fontsBase, 'fonts.css');
   let htmlWithFonts = html;
   if (fs.existsSync(fontsCssPath)) {
-    const fontsDir = pathToFileURL(path.join(fontsBase, 'fonts')).href + '/';
+    const fontsDir = path.join(fontsBase, 'fonts');
     const fontsCss = fs.readFileSync(fontsCssPath, 'utf-8')
-      .replace(/url\(fonts\//g, `url(${fontsDir}`);
+      .replace(/url\((['"]?)fonts\/([^)'"\\]+)\1\)/g, (match, quote, filename) => {
+        const fontPath = path.join(fontsDir, filename);
+        if (!fs.existsSync(fontPath)) return match;
+        const mime = path.extname(filename).toLowerCase() === '.woff' ? 'font/woff' : 'font/woff2';
+        return `url(data:${mime};base64,${fs.readFileSync(fontPath).toString('base64')})`;
+      });
     htmlWithFonts = html.replace('</head>', `<style>\n${fontsCss}\n</style>\n</head>`);
   }
 
   const tmpFile = path.join(app.getPath('userData'), `libria-print-${Date.now()}.html`);
+  const tmpOutput = path.join(app.getPath('userData'), `libria-vivliostyle-${Date.now()}.pdf`);
   fs.writeFileSync(tmpFile, htmlWithFonts, 'utf-8');
 
-  const win = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  });
-
   try {
-    await win.loadFile(tmpFile);
-    await win.webContents.executeJavaScript(
-      'new Promise(r => { document.fonts.ready.then(r).catch(r); setTimeout(r, 3000); })'
-    );
-    await applyForceRecto(win, options);
-    let pdf = await win.webContents.printToPDF(options);
+    const { build } = await import('@vivliostyle/cli');
+    const width = Number(options?.pageSize?.width);
+    const height = Number(options?.pageSize?.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+      throw new Error('Tamaño de página PDF inválido');
+    }
+    await build({
+      input: tmpFile,
+      output: tmpOutput,
+      size: `${width}in,${height}in`,
+      logLevel: 'silent',
+      renderMode: 'local',
+    });
+    let pdf = new Uint8Array(fs.readFileSync(tmpOutput));
 
     // Ghostscript PDF/X-3 post-processing (CMYK conversion)
     // Ghostscript is AGPL-3.0 — see resources/licenses/ in the packaged app.
@@ -774,15 +723,16 @@ ipcMain.handle('pdf:printFromHTML', async (_event, html, options) => {
 
     return pdf;
   } catch (err) {
-    console.error('[printFromHTML] Error:', err);
+    console.error('[Vivliostyle] Error:', err);
     throw err;
   } finally {
-    win.destroy();
     try { fs.unlinkSync(tmpFile); } catch (_) {}
+    try { fs.unlinkSync(tmpOutput); } catch (_) {}
   }
 });
 
 ipcMain.handle('pdf:printToPDF', async (_event, options) => {
+  assertTrustedRenderer(_event);
   // Apply inline styles directly — they override any stylesheet rule (no @media print needed)
   await mainWindow.webContents.executeJavaScript(`
     window.__libriaState = [];

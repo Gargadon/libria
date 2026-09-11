@@ -43,10 +43,11 @@ export class FileService {
     return (this.store.book()?.title || 'Mi_Libro').replace(/\s+/g, '_') + '.libria';
   }
 
-  async saveLibriaFile(saveAs: boolean = false) {
+  async saveLibriaFile(saveAs: boolean = false): Promise<boolean> {
     this.store.setIsSaving(true);
     const doc = this.buildDoc();
     const json = JSON.stringify(doc, null, 2);
+    let saved = false;
 
     try {
       if (this.isElectron) {
@@ -56,13 +57,14 @@ export class FileService {
           path = await api.saveDialog(this.defaultName());
           if (!path) {
             this.store.setIsSaving(false);
-            return;
+            return false;
           }
         }
         await api.writeFile(path, json);
         this.currentPath = path;
         this.recentProjects.add(path, this.store.book()?.title || this.defaultName());
         this.store.markAsSaved();
+        saved = true;
       } else {
         const blob = new Blob([json], { type: 'application/json' });
         const defaultName = this.defaultName();
@@ -83,6 +85,7 @@ export class FileService {
           await writable.close();
           (window as any).__libriaFileHandle = handle;
           this.store.markAsSaved();
+          saved = true;
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
@@ -91,16 +94,21 @@ export class FileService {
           a.click();
           URL.revokeObjectURL(url);
           this.store.markAsSaved();
+          saved = true;
         }
       }
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') console.error(err);
+      if ((err as Error).name !== 'AbortError') {
+        console.error(err);
+        await this.showError('No se pudo guardar el documento', (err as Error).message);
+      }
     } finally {
       // Small delay to make the bar visible even for fast saves
       setTimeout(() => {
         this.store.setIsSaving(false);
       }, 800);
     }
+    return saved;
   }
 
   async openLibriaFileByPath(path: string) {
@@ -113,6 +121,7 @@ export class FileService {
       this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
     } catch (err) {
       console.error(err);
+      await this.showError('No se pudo abrir el documento', (err as Error).message);
     }
   }
 
@@ -128,6 +137,7 @@ export class FileService {
         this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path);
       } catch (err) {
         console.error(err);
+        await this.showError('No se pudo abrir el documento', (err as Error).message);
       }
       return;
     }
@@ -155,11 +165,16 @@ export class FileService {
       input.type = 'file';
       input.accept = '.libria,.json';
       input.onchange = async (e: any) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const text = await file.text();
-        this.store.loadDocument(JSON.parse(text), this.assetService);
-        this.recentProjects.add(file.name, this.store.book()?.title || file.name);
+        try {
+          const file = e.target.files[0];
+          if (!file) return;
+          const text = await file.text();
+          this.store.loadDocument(JSON.parse(text), this.assetService);
+          this.recentProjects.add(file.name, this.store.book()?.title || file.name);
+        } catch (err) {
+          console.error(err);
+          await this.showError('No se pudo abrir el documento', (err as Error).message);
+        }
       };
       input.click();
     }
@@ -175,5 +190,12 @@ export class FileService {
     this.currentPath = null;
     (window as any).__libriaFileHandle = null;
     this.store.closeDocument(this.assetService);
+  }
+
+  private async showError(title: string, detail: string): Promise<void> {
+    const api = (window as any).electronAPI;
+    if (api?.showError) {
+      await api.showError(title, detail || 'Ocurrió un error inesperado.');
+    }
   }
 }

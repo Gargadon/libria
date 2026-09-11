@@ -54,7 +54,7 @@ export class CustomThemesService {
 
     const api = (window as any).electronAPI;
     if (api) {
-      const path = await api.saveDialog(fileName);
+      const path = await api.saveDialog(fileName, 'theme');
       if (!path) return;
       await api.writeFile(path, payload);
     } else {
@@ -77,7 +77,7 @@ export class CustomThemesService {
     let text: string | null = null;
 
     if (api) {
-      const path = await api.openDialog();
+      const path = await api.openDialog('theme');
       if (!path) return null;
       text = await api.readFile(path);
     } else {

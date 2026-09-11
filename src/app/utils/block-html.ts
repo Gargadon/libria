@@ -1,5 +1,6 @@
 import { Block, Footnote, Chapter, Tweaks, sortFootnotesByPosition } from '../models/book.models';
 import { sceneBreakGlyph, escapeHtml, imageTransform } from './block-maps';
+import DOMPurify from 'dompurify';
 
 export interface RenderBlockOptions {
   tweaks: Tweaks;
@@ -8,7 +9,17 @@ export interface RenderBlockOptions {
 }
 
 function rawText(b: Block): string {
-  return b.html ?? escapeHtml(b.text ?? '');
+  return b.html ? sanitizeRichHtml(b.html) : escapeHtml(b.text ?? '');
+}
+
+const RICH_HTML_CONFIG = {
+  ALLOWED_TAGS: ['b', 'i', 'u', 'strong', 'em', 'span', 'sub', 'sup', 'br', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'blockquote', 'cite'],
+  ALLOWED_ATTR: ['class', 'style'],
+};
+
+/** Document HTML must be sanitized in every rendering/export path. */
+export function sanitizeRichHtml(html: string): string {
+  return DOMPurify.sanitize(html, RICH_HTML_CONFIG);
 }
 
 export function blockToHtml(b: Block, opts: RenderBlockOptions): string {
@@ -21,6 +32,7 @@ export function blockToHtml(b: Block, opts: RenderBlockOptions): string {
     case 'subtitle':
     case 'author':
     case 'publisher':
+    case 'dedication':
     case 'chapter-num':
     case 'chapter-title':
     case 'h1':
@@ -30,7 +42,7 @@ export function blockToHtml(b: Block, opts: RenderBlockOptions): string {
     case 'first-p': {
       const dc = opts.tweaks.dropCap ? ' has-dropcap' : '';
       const text = (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + b.text;
-      return `<p class="kp-first${dc}">${hyph(b.html || escapeHtml(text))}</p>`;
+      return `<p class="kp-first${dc}">${hyph(b.html ? sanitizeRichHtml(b.html) : escapeHtml(text))}</p>`;
     }
     case 'p':
       return `<p class="kp-p">${hyph(raw)}</p>`;
@@ -85,7 +97,7 @@ function blockTitleHtml(b: Block, raw: string): string {
 }
 
 function imageBlockHtml(b: Block, assets: Record<string, string>): string {
-  const imgSrc = b.src ? (assets[b.src] ?? '') : '';
+  const imgSrc = b.src ? safeImageSource(assets[b.src] ?? '') : '';
   if (!imgSrc) return '';
   const style = imageStyle(b);
   const cap = b.caption
@@ -96,14 +108,28 @@ function imageBlockHtml(b: Block, assets: Record<string, string>): string {
 
 function imageStyle(b: Block): string {
   const parts = ['max-width:100%;display:block;margin:0 auto'];
-  if (b.width && b.height) {
-    parts.push(`width:${b.width}px;height:${b.height}px`);
+  const width = finiteDimension(b.width);
+  const height = finiteDimension(b.height);
+  if (width !== null && height !== null) {
+    parts.push(`width:${width}px;height:${height}px`);
   } else {
     parts.push('height:auto');
   }
   const xf = imageTransform(b.rotation, b.flipH, b.flipV);
   if (xf) parts.push(`transform:${xf}`);
   return parts.join(';');
+}
+
+function finiteDimension(value: number | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 10000
+    ? value
+    : null;
+}
+
+function safeImageSource(value: string): string {
+  return /^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=\r\n]+$/i.test(value)
+    ? escapeHtml(value)
+    : '';
 }
 
 function tableHtml(html: string): string {

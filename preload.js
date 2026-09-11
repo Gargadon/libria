@@ -1,10 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  saveDialog: (defaultName) => ipcRenderer.invoke('dialog:save', defaultName),
-  openDialog: () => ipcRenderer.invoke('dialog:open'),
+  saveDialog: (defaultName, kind) => ipcRenderer.invoke('dialog:save', defaultName, kind),
+  openDialog: (kind) => ipcRenderer.invoke('dialog:open', kind),
   writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
+  getFontsCss: () => ipcRenderer.invoke('fonts:getCss'),
+  showError: (title, content) => ipcRenderer.invoke('dialog:error', title, content),
   printToPDF: (options) => ipcRenderer.invoke('pdf:printToPDF', options),
   printFromHTML: (html, options) => ipcRenderer.invoke('pdf:printFromHTML', html, options),
   onMenuAction: (callback) => ipcRenderer.on('menu:action', (_event, action) => callback(action)),

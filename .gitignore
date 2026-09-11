@@ -9,6 +9,8 @@
 
 # Node
 /node_modules
+/.bun-cache
+/.bun-tmp
 npm-debug.log
 yarn-error.log
 
