@@ -387,7 +387,8 @@ export class EditorComponent implements OnDestroy {
 
   readonly status = computed(() => {
     const chapter = this.store.activeChapter();
-    return chapter?.status || (chapter?.kind === 'chapter' ? 'ok' : 'front');
+    const status = chapter?.status;
+    return status === 'ok' || status === 'draft' || status === 'outline' ? status : 'draft';
   });
 
   readonly statusLabel = computed(() => {
@@ -1469,4 +1470,3 @@ export class EditorComponent implements OnDestroy {
     clearTimeout(this._tableInputTimeout);
   }
 }
-

@@ -12,7 +12,7 @@ interface ElectronAPI {
   confirmClose(): void;
   onFileOpen(callback: (filePath: string) => void): void;
   getPendingPath(): Promise<string | null>;
-  onUpdateAvailable(callback: (version: string) => void): void;
+  onUpdateAvailable(callback: (update: { version: string; url?: string }) => void): void;
   onUpdateCheckResult(callback: (result: string) => void): void;
 
   platform: string;
@@ -27,6 +27,7 @@ interface ElectronAPI {
 
   // Auto-updater
   checkForUpdates(): void;
+  openExternal(url: string): Promise<void>;
 }
 
 interface Window {

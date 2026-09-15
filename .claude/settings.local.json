@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /home/gargadon/Source/libria-website -type f | sort | head -60)",
+      "Read(//home/gargadon/Source/libria-website/**)",
+      "Bash(git -C /home/gargadon/Source/libria log --oneline -20)"
+    ]
+  }
+}

@@ -58,10 +58,13 @@
   }
 
   <!-- Update notification banner -->
-  @if (updateVersion()) {
+  @if (updateVersion(); as update) {
     <div class="update-banner">
-      <span>Libria {{ updateVersion() }} está disponible.</span>
-      <button class="update-banner__close" (click)="updateVersion.set('')">
+      <span>Libria {{ update.version }} está disponible.</span>
+      @if (update.url) {
+        <button class="update-banner__action" (click)="openUpdate(update.url)">Descargar</button>
+      }
+      <button class="update-banner__close" (click)="updateVersion.set(null)">
         <span class="material-symbols-outlined">close</span>
       </button>
     </div>
