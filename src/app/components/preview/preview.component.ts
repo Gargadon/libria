@@ -88,6 +88,16 @@ import { BlockViewComponent } from '../block-view/block-view.component';
         <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
         <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
+        <div class="pv__page-jump" role="group" aria-label="Ir a una página">
+          <label for="pv-page-number">Página</label>
+          <input id="pv-page-number" type="number" min="1" [max]="measuredTotalPages()"
+                 [value]="globalPage() + 1"
+                 (change)="goToPage($any($event.target).value)"
+                 (keydown.enter)="goToPage($any($event.target).value)"
+                 aria-label="Número de página">
+          <span>/ {{ measuredTotalPages() }}</span>
+        </div>
+
         <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
         <div [class]="mode()" [style.--pw]="pageSize().w" [style.--ph]="pageSize().h"
              [style.width.px]="mode() === 'print' ? toPixels(pageSize().w) * printZoom() : null"
@@ -783,6 +793,25 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       } else {
         this.syncActiveChapter();
       }
+    }
+  }
+
+  goToPage(value: string | number) {
+    const requested = Number(value);
+    if (!Number.isFinite(requested)) return;
+    const page = Math.max(1, Math.min(this.measuredTotalPages(), Math.trunc(requested)));
+    const target = page - 1;
+    this.globalPage.set(target);
+    if (this.mode() === 'print') {
+      const slider = this.printIframeEl?.nativeElement.contentDocument
+        ?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
+      if (slider) {
+        slider.value = String(target);
+        slider.dispatchEvent(new Event('input', { bubbles: true }));
+        slider.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else {
+      this.syncActiveChapter();
     }
   }
 

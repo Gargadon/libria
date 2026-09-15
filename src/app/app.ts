@@ -40,8 +40,12 @@ export class App {
 
   isResizing = false;
   showAbout = signal(false);
-  updateVersion = signal('');
+  updateVersion = signal<{ version: string; url?: string } | null>(null);
   checkResult = signal('');
+
+  openUpdate(url?: string) {
+    if (url) (window as any).electronAPI?.openExternal(url);
+  }
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -86,9 +90,9 @@ export class App {
 
     const api = (window as any).electronAPI;
     if (api?.onUpdateAvailable) {
-      api.onUpdateAvailable((version: string) => {
+      api.onUpdateAvailable((update: { version: string; url?: string }) => {
         this.ngZone.run(() => {
-          this.updateVersion.set(version);
+          this.updateVersion.set(typeof update === 'string' ? { version: update } : update);
         });
       });
     }

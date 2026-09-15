@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   confirmClose: () => ipcRenderer.send('app:confirm-close'),
   onFileOpen: (callback) => ipcRenderer.on('file:open', (_event, filePath) => callback(filePath)),
   getPendingPath: () => ipcRenderer.invoke('file:getPendingPath'),
-  onUpdateAvailable: (callback) => ipcRenderer.on('update:available', (_event, version) => callback(version)),
+  onUpdateAvailable: (callback) => ipcRenderer.on('update:available', (_event, update) => callback(update)),
   onUpdateCheckResult: (callback) => ipcRenderer.on('update:check-result', (_event, result) => callback(result)),
 
   setLanguage: (lang) => ipcRenderer.send('app:set-language', lang),
@@ -31,4 +31,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Auto-updater
   checkForUpdates: () => ipcRenderer.send('app:check-for-updates'),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', url),
 });

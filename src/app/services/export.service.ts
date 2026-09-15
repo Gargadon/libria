@@ -462,6 +462,8 @@ html::-webkit-scrollbar { display: none; }
 
 @page {
   size: ${pageSize};
+  margin-top: ${t.marginTop}mm;
+  margin-bottom: ${t.marginBottom}mm;
 }
 @page :left {
   margin-left: ${t.marginOuter}mm;

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -354,18 +354,37 @@ function getDialogParent() {
   return mainWindow;
 }
 
-function showLinuxUpdateNotice(latestVersion) {
-  mainWindow?.webContents.send('update:available', latestVersion);
+function showLinuxUpdateNotice(latestVersion, url) {
+  mainWindow?.webContents.send('update:available', { version: latestVersion, url });
+}
+
+function parseVersion(value) {
+  const match = String(value || '').trim().replace(/^v/i, '').match(/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?/);
+  if (!match) return null;
+  return { major: Number(match[1]), minor: Number(match[2]), patch: Number(match[3]), pre: match[4] ? match[4].split('.') : [] };
 }
 
 function isNewerVersion(remote, current) {
-  const r = remote.split('.').map(Number);
-  const c = current.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    const rv = r[i] || 0;
-    const cv = c[i] || 0;
+  const r = parseVersion(remote);
+  const c = parseVersion(current);
+  if (!r || !c) return false;
+  for (const key of ['major', 'minor', 'patch']) {
+    const rv = r[key];
+    const cv = c[key];
     if (rv > cv) return true;
     if (rv < cv) return false;
+  }
+  // A release without a prerelease suffix is newer than any prerelease of
+  // the same numeric version.
+  if (!r.pre.length || !c.pre.length) return r.pre.length < c.pre.length;
+  for (let i = 0; i < Math.max(r.pre.length, c.pre.length); i++) {
+    if (r.pre[i] === undefined) return false;
+    if (c.pre[i] === undefined) return true;
+    const rn = /^\d+$/.test(r.pre[i]);
+    const cn = /^\d+$/.test(c.pre[i]);
+    if (rn && cn && Number(r.pre[i]) !== Number(c.pre[i])) return Number(r.pre[i]) > Number(c.pre[i]);
+    if (rn !== cn) return !rn;
+    if (r.pre[i] !== c.pre[i]) return r.pre[i] > c.pre[i];
   }
   return false;
 }
@@ -375,7 +394,7 @@ function checkVersionViaGitHub(manual = false) {
   const TIMEOUT_MS = 10000;
   const options = {
     hostname: 'api.github.com',
-    path: '/repos/Gargadon/libria/releases/latest',
+    path: '/repos/Gargadon/libria/releases?per_page=30',
     headers: { 'User-Agent': `Libria/${app.getVersion()}` },
   };
   let timedOut = false;
@@ -384,15 +403,21 @@ function checkVersionViaGitHub(manual = false) {
     res.on('data', (chunk) => { data += chunk; });
     res.on('end', () => {
       try {
-        const release = JSON.parse(data);
-        const latest = (release.tag_name || '').replace(/^v/, '');
+        if (res.statusCode !== 200) throw new Error(`GitHub respondió HTTP ${res.statusCode}`);
+        const releases = JSON.parse(data);
+        const currentIsBeta = !!parseVersion(app.getVersion())?.pre.length;
+        const release = Array.isArray(releases)
+          ? releases.filter(r => !r.draft && (currentIsBeta || !r.prerelease))
+            .sort((a, b) => isNewerVersion(b.tag_name, a.tag_name) ? -1 : isNewerVersion(a.tag_name, b.tag_name) ? 1 : 0)[0]
+          : null;
+        const latest = (release?.tag_name || '').replace(/^v/, '');
         const hasUpdate = latest && isNewerVersion(latest, app.getVersion());
         if (hasUpdate) {
           if (manual) {
-            showLinuxUpdateNotice(latest);
+            showLinuxUpdateNotice(latest, release.html_url);
           } else {
             // Automatic check: notify renderer for non-blocking in-app toast
-            mainWindow?.webContents.send('update:available', latest);
+            mainWindow?.webContents.send('update:available', { version: latest, url: release.html_url });
           }
         } else if (manual) {
           mainWindow?.webContents.send('update:check-result', 'uptodate');
@@ -432,11 +457,12 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.allowPrerelease = !!parseVersion(app.getVersion())?.pre.length;
 
   autoUpdater.on('update-available', (info) => {
     manualUpdateCheck = false; // Reset flag
     if (process.platform === 'linux') {
-      showLinuxUpdateNotice(info.version);
+      showLinuxUpdateNotice(info.version, info.releaseUrl || info.releaseName);
       return;
     }
     dialog.showMessageBox(getDialogParent(), {
@@ -595,6 +621,16 @@ ipcMain.on('app:check-for-updates', (_event) => {
     // Linux package manager fallback / dev manual check via GitHub API
     checkVersionViaGitHub(true);
   }
+});
+
+ipcMain.handle('app:open-external', async (_event, url) => {
+  assertTrustedRenderer(_event);
+  if (typeof url !== 'string') throw new Error('URL inválida');
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'github.com') {
+    throw new Error('Solo se permiten enlaces HTTPS de GitHub');
+  }
+  await shell.openExternal(parsed.href);
 });
 
 // ─── Spell checker IPC ──────────────────────────────────────────────────────────

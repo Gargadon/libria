@@ -3909,6 +3909,42 @@ button.tb__dropdown-item {
   right: 24px;
 }
 
+.pv__page-jump {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-family: var(--ui);
+}
+
+.pv__page-jump input {
+  width: 52px;
+  padding: 3px 4px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+  font: inherit;
+  font-feature-settings: "tnum";
+}
+
+.pv__page-jump input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
 .pv__stage {
   position: relative;
 }
@@ -5017,6 +5053,16 @@ body.print-digital {
   position: relative;
   display: flex;
   align-items: center;
+  font-family: var(--ui);
+}
+
+.tb__pomodoro-widget .material-symbols-outlined {
+  font-family: "Material Symbols Outlined" !important;
+}
+
+.tb__pomodoro-time,
+.tb__pomo-timer-display {
+  font-family: var(--mono) !important;
 }
 
 .tb__pomodoro-btn {
@@ -5093,6 +5139,19 @@ body.print-digital {
   padding: 2px;
   display: flex;
   border-radius: 4px;
+}
+
+.update-banner__action {
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 5px 10px;
+  background: var(--paper-2);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.update-banner__action:hover {
+  background: var(--rule-soft);
 }
 
 .update-banner__close:hover {

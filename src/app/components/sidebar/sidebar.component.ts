@@ -89,12 +89,12 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
 
             @if (store.activeChapter(); as active) {
               <div class="sb__section">{{ 'sidebar.elementSettings' | translate }}</div>
-              @if (active.kind === 'chapter') {
+              @if (active.kind === 'chapter' || active.kind === 'front' || active.kind === 'back') {
                 <div class="sb__row">
                   <div class="sb__label">{{ 'sidebar.chapterStatus' | translate }}</div>
                   <div class="sb__radio">
                     <button class="sb__opt sb__opt--status-ok" [class.sb__opt--on]="active.status === 'ok'" (click)="store.updateChapterMeta(active.id, { status: 'ok' })">{{ 'sidebar.statusOk' | translate }}</button>
-                    <button class="sb__opt sb__opt--status-draft" [class.sb__opt--on]="active.status === 'draft' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
+                    <button class="sb__opt sb__opt--status-draft" [class.sb__opt--on]="active.status === 'draft' || active.status === 'front' || active.status === 'back' || !active.status" (click)="store.updateChapterMeta(active.id, { status: 'draft' })">{{ 'sidebar.statusDraft' | translate }}</button>
                     <button class="sb__opt sb__opt--status-outline" [class.sb__opt--on]="active.status === 'outline'" (click)="store.updateChapterMeta(active.id, { status: 'outline' })">{{ 'sidebar.statusOutline' | translate }}</button>
                   </div>
                 </div>
@@ -1191,7 +1191,7 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
                   <span class="sbi__bar">
                     <span
                       class="sbi__fill"
-                      [class]="'sbi__fill--' + (c.status || (c.kind === 'chapter' ? 'ok' : 'front'))"
+                      [class]="'sbi__fill--' + (c.status || 'draft')"
                       [style.width.%]="c.words ? Math.max(4, Math.round((c.words / maxW) * 100)) : 6"
                     ></span>
                   </span>
