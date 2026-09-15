@@ -1,4 +1,4 @@
-# Especificación del Formato `.libria` (Esquema v1.5.1)
+# Especificación del Formato `.libria` (Esquema v1.8.5)
 
 El formato `.libria` es un estándar basado en JSON diseñado para el almacenamiento persistente de manuscritos en la aplicación Libria. Permite agrupar en un único archivo el contenido textual (organizado en bloques y capítulos), la estructura jerárquica del libro, los metadatos bibliográficos, los comentarios editoriales enriquecidos, los objetivos de escritura y los ajustes finos de maquetación tipográfica.
 
@@ -9,7 +9,7 @@ El formato `.libria` es un estándar basado en JSON diseñado para el almacenami
 Un documento `.libria` es un objeto JSON raíz con las siguientes propiedades:
 
 ### 1. `libriaVersion` (string)
-Indica la versión de Libria con la que se generó el archivo. Ej: `"1.5.1"`.
+Indica la versión de Libria con la que se generó el archivo. Ej: `"1.8.5"`. Este valor identifica la versión de la aplicación que guardó el documento; no es un número de revisión independiente del JSON Schema.
 
 ### 2. `metadata` (object)
 Información bibliográfica básica de la obra. Basado en la interfaz `Book`.
@@ -27,6 +27,8 @@ Información bibliográfica básica de la obra. Basado en la interfaz `Book`.
 
 ### 3. `preferences` (object)
 Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweaks`).
+
+> La preferencia visual `mode` (`"light"` o `"dark"`) pertenece a la configuración personal de la aplicación y se excluye al guardar un documento `.libria`.
 
 - **Generales**:
   - `sidebar` (string): Orientación de la barra lateral (`"left"` o `"right"`).
@@ -90,13 +92,16 @@ Lista ordenada de objetos `Chapter`. Cada capítulo se compone de:
     - `"halftitle"`: Portadilla.
     - `"title"` / `"subtitle"` / `"author"` / `"publisher"`: Datos de portada.
     - `"dedication"`: Texto de dedicatoria.
+    - `"chapter-num"`: Número o rótulo visible del capítulo.
     - `"chapter-title"`: Título del capítulo.
     - `"first-p"`: Primer párrafo del capítulo (sin sangría, apto para dropcaps).
     - `"p"`: Párrafo normal.
     - `"h1"`, `"h2"`, `"h3"`: Encabezados.
     - `"blockquote"`: Cita en bloque.
+    - `"epigraph"`: Epígrafe con atribución opcional.
     - `"verse"`: Poesía o estrofas.
     - `"code"`: Código preformateado.
+    - `"table"`: Tabla almacenada como HTML enriquecido.
     - `"scene-break"`: Separador visual de escenas.
     - `"page-break"`: Salto de página manual.
     - `"image"`: Bloque de imagen.
@@ -145,6 +150,33 @@ Configuración de objetivos de redacción del libro.
 - `targetWords` (number): Número total de palabras objetivo.
 - `deadline` (string): Fecha límite en formato ISO (`YYYY-MM-DD`).
 
+### 9. `characters` (array, opcional)
+Fichas de personajes asociadas al manuscrito. Cada objeto contiene:
+
+- `id` (string): Identificador único de la ficha.
+- `name` (string): Nombre del personaje.
+- `content` (string): Contenido libre de la ficha.
+
+### 10. `locations` (array, opcional)
+Fichas de lugares asociadas al manuscrito. Cada objeto contiene:
+
+- `id` (string): Identificador único de la ficha.
+- `name` (string): Nombre del lugar.
+- `content` (string): Contenido libre de la ficha.
+
+---
+
+## Compatibilidad, migración y validación
+
+Antes de validar, Libria normaliza documentos creados por versiones anteriores:
+
+- crea arreglos vacíos para `chapters`, `notes`, `characters` y `locations` cuando faltan;
+- crea objetos vacíos para `session` y `assets` cuando faltan;
+- deriva `metadata.authors` desde `metadata.author`, inicializa `metadata.editors` y usa `"es-MX"` como idioma predeterminado;
+- migra las preferencias antiguas `emDash`/`enDash`, `ellipsis` y `openingSigns` a `smartDashes`, `smartEllipsis` y `smartOpeningSigns`, respectivamente.
+
+La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, más de 10 000 capítulos, más de 100 000 bloques por capítulo, bloques sin `type`, valores no textuales en `text`/`html` y recursos individuales mayores de 100 MiB. El HTML enriquecido se sanea al renderizar y exportar; se admiten las etiquetas `b`, `i`, `u`, `strong`, `em`, `span`, `sub`, `sup`, `br`, `p`, `table`, `thead`, `tbody`, `tr`, `td`, `th`, `ul`, `ol`, `li`, `blockquote` y `cite`, con los atributos `class` y `style`.
+
 ---
 
 ## JSON Schema (Draft 7)
@@ -152,7 +184,7 @@ Configuración de objetivos de redacción del libro.
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Libria Document Schema v1.5.1",
+  "title": "Libria Document Schema v1.8.5",
   "type": "object",
   "required": ["libriaVersion", "metadata", "preferences", "chapters"],
   "properties": {
@@ -220,6 +252,7 @@ Configuración de objetivos de redacción del libro.
     },
     "chapters": {
       "type": "array",
+      "maxItems": 10000,
       "items": {
         "type": "object",
         "required": ["id", "kind", "title", "body"],
@@ -235,6 +268,7 @@ Configuración de objetivos de redacción del libro.
           "templateId": { "enum": ["title-page", "credits", "dedication", "acknowledgments", "toc"] },
           "body": {
             "type": "array",
+            "maxItems": 100000,
             "items": {
               "type": "object",
               "required": ["type"],
@@ -302,13 +336,38 @@ Configuración de objetivos de redacción del libro.
     },
     "assets": {
       "type": "object",
-      "additionalProperties": { "type": "string" }
+      "propertyNames": { "minLength": 1 },
+      "additionalProperties": { "type": "string", "maxLength": 104857600 }
     },
     "writingGoals": {
       "type": "object",
       "properties": {
         "targetWords": { "type": "integer" },
         "deadline": { "type": "string" }
+      }
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "content"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      }
+    },
+    "locations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "content"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "content": { "type": "string" }
+        }
       }
     }
   }
