@@ -16,8 +16,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            arch: universal
+          - os: macos-13
+            arch: x64
+            target: mac
+            builderFlags: '--mac'
+          - os: macos-14
+            arch: arm64
             target: mac
             builderFlags: '--mac'
           - os: windows-latest
