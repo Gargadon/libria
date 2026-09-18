@@ -4,9 +4,6 @@ const fs = require('fs');
 
 const MAX_DOCUMENT_BYTES = 100 * 1024 * 1024;
 const ALLOWED_FILE_EXTENSIONS = new Set(['.libria', '.libria-theme', '.json']);
-const safeMode = process.argv.includes('--libria-safe-mode');
-const disableSpellchecker = safeMode || process.argv.includes('--libria-no-spellchecker');
-const disableSandbox = safeMode || process.argv.includes('--libria-no-sandbox');
 
 function assertTrustedRenderer(event) {
   if (!mainWindow || event.sender !== mainWindow.webContents) {
@@ -148,7 +145,6 @@ function getFileArgument() {
 }
 
 function createWindow() {
-  console.error(`[Libria] creando ventana (safe mode: ${safeMode}, sandbox: ${!disableSandbox}, spellchecker: ${!disableSpellchecker})`);
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 768,
@@ -159,10 +155,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: !disableSandbox,
+      sandbox: true,
     },
   });
-  console.error('[Libria] ventana creada');
 
   mainWindow.on('close', (e) => {
     if (mainWindow._forceClose) return;
@@ -172,32 +167,21 @@ function createWindow() {
 
   const isDev = process.argv.includes('--dev');
   if (isDev) {
-    console.error('[Libria] cargando renderer de desarrollo');
     mainWindow.loadURL('http://localhost:4300');
     mainWindow.webContents.openDevTools();
   } else {
-    console.error('[Libria] cargando renderer empaquetado');
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
   }
-  mainWindow.webContents.once('did-finish-load', () => console.error('[Libria] renderer cargado'));
-  mainWindow.webContents.once('render-process-gone', (_event, details) => {
-    console.error('[Libria] renderer finalizado:', details.reason, details.exitCode);
-  });
 
   // --- Spell checker setup ---
   const session = mainWindow.webContents.session;
   session.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'local-fonts');
   });
-  if (!disableSpellchecker) {
-    console.error('[Libria] inicializando corrector ortográfico');
-    session.setSpellCheckerEnabled(true);
-    session.setSpellCheckerLanguages(['es-ES']);
-    const customWords = loadCustomDictionary();
-    customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
-  } else {
-    console.error('[Libria] corrector ortográfico desactivado por diagnóstico');
-  }
+  session.setSpellCheckerEnabled(true);
+  session.setSpellCheckerLanguages(['es-ES']);
+  const customWords = loadCustomDictionary();
+  customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
 
   // Context menu with spelling suggestions
   mainWindow.webContents.on('context-menu', (_event, params) => {

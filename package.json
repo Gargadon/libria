@@ -20,7 +20,7 @@
     "build": "bun run ng build",
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
-    "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev --ozone-platform=x11\"",
+    "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev\"",
     "electron:build": "bun run build && electron-builder",
     "download:gs": "node scripts/download-ghostscript.mjs",
     "download:gs:linux": "node scripts/download-ghostscript.mjs linux",
