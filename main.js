@@ -573,11 +573,18 @@ ipcMain.handle('fs:writeFile', async (_event, filePath, content) => {
 ipcMain.handle('fs:readFile', async (_event, filePath) => {
   assertTrustedRenderer(_event);
   const safePath = validateUserFilePath(filePath, 'lectura');
-  const stat = fs.statSync(safePath);
-  if (!stat.isFile() || stat.size > MAX_DOCUMENT_BYTES) {
-    throw new Error('Archivo demasiado grande o inválido');
+  try {
+    const stat = fs.statSync(safePath);
+    if (!stat.isFile() || stat.size > MAX_DOCUMENT_BYTES) {
+      throw new Error('Archivo demasiado grande o inválido');
+    }
+    return fs.readFileSync(safePath, 'utf-8');
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      throw new Error('El archivo no se encuentra o fue movido a otra ubicación.');
+    }
+    throw error;
   }
-  return fs.readFileSync(safePath, 'utf-8');
 });
 
 ipcMain.handle('fonts:getCss', async (_event) => {
