@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const MAX_DOCUMENT_BYTES = 100 * 1024 * 1024;
 const ALLOWED_FILE_EXTENSIONS = new Set(['.libria', '.libria-theme', '.json']);
+const safeMode = process.argv.includes('--libria-safe-mode');
 
 function assertTrustedRenderer(event) {
   if (!mainWindow || event.sender !== mainWindow.webContents) {
@@ -145,6 +146,7 @@ function getFileArgument() {
 }
 
 function createWindow() {
+  console.error(`[Libria] creando ventana (safe mode: ${safeMode})`);
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 768,
@@ -155,9 +157,10 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: !safeMode,
     },
   });
+  console.error('[Libria] ventana creada');
 
   mainWindow.on('close', (e) => {
     if (mainWindow._forceClose) return;
@@ -167,21 +170,32 @@ function createWindow() {
 
   const isDev = process.argv.includes('--dev');
   if (isDev) {
+    console.error('[Libria] cargando renderer de desarrollo');
     mainWindow.loadURL('http://localhost:4300');
     mainWindow.webContents.openDevTools();
   } else {
+    console.error('[Libria] cargando renderer empaquetado');
     mainWindow.loadFile(path.join(__dirname, 'dist', 'libria', 'browser', 'index.html'));
   }
+  mainWindow.webContents.once('did-finish-load', () => console.error('[Libria] renderer cargado'));
+  mainWindow.webContents.once('render-process-gone', (_event, details) => {
+    console.error('[Libria] renderer finalizado:', details.reason, details.exitCode);
+  });
 
   // --- Spell checker setup ---
   const session = mainWindow.webContents.session;
   session.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'local-fonts');
   });
-  session.setSpellCheckerEnabled(true);
-  session.setSpellCheckerLanguages(['es-ES']);
-  const customWords = loadCustomDictionary();
-  customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
+  if (!safeMode) {
+    console.error('[Libria] inicializando corrector ortográfico');
+    session.setSpellCheckerEnabled(true);
+    session.setSpellCheckerLanguages(['es-ES']);
+    const customWords = loadCustomDictionary();
+    customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
+  } else {
+    console.error('[Libria] corrector ortográfico desactivado en safe mode');
+  }
 
   // Context menu with spelling suggestions
   mainWindow.webContents.on('context-menu', (_event, params) => {
@@ -449,8 +463,11 @@ function checkVersionViaGitHub(manual = false) {
 let manualUpdateCheck = false;
 
 function setupAutoUpdater() {
-  // Linux sin electron-updater (AUR, deb, pacman): check manual vía GitHub API
-  if (!autoUpdater) {
+  // Linux (AUR, deb, pacman) no usa el flujo AppImage de electron-updater.
+  // El wrapper de Electron de Arch fuerza ELECTRON_FORCE_IS_PACKAGED=true,
+  // por lo que la mera presencia de electron-updater no debe activar ese
+  // flujo al ejecutar desde el repositorio o desde un paquete del sistema.
+  if (process.platform === 'linux' || !autoUpdater) {
     setTimeout(() => checkVersionViaGitHub(false), 5000);
     return;
   }
