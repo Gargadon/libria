@@ -226,7 +226,7 @@ import { PomodoroService } from '../../services/pomodoro.service';
         @if (store.book()) {
 
           <!-- FILE ACTIONS FULL (≥1360px) -->
-          <div class="tb__actions tb__actions--full">
+          <div class="tb__actions tb__actions--full tb__actions--file-full">
             <button class="tb__action" [attr.title]="'topbar.new' | translate" (click)="newDoc()"><span class="material-symbols-outlined">note_add</span></button>
             <button class="tb__action" [attr.title]="'topbar.open' | translate" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
             <button class="tb__action" [attr.title]="'topbar.save' | translate" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>

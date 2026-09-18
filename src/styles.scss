@@ -4142,6 +4142,33 @@ button.tb__dropdown-item {
   }
 }
 
+/* Topbar wide layout: keep the primary actions visible and move the rest
+   into the existing compact menus. The native/compact menu is intentionally
+   used at every width to avoid duplicating the Electron menu bar. */
+.tb__sysmenu--full {
+  display: none !important;
+}
+
+.tb__sysmenu--compact {
+  display: block !important;
+}
+
+.tb__actions--file-full,
+.tb__compact-menu--file,
+.tb__compact-menu--edit {
+  display: none !important;
+}
+
+.tb__compact-menu--nav {
+  display: block !important;
+}
+
+@media (min-width: 1360px) {
+  .tb__nav--full .tb__nav__b:nth-child(n + 4) {
+    display: none;
+  }
+}
+
 .tb__compact-menu {
   position: relative;
 }
