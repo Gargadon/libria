@@ -4155,18 +4155,10 @@ button.tb__dropdown-item {
 
 .tb__actions--file-full,
 .tb__compact-menu--file,
-.tb__compact-menu--edit {
-  display: none !important;
-}
-
+.tb__compact-menu--edit,
+.tb__nav--full,
 .tb__compact-menu--nav {
-  display: block !important;
-}
-
-@media (min-width: 1360px) {
-  .tb__nav--full .tb__nav__b:nth-child(n + 4) {
-    display: none;
-  }
+  display: none !important;
 }
 
 .tb__compact-menu {
