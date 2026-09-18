@@ -5,6 +5,8 @@ const fs = require('fs');
 const MAX_DOCUMENT_BYTES = 100 * 1024 * 1024;
 const ALLOWED_FILE_EXTENSIONS = new Set(['.libria', '.libria-theme', '.json']);
 const safeMode = process.argv.includes('--libria-safe-mode');
+const disableSpellchecker = safeMode || process.argv.includes('--libria-no-spellchecker');
+const disableSandbox = safeMode || process.argv.includes('--libria-no-sandbox');
 
 function assertTrustedRenderer(event) {
   if (!mainWindow || event.sender !== mainWindow.webContents) {
@@ -146,7 +148,7 @@ function getFileArgument() {
 }
 
 function createWindow() {
-  console.error(`[Libria] creando ventana (safe mode: ${safeMode})`);
+  console.error(`[Libria] creando ventana (safe mode: ${safeMode}, sandbox: ${!disableSandbox}, spellchecker: ${!disableSpellchecker})`);
   mainWindow = new BrowserWindow({
     width: 1360,
     height: 768,
@@ -157,7 +159,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: !safeMode,
+      sandbox: !disableSandbox,
     },
   });
   console.error('[Libria] ventana creada');
@@ -187,14 +189,14 @@ function createWindow() {
   session.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'local-fonts');
   });
-  if (!safeMode) {
+  if (!disableSpellchecker) {
     console.error('[Libria] inicializando corrector ortográfico');
     session.setSpellCheckerEnabled(true);
     session.setSpellCheckerLanguages(['es-ES']);
     const customWords = loadCustomDictionary();
     customWords.forEach(w => session.addWordToSpellCheckerDictionary(w));
   } else {
-    console.error('[Libria] corrector ortográfico desactivado en safe mode');
+    console.error('[Libria] corrector ortográfico desactivado por diagnóstico');
   }
 
   // Context menu with spelling suggestions
