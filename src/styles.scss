@@ -4156,9 +4156,12 @@ button.tb__dropdown-item {
 .tb__actions--file-full,
 .tb__compact-menu--file,
 .tb__compact-menu--edit,
-.tb__nav--full,
-.tb__compact-menu--nav {
+.tb__nav--full {
   display: none !important;
+}
+
+.tb__compact-menu--nav {
+  display: block !important;
 }
 
 .tb__compact-menu {
