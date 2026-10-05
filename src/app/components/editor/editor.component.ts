@@ -28,6 +28,27 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
 
     @if (store.activeChapter(); as chapter) {
       <main class="ed">
+        @if (selectionToolbar(); as toolbar) {
+          <div class="ed__selection-toolbar"
+               [style.left.px]="toolbar.left"
+               [style.top.px]="toolbar.top"
+               (mousedown)="$event.preventDefault()"
+               (click)="$event.stopPropagation()">
+            <button type="button" title="Negrita" (click)="applyInlineFormat('bold')">
+              <span class="material-symbols-outlined">format_bold</span>
+            </button>
+            <button type="button" title="Cursiva" (click)="applyInlineFormat('italic')">
+              <span class="material-symbols-outlined">format_italic</span>
+            </button>
+            <button type="button" title="Subrayado" (click)="applyInlineFormat('underline')">
+              <span class="material-symbols-outlined">format_underlined</span>
+            </button>
+            <span class="ed__selection-toolbar-sep"></span>
+            <button type="button" title="Limpiar formato" (click)="applyInlineFormat('removeFormat')">
+              <span class="material-symbols-outlined">format_clear</span>
+            </button>
+          </div>
+        }
         <div class="ed__bar">
           <div class="ed__crumbs">
             <span class="ed__chip">
@@ -489,6 +510,8 @@ export class EditorComponent implements OnDestroy {
   lastFocusedIndex = -1;
   private _savedCaretOffset = 0;
   readonly focusedBlockIndex = signal(-1);
+  readonly selectionToolbar = signal<{ top: number; left: number } | null>(null);
+  private _savedSelection: Range | null = null;
   /** Prevents onInput from firing during programmatic splits/merges */
   private _suppressInput = false;
   private _inputTimeout: any;
@@ -510,6 +533,49 @@ export class EditorComponent implements OnDestroy {
   onFocus(index: number) {
     this.lastFocusedIndex = index;
     this.focusedBlockIndex.set(index);
+  }
+
+  @HostListener('document:selectionchange')
+  onDocumentSelectionChange() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      this.selectionToolbar.set(null);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+      ? range.commonAncestorContainer as Element
+      : range.commonAncestorContainer.parentElement;
+    if (!container?.closest('.ed__doc') || !range.toString().trim()) {
+      this.selectionToolbar.set(null);
+      return;
+    }
+
+    this._savedSelection = range.cloneRange();
+    const rect = range.getBoundingClientRect();
+    const toolbarWidth = 184;
+    const left = Math.max(8, Math.min(window.innerWidth - toolbarWidth - 8, rect.left + (rect.width / 2) - (toolbarWidth / 2)));
+    const top = rect.top >= 54 ? rect.top - 46 : rect.bottom + 8;
+    this.selectionToolbar.set({ top, left });
+  }
+
+  applyInlineFormat(command: 'bold' | 'italic' | 'underline' | 'removeFormat') {
+    if (!this._savedSelection) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+
+    selection.removeAllRanges();
+    selection.addRange(this._savedSelection);
+    const editable = selection.anchorNode ? this._contenteditableOf(selection.anchorNode) : null;
+    if (!editable) return;
+
+    editable.focus({ preventScroll: true });
+    this.store.saveSnapshot();
+    document.execCommand(command, false);
+    editable.dispatchEvent(new Event('input', { bubbles: true }));
+    this.selectionToolbar.set(null);
+    this._savedSelection = null;
   }
 
   onPaste(chapterId: string, blockIndex: number, event: ClipboardEvent) {
