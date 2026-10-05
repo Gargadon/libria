@@ -414,19 +414,16 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const id = this.store.activeChapterId();
-      const m = this.mode();
+      this.mode();
+      const renderedChapters = this.chapters();
+      this.realPageOffsets();
+      this.printPageOffsets();
       untracked(() => {
-        // Sync Preview globalPage when ActiveChapterId changes externally
-        const realOffset = this.realPageOffsets()[id];
-        if (realOffset !== undefined) {
-          this.globalPage.set(realOffset);
-        } else {
-          // If not measured yet (e.g. new chapter), use layout estimation
-          const layout = this.bookLayout().chapters[id];
-          if (layout) {
-            this.globalPage.set(layout.startPage - 1);
-          }
-        }
+        // Wait until the debounced preview content exists. Otherwise the
+        // first run happens against an empty flow and leaves the preview on
+        // page one when it is opened from a later chapter.
+        if (!id || renderedChapters.length === 0) return;
+        this.navigateToChapter(id);
       });
     });
 
@@ -575,6 +572,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const total = Number(slider?.max || 1);
     this.measuredTotalPages.set(Math.max(1, total));
     this.globalPage.set(Math.max(0, Math.min(this.globalPage(), total - 1)));
+    this.setVivliostylePage(this.globalPage());
 
     // A long document paginates asynchronously. Wait until the Viewer has
     // published its final page count instead of trusting the initial value 1.
@@ -609,6 +607,17 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       ? '#vivliostyle-page-navigation-right'
       : '#vivliostyle-page-navigation-left';
     (iframe.contentDocument.querySelector(selector) as HTMLElement | null)?.click();
+  }
+
+  private setVivliostylePage(page: number) {
+    const slider = this.printIframeEl?.nativeElement.contentDocument
+      ?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
+    if (!slider) return;
+    const max = Number(slider.max || this.measuredTotalPages());
+    const target = Math.max(0, Math.min(Math.trunc(page), Math.max(0, max - 1)));
+    slider.value = String(target);
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   public toPixels(value: string): number {
@@ -697,14 +706,18 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   }
 
   navigateToChapter(chapterId: string): void {
-    if (this.mode() === 'print') return;
-    const offset = this.realPageOffsets()[chapterId];
+    const isPrint = this.mode() === 'print';
+    const offsetMap = isPrint ? this.printPageOffsets() : this.realPageOffsets();
+    const offset = offsetMap[chapterId];
+    let target: number;
     if (offset !== undefined) {
-      this.globalPage.set(offset);
+      target = offset;
     } else {
       const startPage = this.bookLayout().chapters[chapterId]?.startPage ?? 1;
-      this.globalPage.set(startPage - 1);
+      target = startPage - 1;
     }
+    this.globalPage.set(Math.max(0, target));
+    if (isPrint) this.setVivliostylePage(target);
   }
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
