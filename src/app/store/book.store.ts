@@ -661,6 +661,22 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
+    reorderChapter(chapterId: string, targetId: string, after: boolean) {
+      const chapters = store.chapters();
+      const source = chapters.find(c => c.id === chapterId);
+      const target = chapters.find(c => c.id === targetId);
+      if (!source || !target || source === target || source.kind !== target.kind) return;
+      const reordered = chapters.filter(c => c.id !== chapterId);
+      const destination = reordered.findIndex(c => c.id === targetId) + (after ? 1 : 0);
+      reordered.splice(destination, 0, source);
+      if (reordered.every((c, i) => c.id === chapters[i].id)) return;
+      patchState(store, state => ({
+        past: [...state.past.slice(-19), { chapters: state.chapters, notes: state.notes }],
+        future: [],
+        chapters: reordered,
+        isDirty: true
+      }));
+    },
     moveChapter(chapterId: string, direction: 'up' | 'down') {
       patchState(store, (state) => {
         const idx = state.chapters.findIndex(c => c.id === chapterId);

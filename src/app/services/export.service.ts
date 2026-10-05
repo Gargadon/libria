@@ -816,11 +816,11 @@ ${t.dropCap ? `
           .join('\n');
         body = `<h2 class="kp-toc-heading" style="font-family:${titleFontFamily}">${this.escapeHtml(ch.title)}</h2>\n<ol class="kp-toc-list">${tocItems}</ol>`;
       } else {
-        body = ch.body.map((b: any) => blockToHtml(b, {
+        body = ch.body.map((b: any, blockIndex: number) => blockToHtml(b, {
           tweaks: t,
           assets,
           hyphenateHtml: (s: string) => this.hyphenService.hyphenateHtml(s),
-        })).join('\n');
+        }).replace(/^(\s*<[a-z][a-z0-9-]*)/i, `$1 data-libria-block="${idx}:${blockIndex}"`)).join('\n');
       }
 
       const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);

@@ -87,6 +87,10 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true }"></ng-container>
             <ng-container *ngTemplateOutlet="groupTemplate; context: { label: ('sidebar.posliminares' | translate), items: backChapters() }"></ng-container>
 
+          </div>
+
+          <div class="sb__element-settings">
+
             @if (store.activeChapter(); as active) {
               <div class="sb__section">{{ 'sidebar.elementSettings' | translate }}</div>
               @if (active.kind === 'chapter' || active.kind === 'front' || active.kind === 'back') {
@@ -1166,7 +1170,14 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
         <ul class="sbg__list">
           @let maxW = store.maxWords();
           @for (c of items; track c.id; let i = $index; let first = $first; let last = $last) {
-            <li>
+            <li draggable="true"
+                [class.sbi--dragging]="draggedChapterId() === c.id"
+                [class.sbi--drop-before]="dropTargetId() === c.id && !dropAfter()"
+                [class.sbi--drop-after]="dropTargetId() === c.id && dropAfter()"
+                (dragstart)="startChapterDrag(c.id, $event)"
+                (dragover)="overChapter(c.id, $event)"
+                (drop)="dropChapter(c.id, $event)"
+                (dragend)="endChapterDrag()">
               <button
                 class="sbi"
                 [class.sbi--on]="store.activeChapterId() === c.id"
@@ -1209,6 +1220,45 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
   `
 })
 export class SidebarComponent implements OnInit {
+  readonly draggedChapterId = signal<string | null>(null);
+  readonly dropTargetId = signal<string | null>(null);
+  readonly dropAfter = signal(false);
+
+  startChapterDrag(id: string, event: DragEvent) {
+    this.draggedChapterId.set(id);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', id);
+    }
+  }
+
+  overChapter(id: string, event: DragEvent) {
+    const source = this.store.chapters().find(c => c.id === this.draggedChapterId());
+    const target = this.store.chapters().find(c => c.id === id);
+    if (!source || !target || source.kind !== target.kind || source.id === id) {
+      this.dropTargetId.set(null);
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    this.dropTargetId.set(id);
+    this.dropAfter.set(event.clientY > rect.top + rect.height / 2);
+  }
+
+  dropChapter(id: string, event: DragEvent) {
+    event.preventDefault();
+    const source = this.draggedChapterId();
+    if (source && this.dropTargetId() === id) {
+      this.store.reorderChapter(source, id, this.dropAfter());
+    }
+    this.endChapterDrag();
+  }
+
+  endChapterDrag() {
+    this.draggedChapterId.set(null);
+    this.dropTargetId.set(null);
+  }
   readonly store = inject(BookStore);
   readonly assetService = inject(AssetService);
   readonly exportService = inject(ExportService);

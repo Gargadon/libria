@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
 import { TableContentDirective } from './table-content.directive';
+import { EditorPositionService } from '../../services/editor-position.service';
 import { Block, NoteRole, NoteStatus, Footnote, sortFootnotesByPosition } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
@@ -510,6 +511,7 @@ export class EditorComponent implements OnDestroy {
   lastFocusedIndex = -1;
   private _savedCaretOffset = 0;
   readonly focusedBlockIndex = signal(-1);
+  private readonly editorPosition = inject(EditorPositionService);
   readonly selectionToolbar = signal<{ top: number; left: number } | null>(null);
   private _savedSelection: Range | null = null;
   /** Prevents onInput from firing during programmatic splits/merges */
@@ -531,6 +533,7 @@ export class EditorComponent implements OnDestroy {
   });
 
   onFocus(index: number) {
+    this.editorPosition.position.set({ chapterId: this.store.activeChapterId(), blockIndex: index });
     this.lastFocusedIndex = index;
     this.focusedBlockIndex.set(index);
   }

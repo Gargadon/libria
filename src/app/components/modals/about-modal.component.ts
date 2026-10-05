@@ -2,6 +2,7 @@ import { Component, output, inject, ChangeDetectionStrategy } from '@angular/cor
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
+import packageJson from '../../../../package.json';
 
 
 @Component({
@@ -40,7 +41,7 @@ import { environment } from '../../../environments/environment';
             </div>
             <div class="about__row">
               <dt>{{ 'about.license' | translate }}</dt>
-              <dd>MIT</dd>
+              <dd>{{ license }}</dd>
             </div>
           </dl>
 
@@ -237,6 +238,7 @@ import { environment } from '../../../environments/environment';
   `]
 })
 export class AboutModalComponent {
+  readonly license = packageJson.license;
   close = output<void>();
   readonly translate = inject(TranslateService);
   

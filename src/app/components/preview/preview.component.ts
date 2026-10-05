@@ -6,6 +6,7 @@ import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
 import { ExportService } from '../../services/export.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { BlockViewComponent } from '../block-view/block-view.component';
+import { EditorPositionService } from '../../services/editor-position.service';
 
 @Component({
   selector: 'app-preview',
@@ -243,7 +244,7 @@ import { BlockViewComponent } from '../block-view/block-view.component';
             </div>
           } @else {
           @for (b of chapter.body; track $index; let bIdx = $index) {
-            <app-block-view [block]="b" [blockIndex]="bIdx" />
+            <app-block-view [block]="b" [blockIndex]="bIdx" [attr.data-preview-block]="bIdx" />
             @if (showNotes) {
               @for (n of blockNotes(chapter.id, bIdx); track n.id) {
                 <span class="kp-note-ref">[*]</span>
@@ -285,6 +286,7 @@ import { BlockViewComponent } from '../block-view/block-view.component';
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
+  private readonly editorPosition = inject(EditorPositionService);
   readonly assetService = inject(AssetService);
   readonly exportService = inject(ExportService);
   readonly sanitizer = inject(DomSanitizer);
@@ -414,6 +416,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const id = this.store.activeChapterId();
+      this.editorPosition.position();
       this.mode();
       const renderedChapters = this.chapters();
       this.realPageOffsets();
@@ -587,6 +590,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.globalPage.set(Math.max(0, Math.min(this.globalPage(), currentTotal - 1)));
       stableCount = currentTotal === previousTotal ? stableCount + 1 : 0;
       previousTotal = currentTotal;
+      this.navigateToChapter(this.store.activeChapterId());
       // The Viewer first exposes a partial count (often 16) while it is still
       // composing. Keep polling until the count has stabilized or the safety
       // limit is reached.
@@ -615,7 +619,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (!slider) return;
     const max = Number(slider.max || this.measuredTotalPages());
     const target = Math.max(0, Math.min(Math.trunc(page), Math.max(0, max - 1)));
-    slider.value = String(target);
+    slider.value = String(target + 1);
     slider.dispatchEvent(new Event('input', { bubbles: true }));
     slider.dispatchEvent(new Event('change', { bubbles: true }));
   }
@@ -703,10 +707,38 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.realChapterPages.set(chapterPages);
     }
     this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
+    this.navigateToChapter(this.store.activeChapterId());
   }
 
   navigateToChapter(chapterId: string): void {
+    const position = this.editorPosition.position();
+    const blockIndex = position?.chapterId === chapterId ? position.blockIndex : 0;
     const isPrint = this.mode() === 'print';
+    if (isPrint) {
+      const doc = this.printIframeEl?.nativeElement.contentDocument;
+      const chapterIndex = this.store.chapters().findIndex(ch => ch.id === chapterId);
+      const anchor = doc?.querySelector(`[data-libria-block="${chapterIndex}:${blockIndex}"]`)
+        ?? doc?.querySelector(`[data-id="${CSS.escape(chapterId)}"]`);
+      const page = anchor?.closest('[data-vivliostyle-page-container]');
+      const pages = Array.from(doc?.querySelectorAll('[data-vivliostyle-page-container]') ?? []);
+      if (page && pages.includes(page)) {
+        const target = pages.indexOf(page);
+        this.globalPage.set(target);
+        this.setVivliostylePage(target);
+      }
+      return;
+    }
+    const flow = this.kpFlowEl?.nativeElement;
+    const chapter = Array.from(flow?.querySelectorAll<HTMLElement>('[data-chapter]') ?? [])
+      .find(el => el.dataset['chapter'] === chapterId);
+    const block = chapter?.querySelector<HTMLElement>(`[data-preview-block="${blockIndex}"]`);
+    if (flow && block) {
+      const width = flow.clientWidth + (parseFloat(getComputedStyle(flow).columnGap) || 0);
+      if (width > 0) {
+        this.globalPage.set(Math.max(0, Math.floor((block.getBoundingClientRect().left - flow.getBoundingClientRect().left) / width)));
+        return;
+      }
+    }
     const offsetMap = isPrint ? this.printPageOffsets() : this.realPageOffsets();
     const offset = offsetMap[chapterId];
     let target: number;
@@ -819,7 +851,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const slider = this.printIframeEl?.nativeElement.contentDocument
         ?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
       if (slider) {
-        slider.value = String(target);
+        slider.value = String(target + 1);
         slider.dispatchEvent(new Event('input', { bubbles: true }));
         slider.dispatchEvent(new Event('change', { bubbles: true }));
       }

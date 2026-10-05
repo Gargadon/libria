@@ -601,6 +601,26 @@ button.tb__dropdown-item {
 }
 
 /* ===== Sidebar ===== */
+.sbg__list > li[draggable="true"] {
+  position: relative;
+  cursor: grab;
+}
+.sbi--dragging { opacity: .4; }
+.sbi--drop-before::before,
+.sbi--drop-after::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  z-index: 2;
+  pointer-events: none;
+}
+.sbi--drop-before::before { top: 0; }
+.sbi--drop-after::after { bottom: 0; }
+
 .sb__close {
   position: absolute;
   top: 10px;
@@ -652,6 +672,13 @@ button.tb__dropdown-item {
 .sb__content {
   flex: 1;
   overflow-y: auto;
+}
+
+.sb__element-settings {
+  flex-shrink: 0;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+  padding-bottom: 12px;
 }
 
 .sb__content--padding {
