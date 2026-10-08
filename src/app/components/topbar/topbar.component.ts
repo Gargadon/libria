@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { sceneBreakGlyph } from '../../utils/block-maps';
 import { PomodoroService } from '../../services/pomodoro.service';
+import { GoogleDriveService } from '../../services/google-drive.service';
 
 @Component({
   selector: 'app-topbar',
@@ -22,6 +23,11 @@ import { PomodoroService } from '../../services/pomodoro.service';
           <div class="tb__brandN">Libria</div>
           <div class="tb__brandV">{{ editionLabel }}</div>
         </div>
+        @if (drive.available) {
+          <button class="tb__icon" [attr.title]="(fileService.driveLink() ? 'drive.state.' + fileService.syncState() : 'drive.open') | translate" (click)="drive.show()">
+            <span class="material-symbols-outlined">{{ fileService.syncState() === 'conflict' ? 'warning' : fileService.syncState() === 'working' ? 'sync' : fileService.syncState() === 'pending' ? 'cloud_off' : fileService.driveLink() ? 'cloud_done' : 'cloud' }}</span>
+          </button>
+        }
 
         @if (showWebMenu) {
           <span class="tb__sep"></span>
@@ -400,6 +406,7 @@ import { PomodoroService } from '../../services/pomodoro.service';
 })
 export class TopbarComponent {
   readonly store = inject(BookStore);
+  readonly drive = inject(GoogleDriveService);
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
   readonly environment = environment;
@@ -594,7 +601,7 @@ export class TopbarComponent {
 
   async saveAndExit() {
     const action = this.pendingAction();
-    await this.fileService.saveLibriaFile();
+    if (!await this.fileService.saveLibriaFile() || this.store.isDirty()) return;
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 

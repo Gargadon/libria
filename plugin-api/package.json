@@ -1,0 +1,13 @@
+{
+  "name": "@libria/plugin-api",
+  "version": "0.1.0",
+  "description": "Draft public TypeScript contract for Libria plugins",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": { "types": "./index.d.ts" },
+    "./manifest.schema.json": "./manifest.schema.json"
+  },
+  "files": ["index.d.ts", "manifest.schema.json", "README.md"]
+}

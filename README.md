@@ -151,6 +151,14 @@ bun run build
 bun run electron:build
 ```
 
+### Google Drive
+
+La aplicación de escritorio permite conectar una cuenta, abrir y guardar documentos `.libria` en Drive y sincronizarlos cada 30 segundos o manualmente. Mantiene una copia local y detecta cambios en ambas versiones antes de subir. El vínculo con Drive se guarda por separado, sin modificar la estructura del documento. Incluye credenciales de aplicación ofuscadas; consulta la [configuración OAuth y sincronización](docs/google-drive.md).
+
+### Plugins (propuesta de API)
+
+La [especificación de plugins](docs/plugins.md) define una API pública para añadir almacenamiento, comandos y otras integraciones sin extender el formato `.libria`. Incluye un [contrato TypeScript](plugin-api/README.md) y un [ejemplo](examples/plugins/memory-storage). El cargador y el gestor todavía no están implementados.
+
 ### Scripts Disponibles
 
 | Script | Descripción |

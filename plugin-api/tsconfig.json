@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "paths": { "@libria/plugin-api": ["./index.d.ts"] }
+  },
+  "include": ["index.d.ts", "../examples/plugins/memory-storage/index.ts"]
+}

@@ -14,6 +14,7 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
 import { PomodoroService } from '../../services/pomodoro.service';
 import { BOOK_THEMES } from '../../data/themes.data';
 import { CustomThemesService } from '../../services/custom-themes.service';
+import { GoogleDriveService } from '../../services/google-drive.service';
 
 import { environment } from '../../../environments/environment';
 
@@ -837,6 +838,16 @@ const BUNDLED_FONT_KEYS = ['spectral', 'lora', 'eb-garamond', 'crimson-pro', 'in
             <div class="sb__author">{{ 'sidebar.settingsDesc' | translate }}</div>
           </div>
           <div class="sb__content sb__content--padding">
+            @if (drive.available) {
+              <div class="sb__section">Google Drive</div>
+              <div class="sb__drive-settings">
+                <p class="sb__drive-description">{{ 'drive.settingsDescription' | translate }}</p>
+                <button class="sb__btn-primary sb__drive-button" (click)="drive.show()">
+                  <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+                  {{ 'drive.settingsButton' | translate }}
+                </button>
+              </div>
+            }
             <div class="sb__section">{{ 'sidebar.appLang' | translate }}</div>
             <div class="sb__row">
               <select class="sb__select" [ngModel]="store.personalConfig().language" (ngModelChange)="setLanguage($event)">
@@ -1260,6 +1271,7 @@ export class SidebarComponent implements OnInit {
     this.dropTargetId.set(null);
   }
   readonly store = inject(BookStore);
+  readonly drive = inject(GoogleDriveService);
   readonly assetService = inject(AssetService);
   readonly exportService = inject(ExportService);
   readonly importService = inject(ImportService);

@@ -1,0 +1,9 @@
+{
+  "id": "org.libria.examples.memory-storage",
+  "name": "Almacenamiento de ejemplo",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "main": "dist/index.js",
+  "description": "Ejemplo del contrato: un proveedor de almacenamiento y un comando, sin Google ni credenciales.",
+  "permissions": []
+}
