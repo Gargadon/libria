@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class SpellCheckService {
   private get api() {
-    return (window as Window & typeof globalThis).electronAPI;
+    return (window as Window & typeof globalThis).desktopAPI;
   }
 
   get isAvailable(): boolean {

@@ -29,13 +29,13 @@ export class FileService {
   async openDriveDocument(document: DriveDocument): Promise<void> {
     this.validateExternalDocument(document.content);
     const epoch = this.epoch, previous = this.documentContent();
-    const path = await window.electronAPI!.driveCacheFile(document, document.content);
+    const path = await window.desktopAPI!.driveCacheFile(document, document.content);
     if (epoch !== this.epoch || this.documentContent() !== previous) throw new Error('El documento abierto cambió. Vuelve a abrir el archivo de Drive.');
     this.openExternalDocument(document.content);
     const link = { ...document, baseline: document.baseline || this.documentContent() };
     delete (link as Partial<DriveDocument>).content;
     const openedEpoch = this.epoch;
-    await window.electronAPI!.driveCacheFile(link, this.documentContent());
+    await window.desktopAPI!.driveCacheFile(link, this.documentContent());
     if (openedEpoch !== this.epoch) return;
     this.currentPath = path;
     this.driveLink.set(link);
@@ -45,8 +45,8 @@ export class FileService {
   async uploadDriveCopy(): Promise<void> {
     if (this.syncing) throw new Error('Espera a que termine la sincronización actual.');
     const epoch = this.epoch, content = this.documentContent();
-    const link = await window.electronAPI!.driveCreateFile(this.defaultName(), content);
-    const path = await window.electronAPI!.driveCacheFile({ ...link, baseline: content }, content);
+    const link = await window.desktopAPI!.driveCreateFile(this.defaultName(), content);
+    const path = await window.desktopAPI!.driveCacheFile({ ...link, baseline: content }, content);
     if (epoch !== this.epoch) return;
     this.currentPath = path;
     this.driveLink.set({ ...link, baseline: content });
@@ -55,7 +55,7 @@ export class FileService {
     this.syncState.set(this.documentContent() === content ? 'saved' : 'pending');
   }
   async syncDrive(): Promise<void> {
-    const link = this.driveLink(), api = window.electronAPI;
+    const link = this.driveLink(), api = window.desktopAPI;
     if (!link || !api || this.syncing) return;
     this.syncing = true;
     const epoch = this.epoch, content = this.documentContent();
@@ -92,12 +92,12 @@ export class FileService {
     } finally { this.syncing = false; }
   }
 
-  private get isElectron(): boolean {
-    return !!(window as any).electronAPI;
+  private get isDesktop(): boolean {
+    return !!(window as any).desktopAPI;
   }
 
   get canSilentSave(): boolean {
-    if (this.isElectron) return !!this.currentPath;
+    if (this.isDesktop) return !!this.currentPath;
     return !!(window as any).__libriaFileHandle;
   }
 
@@ -143,8 +143,8 @@ export class FileService {
     let saved = false;
 
     try {
-      if (this.isElectron) {
-        const api = window.electronAPI!;
+      if (this.isDesktop) {
+        const api = window.desktopAPI!;
         let path = this.currentPath;
         if (saveAs || !path) {
           path = await api.saveDialog(this.defaultName());
@@ -208,9 +208,9 @@ export class FileService {
   }
 
   async openLibriaFileByPath(path: string) {
-    if (!this.isElectron) return;
+    if (!this.isDesktop) return;
     try {
-      const api = window.electronAPI!;
+      const api = window.desktopAPI!;
       const text = await api.readFile(path);
       this.store.loadDocument(JSON.parse(text), this.assetService);
       this.detachDrive();
@@ -228,9 +228,9 @@ export class FileService {
   }
 
   async openLibriaFile() {
-    if (this.isElectron) {
+    if (this.isDesktop) {
       try {
-        const api = window.electronAPI!;
+        const api = window.desktopAPI!;
         const path = await api.openDialog();
         if (!path) return;
         await this.openLibriaFileByPath(path);
@@ -294,7 +294,7 @@ export class FileService {
   }
 
   private async showError(title: string, detail: string): Promise<void> {
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (api?.showError) {
       await api.showError(title, detail || 'Ocurrió un error inesperado.');
     }

@@ -36,11 +36,7 @@ Un panel de control con parámetros ajustables para ver cómo quedará tu libro 
 
 ### Revisión Ortográfica Integrada
 
-Corrector ortográfico completo sin depender del sistema operativo:
-
-- **Panel de revisión:** Navegación error por error con contexto, sugerencias y acciones (Ignorar, Ignorar todo, Añadir al diccionario). Acceso vía `F7` o botón en la barra de herramientas.
-- **Subrayado en tiempo real:** Los errores ortográficos se subrayan en rojo directamente en el editor mientras escribes, sin perder el cursor ni el formato.
-- **Diccionarios Hunspell:** Soporte para español, inglés, francés e italiano.
+El editor utiliza el corrector del WebView del sistema para subrayar errores y mostrar sugerencias. Los idiomas disponibles dependen de los diccionarios del sistema. Las diferencias del diccionario personal respecto a Electron están descritas en [la guía de Tauri](docs/tauri.md).
 
 ### Notas al Pie
 
@@ -99,14 +95,14 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 | :--- | :--- |
 | **Framework** | [Angular 22](https://angular.dev/) (standalone components) |
 | **Gestión de Estado** | [NgRx Signals Store](https://ngrx.io/guide/signals) |
-| **Entorno de Escritorio** | [Electron 42](https://www.electronjs.org/) |
+| **Entorno de Escritorio** | [Tauri 2](https://v2.tauri.app/) + Rust |
 | **Motor de composición PDF** | [Vivliostyle](https://vivliostyle.org/) 11 |
 | **Persistencia** | Formato abierto `.libria` (JSON autocontenido) |
 | **Testing** | [Vitest](https://vitest.dev/) |
 | **Estilos** | SCSS (Sass) por componente |
-| **Lenguaje** | TypeScript 6.0 (Modo Estricto) |
-| **Runtime** | [Bun](https://bun.sh/) 1.3.14 |
-| **Corrector ortográfico** | API de corrección integrada + diccionarios Hunspell |
+| **Lenguajes** | TypeScript 6.0 (Modo Estricto) y Rust |
+| **Herramientas de desarrollo** | [Bun](https://bun.sh/) + Rust estable |
+| **Corrector ortográfico** | Corrector del WebView del sistema |
 | **Dependencias clave** | `@vivliostyle/cli` (PDF), `docx` (DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
 
 ### Arquitectura de Datos
@@ -124,10 +120,11 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 
 ### Requisitos Previos
 
-- **Node.js**: 18.0 o superior
+- **Node.js**: 22.12 o superior
 - **Bun**: 1.3.14 o superior
+- **Rust estable** y [prerrequisitos nativos de Tauri](https://v2.tauri.app/start/prerequisites/)
 
-La primera exportación PDF puede descargar automáticamente el navegador de renderizado administrado por Vivliostyle. Las exportaciones posteriores reutilizan esa instalación local.
+El empaquetado incluye el motor PDF, que se inicia solo al exportar. Consulta los requisitos nativos, los comandos y las diferencias respecto a Electron en [la guía de Tauri](docs/tauri.md).
 
 ### Instalación y Ejecución
 
@@ -141,14 +138,14 @@ bun install
 # 3. Iniciar servidor de desarrollo
 bun run start          # http://localhost:4300
 
-# 4. Iniciar con Electron
-bun run electron:dev   # Servidor + Electron en paralelo
+# 4. Iniciar con Tauri
+bun run tauri:dev      # Angular + ventana Tauri
 
 # 5. Construir para producción
 bun run build
 
 # 6. Empaquetar para distribución
-bun run electron:build
+bun run tauri:build
 ```
 
 ### Google Drive
@@ -167,8 +164,8 @@ La [especificación de plugins](docs/plugins.md) define una API pública para a�
 | `bun run dev` | Alias de `start` |
 | `bun run build` | Build de producción |
 | `bun run test` | Ejecutar tests con Vitest |
-| `bun run electron:dev` | Servidor dev + Electron en paralelo |
-| `bun run electron:build` | Build + empaquetado con electron-builder |
+| `bun run tauri:dev` | Servidor Angular + ventana Tauri |
+| `bun run tauri:build` | Build + instaladores Tauri |
 
 ---
 

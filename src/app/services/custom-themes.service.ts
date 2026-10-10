@@ -52,7 +52,7 @@ export class CustomThemesService {
     const safeName = theme.name.replace(/[^a-zA-Z0-9_\-\u00C0-\u024F ]/g, '').trim() || 'tema';
     const fileName = `${safeName}.libria-theme`;
 
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (api) {
       const path = await api.saveDialog(fileName, 'theme');
       if (!path) return;
@@ -72,7 +72,7 @@ export class CustomThemesService {
   // ─── Import ──────────────────────────────────────────────────────────────────
 
   async importTheme(): Promise<BookTheme | null> {
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
 
     let text: string | null = null;
 

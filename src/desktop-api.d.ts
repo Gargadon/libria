@@ -1,4 +1,4 @@
-interface ElectronAPI {
+interface DesktopAPI {
   driveStatus(): Promise<DriveStatus>;
   driveConnect(): Promise<DriveStatus>;
   driveDisconnect(): Promise<{ revoked: boolean }>;
@@ -15,9 +15,11 @@ interface ElectronAPI {
   writeFile(filePath: string, content: string): Promise<void>;
   readFile(filePath: string): Promise<string>;
   getFontsCss(): Promise<string>;
+  getSystemFonts(): Promise<string[]>;
+  getFontVariants(family: string): Promise<{ data: string; mimeType: string; style: string; weight: string }[]>;
   showError(title: string, content: string): Promise<void>;
-  printToPDF(options: object): Promise<Uint8Array>;
   printFromHTML(html: string, options: object): Promise<Uint8Array>;
+  saveExport(filename: string, bytes: Uint8Array): Promise<boolean>;
   onMenuAction(callback: (action: string) => void): void;
   onCloseRequested(callback: () => void): void;
   confirmClose(): void;
@@ -25,6 +27,7 @@ interface ElectronAPI {
   getPendingPath(): Promise<string | null>;
   onUpdateAvailable(callback: (update: { version: string; url?: string }) => void): void;
   onUpdateCheckResult(callback: (result: string) => void): void;
+  setLanguage(lang: string): void;
 
   platform: string;
   arch: string;
@@ -42,7 +45,7 @@ interface ElectronAPI {
 }
 
 interface Window {
-  electronAPI?: ElectronAPI;
+  desktopAPI?: DesktopAPI;
 }
 
 interface DriveStatus {

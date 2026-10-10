@@ -501,9 +501,9 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
           const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap, true);
           const generation = ++this.vivliostyleLoadGeneration;
           clearTimeout(this.vivliostyleMeasureTimeout);
-          const electronFontsCss = (window as any).electronAPI?.getFontsCss?.();
-          const fontsCssPromise = electronFontsCss instanceof Promise
-            ? electronFontsCss.catch(() => '')
+          const desktopFontsCss = (window as any).desktopAPI?.getFontsCss?.();
+          const fontsCssPromise = desktopFontsCss instanceof Promise
+            ? desktopFontsCss.catch(() => '')
             : fetch(fontsHref).then(response => response.ok ? response.text() : '').catch(() => '');
           fontsCssPromise.then((fontCss: string) => {
             if (generation !== this.vivliostyleLoadGeneration) return;

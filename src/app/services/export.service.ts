@@ -273,7 +273,7 @@ ${dropCapStyles}`);
 
     this.store.setExporting(true, this.ts.instant('sidebar.exportingEpub'));
     const content = await zip.generateAsync({ type: 'blob' });
-    this.downloadFile(content, `${book.title}.epub`);
+    await this.downloadFile(content, `${book.title}.epub`);
     } finally {
       this.store.setExporting(false);
     }
@@ -313,11 +313,12 @@ ${dropCapStyles}`);
       pdfOptions['displayHeaderFooter'] = false;
 
 
-      const pdfData = await (window as any).electronAPI.printFromHTML(html, pdfOptions);
+      const pdfData = await (window as any).desktopAPI.printFromHTML(html, pdfOptions);
       const blob = new Blob([pdfData], { type: 'application/pdf' });
-      this.downloadFile(blob, `${book.title}.pdf`);
+      await this.downloadFile(blob, `${book.title}.pdf`);
     } catch (error) {
       console.error('PDF export failed', error);
+      if (window.desktopAPI) await window.desktopAPI.showError('No se pudo exportar el PDF', String(error));
     } finally {
       this.store.setExporting(false);
     }
@@ -1213,7 +1214,7 @@ ${bodyContent}
 
       await this.addFootnotesToDoc(doc, allFootnoteDefs);
       const blob = await this._docx.Packer.toBlob(doc);
-      this.downloadFile(blob, `${book.title}.docx`);
+      await this.downloadFile(blob, `${book.title}.docx`);
     } finally {
       this.store.setExporting(false);
     }
@@ -1503,7 +1504,7 @@ ${bodyContent}
       zip.file('content.xml', contentXml);
 
       const content = await zip.generateAsync({ type: 'blob' });
-      this.downloadFile(content, `${book.title}.odt`);
+      await this.downloadFile(content, `${book.title}.odt`);
     } finally {
       this.store.setExporting(false);
     }
@@ -1667,6 +1668,10 @@ ${bodyContent}
   }
 
   private async downloadFile(blob: Blob, filename: string) {
+    if (window.desktopAPI?.saveExport) {
+      await window.desktopAPI.saveExport(filename, new Uint8Array(await blob.arrayBuffer()));
+      return;
+    }
     if (!this._saveAs) {
       const mod: any = await import('file-saver');
       this._saveAs = mod.saveAs ?? mod.default?.saveAs ?? mod.default;

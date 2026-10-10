@@ -7,12 +7,12 @@ import { BookStore } from '../store/book.store';
 import { RecentProjectsService } from './recent-projects.service';
 
 describe('opening Drive documents safely', () => {
-  afterEach(() => { delete window.electronAPI; TestBed.resetTestingModule(); });
+  afterEach(() => { delete window.desktopAPI; TestBed.resetTestingModule(); });
   const file = { id: 'remote', name: 'Book.libria' };
   function service(dirty: boolean) {
     const fileService = { store: { isDirty: () => dirty }, validateExternalDocument: vi.fn(),
       openExternalDocument: vi.fn(), openDriveDocument: vi.fn(), saveLibriaFile: vi.fn().mockResolvedValue(false) };
-    window.electronAPI = { driveStatus: vi.fn(), driveReadFile: vi.fn().mockResolvedValue({ name: file.name, content: '{}' }) } as unknown as ElectronAPI;
+    window.desktopAPI = { driveStatus: vi.fn(), driveReadFile: vi.fn().mockResolvedValue({ name: file.name, content: '{}' }) } as unknown as DesktopAPI;
     TestBed.configureTestingModule({ providers: [{ provide: FileService, useValue: fileService }] });
     return { drive: TestBed.inject(GoogleDriveService), fileService };
   }
@@ -39,17 +39,17 @@ describe('opening Drive documents safely', () => {
   });
   it('loads documents automatically when opening the modal with a connected account', async () => {
     const { drive } = service(false);
-    window.electronAPI!.driveStatus = vi.fn().mockResolvedValue({ connected: true, configured: true });
-    window.electronAPI!.driveListFiles = vi.fn().mockResolvedValue({ files: [file], nextPageToken: null });
+    window.desktopAPI!.driveStatus = vi.fn().mockResolvedValue({ connected: true, configured: true });
+    window.desktopAPI!.driveListFiles = vi.fn().mockResolvedValue({ files: [file], nextPageToken: null });
     await drive.show();
-    expect(window.electronAPI!.driveListFiles).toHaveBeenCalledOnce();
+    expect(window.desktopAPI!.driveListFiles).toHaveBeenCalledOnce();
     expect(drive.files()).toEqual([file]);
     expect(drive.listed()).toBe(true);
   });
   it('does not present a failed document listing as an empty Drive', async () => {
     const { drive } = service(false);
-    window.electronAPI!.driveStatus = vi.fn().mockResolvedValue({ connected: true, configured: true });
-    window.electronAPI!.driveListFiles = vi.fn().mockRejectedValue(new Error('Offline'));
+    window.desktopAPI!.driveStatus = vi.fn().mockResolvedValue({ connected: true, configured: true });
+    window.desktopAPI!.driveListFiles = vi.fn().mockRejectedValue(new Error('Offline'));
     await drive.show();
     expect(drive.listed()).toBe(false);
     expect(drive.error()).toBe('Offline');

@@ -12,7 +12,7 @@ El vínculo, la cuenta y la versión base están en un archivo auxiliar fuera de
 
 ## Credenciales incluidas y reemplazo local
 
-La aplicación incluye credenciales OAuth ofuscadas en `electron/google-drive-credentials.cjs`. Un clon que contenga ese archivo puede compilar y conectar sin crear una configuración propia. La recuperación ocurre en el proceso principal de Electron; no se expone mediante IPC al renderer.
+La aplicación incluye credenciales OAuth ofuscadas en `src-tauri/oauth-credentials.json`. Un clon que contenga ese archivo puede compilar y conectar sin crear una configuración propia. La recuperación ocurre en Rust; no se expone mediante IPC al WebView.
 
 El blob usa AES-256-GCM, un nonce aleatorio y una clave de 256 bits reconstruida mediante XOR de dos fragmentos aleatorios distribuidos con el programa. Su autenticación permite detectar una alteración accidental del blob. Como ambos fragmentos y el descifrador son públicos, esto es **ofuscación de distribución**, no confidencialidad frente a quien inspeccione el código o la memoria. No ofrece garantía de evitar detección o revocación ni aclara las políticas del proveedor. El blob contiene solo credenciales de la aplicación, nunca tokens de usuarios.
 
@@ -35,9 +35,9 @@ En la raíz del repositorio crea `google-drive-config.json`, copiando `google-dr
 }
 ```
 
-Reinicia `bun run electron:dev`. Abre **Configuración → Google Drive → Gestionar cuenta y documentos → Conectar cuenta**. El botón de nube de la barra superior funciona también sin libro abierto, al igual que **Archivo → Abrir desde Google Drive** en el menú nativo.
+Reinicia `bun run tauri:dev`. Abre **Configuración → Google Drive → Gestionar cuenta y documentos → Conectar cuenta**. El botón de nube de la barra superior funciona también sin libro abierto.
 
-También puedes usar `LIBRIA_GOOGLE_CLIENT_ID` y `LIBRIA_GOOGLE_CLIENT_SECRET` como variables de entorno del proceso Electron. Tienen prioridad sobre el archivo. Para una aplicación instalada, puedes colocar `google-drive-config.json` en su directorio `userData` (en Windows, normalmente `%APPDATA%/Libria`); ese archivo tiene prioridad sobre el de la raíz de desarrollo. Los valores locales vacíos recurren a las credenciales incluidas. Si especificas otro `client_id`, debes aportar su secreto: no se combina con el secreto del cliente incluido. No se lee un `.env` automáticamente.
+También puedes usar `LIBRIA_GOOGLE_CLIENT_ID` y `LIBRIA_GOOGLE_CLIENT_SECRET` como variables de entorno del proceso nativo. Tienen prioridad sobre el archivo. Para una aplicación instalada, puedes colocar `google-drive-config.json` en su directorio `app_data_dir` de Tauri (en Windows, normalmente `%APPDATA%/com.libria.app`); ese archivo tiene prioridad sobre el de la raíz de desarrollo. Si especificas otro `client_id`, debes aportar su secreto: no se combina con el secreto del cliente incluido. No se lee un `.env` automáticamente.
 
 El empaquetado incluye el blob y su descifrador; no incluye el JSON local con el secreto en texto plano. El archivo `google-drive-config.json` permanece excluido de Git. Las credenciales del blob siguen siendo recuperables del repositorio y del paquete.
 
@@ -49,9 +49,9 @@ El alcance actual es `https://www.googleapis.com/auth/drive`, para listar, desca
 
 La autorización abre el navegador del sistema y usa callback en `127.0.0.1` con puerto aleatorio, `state` y PKCE S256. Tanto el canje inicial como la renovación incluyen `client_secret`. La autorización pendiente puede cancelarse y caduca a los tres minutos.
 
-Los tokens permanecen en el proceso principal de Electron y se almacenan cifrados mediante `safeStorage`, fuera del `.libria`. En Linux se necesita un llavero seguro; se rechaza el backend `basic_text`. Desconectar elimina los tokens locales e intenta revocarlos en Google, indicando si la revocación no se pudo confirmar. No elimina el documento abierto ni sus copias locales.
+Los tokens permanecen en Rust y se guardan mediante `keyring` en el almacén seguro del sistema, fuera del `.libria`. En Linux se necesita un servicio Secret Service desbloqueado. La sesión antigua de Electron no se importa: hay que volver a autorizar. Desconectar elimina los tokens locales e intenta revocarlos en Google, indicando si la revocación no se pudo confirmar. No elimina el documento abierto ni sus copias locales.
 
-Las respuestas tienen límite de tamaño y tiempo. No se imprimen tokens, secreto, códigos OAuth ni cuerpos de respuesta en diagnósticos. Los errores HTTP muestran estado y código del proveedor.
+Las respuestas tienen límite de tamaño y tiempo. No se imprimen tokens, secreto, códigos OAuth ni cuerpos de respuesta en diagnósticos. Los errores HTTP muestran el estado del proveedor.
 
 ## Verificación
 
@@ -60,6 +60,6 @@ bun run test:drive
 bun run build
 ```
 
-Las pruebas del backend usan respuestas simuladas y callbacks locales. También comprueban el descifrado, rechazo de alteraciones y uso del blob sin configuración local. La conexión real exige habilitar la API y autorizar la cuenta en el navegador.
+Las pruebas del backend comprueban la validación de documentos, identificadores y checksums y el descifrado del blob. Las pruebas JavaScript comprueban el generador y el rechazo de alteraciones. La conexión real exige habilitar la API y autorizar la cuenta en el navegador.
 
-Referencias: [OAuth para aplicaciones instaladas](https://developers.google.com/identity/protocols/oauth2/native-app), [listado de archivos de Drive](https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list), [almacenamiento seguro de Electron](https://www.electronjs.org/docs/latest/api/safe-storage).
+Referencias: [OAuth para aplicaciones instaladas](https://developers.google.com/identity/protocols/oauth2/native-app), [listado de archivos de Drive](https://developers.google.com/workspace/drive/api/reference/rest/v3/files/list), [almacenamiento de credenciales de Rust](https://docs.rs/keyring/).

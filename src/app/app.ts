@@ -48,7 +48,7 @@ export class App {
   checkResult = signal('');
 
   openUpdate(url?: string) {
-    if (url) (window as any).electronAPI?.openExternal(url);
+    if (url) (window as any).desktopAPI?.openExternal(url);
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -87,12 +87,12 @@ export class App {
       const lang = this.store.personalConfig().language;
       if (lang) {
         this.translate.use(lang);
-        const api = (window as any).electronAPI;
+        const api = (window as any).desktopAPI;
         if (api?.setLanguage) api.setLanguage(lang);
       }
     });
 
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (api?.onUpdateAvailable) {
       api.onUpdateAvailable((update: { version: string; url?: string }) => {
         this.ngZone.run(() => {

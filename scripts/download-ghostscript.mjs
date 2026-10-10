@@ -70,10 +70,17 @@ async function main() {
   if (plat === 'win32') {
     const name = `${GS_TAG}w64.exe`;
     const url = `${BASE}/${GS_TAG}/${name}`;
-    const out = join(dir, 'gswin64c.exe');
-    await fetch(url, out);
-    chmodSync(out, 0o755);
-    console.log(`  ✓ ${out}`);
+    const installer = join(dir, 'ghostscript-installer.exe');
+    await fetch(url, installer);
+    // The upstream .exe is an NSIS installer, not the console interpreter.
+    // Keep the complete installation (DLL, Resource and lib files) with the binary.
+    const installed = join(dir, 'bin', 'gswin64c.exe');
+    if (!existsSync(installed)) {
+      const result = spawnSync(installer, ['/S', `/D=${dir}`], { stdio: 'inherit', windowsHide: true });
+      if (result.error || result.status !== 0 || !existsSync(installed)) throw new Error('No se pudo preparar Ghostscript para Windows.');
+    }
+    unlinkSync(installer);
+    console.log(`  ✓ ${installed}`);
 
   } else if (plat === 'linux') {
     // Prefer system-installed GS (works on all architectures)

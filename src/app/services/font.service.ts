@@ -23,6 +23,16 @@ export class FontService {
 
   async loadSystemFonts(): Promise<string[]> {
     if (this.loaded) return this.familyNames;
+    if (window.desktopAPI) {
+      try {
+        this.familyNames = (await window.desktopAPI.getSystemFonts()).sort((a, b) => a.localeCompare(b));
+        this.loaded = true;
+        return this.familyNames;
+      } catch (error) {
+        console.error('No se pudieron leer las tipografías del sistema', error);
+        return [];
+      }
+    }
     if (!('queryLocalFonts' in window)) return [];
     try {
       this.allFonts = await (window as any).queryLocalFonts() as FontData[];
@@ -42,6 +52,12 @@ export class FontService {
 
   async getFontVariants(family: string): Promise<FontVariant[]> {
     if (!this.loaded) await this.loadSystemFonts();
+    if (window.desktopAPI) {
+      return (await window.desktopAPI.getFontVariants(family)).map(({ data, ...variant }) => ({
+        ...variant,
+        buffer: Uint8Array.from(atob(data), c => c.charCodeAt(0)).buffer,
+      }));
+    }
     const matches = this.allFonts.filter(f => f.family === family);
     const results: FontVariant[] = [];
     for (const font of matches) {

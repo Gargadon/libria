@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { sealCredentials, openCredentials } = require('./credential-blob');
-const { bundle } = require('../scripts/bundle-google-drive-credentials.cjs');
-const { loadConfig } = require('./google-drive');
+const { sealCredentials, openCredentials } = require('./lib/credential-blob.cjs');
+const { bundle } = require('./bundle-google-drive-credentials.cjs');
+
 
 test('AES-GCM restores credentials and rejects tampering', () => {
   const credentials = { clientId: 'fixture.apps.googleusercontent.com', clientSecret: 'fixture-client-secret' };
@@ -17,26 +17,15 @@ test('AES-GCM restores credentials and rejects tampering', () => {
   assert.notDeepEqual(sealCredentials(credentials), blob);
 });
 
-test('generator emits a working module without plaintext, does not modify input', t => {
+test('generator emits a working JSON blob without plaintext, does not modify input', t => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'libria-blob-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
-  const input = path.join(directory, 'config.json'), output = path.join(directory, 'blob.cjs');
+  const input = path.join(directory, 'config.json'), output = path.join(directory, 'blob.json');
   const source = JSON.stringify({ client_id: 'fixture.apps.googleusercontent.com', client_secret: 'test-private-value' });
   fs.writeFileSync(input, source);
   bundle(input, output);
   assert.equal(fs.readFileSync(input, 'utf8'), source);
   assert.equal(fs.readFileSync(output, 'utf8').includes('test-private-value'), false);
-  assert.equal(openCredentials(require(output)).clientSecret, 'test-private-value');
+  assert.equal(openCredentials(JSON.parse(fs.readFileSync(output, 'utf8'))).clientSecret, 'test-private-value');
 });
 
-test('default configuration uses bundled credentials without a local file', () => {
-  const app = { getPath: () => '/nonexistent-libria-test-user', getAppPath: () => '/nonexistent-libria-test-app' };
-  const bundled = openCredentials(require('./google-drive-credentials.cjs'));
-  const config = loadConfig(app, {});
-  assert.ok(bundled, 'Generate the credential blob first');
-  // Assertions deliberately avoid including real secrets in diagnostic output.
-  assert.ok(config.clientId === bundled.clientId);
-  assert.ok(config.clientSecret === bundled.clientSecret);
-  const custom = loadConfig(app, { LIBRIA_GOOGLE_CLIENT_ID: 'different.apps.googleusercontent.com' });
-  assert.equal(custom.clientSecret, '');
-});

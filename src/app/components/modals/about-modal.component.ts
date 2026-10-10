@@ -243,16 +243,16 @@ export class AboutModalComponent {
   readonly translate = inject(TranslateService);
   
   readonly platform = (() => {
-    const raw = (window as any).electronAPI?.platform ?? 'web';
+    const raw = (window as any).desktopAPI?.platform ?? 'web';
     return ({ win32: 'Windows', darwin: 'macOS', linux: 'Linux' } as Record<string, string>)[raw] ?? raw;
   })();
   
-  readonly arch = (window as any).electronAPI?.arch ?? 'unknown';
+  readonly arch = (window as any).desktopAPI?.arch ?? 'unknown';
   readonly environment = environment;
   readonly editionName = `${environment.edition} Edition`;
 
   checkUpdates() {
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (api?.checkForUpdates) {
       api.checkForUpdates();
     }

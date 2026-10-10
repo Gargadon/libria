@@ -6,7 +6,7 @@ import { AssetService } from './asset.service';
 import { RecentProjectsService } from './recent-projects.service';
 
 describe('Drive synchronization', () => {
-  afterEach(() => { TestBed.resetTestingModule(); delete window.electronAPI; });
+  afterEach(() => { TestBed.resetTestingModule(); delete window.desktopAPI; });
   function fixture() {
     let title = 'Original';
     const store = { book: () => ({ title }), tweaks: () => ({}), activeChapterId: () => null,
@@ -16,7 +16,7 @@ describe('Drive synchronization', () => {
       driveStatus: vi.fn().mockResolvedValue({ connected: true, account: { email: 'writer@example.test' } }),
       driveFileMetadata: vi.fn().mockResolvedValue({ version: '1' }),
       driveWriteFile: vi.fn().mockResolvedValue({ conflict: false, version: '2' }), driveReadFile: vi.fn() };
-    window.electronAPI = api as unknown as ElectronAPI;
+    window.desktopAPI = api as unknown as DesktopAPI;
     TestBed.configureTestingModule({ providers: [
       { provide: BookStore, useValue: store }, { provide: AssetService, useValue: { getAll: () => ({}) } },
       { provide: RecentProjectsService, useValue: { add: vi.fn() } },

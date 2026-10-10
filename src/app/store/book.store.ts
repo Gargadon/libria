@@ -1047,7 +1047,7 @@ export const BookStore = signalStore(
         personalConfigService.save(config);
       });
 
-      // Sync spell checker language with Electron
+      // Sync spell checker language with the desktop WebView
       effect(() => {
         const lang = store.documentLang();
         if (spellCheckService.isAvailable) {

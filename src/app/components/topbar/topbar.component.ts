@@ -62,7 +62,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                        (click)="store.book() && closeDoc(); store.book() && closeIntegrated()">
                     {{ 'topbar.closeDoc' | translate }}
                   </button>
-                  @if (isElectron) {
+                  @if (isDesktop) {
                     <div class="tb__dropdown-sep"></div>
                     <button class="tb__dropdown-item" (click)="quitApp(); closeIntegrated()">
                       {{ 'electron.menu.fileQuit' | translate }}
@@ -151,7 +151,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                         (click)="store.book() && closeDoc(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
                 </button>
-                @if (isElectron) {
+                @if (isDesktop) {
                   <button class="tb__compact-item" (click)="quitApp(); closeIntegratedHamburger()">
                     <span class="material-symbols-outlined">logout</span> {{ 'electron.menu.fileQuit' | translate }}
                   </button>
@@ -471,7 +471,7 @@ export class TopbarComponent {
   private readonly ngZone = inject(NgZone);
 
   constructor() {
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
         this.ngZone.run(() => {
@@ -524,9 +524,9 @@ export class TopbarComponent {
 
   // --- INTEGRATED FALLBACK MENU ---
   aboutRequested = output<void>();
-  readonly isElectron = !!(window as any).electronAPI;
+  readonly isDesktop = !!(window as any).desktopAPI;
   readonly showWebMenu = (() => {
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (!api) return true;
     return !!api.useIntegratedMenu;
   })();
@@ -551,7 +551,7 @@ export class TopbarComponent {
       this.pendingAction.set('close');
       this.showExitModal.set(true);
     } else {
-      const api = (window as any).electronAPI;
+      const api = (window as any).desktopAPI;
       if (api?.confirmClose) {
         api.confirmClose();
       }
@@ -592,7 +592,7 @@ export class TopbarComponent {
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();
@@ -605,7 +605,7 @@ export class TopbarComponent {
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 
-    const api = (window as any).electronAPI;
+    const api = (window as any).desktopAPI;
     if (action === 'new') this.fileService.newProject();
     else if (action === 'open') this.fileService.openLibriaFile();
     else if (action === 'close') api?.confirmClose();

@@ -3,6 +3,9 @@
 # Compiled output
 /dist
 /release
+/src-tauri/target
+/src-tauri/gen
+/build/tauri-resources
 /tmp
 /out-tsc
 /bazel-out
@@ -10,6 +13,7 @@
 # Node
 /google-drive-config.json
 /node_modules
+/runtime/pdf/node_modules/
 /.bun-cache
 /.bun-tmp
 npm-debug.log
@@ -52,6 +56,7 @@ Thumbs.db
 /build/bin/linux/gs
 /build/bin/mac/gs
 /build/bin/win/gswin64c.exe
+/build/bin/win/
 /build/bin/**/*.tar.gz
 
 # Testing

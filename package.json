@@ -1,8 +1,7 @@
 {
   "name": "libria",
-  "version": "1.11.0",
+  "version": "2.0.0-beta.1",
   "description": "Aplicación para la creación y maquetación de libros",
-  "main": "main.js",
   "author": {
     "name": "David Kantun",
     "email": "dkantun@gmail.com"
@@ -20,14 +19,18 @@
     "build": "bun run ng build",
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
-    "electron:dev": "concurrently --kill-others --success first \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev\"",
-    "test:drive": "node --test electron/google-drive.test.js electron/credential-blob.test.js",
     "drive:bundle-credentials": "node scripts/bundle-google-drive-credentials.cjs",
-    "electron:build": "bun run build && electron-builder",
     "download:gs": "node scripts/download-ghostscript.mjs",
     "download:gs:linux": "node scripts/download-ghostscript.mjs linux",
     "download:gs:mac": "node scripts/download-ghostscript.mjs mac",
-    "download:gs:win": "node scripts/download-ghostscript.mjs win"
+    "download:gs:win": "node scripts/download-ghostscript.mjs win",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:prepare": "node scripts/prepare-tauri.mjs",
+    "test:desktop": "node --test scripts/pdf-export.test.mjs scripts/credential-blob.test.cjs",
+    "test:drive": "cargo test --manifest-path src-tauri/Cargo.toml drive::tests",
+    "test:native": "cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "private": true,
   "license": "AGPL-3.0-only",
@@ -41,6 +44,10 @@
     "@ngrx/signals": "^21.1.1",
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
+    "@tauri-apps/api": "^2.12.2",
+    "@tauri-apps/plugin-dialog": "^2.8.1",
+    "@tauri-apps/plugin-opener": "^2.7.0",
+    "@tauri-apps/plugin-os": "^2.4.0",
     "@types/dompurify": "^3.2.0",
     "@types/hyphen": "^1.14.0",
     "@vivliostyle/cli": "^11.3.0",
@@ -48,7 +55,6 @@
     "buffer": "^6.0.3",
     "docx": "^9.6.1",
     "dompurify": "^3.4.11",
-    "electron-updater": "^6.8.9",
     "file-saver": "^2.0.5",
     "hyphen": "^1.14.1",
     "jszip": "^3.10.1",
@@ -63,130 +69,20 @@
     "@angular/build": "^22.0.2",
     "@angular/cli": "^22.0.2",
     "@angular/compiler-cli": "^22.0.2",
+    "@tauri-apps/cli": "^2.12.1",
     "@types/blob-stream": "^0.1.33",
     "@types/file-saver": "^2.0.7",
     "@types/jszip": "^3.4.0",
     "@types/pdfkit": "^0.17.6",
-    "concurrently": "^9.2.1",
     "dictionary-en": "^4.0.0",
     "dictionary-en-gb": "^3.0.0",
     "dictionary-es": "^4.0.0",
     "dictionary-fr": "^3.0.0",
     "dictionary-it": "^2.0.0",
     "dictionary-pt": "^4.0.0",
-    "electron": "^42.4.1",
-    "electron-builder": "^26.8.1",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.3",
-    "vitest": "^4.0.8",
-    "wait-on": "^9.0.5"
-  },
-  "build": {
-    "appId": "com.libria.app",
-    "productName": "Libria",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "Gargadon",
-        "repo": "libria"
-      }
-    ],
-    "files": [
-      "dist/**/*",
-      "build/**/*",
-      "main.js",
-      "electron/google-drive.js",
-      "electron/credential-blob.js",
-      "electron/google-drive-credentials.cjs",
-      "preload.js"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "linux": {
-      "artifactName": "${name}-${version}-linux-${arch}.${ext}",
-      "category": "Office",
-      "executableArgs": [
-        "--ozone-platform=x11"
-      ],
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "build/icon.png"
-    },
-    "deb": {
-      "depends": [
-        "ghostscript"
-      ]
-    },
-    "mac": {
-      "artifactName": "${name}-${version}-mac-${arch}.${ext}",
-      "target": [
-        "dmg"
-      ],
-      "icon": "build/icon-512.png",
-      "x64ArchFiles": "**/gs/bin/*",
-      "extraResources": [
-        {
-          "from": "build/bin/mac",
-          "to": "gs/bin",
-          "filter": [
-            "**/*"
-          ]
-        }
-      ]
-    },
-    "win": {
-      "compression": "maximum",
-      "target": [
-        "nsis"
-      ],
-      "icon": "build/icon.ico",
-      "extraResources": [
-        {
-          "from": "build/bin/win",
-          "to": "gs/bin",
-          "filter": [
-            "**/*"
-          ]
-        }
-      ]
-    },
-    "extraResources": [
-      {
-        "from": "build/licenses",
-        "to": "licenses",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "artifactName": "${name}-${version}-win-${arch}.${ext}"
-    },
-    "fileAssociations": [
-      {
-        "ext": "libria",
-        "name": "Documento Libria",
-        "description": "Archivo de proyecto Libria",
-        "mimeType": "application/x-libria",
-        "icon": "build/icon",
-        "role": "Editor"
-      }
-    ],
-    "electronLanguages": [
-      "es",
-      "es-MX",
-      "en",
-      "en-US",
-      "it",
-      "fr",
-      "pt",
-      "pt-BR"
-    ]
+    "vitest": "^4.0.8"
   }
 }

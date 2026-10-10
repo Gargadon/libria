@@ -3,7 +3,7 @@ import { FileService } from './file.service';
 
 @Injectable({ providedIn: 'root' })
 export class GoogleDriveService {
-  readonly available = !!window.electronAPI?.driveStatus;
+  readonly available = !!window.desktopAPI?.driveStatus;
   readonly visible = signal(false);
   readonly busy = signal(false);
   readonly connecting = signal(false);
@@ -21,7 +21,7 @@ export class GoogleDriveService {
     this.visible.set(true);
     if (!this.available) return;
     await this.run(async () => {
-      this.status.set(await window.electronAPI!.driveStatus());
+      this.status.set(await window.desktopAPI!.driveStatus());
       if (this.status()?.connected) await this.fetchFiles();
     }, 'drive.loadingDocuments');
   }
@@ -30,7 +30,7 @@ export class GoogleDriveService {
     this.connecting.set(true);
     try {
       await this.run(async () => {
-        this.status.set(await window.electronAPI!.driveConnect());
+        this.status.set(await window.desktopAPI!.driveConnect());
         this.files.set([]);
         this.cursor.set(null);
         this.listed.set(false);
@@ -39,11 +39,11 @@ export class GoogleDriveService {
       }, 'drive.waitingGoogle');
     } finally { this.connecting.set(false); }
   }
-  async cancel() { await window.electronAPI?.driveCancel(); }
+  async cancel() { await window.desktopAPI?.driveCancel(); }
   async disconnect() {
     await this.run(async () => {
-      const result = await window.electronAPI!.driveDisconnect();
-      this.status.set(await window.electronAPI!.driveStatus());
+      const result = await window.desktopAPI!.driveDisconnect();
+      this.status.set(await window.desktopAPI!.driveStatus());
       this.files.set([]);
       this.cursor.set(null);
       this.pending.set(null);
@@ -55,14 +55,14 @@ export class GoogleDriveService {
     await this.run(() => this.fetchFiles(more), 'drive.loadingDocuments');
   }
   private async fetchFiles(more = false) {
-    const page = await window.electronAPI!.driveListFiles(more ? this.cursor() || undefined : undefined);
+    const page = await window.desktopAPI!.driveListFiles(more ? this.cursor() || undefined : undefined);
     this.files.set(more ? [...this.files(), ...page.files] : page.files);
     this.cursor.set(page.nextPageToken);
     this.listed.set(true);
   }
   async download(file: DriveFile) {
     await this.run(async () => {
-      const result = await window.electronAPI!.driveReadFile(file.id);
+      const result = await window.desktopAPI!.driveReadFile(file.id);
       this.fileService.validateExternalDocument(result.content);
       if (this.fileService.store.isDirty()) this.pending.set(result);
       else await this.open(result);
@@ -90,7 +90,7 @@ export class GoogleDriveService {
       if (!link) return;
       // Keep an independent native local backup before replacing the working copy.
       if (!await this.fileService.saveLibriaFile(true)) return;
-      await this.open(await window.electronAPI!.driveReadFile(link.id, true));
+      await this.open(await window.desktopAPI!.driveReadFile(link.id, true));
     });
   }
   private async run(action: () => Promise<void>, operation = 'drive.working') {
