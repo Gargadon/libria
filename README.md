@@ -1,6 +1,6 @@
 [![Release](https://github.com/Gargadon/libria/actions/workflows/release.yml/badge.svg)](https://github.com/Gargadon/libria/actions/workflows/release.yml)
 
-# Libria — Shelley Edition
+# Libria — Cervantes Edition
 
 ![Libria Banner](libria-banner.webp)
 
