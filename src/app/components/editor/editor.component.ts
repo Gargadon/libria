@@ -22,8 +22,8 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
   },
   template: `
     @if (store.ui.zenMode()) {
-      <button class="ed__zen-exit" (click)="store.toggleZenMode()" [attr.title]="'topbar.zenMode' | translate">
-        <span class="material-symbols-outlined">fullscreen_exit</span>
+      <button type="button" class="ed__zen-exit" (click)="store.toggleZenMode()" [attr.title]="'topbar.zenMode' | translate" [attr.aria-label]="'topbar.zenMode' | translate" aria-pressed="true">
+        <span class="material-symbols-outlined" aria-hidden="true">fullscreen_exit</span>
       </button>
     }
 

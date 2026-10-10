@@ -4866,29 +4866,34 @@ body.print-digital {
 /* Botón flotante de salida del modo zen */
 .ed__zen-exit {
   position: fixed;
-  top: 12px;
-  right: 16px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  right: max(24px, env(safe-area-inset-right));
   z-index: 200;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  color: var(--ink-soft);
+  background: var(--ink);
+  border: 1px solid var(--paper);
+  border-radius: 12px;
+  color: var(--paper);
   box-shadow: var(--shadow-md);
-  opacity: 0.4;
-  transition: opacity .15s;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
 
   &:hover {
-    opacity: 1;
-    color: var(--ink);
+    background: var(--ink-2);
+    transform: translateY(-2px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--terra);
+    outline-offset: 3px;
   }
 
   .material-symbols-outlined {
-    font-size: 20px;
+    font-size: 26px;
   }
 }
 
