@@ -1533,6 +1533,11 @@ button.tb__dropdown-item {
   margin-bottom: 12px;
 }
 
+.sb__drive-settings { display: grid; gap: 12px; margin-bottom: 22px; }
+.sb__drive-description { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
+.sb__drive-button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 38px; white-space: normal; }
+.sb__drive-button .material-symbols-outlined { font-size: 18px; }
+
 .sb__btn-primary {
   background: var(--ink);
   color: var(--paper);

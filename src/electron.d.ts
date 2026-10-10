@@ -1,4 +1,15 @@
 interface ElectronAPI {
+  driveStatus(): Promise<DriveStatus>;
+  driveConnect(): Promise<DriveStatus>;
+  driveDisconnect(): Promise<{ revoked: boolean }>;
+  driveListFiles(cursor?: string): Promise<{ files: DriveFile[]; nextPageToken: string | null }>;
+  driveReadFile(id: string, forceRemote?: boolean): Promise<DriveDocument>;
+  driveFileMetadata(id: string): Promise<DriveFile & { version: string }>;
+  driveWriteFile(id: string, version: string, content: string, account: string): Promise<Partial<DriveLink> & { conflict: boolean }>;
+  driveCreateFile(name: string, content: string): Promise<DriveLink>;
+  driveCacheFile(link: DriveLink, content: string): Promise<string>;
+  driveCachedLink(path: string): Promise<DriveLink | null>;
+  driveCancel(): Promise<void>;
   saveDialog(defaultName: string, kind?: 'document' | 'theme'): Promise<string | null>;
   openDialog(kind?: 'document' | 'theme'): Promise<string | null>;
   writeFile(filePath: string, content: string): Promise<void>;
@@ -32,4 +43,20 @@ interface ElectronAPI {
 
 interface Window {
   electronAPI?: ElectronAPI;
+}
+
+interface DriveStatus {
+  writable?: boolean;
+  configured: boolean;
+  connected: boolean;
+  account: { name: string; email: string } | null;
+}
+interface DriveLink { id: string; name: string; version: string; account: string; baseline?: string; }
+interface DriveDocument extends DriveLink { content: string; }
+interface DriveFile {
+  id: string;
+  name: string;
+  modifiedTime?: string;
+  size?: string;
+  capabilities?: { canDownload?: boolean };
 }

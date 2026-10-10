@@ -8,6 +8,7 @@
 /bazel-out
 
 # Node
+/google-drive-config.json
 /node_modules
 /.bun-cache
 /.bun-tmp

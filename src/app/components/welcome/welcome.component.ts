@@ -6,6 +6,7 @@ import { RecentProject } from '../../models/book.models';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
+import { GoogleDriveService } from '../../services/google-drive.service';
 
 @Component({
   selector: 'app-welcome',
@@ -24,6 +25,7 @@ import { environment } from '../../../environments/environment';
         </div>
 
         <div class="welcome__body">
+          <div class="welcome__local-files">
           @if (recentProjects().length) {
             <div class="welcome__recent">
               <div class="welcome__recent-title">{{ 'welcome.recent' | translate }}</div>
@@ -40,6 +42,13 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
           }
+          @if (drive.available) {
+            <button class="welcome__drive-help" (click)="drive.show()">
+              <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+              {{ 'welcome.driveFilesNotice' | translate }}
+            </button>
+          }
+          </div>
 
           <div class="welcome__actions">
             <button class="welcome__btn welcome__btn--primary" (click)="store.createNewProject()">
@@ -163,6 +172,23 @@ import { environment } from '../../../environments/environment';
     .welcome__recent {
       text-align: left;
     }
+    .welcome__drive-help {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 6px 0;
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font: inherit;
+      font-size: .8rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .welcome__drive-help:hover { color: var(--accent); text-decoration: underline; }
+    .welcome__drive-help:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    .welcome__drive-help .material-symbols-outlined { font-size: 18px; }
     .welcome__recent-title {
       font-size: 0.75rem;
       text-transform: uppercase;
@@ -212,6 +238,7 @@ import { environment } from '../../../environments/environment';
 export class WelcomeComponent {
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
+  readonly drive = inject(GoogleDriveService);
   private recentService = inject(RecentProjectsService);
   readonly version = environment.version;
   readonly edition = environment.edition;

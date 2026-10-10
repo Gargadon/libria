@@ -12,6 +12,8 @@ import { PreviewComponent } from './components/preview/preview.component';
 import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.component';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
+import { GoogleDriveModalComponent } from './components/modals/google-drive-modal.component';
+import { GoogleDriveService } from './services/google-drive.service';
 
 @Component({
   selector: 'app-root',
@@ -26,12 +28,14 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
     TweaksPanelComponent,
     WelcomeComponent,
     AboutModalComponent,
+    GoogleDriveModalComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
+  readonly drive = inject(GoogleDriveService);
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
@@ -113,6 +117,7 @@ export class App {
       api.onMenuAction((action: string) => {
         this.ngZone.run(() => {
           if (action === 'about') this.showAbout.set(true);
+          if (action === 'openDrive') void this.drive.show();
         });
       });
     }

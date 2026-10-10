@@ -1,6 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  driveStatus: () => ipcRenderer.invoke('drive:status'),
+  driveConnect: () => ipcRenderer.invoke('drive:connect'),
+  driveDisconnect: () => ipcRenderer.invoke('drive:disconnect'),
+  driveListFiles: (cursor) => ipcRenderer.invoke('drive:listFiles', cursor),
+  driveReadFile: (id, forceRemote) => ipcRenderer.invoke('drive:readFile', id, forceRemote),
+  driveFileMetadata: (id) => ipcRenderer.invoke('drive:fileMetadata', id),
+  driveWriteFile: (id, version, content, account) => ipcRenderer.invoke('drive:writeFile', id, version, content, account),
+  driveCreateFile: (name, content) => ipcRenderer.invoke('drive:createFile', name, content),
+  driveCacheFile: (link, content) => ipcRenderer.invoke('drive:cacheFile', link, content),
+  driveCachedLink: (path) => ipcRenderer.invoke('drive:cachedLink', path),
+  driveCancel: () => ipcRenderer.invoke('drive:cancel'),
   saveDialog: (defaultName, kind) => ipcRenderer.invoke('dialog:save', defaultName, kind),
   openDialog: (kind) => ipcRenderer.invoke('dialog:open', kind),
   writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),

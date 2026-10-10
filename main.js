@@ -1,4 +1,14 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, MenuItem, shell, safeStorage } = require('electron');
+const { createGoogleDrive } = require('./electron/google-drive');
+let googleDrive;
+for (const method of ['status', 'connect', 'disconnect', 'listFiles', 'readFile', 'fileMetadata', 'writeFile', 'createFile', 'cacheFile', 'cachedLink', 'cancel']) {
+  ipcMain.handle('drive:' + method, (event, ...args) => {
+    assertTrustedRenderer(event);
+    if (!googleDrive) throw new Error('Google Drive aún no está disponible.');
+    return googleDrive[method](...args);
+  });
+}
+app.on('before-quit', () => googleDrive?.dispose());
 const path = require('path');
 const fs = require('fs');
 
@@ -281,6 +291,7 @@ function buildMenu(lang = 'es') {
       submenu: [
         { label: labels.fileNew, accelerator: 'CmdOrCtrl+N', click: () => send('new') },
         { label: labels.fileOpen, accelerator: 'CmdOrCtrl+O', click: () => send('open') },
+        { label: lang === 'es' ? 'Abrir desde Google Drive…' : 'Open from Google Drive…', click: () => send('openDrive') },
         { label: labels.fileSave, accelerator: 'CmdOrCtrl+S', click: () => send('save') },
         { label: labels.fileSaveAs, accelerator: 'CmdOrCtrl+Shift+S', click: () => send('saveAs') },
         { label: labels.fileClose, accelerator: 'CmdOrCtrl+W', click: () => send('close') },
@@ -530,6 +541,7 @@ function setupAutoUpdater() {
 }
 
 app.whenReady().then(() => {
+  googleDrive = createGoogleDrive({ app, shell, safeStorage });
   setupHyphenation();
   buildMenu();
   createWindow();

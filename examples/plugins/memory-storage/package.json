@@ -1,0 +1,6 @@
+{
+  "name": "libria-plugin-memory-storage-example",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module"
+}

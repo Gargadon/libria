@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "main": "main.js",
   "author": {
@@ -20,7 +20,9 @@
     "build": "bun run ng build",
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
-    "electron:dev": "concurrently --kill-others \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev\"",
+    "electron:dev": "concurrently --kill-others --success first \"bun run dev\" \"wait-on http://localhost:4300 && electron . --dev\"",
+    "test:drive": "node --test electron/google-drive.test.js electron/credential-blob.test.js",
+    "drive:bundle-credentials": "node scripts/bundle-google-drive-credentials.cjs",
     "electron:build": "bun run build && electron-builder",
     "download:gs": "node scripts/download-ghostscript.mjs",
     "download:gs:linux": "node scripts/download-ghostscript.mjs linux",
@@ -94,6 +96,9 @@
       "dist/**/*",
       "build/**/*",
       "main.js",
+      "electron/google-drive.js",
+      "electron/credential-blob.js",
+      "electron/google-drive-credentials.cjs",
       "preload.js"
     ],
     "directories": {
