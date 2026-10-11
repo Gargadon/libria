@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { mkdirSync, chmodSync, existsSync, copyFileSync, createWriteStream, unlinkSync } from 'fs';
+import { mkdirSync, chmodSync, existsSync, copyFileSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import https from 'https';
 import { spawnSync } from 'child_process';
+import { downloadFile as fetch } from './download-file.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -14,26 +14,6 @@ const GS_VER = '10.07.0';
 const GS_TAG = `gs${GS_VER.replace(/\./g, '')}`;
 const BASE = 'https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download';
 const GHCR = 'https://ghcr.io/v2/homebrew/core/ghostscript/blobs';
-
-function fetch(url, dest) {
-  return new Promise((resolve, reject) => {
-    if (existsSync(dest) && process.env.FORCE !== '1') { console.log(`  Already exists: ${dest}`); return resolve(); }
-    const file = createWriteStream(dest);
-    console.log(`  ${url}`);
-    https.get(url, { headers: { 'User-Agent': 'libria/1.0' } }, (res) => {
-      if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
-        file.close(); try { unlinkSync(dest); } catch (_) {}
-        return fetch(res.headers.location, dest).then(resolve).catch(reject);
-      }
-      if (res.statusCode !== 200) {
-        file.close(); try { unlinkSync(dest); } catch (_) {}
-        return reject(new Error(`HTTP ${res.statusCode}`));
-      }
-      res.pipe(file);
-      file.on('finish', () => { file.close(); resolve(); });
-    }).on('error', (e) => { file.close(); try { unlinkSync(dest); } catch (_) {}; reject(e); });
-  });
-}
 
 function brewGsBinary() {
   // Try `brew --prefix ghostscript`
@@ -71,14 +51,24 @@ async function main() {
     const name = `${GS_TAG}w64.exe`;
     const url = `${BASE}/${GS_TAG}/${name}`;
     const installer = join(dir, 'ghostscript-installer.exe');
+    // Extract NSIS data without executing an installer or changing the registry.
+    const sevenZip = ['7z', join(process.env.ProgramFiles || 'C:/Program Files', '7-Zip', '7z.exe')]
+      .find(command => spawnSync(command, ['i'], { windowsHide: true, timeout: 10_000 }).status === 0);
+    if (!sevenZip) throw new Error('Se necesita 7-Zip para desempaquetar Ghostscript.');
     await fetch(url, installer);
-    // The upstream .exe is an NSIS installer, not the console interpreter.
-    // Keep the complete installation (DLL, Resource and lib files) with the binary.
     const installed = join(dir, 'bin', 'gswin64c.exe');
-    if (!existsSync(installed)) {
-      const result = spawnSync(installer, ['/S', `/D=${dir}`], { stdio: 'inherit', windowsHide: true });
-      if (result.error || result.status !== 0 || !existsSync(installed)) throw new Error('No se pudo preparar Ghostscript para Windows.');
+    console.log('  Extrayendo Ghostscript con 7-Zip…');
+    const result = spawnSync(sevenZip, ['x', installer, `-o${dir}`, '-y', 'bin/*', 'lib/*', 'Resource/*', 'doc/*', 'LICENSE*'], {
+      stdio: 'inherit', windowsHide: true, timeout: 120_000,
+    });
+    if (result.error || result.status !== 0 || !existsSync(installed) || !existsSync(join(dir, 'bin', 'gsdll64.dll'))) {
+      throw new Error(`No se pudo extraer Ghostscript: ${result.error?.message || result.status}`);
     }
+    console.log('  Comprobando el intérprete Ghostscript…');
+    const check = spawnSync(installed, ['-dNODISPLAY', '-dBATCH', '-dNOPAUSE', '-c', '(Ghostscript listo) =', '-c', 'quit'], {
+      stdio: 'inherit', windowsHide: true, timeout: 30_000,
+    });
+    if (check.error || check.status !== 0) throw new Error('El Ghostscript extraído no funciona.');
     unlinkSync(installer);
     console.log(`  ✓ ${installed}`);
 
