@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { syncVersion } from './sync-version.mjs';
 import { runtimeModuleFilter } from './runtime-prebuilds.mjs';
+import { pdfBrowserFilter } from './pdf-browser-files.mjs';
 
 syncVersion();
 
@@ -59,7 +60,14 @@ if (!process.argv.includes('--system-browser')) {
   if (!browserPlatform) throw new Error('Plataforma PDF no soportada.');
   const version = DEFAULT_BROWSER_VERSIONS.chrome?.[browserPlatform] ?? 'stable';
   const buildId = await browsers.resolveBuildId(browser, browserPlatform, version);
-  const installed = await browsers.install({ browser, platform: browserPlatform, buildId, cacheDir: path.join(destination, 'browsers') });
-  writeFileSync(path.join(destination, 'browser.json'), JSON.stringify({ executable: path.relative(destination, installed.executablePath) }) + '\n');
+  // Downloads are a reusable build cache, separate from shipped resources.
+  const installed = await browsers.install({ browser, platform: browserPlatform, buildId, cacheDir: path.join(root, 'tmp/pdf-browser-cache') });
+  const bundledBrowsers = path.resolve(destination, 'browsers');
+  if (path.relative(destination, bundledBrowsers) !== 'browsers') throw new Error('Invalid PDF browser destination');
+  rmSync(bundledBrowsers, { recursive: true, force: true });
+  const bundledBrowser = path.join(bundledBrowsers, browser, `${browserPlatform}-${buildId}`);
+  cpSync(installed.path, bundledBrowser, { recursive: true, dereference: true, filter: pdfBrowserFilter(installed.path) });
+  const executable = path.join(bundledBrowser, path.relative(installed.path, installed.executablePath));
+  writeFileSync(path.join(destination, 'browser.json'), JSON.stringify({ executable: path.relative(destination, executable) }) + '\n');
 }
 console.log('Runtime PDF de Tauri preparado.');

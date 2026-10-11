@@ -32,3 +32,16 @@ for (const [platform, arch] of [['linux', 'x64'], ['linux', 'arm64'], ['win32', 
     }
   });
 }
+
+test('omits debug and compile-time files but preserves runtime resources and legal notices', () => {
+  const filter = runtimeModuleFilter('linux', 'x64');
+  for (const file of ['dist/index.js.map', 'dist/style.css.map', 'dist/index.d.ts',
+    'dist/index.d.mts', 'dist/index.d.cts', 'CHANGELOG.md', 'HISTORY.txt', 'CONTRIBUTING.md']) {
+    assert.equal(filter(path.join('node_modules/package', file)), false, file);
+  }
+  for (const file of ['package.json', 'dist/index.js', 'dist/index.cjs', 'dist/index.mjs',
+    'dist/style.css', 'dist/engine.wasm', 'dist/engine.wasm.br', 'src/config.ts',
+    'binding.node', 'icudtl.dat', 'LICENSE', 'LICENSE.md', 'COPYING', 'NOTICE', 'README.md']) {
+    assert.equal(filter(path.join('node_modules/package', file)), true, file);
+  }
+});

@@ -29,7 +29,7 @@
     "tauri:dev": "bun run version:sync && tauri dev",
     "tauri:build": "bun run version:sync && tauri build",
     "tauri:prepare": "node scripts/prepare-tauri.mjs",
-    "test:desktop": "node --test scripts/pdf-export.test.mjs scripts/credential-blob.test.cjs scripts/sync-version.test.mjs scripts/runtime-prebuilds.test.mjs scripts/download-file.test.mjs scripts/stage-installers.test.mjs",
+    "test:desktop": "node --test scripts/pdf-export.test.mjs scripts/credential-blob.test.cjs scripts/sync-version.test.mjs scripts/runtime-prebuilds.test.mjs scripts/download-file.test.mjs scripts/stage-installers.test.mjs scripts/pdf-browser-files.test.mjs",
     "test:drive": "bun run version:sync && cargo test --manifest-path src-tauri/Cargo.toml drive::tests",
     "test:native": "bun run version:sync && cargo test --manifest-path src-tauri/Cargo.toml"
   },
