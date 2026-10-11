@@ -34,6 +34,8 @@ El documento local `/vivliostyle/index.html` permite además `unsafe-eval`, nece
 
 El workflow genera Windows x64, Linux x64 y macOS x64/arm64. Windows y Linux arm64 necesitan todavía un runtime PDF y un runner compatibles; no se generan instaladores para esas arquitecturas en esta primera migración.
 
+`.github/workflows/release.yml` ejecuta únicamente CI en cada push a `main`: pruebas de Angular, scripts de escritorio y backend nativo, además de verificar el build de producción de Angular. No prepara el runtime PDF ni genera instaladores. Los tags `v*` ejecutan las pruebas, compilan los instaladores de Tauri y publican una release tras completar todas las plataformas; el tag debe coincidir con `v` seguido de la versión de `package.json` (por ejemplo, `v2.0.0`). La ejecución manual sobre una rama realiza CI; sobre un tag realiza el flujo de release.
+
 ## PDF y consumo
 
 Vivliostyle se ejecuta en un proceso independiente solo durante la exportación. El backend crea un directorio temporal, incrusta las fuentes, inicia el worker con argumentos controlados y espera como máximo tres minutos. El proceso directo se termina si se cancela la tarea; el directorio temporal se elimina al terminar. Ghostscript solo se ejecuta si se solicita PDF/X. Un fallo de conversión se informa como error; nunca se devuelve silenciosamente el PDF sin convertir.
