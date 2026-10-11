@@ -124,7 +124,14 @@ mod tests {
                 .with_face_data(face.id, standalone_font)
                 .flatten()
                 .unwrap();
-            assert!(bytes.starts_with(b"OTTO") || bytes.starts_with(&[0, 1, 0, 0]));
+            // Apple TrueType fonts can use `true` instead of the usual sfnt
+            // signature. Let fontdb validate the font rather than restricting
+            // valid signatures here, while still requiring a standalone face.
+            assert!(
+                !bytes.starts_with(b"ttcf"),
+                "{} is still a collection",
+                face.post_script_name
+            );
             let mut extracted = Database::new();
             extracted.load_font_data(bytes);
             assert_eq!(extracted.len(), 1);
