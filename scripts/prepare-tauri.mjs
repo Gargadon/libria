@@ -1,10 +1,11 @@
 // Run on the target platform: packages a PDF-only runtime, never an Electron runtime.
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { syncVersion } from './sync-version.mjs';
+import { runtimeModuleFilter } from './runtime-prebuilds.mjs';
 
 syncVersion();
 
@@ -20,7 +21,15 @@ const run = (command, args, cwd) => {
 };
 if (process.platform === 'win32') run('cmd.exe', ['/d', '/s', '/c', 'npm ci --omit=dev --ignore-scripts'], runtimeSource);
 else run('npm', ['ci', '--omit=dev', '--ignore-scripts'], runtimeSource);
-cpSync(path.join(runtimeSource, 'node_modules'), path.join(pdf, 'node_modules'), { recursive: true, dereference: true });
+// Start clean so a previous build cannot leave foreign prebuilds in the bundle.
+const runtimeModules = path.resolve(pdf, 'node_modules');
+if (path.relative(destination, runtimeModules) !== path.join('pdf', 'node_modules')) {
+  throw new Error('Invalid PDF runtime modules destination');
+}
+rmSync(runtimeModules, { recursive: true, force: true });
+cpSync(path.join(runtimeSource, 'node_modules'), runtimeModules, {
+  recursive: true, dereference: true, filter: runtimeModuleFilter(),
+});
 copyFileSync(path.join(runtimeSource, 'package.json'), path.join(pdf, 'package.json'));
 copyFileSync(path.join(root, 'scripts/pdf-export.mjs'), path.join(pdf, 'pdf-export.mjs'));
 copyFileSync(process.execPath, path.join(destination, process.platform === 'win32' ? 'node.exe' : 'node'));
