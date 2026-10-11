@@ -43,6 +43,20 @@ import { GoogleDriveService } from '../../services/google-drive.service';
             </div>
           }
           @if (drive.available) {
+            @if (drive.offlineFiles().length) {
+              <div class="welcome__recent">
+                <div class="welcome__recent-title">{{ 'drive.offlineDocuments' | translate }}</div>
+                <div class="welcome__recent-list" style="max-height: 220px; overflow-y: auto;">
+                  @for (file of drive.offlineFiles(); track file.path) {
+                    <button class="welcome__recent-item" [disabled]="drive.busy()" (click)="drive.openOffline(file)">
+                      <span class="material-symbols-outlined">{{ file.pending ? 'cloud_upload' : 'cloud_done' }}</span>
+                      <div class="welcome__recent-info"><strong>{{ file.name }}</strong><span>{{ (file.pending ? 'drive.savedLocally' : 'drive.availableOffline') | translate }}</span><span>{{ file.account }}</span></div>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            @if (drive.offlineError()) { <p role="alert">{{ 'drive.offlineListFailed' | translate }}</p> }
             <button class="welcome__drive-help" (click)="drive.show()">
               <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
               {{ 'welcome.driveFilesNotice' | translate }}
@@ -244,6 +258,7 @@ export class WelcomeComponent {
   readonly edition = environment.edition;
 
   readonly recentProjects = signal<RecentProject[]>(this.recentService.getAll());
+  constructor() { void this.drive.refreshOffline(); }
 
   openRecent(p: RecentProject): void {
     this.fileService.openLibriaFileByPath(p.path);

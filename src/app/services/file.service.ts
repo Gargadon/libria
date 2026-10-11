@@ -18,78 +18,177 @@ export class FileService {
   readonly autoSync = signal(true);
   private epoch = 0;
   private syncing = false;
+  private syncRequested = false;
+  readonly conflictVersion = signal<string | null>(null);
+  private driveWrites: Promise<unknown> = Promise.resolve();
+  private readonly online = () => {
+    if (this.driveLink() && this.autoSync() && this.syncState() !== 'conflict') void this.syncDrive();
+  };
   constructor() {
     const interval = setInterval(() => {
       if (this.driveLink() && this.autoSync() && this.syncState() !== 'conflict') void this.syncDrive();
     }, 30_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(interval));
+    window.addEventListener('online', this.online);
+    inject(DestroyRef).onDestroy(() => { clearInterval(interval); window.removeEventListener('online', this.online); });
   }
-  private detachDrive() { this.epoch++; this.driveLink.set(null); this.syncState.set('idle'); this.syncError.set(''); }
+  private cacheDriveCopy(content: string, epoch: number, updatedLink?: DriveLink): Promise<string | null> {
+    const task = this.driveWrites.catch(() => {}).then(async () => {
+      if (epoch !== this.epoch) return null;
+      const link = updatedLink ?? this.driveLink();
+      if (!link) return null;
+      const path = await window.desktopAPI!.driveCacheFile(link, content);
+      if (epoch !== this.epoch) return null;
+      this.currentPath = path;
+      if (updatedLink) this.driveLink.set(updatedLink);
+      return path;
+    });
+    this.driveWrites = task;
+    return task;
+  }
+  private detachDrive() { this.epoch++; this.syncRequested = false; this.conflictVersion.set(null); this.driveLink.set(null); this.syncState.set('idle'); this.syncError.set(''); }
   documentContent(): string { return JSON.stringify(this.buildDoc(), null, 2); }
   async openDriveDocument(document: DriveDocument): Promise<void> {
     this.validateExternalDocument(document.content);
     const epoch = this.epoch, previous = this.documentContent();
-    const path = await window.desktopAPI!.driveCacheFile(document, document.content);
-    if (epoch !== this.epoch || this.documentContent() !== previous) throw new Error('El documento abierto cambió. Vuelve a abrir el archivo de Drive.');
-    this.openExternalDocument(document.content);
-    const link = { ...document, baseline: document.baseline || this.documentContent() };
-    delete (link as Partial<DriveDocument>).content;
-    const openedEpoch = this.epoch;
-    await window.desktopAPI!.driveCacheFile(link, this.documentContent());
-    if (openedEpoch !== this.epoch) return;
-    this.currentPath = path;
-    this.driveLink.set(link);
-    this.recentProjects.add(path, document.name, 'drive');
-    this.syncState.set(this.documentContent() === link.baseline ? 'saved' : 'pending');
+    const task = this.driveWrites.catch(() => {}).then(async () => {
+      if (epoch !== this.epoch || this.documentContent() !== previous) throw new Error('El documento abierto cambió. Vuelve a abrir el archivo de Drive.');
+      const path = await window.desktopAPI!.driveCacheFile(document, document.content);
+      if (epoch !== this.epoch || this.documentContent() !== previous) {
+        const currentLink = this.driveLink();
+        if (epoch === this.epoch && currentLink?.id === document.id && currentLink.account === document.account) {
+          await window.desktopAPI!.driveCacheFile(currentLink, this.documentContent());
+        }
+        throw new Error('El documento abierto cambió. Vuelve a abrir el archivo de Drive.');
+      }
+      this.openExternalDocument(document.content);
+      const link = { ...document, baseline: document.baseline || this.documentContent() };
+      delete (link as Partial<DriveDocument>).content;
+      const openedEpoch = this.epoch;
+      await window.desktopAPI!.driveCacheFile(link, this.documentContent());
+      if (openedEpoch !== this.epoch) return;
+      this.currentPath = path;
+      this.driveLink.set(link);
+      this.recentProjects.add(path, document.name, 'drive');
+      this.syncState.set(this.documentContent() === link.baseline ? 'saved' : 'pending');
+    });
+    this.driveWrites = task;
+    await task;
+    if (this.autoSync()) void this.syncDrive();
   }
-  async uploadDriveCopy(): Promise<void> {
+  async uploadDriveCopy(folderId = 'root', name = this.defaultName()): Promise<void> {
+    if (!this.store.book()) throw new Error('Abre o crea un documento antes de guardarlo en Drive.');
     if (this.syncing) throw new Error('Espera a que termine la sincronización actual.');
-    const epoch = this.epoch, content = this.documentContent();
-    const link = await window.desktopAPI!.driveCreateFile(this.defaultName(), content);
-    const path = await window.desktopAPI!.driveCacheFile({ ...link, baseline: content }, content);
-    if (epoch !== this.epoch) return;
-    this.currentPath = path;
-    this.driveLink.set({ ...link, baseline: content });
-    this.recentProjects.add(path, link.name, 'drive');
-    if (this.documentContent() === content) this.store.markAsSaved();
-    this.syncState.set(this.documentContent() === content ? 'saved' : 'pending');
+    this.syncing = true;
+    try {
+      const epoch = this.epoch, content = this.documentContent();
+      const link = await window.desktopAPI!.driveCreateFile(name, content, folderId);
+      const path = await window.desktopAPI!.driveCacheFile({ ...link, baseline: content }, content);
+      if (epoch !== this.epoch) return;
+      this.currentPath = path;
+      this.driveLink.set({ ...link, baseline: content });
+      this.conflictVersion.set(null); this.syncError.set('');
+      this.recentProjects.add(path, link.name, 'drive');
+      if (this.documentContent() === content) this.store.markAsSaved();
+      this.syncState.set(this.documentContent() === content ? 'saved' : 'pending');
+    } finally { await this.finishDriveSync(); }
   }
   async syncDrive(): Promise<void> {
-    const link = this.driveLink(), api = window.desktopAPI;
-    if (!link || !api || this.syncing) return;
+    let link = this.driveLink();
+    const api = window.desktopAPI;
+    if (!link || !api) return;
+    if (this.syncing) { this.syncRequested = true; return; }
     this.syncing = true;
+    this.syncRequested = false;
     const epoch = this.epoch, content = this.documentContent();
     this.syncState.set('working'); this.syncError.set('');
     try {
       // Local copy is saved before any network request; the link stays outside .libria.
-      const path = await api.driveCacheFile(link, content);
+      const path = await this.cacheDriveCopy(content, epoch);
       if (epoch !== this.epoch) return;
+      if (!path) return;
+      link = this.driveLink()!;
       this.currentPath = path;
       const status = await api.driveStatus();
       if (!status.connected || status.account?.email !== link.account) throw new Error('Conecta la cuenta de Drive de este documento para sincronizar.');
       const remote = await api.driveFileMetadata(link.id);
       if (epoch !== this.epoch) return;
       const localChanged = content !== link.baseline;
+      if (remote.trashed || remote.unavailable) throw new Error('El documento está en la papelera de Drive o ya no está disponible. Tu copia local se conserva: puedes guardarla como un documento nuevo.');
       if (remote.version !== link.version) {
-        if (localChanged || this.documentContent() !== content) { this.syncState.set('conflict'); return; }
+        if (localChanged) {
+          const document = await api.driveReadFile(link.id, true);
+          if (epoch !== this.epoch) return;
+          // The app may have closed after Google accepted an upload but before
+          // we could persist its acknowledgement. Equal content is not a conflict.
+          if (!this.sameDriveContent(document.content, content)) {
+            if (link.baseline && this.sameDriveContent(document.content, link.baseline)) {
+              await this.writeDriveChanges(link, document.version, content, epoch);
+              return;
+            }
+            this.conflictVersion.set(document.version);
+            this.syncState.set('conflict'); return;
+          }
+          const updated = { ...link, name: document.name, version: document.version, baseline: content };
+          await this.cacheDriveCopy(this.documentContent(), epoch, updated);
+          if (epoch !== this.epoch) return;
+          if (this.documentContent() === content) this.store.markAsSaved();
+          this.syncState.set(this.documentContent() === content ? 'saved' : 'pending');
+          return;
+        }
+        if (this.documentContent() !== content) { this.syncState.set('conflict'); return; }
         const document = await api.driveReadFile(link.id, true);
         if (epoch !== this.epoch) return;
         if (this.documentContent() !== content) { this.syncState.set('conflict'); return; }
         await this.openDriveDocument(document);
       } else if (localChanged) {
-        const result = await api.driveWriteFile(link.id, link.version, content, link.account);
-        if (epoch !== this.epoch) return;
-        if (result.conflict) { this.syncState.set('conflict'); return; }
-        const updated = { ...link, version: result.version!, name: result.name || link.name, baseline: content };
-        await api.driveCacheFile(updated, this.documentContent());
-        if (epoch !== this.epoch) return;
-        this.driveLink.set(updated);
-        if (this.documentContent() === content) this.store.markAsSaved();
+        await this.writeDriveChanges(link, link.version, content, epoch);
+        return;
       }
       if (epoch === this.epoch) this.syncState.set(this.documentContent() === this.driveLink()?.baseline ? 'saved' : 'pending');
     } catch (error) {
       if (epoch === this.epoch) { this.syncState.set('pending'); this.syncError.set(error instanceof Error ? error.message : String(error)); }
-    } finally { this.syncing = false; }
+    } finally {
+      await this.finishDriveSync();
+    }
+  }
+
+  private async finishDriveSync(): Promise<void> {
+    this.syncing = false;
+    if (this.driveLink() && this.syncRequested && this.syncState() !== 'conflict' && !this.syncError()) await this.syncDrive();
+  }
+
+  private sameDriveContent(left: string, right: string): boolean {
+    if (left === right) return true;
+    const canonical = (value: any): any => Array.isArray(value) ? value.map(canonical)
+      : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+    try { return JSON.stringify(canonical(JSON.parse(left))) === JSON.stringify(canonical(JSON.parse(right))); }
+    catch { return false; }
+  }
+
+  private async writeDriveChanges(link: DriveLink, version: string, content: string, epoch: number): Promise<void> {
+    const result = await window.desktopAPI!.driveWriteFile(link.id, version, content, link.account);
+    if (epoch !== this.epoch) return;
+    if (result.conflict) { this.conflictVersion.set(null); this.syncState.set('conflict'); return; }
+    if (!result.version) throw new Error('Drive no confirmó la versión guardada. Vuelve a sincronizar.');
+    const updated = { ...link, version: result.version, name: result.name || link.name, baseline: content };
+    await this.cacheDriveCopy(this.documentContent(), epoch, updated);
+    if (epoch !== this.epoch) return;
+    this.conflictVersion.set(null);
+    if (this.documentContent() === content) this.store.markAsSaved();
+    this.syncState.set(this.documentContent() === content ? 'saved' : 'pending');
+  }
+
+  async replaceDriveVersion(): Promise<void> {
+    const link = this.driveLink(), version = this.conflictVersion();
+    if (!link || !version || this.syncing) return;
+    const epoch = this.epoch, content = this.documentContent();
+    this.syncing = true; this.syncState.set('working'); this.syncError.set('');
+    try {
+      if (!await this.cacheDriveCopy(content, epoch) || epoch !== this.epoch) return;
+      await this.writeDriveChanges(link, version, content, epoch);
+    } catch (error) {
+      if (epoch === this.epoch) { this.syncState.set('conflict'); this.syncError.set(String(error)); }
+    } finally { await this.finishDriveSync(); }
   }
 
   private get isDesktop(): boolean {
@@ -135,7 +234,7 @@ export class FileService {
     (window as any).__libriaFileHandle = null;
   }
 
-  async saveLibriaFile(saveAs: boolean = false): Promise<boolean> {
+  async saveLibriaFile(saveAs: boolean = false, syncAfterSave = true): Promise<boolean> {
     this.store.setIsSaving(true);
     const doc = this.buildDoc();
     const json = JSON.stringify(doc, null, 2);
@@ -145,6 +244,17 @@ export class FileService {
     try {
       if (this.isDesktop) {
         const api = window.desktopAPI!;
+        if (!saveAs && this.driveLink()) {
+          const path = await this.cacheDriveCopy(json, epoch);
+          if (!path || epoch !== this.epoch) return false;
+          this.recentProjects.add(path, this.store.book()?.title || this.defaultName(), 'drive');
+          if (this.documentContent() === json) this.store.markAsSaved();
+          if (this.syncState() !== 'conflict') {
+            this.syncState.set(json === this.driveLink()?.baseline ? 'saved' : 'pending');
+            if (syncAfterSave) void this.syncDrive();
+          }
+          return true;
+        }
         let path = this.currentPath;
         if (saveAs || !path) {
           path = await api.saveDialog(this.defaultName());
@@ -158,7 +268,6 @@ export class FileService {
         this.currentPath = path;
         this.recentProjects.add(path, this.store.book()?.title || this.defaultName(), !saveAs && this.driveLink() ? 'drive' : 'local');
         if (this.documentContent() === json) this.store.markAsSaved();
-        if (!saveAs && this.driveLink()) await this.syncDrive();
         if (saveAs) this.detachDrive();
         saved = true;
       } else {
@@ -219,7 +328,10 @@ export class FileService {
       const link = await api.driveCachedLink(path);
       if (epoch !== this.epoch) return;
       this.driveLink.set(link);
-      if (this.driveLink()) this.syncState.set('pending');
+      if (link) {
+        this.syncState.set(this.documentContent() === link.baseline ? 'saved' : 'pending');
+        if (this.autoSync()) void this.syncDrive();
+      }
       this.recentProjects.add(path, this.store.book()?.title || path.split('/').pop() || path, link ? 'drive' : 'local');
     } catch (err) {
       console.error(err);

@@ -2,13 +2,16 @@ interface DesktopAPI {
   driveStatus(): Promise<DriveStatus>;
   driveConnect(): Promise<DriveStatus>;
   driveDisconnect(): Promise<{ revoked: boolean }>;
-  driveListFiles(cursor?: string): Promise<{ files: DriveFile[]; nextPageToken: string | null }>;
+  driveListFiles(cursor?: string, folderId?: string, documentsOnly?: boolean): Promise<{ files: DriveFile[]; nextPageToken: string | null }>;
   driveReadFile(id: string, forceRemote?: boolean): Promise<DriveDocument>;
   driveFileMetadata(id: string): Promise<DriveFile & { version: string }>;
+  drivePickFile(mode: 'document' | 'folder'): Promise<DriveFile>;
   driveWriteFile(id: string, version: string, content: string, account: string): Promise<Partial<DriveLink> & { conflict: boolean }>;
-  driveCreateFile(name: string, content: string): Promise<DriveLink>;
+  driveCreateFile(name: string, content: string, folderId?: string): Promise<DriveLink>;
+  driveTrashFile(id: string, account: string): Promise<{ id: string; trashed: boolean }>;
   driveCacheFile(link: DriveLink, content: string): Promise<string>;
   driveCachedLink(path: string): Promise<DriveLink | null>;
+  driveCachedFiles(): Promise<DriveCachedFile[]>;
   driveCancel(): Promise<void>;
   saveDialog(defaultName: string, kind?: 'document' | 'theme'): Promise<string | null>;
   openDialog(kind?: 'document' | 'theme'): Promise<string | null>;
@@ -55,11 +58,15 @@ interface DriveStatus {
   account: { name: string; email: string } | null;
 }
 interface DriveLink { id: string; name: string; version: string; account: string; baseline?: string; }
+interface DriveCachedFile { unavailable?: boolean; path: string; id: string; name: string; account: string; pending: boolean; modifiedAt: number; }
 interface DriveDocument extends DriveLink { content: string; }
 interface DriveFile {
+  trashed?: boolean;
+  unavailable?: boolean;
+  mimeType?: string;
   id: string;
   name: string;
   modifiedTime?: string;
   size?: string;
-  capabilities?: { canDownload?: boolean };
+  capabilities?: { canDownload?: boolean; canAddChildren?: boolean; canTrash?: boolean };
 }

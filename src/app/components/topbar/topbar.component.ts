@@ -47,18 +47,21 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                     {{ 'electron.menu.fileOpen' | translate }}
                   </button>
                   <button class="tb__dropdown-item" 
-                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       [disabled]="!store.book()"
                        (click)="store.book() && saveDoc(); store.book() && closeIntegrated()">
                     {{ 'electron.menu.fileSave' | translate }}
                   </button>
                   <button class="tb__dropdown-item" 
-                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       [disabled]="!store.book()"
                        (click)="store.book() && saveDocAs(); store.book() && closeIntegrated()">
                     {{ 'electron.menu.fileSaveAs' | translate }}
                   </button>
                   <div class="tb__dropdown-sep"></div>
+                  @if (drive.available) {
+                    <button class="tb__dropdown-item" [disabled]="!store.book() || drive.busy()" (click)="drive.saveToDrive(); closeIntegrated()">{{ 'drive.saveToDrive' | translate }}</button>
+                  }
                   <button class="tb__dropdown-item" 
-                       [class.tb__dropdown-item--disabled]="!store.book()" 
+                       [disabled]="!store.book()"
                        (click)="store.book() && closeDoc(); store.book() && closeIntegrated()">
                     {{ 'topbar.closeDoc' | translate }}
                   </button>
@@ -81,10 +84,10 @@ import { GoogleDriveService } from '../../services/google-drive.service';
               </div>
               @if (store.book() && activeIntegratedMenu() === 'edit') {
                 <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" (click)="store.undo(); closeIntegrated()">
+                  <button class="tb__dropdown-item" [disabled]="!canUndo()" (click)="store.undo(); closeIntegrated()">
                     {{ 'electron.menu.editUndo' | translate }}
                   </button>
-                  <button class="tb__dropdown-item" (click)="store.redo(); closeIntegrated()">
+                  <button class="tb__dropdown-item" [disabled]="!canRedo()" (click)="store.redo(); closeIntegrated()">
                     {{ 'electron.menu.editRedo' | translate }}
                   </button>
                 </div>
@@ -137,21 +140,24 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                   <span class="material-symbols-outlined">folder_open</span> {{ 'electron.menu.fileOpen' | translate }}
                 </button>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!store.book()"
                         (click)="store.book() && saveDoc(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">save</span> {{ 'electron.menu.fileSave' | translate }}
                 </button>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!store.book()"
                         (click)="store.book() && saveDocAs(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">save_as</span> {{ 'electron.menu.fileSaveAs' | translate }}
                 </button>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!store.book()"
                         (click)="store.book() && closeDoc(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
                 </button>
                 @if (isDesktop) {
+                  <button class="tb__compact-item" [disabled]="!store.book() || drive.busy()" (click)="drive.saveToDrive(); closeIntegratedHamburger()">
+                    <span class="material-symbols-outlined">cloud_upload</span> {{ 'drive.saveToDrive' | translate }}
+                  </button>
                   <button class="tb__compact-item" (click)="quitApp(); closeIntegratedHamburger()">
                     <span class="material-symbols-outlined">logout</span> {{ 'electron.menu.fileQuit' | translate }}
                   </button>
@@ -161,12 +167,12 @@ import { GoogleDriveService } from '../../services/google-drive.service';
 
                 <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.edit' | translate }}</div>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!canUndo()"
                         (click)="store.book() && store.undo(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">undo</span> {{ 'electron.menu.editUndo' | translate }}
                 </button>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!canRedo()"
                         (click)="store.book() && store.redo(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">redo</span> {{ 'electron.menu.editRedo' | translate }}
                 </button>
@@ -175,7 +181,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
 
                 <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.view' | translate }}</div>
                 <button class="tb__compact-item" 
-                        [disabled]="!store.book()" 
+                        [disabled]="!store.book()"
                         (click)="store.book() && store.search(''); store.book() && store.setNav('search'); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">search</span> {{ 'electron.menu.viewSearch' | translate }}
                 </button>
@@ -243,8 +249,8 @@ import { GoogleDriveService } from '../../services/google-drive.service';
 
           <!-- UNDO/REDO FULL (≥1360px) -->
           <div class="tb__actions tb__actions--full">
-            <button class="tb__action" [attr.title]="'topbar.undo' | translate" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
-            <button class="tb__action" [attr.title]="'topbar.redo' | translate" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
+            <button class="tb__action" [disabled]="!canUndo()" [attr.title]="'topbar.undo' | translate" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
+            <button class="tb__action" [disabled]="!canRedo()" [attr.title]="'topbar.redo' | translate" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
           </div>
           <span class="tb__sep tb__sep--full"></span>
 
@@ -299,10 +305,10 @@ import { GoogleDriveService } from '../../services/google-drive.service';
             </button>
             @if (openMenu() === 'edit') {
               <div class="tb__compact-dropdown">
-                <button class="tb__compact-item" (click)="store.undo(); closeMenus()">
+                <button class="tb__compact-item" [disabled]="!canUndo()" (click)="store.undo(); closeMenus()">
                   <span class="material-symbols-outlined">undo</span> {{ 'topbar.undo' | translate }}
                 </button>
-                <button class="tb__compact-item" (click)="store.redo(); closeMenus()">
+                <button class="tb__compact-item" [disabled]="!canRedo()" (click)="store.redo(); closeMenus()">
                   <span class="material-symbols-outlined">redo</span> {{ 'topbar.redo' | translate }}
                 </button>
               </div>
@@ -389,6 +395,19 @@ import { GoogleDriveService } from '../../services/google-drive.service';
       </div>
     </header>
 
+    @if (showSaveLocation()) {
+      <div class="exit-modal-backdrop">
+        <div class="exit-modal" role="dialog" aria-modal="true" aria-labelledby="save-location-title" (keydown.escape)="showSaveLocation.set(false); $event.stopPropagation()">
+          <div id="save-location-title" class="exit-modal__title">{{ 'drive.chooseLocation' | translate }}</div>
+          <div class="exit-modal__body">{{ 'drive.chooseLocationHint' | translate }}</div>
+          <div class="exit-modal__actions">
+            <button class="exit-modal__btn" (click)="showSaveLocation.set(false)">{{ 'drive.cancel' | translate }}</button>
+            <button class="exit-modal__btn" (click)="saveLocally()">{{ 'drive.thisDevice' | translate }}</button>
+            <button class="exit-modal__btn exit-modal__btn--primary" (click)="showSaveLocation.set(false); drive.beginUpload()">Google Drive</button>
+          </div>
+        </div>
+      </div>
+    }
     @if (showExitModal()) {
       <div class="exit-modal-backdrop">
         <div class="exit-modal">
@@ -410,6 +429,8 @@ export class TopbarComponent {
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
   readonly environment = environment;
+  readonly canUndo = computed(() => !!this.store.book() && this.store.past().length > 0);
+  readonly canRedo = computed(() => !!this.store.book() && this.store.future().length > 0);
   readonly editionLabel = `${environment.version} · ${environment.edition}`;
 
   readonly displayAuthors = computed(() => {
@@ -451,15 +472,33 @@ export class TopbarComponent {
 
   saveDoc() {
     if (!this.store.book()) return;
+    if (this.drive.available && !this.fileService.currentPath && !this.fileService.driveLink()) {
+      this.saveAsRequested = false;
+      this.showSaveLocation.set(true);
+      return;
+    }
     this.fileService.saveLibriaFile();
   }
 
   saveDocAs() {
     if (!this.store.book()) return;
+    if (this.drive.available) {
+      this.saveAsRequested = true;
+      this.showSaveLocation.set(true);
+      return;
+    }
     this.fileService.saveLibriaFile(true);
   }
 
+  readonly showSaveLocation = signal(false);
+  private saveAsRequested = false;
+  saveLocally() {
+    this.showSaveLocation.set(false);
+    void this.fileService.saveLibriaFile(this.saveAsRequested);
+  }
+
   closeDoc() {
+    if (!this.store.book()) return;
     if (this.store.isDirty()) {
       this.pendingAction.set('close-doc');
       this.showExitModal.set(true);
@@ -481,9 +520,9 @@ export class TopbarComponent {
             case 'save': this.saveDoc(); break;
             case 'saveAs': this.saveDocAs(); break;
             case 'close': this.closeDoc(); break;
-            case 'undo': this.store.undo(); break;
-            case 'redo': this.store.redo(); break;
-            case 'search': this.store.search(''); this.store.setNav('search'); break;
+            case 'undo': if (this.canUndo()) this.store.undo(); break;
+            case 'redo': if (this.canRedo()) this.store.redo(); break;
+            case 'search': if (this.store.book()) { this.store.search(''); this.store.setNav('search'); } break;
           }
         });
       });
@@ -601,7 +640,7 @@ export class TopbarComponent {
 
   async saveAndExit() {
     const action = this.pendingAction();
-    if (!await this.fileService.saveLibriaFile() || this.store.isDirty()) return;
+    if (!await this.fileService.saveLibriaFile(false, false) || this.store.isDirty()) return;
     this.showExitModal.set(false);
     this.pendingAction.set(null);
 

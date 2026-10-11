@@ -420,7 +420,7 @@ app-welcome {
   color: var(--ink)
 }
 
-.tb__dropdown-item:hover {
+.tb__dropdown-item:hover:not(:disabled) {
   background: var(--ink);
   color: #fff
 }
@@ -4271,8 +4271,17 @@ button.tb__dropdown-item {
   font-family: var(--ui);
 }
 
-.tb__compact-item:hover {
+.tb__compact-item:hover:not(:disabled) {
   background: var(--paper-2);
+}
+
+.tb__compact-item:disabled,
+.tb__dropdown-item:disabled,
+.tb__action:disabled {
+  color: var(--ink-mute);
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: none;
 }
 
 .tb__compact-item--on {

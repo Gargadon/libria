@@ -1,6 +1,7 @@
 import { Component, inject, computed, signal, HostListener, effect, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
+import { FileService } from '../../services/file.service';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
@@ -346,7 +347,7 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
           <span class="ed__dot2"></span>
           <span>{{ 'editor.wordCount' | translate:{ count: (chapter.words || 0).toLocaleString(currentLang()) } }}</span>
           <span class="ed__dot2"></span>
-          <span>{{ store.isDirty() ? ('editor.unsaved' | translate) : ('editor.saved' | translate) }}</span>
+          <span role="status" [attr.title]="fileService.driveLink() && !store.isDirty() ? ('drive.offlineHint' | translate) : null">{{ (store.isDirty() ? 'editor.unsaved' : fileService.driveLink() && fileService.syncState() !== 'saved' ? 'drive.savedLocally' : 'editor.saved') | translate }}</span>
           <span style="flex: 1"></span>
           <span>{{ 'editor.layoutLabel' | translate:{ version: environment.version } }}</span>
         </div>
@@ -364,6 +365,7 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
 })
 export class EditorComponent implements OnDestroy {
   readonly store = inject(BookStore);
+  readonly fileService = inject(FileService);
   readonly assetService = inject(AssetService);
   readonly translate = inject(TranslateService);
   private readonly _footnoteWatch = effect(() => {

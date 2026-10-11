@@ -39,4 +39,20 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.tb__brandN')?.textContent).toContain('Libria');
   });
+
+  it('disables document actions in the welcome hamburger menu', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    root.querySelector<HTMLButtonElement>('.tb__sysmenu--compact > button')!.click();
+    fixture.detectChanges();
+    const actions = [...root.querySelectorAll<HTMLButtonElement>('.tb__sysmenu--compact .tb__compact-item')];
+    const byIcon = (icon: string) => actions.find(button => button.querySelector('span')?.textContent?.trim() === icon)!;
+    for (const icon of ['save', 'save_as', 'close_fullscreen', 'undo', 'redo', 'search']) {
+      expect(byIcon(icon).disabled, icon).toBe(true);
+    }
+    for (const icon of ['note_add', 'folder_open', 'info']) {
+      expect(byIcon(icon).disabled, icon).toBe(false);
+    }
+  });
 });

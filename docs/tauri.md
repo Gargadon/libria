@@ -6,6 +6,8 @@ El backend Rust en `src-tauri` gestiona ventanas, archivos, diálogos, asociaci�
 
 ## Desarrollo
 
+La versión se cambia **solo en `package.json` de la raíz**, en el campo `version`. Angular ya la importa desde ese archivo y `tauri.conf.json` lo referencia directamente. Los comandos `build`, `tauri`, `tauri:dev`, `tauri:build`, `tauri:prepare`, `test:drive` y `test:native` sincronizan automáticamente las copias que requieren Cargo y el runtime PDF, incluidos sus lockfiles, sin cambiar versiones de dependencias. No edites esas copias manualmente. Puedes actualizarlas por separado con `bun run version:sync`; si ejecutas Cargo directamente tras cambiar la versión, ejecuta antes ese comando. El build nativo también vigila `package.json` para regenerar los metadatos de Tauri cuando cambie.
+
 Las tipografías instaladas se consultan desde Rust mediante `fontdb`, sin solicitar el permiso de fuentes locales del WebView. El catálogo se carga una vez por proceso y los datos de cada variante se leen cuando hacen falta para incrustarlos en las exportaciones. Las colecciones TTC/OTC se separan por variante. La versión web conserva `queryLocalFonts()` y los permisos del navegador.
 
 Se necesitan Node.js 22.12 o superior, Bun, Rust estable y los [prerrequisitos de Tauri](https://v2.tauri.app/start/prerequisites/) del sistema. En Windows: herramientas C++ de Visual Studio y WebView2. En Linux: WebKitGTK 4.1 y las bibliotecas de compilación; para Drive también un servicio Secret Service desbloqueado.

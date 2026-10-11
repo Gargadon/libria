@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0",
   "description": "Aplicación para la creación y maquetación de libros",
   "author": {
     "name": "David Kantun",
@@ -16,7 +16,7 @@
     "ng": "ng",
     "start": "bun run ng serve --port 4300",
     "dev": "bun run ng serve --port 4300",
-    "build": "bun run ng build",
+    "build": "bun run version:sync && bun run ng build",
     "watch": "bun run ng build --watch --configuration development",
     "test": "bun run ng test",
     "drive:bundle-credentials": "node scripts/bundle-google-drive-credentials.cjs",
@@ -24,13 +24,14 @@
     "download:gs:linux": "node scripts/download-ghostscript.mjs linux",
     "download:gs:mac": "node scripts/download-ghostscript.mjs mac",
     "download:gs:win": "node scripts/download-ghostscript.mjs win",
-    "tauri": "tauri",
-    "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build",
+    "version:sync": "node scripts/sync-version.mjs",
+    "tauri": "bun run version:sync && tauri",
+    "tauri:dev": "bun run version:sync && tauri dev",
+    "tauri:build": "bun run version:sync && tauri build",
     "tauri:prepare": "node scripts/prepare-tauri.mjs",
-    "test:desktop": "node --test scripts/pdf-export.test.mjs scripts/credential-blob.test.cjs",
-    "test:drive": "cargo test --manifest-path src-tauri/Cargo.toml drive::tests",
-    "test:native": "cargo test --manifest-path src-tauri/Cargo.toml"
+    "test:desktop": "node --test scripts/pdf-export.test.mjs scripts/credential-blob.test.cjs scripts/sync-version.test.mjs",
+    "test:drive": "bun run version:sync && cargo test --manifest-path src-tauri/Cargo.toml drive::tests",
+    "test:native": "bun run version:sync && cargo test --manifest-path src-tauri/Cargo.toml"
   },
   "private": true,
   "license": "AGPL-3.0-only",

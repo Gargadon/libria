@@ -20,7 +20,8 @@ use tokio::{
 };
 
 const CLIENT_ID: &str = "109920984385-nj300o5c59enim5n2vicbo23p4khhs84.apps.googleusercontent.com";
-const SCOPE: &str = "https://www.googleapis.com/auth/drive";
+const SCOPE: &str = "https://www.googleapis.com/auth/drive.file";
+const LEGACY_SCOPE: &str = "https://www.googleapis.com/auth/drive";
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +35,7 @@ struct Session {
 }
 
 pub struct Drive {
+    cache_lock: std::sync::Mutex<()>,
     session: Mutex<Option<Session>>,
     cancel: watch::Sender<u64>,
     root: PathBuf,
@@ -46,6 +48,7 @@ impl Drive {
         let root = crate::data_dir(app)?.join("drive-cache");
         std::fs::create_dir_all(&root).map_err(|e| e.to_string())?;
         Ok(Self {
+            cache_lock: std::sync::Mutex::new(()),
             session: Mutex::new(None),
             cancel: watch::channel(0).0,
             root,
@@ -138,7 +141,7 @@ impl Drive {
         Ok(
             json!({ "configured": !self.credentials()?.1.trim().is_empty(), "connected": session.is_some(),
             "account": session.as_ref().map(|s| &s.account),
-            "writable": session.as_ref().is_some_and(|s| s.scope.split_whitespace().any(|v| v == SCOPE)) }),
+            "writable": session.as_ref().is_some_and(|s| writable_scope(&s.scope)) }),
         )
     }
 
@@ -261,7 +264,11 @@ impl Drive {
         self.response(request, MAX_BYTES).await
     }
 
-    async fn connect(&self, session: &mut Option<Session>) -> Result<Value, String> {
+    async fn connect(
+        &self,
+        session: &mut Option<Session>,
+        picker: Option<&str>,
+    ) -> Result<Value, String> {
         let (client_id, secret) = self.credentials()?;
         if secret.trim().is_empty() {
             return Err("Configura client_secret antes de conectar Google Drive".into());
@@ -294,18 +301,25 @@ impl Drive {
             ("code_challenge_method", "S256"),
             ("access_type", "offline"),
             ("prompt", "consent select_account"),
+            ("include_granted_scopes", "false"),
         ]);
+        if let Some(mode) = picker {
+            configure_picker(&mut url, mode)?;
+            if let Some(email) = session.as_ref().and_then(|s| s.account["email"].as_str()) {
+                url.query_pairs_mut().append_pair("login_hint", email);
+            }
+        }
         self.app
             .opener()
             .open_url(url.as_str(), None::<&str>)
             .map_err(|_| "No se pudo abrir el navegador")?;
-        let code = tokio::time::timeout(Duration::from_secs(180), callback(&listener, &state))
+        let selection = tokio::time::timeout(Duration::from_secs(180), callback(&listener, &state))
             .await
             .map_err(|_| "La autorización de Google tardó demasiado")??;
         let token = self
             .token(&[
                 ("grant_type", "authorization_code"),
-                ("code", &code),
+                ("code", &selection.code),
                 ("code_verifier", &verifier),
                 ("redirect_uri", &redirect),
             ])
@@ -323,19 +337,69 @@ impl Drive {
             client_id,
             access_token,
             refresh_token,
-            scope: token["scope"].as_str().unwrap_or("").into(),
+            scope: token["scope"].as_str().unwrap_or(SCOPE).into(),
             expires_at: now() + token["expires_in"].as_u64().unwrap(),
             account: json!({ "name": about["user"]["displayName"].as_str().unwrap_or("Google Drive"), "email": about["user"]["emailAddress"].as_str().unwrap_or("") }),
         };
+        let selected = if let Some(mode) = picker {
+            if session
+                .as_ref()
+                .is_some_and(|s| s.account["email"] != saved.account["email"])
+            {
+                return Err("Selecciona la misma cuenta conectada en Libria. Para cambiar de cuenta, desconéctala primero".into());
+            }
+            if selection.ids.len() != 1 {
+                return Err("Selecciona un único archivo o carpeta en Google Drive".into());
+            }
+            let mut temporary = Some(saved.clone());
+            let file = self.metadata(&mut temporary, &selection.ids[0]).await?;
+            validate_picker_selection(&file, mode)?;
+            Some(file)
+        } else {
+            None
+        };
         self.persist(&saved)?;
         *session = Some(saved);
-        self.status(session)
+        if let Some(file) = selected {
+            Ok(file)
+        } else {
+            self.status(session)
+        }
     }
 
     async fn metadata(&self, session: &mut Option<Session>, id: &str) -> Result<Value, String> {
         validate_id(id)?;
-        let text = self.api(session, Method::GET, &format!("files/{id}?fields=id,name,size,version,md5Checksum,trashed,capabilities(canDownload,canEdit)"), None, false).await?;
-        serde_json::from_str(&text).map_err(|_| "Metadatos de Drive inválidos".into())
+        let result = self.api(session, Method::GET, &format!("files/{id}?fields=id,name,mimeType,size,version,md5Checksum,trashed,capabilities(canDownload,canEdit,canTrash,canAddChildren)"), None, false).await;
+        let metadata: Value = match result {
+            Ok(text) => serde_json::from_str(&text).map_err(|_| "Metadatos de Drive inválidos")?,
+            Err(error) if error == "Google Drive: HTTP 404" => {
+                json!({"id": id, "unavailable": true})
+            }
+            Err(error) => return Err(error),
+        };
+        self.record_remote_state(
+            account(session)?,
+            id,
+            metadata["trashed"] == true || metadata["unavailable"] == true,
+        )?;
+        Ok(metadata)
+    }
+
+    fn record_remote_state(
+        &self,
+        account: &str,
+        id: &str,
+        unavailable: bool,
+    ) -> Result<(), String> {
+        let path = self.cache_path(account, id)?;
+        // Separate from the link: saving offline must not undo a remote deletion.
+        if path.exists() {
+            files::atomic_write(
+                &PathBuf::from(format!("{}.remote.json", path.to_string_lossy())),
+                json!({"unavailable": unavailable}).to_string().as_bytes(),
+            )?;
+        }
+        Ok(())
     }
 
     fn cache_path(&self, account: &str, id: &str) -> Result<PathBuf, String> {
@@ -388,13 +452,12 @@ impl Drive {
         args: &[Value],
         session: &mut Option<Session>,
     ) -> Result<Value, String> {
-        // Cache operations remain usable offline, including when the credential store is locked.
         match method {
-            "cacheFile" => {
-                return self.cache_file(args.first().ok_or("Vínculo inválido")?, argument(args, 1)?)
+            "connect" => return self.connect(session, None).await,
+            "pickFile" => {
+                self.restore(session)?;
+                return self.connect(session, Some(argument(args, 0)?)).await;
             }
-            "cachedLink" => return Ok(self.cached_link(argument(args, 0)?)),
-            "connect" => return self.connect(session).await,
             "disconnect" => {
                 let _ = self.restore(session);
                 let refresh = session.as_ref().map(|s| s.refresh_token.clone());
@@ -425,11 +488,17 @@ impl Drive {
         match method {
             "status" => self.status(session),
             "listFiles" => {
+                let folder = args.get(1).and_then(Value::as_str).unwrap_or("root");
+                let query = if args.get(2).and_then(Value::as_bool).unwrap_or(false) {
+                    "trashed = false and mimeType != 'application/vnd.google-apps.folder' and name contains '.libria'".to_owned()
+                } else {
+                    folder_query(folder)?
+                };
                 let route = {
                     let mut params = url::form_urlencoded::Serializer::new(String::new());
                     params.extend_pairs([
-                    ("q", "trashed = false and mimeType != 'application/vnd.google-apps.folder' and name contains '.libria'"),
-                    ("fields", "nextPageToken,files(id,name,modifiedTime,size,capabilities(canDownload))"), ("pageSize", "100"), ("orderBy", "modifiedTime desc"),
+                    ("q", query.as_str()),
+                    ("fields", "nextPageToken,files(id,name,mimeType,modifiedTime,size,capabilities(canDownload,canAddChildren,canTrash))"), ("pageSize", "100"), ("orderBy", "folder,name"),
                 ]);
                     if let Some(cursor) = args.first().and_then(Value::as_str) {
                         if cursor.len() > 4096 {
@@ -446,7 +515,9 @@ impl Drive {
                     .as_array()
                     .into_iter()
                     .flatten()
-                    .filter(|f| is_document(f))
+                    .filter(|f| {
+                        is_document(f) || f["mimeType"] == "application/vnd.google-apps.folder"
+                    })
                     .collect();
                 Ok(json!({ "files": files, "nextPageToken": data["nextPageToken"] }))
             }
@@ -540,16 +611,49 @@ impl Drive {
                 result["account"] = json!(expected_account);
                 Ok(result)
             }
+            "trashFile" => {
+                let id = argument(args, 0)?;
+                let expected_account = argument(args, 1)?;
+                if account(session)? != expected_account {
+                    return Err(
+                        "La cuenta de Drive cambió. Vuelve a seleccionar el documento".into(),
+                    );
+                }
+                self.require_writable(session)?;
+                let metadata = self.metadata(session, id).await?;
+                validate_trash_target(&metadata)?;
+                let text = self
+                    .api(
+                        session,
+                        Method::PATCH,
+                        &format!("files/{id}?fields=id,trashed"),
+                        Some((
+                            "application/json".into(),
+                            json!({"trashed": true}).to_string(),
+                        )),
+                        false,
+                    )
+                    .await?;
+                let result: Value =
+                    serde_json::from_str(&text).map_err(|_| "Respuesta de Drive inválida")?;
+                if result["id"] != id || result["trashed"] != true {
+                    return Err("No se pudo confirmar el traslado a la papelera. Actualiza la carpeta antes de reintentarlo".into());
+                }
+                self.record_remote_state(expected_account, id, true)?;
+                Ok(result)
+            }
             "createFile" => {
                 let name = argument(args, 0)?;
                 let content = argument(args, 1)?;
+                let folder = args.get(2).and_then(Value::as_str).unwrap_or("root");
+                validate_id(folder)?;
                 if name.len() > 800 || !name.to_lowercase().ends_with(".libria") {
                     return Err("Nombre inválido".into());
                 }
                 validate_content(content)?;
                 self.require_writable(session)?;
                 let boundary = format!("libria_{}", random(24));
-                let body = format!("--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--{boundary}\r\nContent-Type: application/json\r\n\r\n{content}\r\n--{boundary}--", json!({ "name": name, "mimeType": "application/json" }));
+                let body = format!("--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{}\r\n--{boundary}\r\nContent-Type: application/json\r\n\r\n{content}\r\n--{boundary}--", json!({ "name": name, "mimeType": "application/json", "parents": [folder] }));
                 let text = self
                     .api(
                         session,
@@ -569,10 +673,7 @@ impl Drive {
     }
 
     fn require_writable(&self, session: &Option<Session>) -> Result<(), String> {
-        if !session
-            .as_ref()
-            .is_some_and(|s| s.scope.split_whitespace().any(|v| v == SCOPE))
-        {
+        if !session.as_ref().is_some_and(|s| writable_scope(&s.scope)) {
             return Err(
                 "Vuelve a conectar Drive para autorizar el guardado y la sincronización".into(),
             );
@@ -587,6 +688,20 @@ pub async fn drive(
     method: String,
     args: Vec<Value>,
 ) -> Result<Value, String> {
+    // Local saves must never queue behind OAuth or a slow network request.
+    if matches!(method.as_str(), "cacheFile" | "cachedLink" | "cachedFiles") {
+        let _guard = state
+            .cache_lock
+            .lock()
+            .map_err(|_| "No se pudo acceder a la copia local")?;
+        return match method.as_str() {
+            "cacheFile" => {
+                state.cache_file(args.first().ok_or("Vínculo inválido")?, argument(&args, 1)?)
+            }
+            "cachedLink" => Ok(state.cached_link(argument(&args, 0)?)),
+            _ => cached_files(&state.root),
+        };
+    }
     if method == "cancel" || method == "disconnect" {
         state
             .cancel
@@ -612,6 +727,75 @@ fn now() -> u64 {
         .unwrap_or_default()
         .as_secs()
 }
+
+fn cached_files(root: &std::path::Path) -> Result<Value, String> {
+    let mut documents = Vec::new();
+    for account_dir in std::fs::read_dir(root)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
+        if !account_dir.file_type().is_ok_and(|kind| kind.is_dir()) {
+            continue;
+        }
+        let Ok(entries) = std::fs::read_dir(account_dir.path()) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if !entry.file_type().is_ok_and(|kind| kind.is_file())
+                || path.extension().is_none_or(|ext| ext != "libria")
+            {
+                continue;
+            }
+            let link_path = PathBuf::from(format!("{}.link.json", path.to_string_lossy()));
+            let Ok(link_text) = files::read_text(&link_path) else {
+                continue;
+            };
+            let Ok(link) = serde_json::from_str::<Value>(&link_text) else {
+                continue;
+            };
+            let Ok(id) = field(&link, "id") else {
+                continue;
+            };
+            let Ok(account) = field(&link, "account") else {
+                continue;
+            };
+            if validate_id(id).is_err()
+                || path.file_stem().is_none_or(|stem| stem != id)
+                || account_dir.file_name()
+                    != std::ffi::OsStr::new(&hex::encode(Sha256::digest(account.as_bytes())))
+            {
+                continue;
+            }
+            let Ok(content) = files::read_text(&path) else {
+                continue;
+            };
+            if validate_content(&content).is_err() {
+                continue;
+            }
+            let modified = entry
+                .metadata()
+                .ok()
+                .and_then(|m| m.modified().ok())
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|t| t.as_secs())
+                .unwrap_or(0);
+            let unavailable = files::read_text(&PathBuf::from(format!(
+                "{}.remote.json",
+                path.to_string_lossy()
+            )))
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .is_some_and(|state| state["unavailable"] == true);
+            documents.push(json!({ "path": path.to_string_lossy(), "id": id, "unavailable": unavailable,
+                "name": link["name"], "account": account,
+                "pending": link["baseline"].as_str() != Some(content.as_str()), "modifiedAt": modified }));
+        }
+    }
+    documents
+        .sort_by_key(|document| std::cmp::Reverse(document["modifiedAt"].as_u64().unwrap_or(0)));
+    Ok(json!(documents))
+}
 fn random(count: usize) -> String {
     let mut bytes = vec![0; count];
     rand::thread_rng().fill_bytes(&mut bytes);
@@ -634,10 +818,27 @@ fn account(session: &Option<Session>) -> Result<&str, String> {
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "Conecta una cuenta de Google Drive primero".into())
 }
+fn folder_query(folder: &str) -> Result<String, String> {
+    validate_id(folder)?;
+    Ok(format!("trashed = false and '{folder}' in parents and (mimeType = 'application/vnd.google-apps.folder' or name contains '.libria')"))
+}
+
 fn is_document(metadata: &Value) -> bool {
     metadata["name"]
         .as_str()
         .is_some_and(|s| s.to_lowercase().ends_with(".libria"))
+}
+fn validate_trash_target(metadata: &Value) -> Result<(), String> {
+    if !is_document(metadata)
+        || metadata["mimeType"] == "application/vnd.google-apps.folder"
+        || metadata["capabilities"]["canTrash"] != true
+        || metadata["trashed"] == true
+    {
+        return Err(
+            "Este archivo no es un documento .libria que puedas mover a la papelera".into(),
+        );
+    }
+    Ok(())
 }
 fn validate_id(id: &str) -> Result<(), String> {
     if id.is_empty()
@@ -700,7 +901,54 @@ fn bundled_credentials() -> Result<Value, String> {
     serde_json::from_slice(&plaintext).map_err(|_| "Blob OAuth incluido dañado".into())
 }
 
-async fn callback(listener: &TcpListener, state: &str) -> Result<String, String> {
+fn writable_scope(scope: &str) -> bool {
+    scope
+        .split_whitespace()
+        .any(|v| v == SCOPE || v == LEGACY_SCOPE)
+}
+
+fn configure_picker(url: &mut url::Url, mode: &str) -> Result<(), String> {
+    if !matches!(mode, "document" | "folder") {
+        return Err("Selector de Drive inválido".into());
+    }
+    url.query_pairs_mut()
+        .append_pair("trigger_onepick", "true")
+        .append_pair("allow_multiple", "false");
+    if mode == "folder" {
+        url.query_pairs_mut()
+            .append_pair("allow_folder_selection", "true")
+            .append_pair("mimetypes", "application/vnd.google-apps.folder");
+    }
+    Ok(())
+}
+
+fn validate_picker_selection(file: &Value, mode: &str) -> Result<(), String> {
+    validate_id(field(file, "id")?)?;
+    if file["trashed"] == true || file["unavailable"] == true {
+        return Err("El archivo seleccionado ya no está disponible en Drive".into());
+    }
+    if mode == "folder" {
+        if file["mimeType"] != "application/vnd.google-apps.folder"
+            || file["capabilities"]["canAddChildren"] == false
+        {
+            return Err("Selecciona una carpeta en la que puedas guardar documentos".into());
+        }
+    } else if !is_document(file)
+        || file["mimeType"] == "application/vnd.google-apps.folder"
+        || file["capabilities"]["canDownload"] == false
+    {
+        return Err("Selecciona un documento .libria que puedas descargar".into());
+    }
+    Ok(())
+}
+
+#[derive(Debug)]
+struct OAuthSelection {
+    code: String,
+    ids: Vec<String>,
+}
+
+async fn callback(listener: &TcpListener, state: &str) -> Result<OAuthSelection, String> {
     loop {
         let (mut socket, _) = listener
             .accept()
@@ -743,13 +991,22 @@ async fn callback(listener: &TcpListener, state: &str) -> Result<String, String>
         let reply = format!("HTTP/1.1 {}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", if valid { "200 OK" } else { "400 Bad Request" }, body.len());
         let _ = socket.write_all(reply.as_bytes()).await;
         if valid {
-            return parsed
-                .unwrap()
+            let url = parsed.unwrap();
+            let code = url
                 .query_pairs()
                 .find(|(k, _)| k == "code")
                 .map(|(_, v)| v.into_owned())
                 .filter(|v| !v.is_empty())
-                .ok_or_else(|| "Google no autorizó la conexión".into());
+                .ok_or("Selección o autorización de Google cancelada")?;
+            let ids: Vec<String> = url
+                .query_pairs()
+                .find(|(k, _)| k == "picked_file_ids")
+                .map(|(_, v)| v.split(',').map(str::to_owned).collect())
+                .unwrap_or_default();
+            for id in &ids {
+                validate_id(id)?;
+            }
+            return Ok(OAuthSelection { code, ids });
         }
     }
 }
@@ -758,7 +1015,97 @@ async fn callback(listener: &TcpListener, state: &str) -> Result<String, String>
 mod tests {
     use super::*;
     #[test]
+    fn picker_restricts_destinations_and_accepts_both_new_and_existing_write_grants() {
+        let mut url = url::Url::parse("https://accounts.google.com/o/oauth2/v2/auth").unwrap();
+        configure_picker(&mut url, "folder").unwrap();
+        let pairs: std::collections::HashMap<_, _> = url.query_pairs().collect();
+        assert_eq!(
+            pairs.get("trigger_onepick").map(|v| v.as_ref()),
+            Some("true")
+        );
+        assert_eq!(
+            pairs.get("allow_folder_selection").map(|v| v.as_ref()),
+            Some("true")
+        );
+        assert_eq!(
+            pairs.get("mimetypes").map(|v| v.as_ref()),
+            Some("application/vnd.google-apps.folder")
+        );
+        assert!(configure_picker(&mut url, "unknown").is_err());
+        assert!(writable_scope(SCOPE));
+        assert!(writable_scope(LEGACY_SCOPE));
+        assert!(!writable_scope(
+            "https://www.googleapis.com/auth/drive.readonly"
+        ));
+        let folder = json!({"id":"books", "mimeType":"application/vnd.google-apps.folder", "capabilities":{"canAddChildren":true}});
+        assert!(validate_picker_selection(&folder, "folder").is_ok());
+        assert!(validate_picker_selection(&folder, "document").is_err());
+        let document =
+            json!({"id":"book", "name":"Book.libria", "capabilities":{"canDownload":true}});
+        assert!(validate_picker_selection(&document, "document").is_ok());
+        assert!(validate_picker_selection(&document, "folder").is_err());
+        assert!(validate_picker_selection(
+            &json!({"id":"book", "name":"Book.libria", "trashed":true}),
+            "document"
+        )
+        .is_err());
+        assert!(
+            validate_picker_selection(&json!({"id":"book", "name":"Other.pdf"}), "document")
+                .is_err()
+        );
+        assert!(validate_picker_selection(&json!({"id":"books", "mimeType":"application/vnd.google-apps.folder", "capabilities":{"canAddChildren":false}}), "folder").is_err());
+    }
+    #[test]
+    fn trash_only_accepts_libria_documents_with_permission() {
+        let mut file = json!({"name":"Novel.libria","mimeType":"application/json","trashed":false,"capabilities":{"canTrash":true}});
+        assert!(validate_trash_target(&file).is_ok());
+        file["mimeType"] = json!("application/vnd.google-apps.folder");
+        assert!(validate_trash_target(&file).is_err());
+        file["mimeType"] = json!("application/json");
+        file["capabilities"]["canTrash"] = json!(false);
+        assert!(validate_trash_target(&file).is_err());
+        file["capabilities"]["canTrash"] = json!(true);
+        file["name"] = json!("Notes.txt");
+        assert!(validate_trash_target(&file).is_err());
+        file["name"] = json!("Novel.libria");
+        file["trashed"] = json!(true);
+        assert!(validate_trash_target(&file).is_err());
+    }
+    #[test]
+    fn discovers_pending_local_copies_without_an_oauth_session() {
+        let root = tempfile::tempdir().unwrap();
+        let account = "writer@example.test";
+        let directory = root
+            .path()
+            .join(hex::encode(Sha256::digest(account.as_bytes())));
+        std::fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("book.libria");
+        let baseline = r#"{"libriaVersion":"2","metadata":{"title":"Before"}}"#;
+        let edited = r#"{"libriaVersion":"2","metadata":{"title":"Offline edits"}}"#;
+        files::atomic_write(&path, edited.as_bytes()).unwrap();
+        files::atomic_write(&directory.join("book.libria.link.json"),
+            serde_json::to_string(&json!({"id":"book","name":"Book.libria","account":account,"version":"1","baseline":baseline})).unwrap().as_bytes()).unwrap();
+        let listed = cached_files(root.path()).unwrap();
+        assert_eq!(listed.as_array().unwrap().len(), 1);
+        assert_eq!(listed[0]["pending"], true);
+        assert_eq!(listed[0]["path"], path.to_string_lossy().as_ref());
+        assert_eq!(files::read_text(&path).unwrap(), edited);
+        files::atomic_write(&path, baseline.as_bytes()).unwrap();
+        assert_eq!(cached_files(root.path()).unwrap()[0]["pending"], false);
+        let state_path = directory.join("book.libria.remote.json");
+        files::atomic_write(&state_path, br#"{"unavailable":true}"#).unwrap();
+        assert_eq!(cached_files(root.path()).unwrap()[0]["unavailable"], true);
+        assert_eq!(files::read_text(&path).unwrap(), baseline);
+        files::atomic_write(&path, edited.as_bytes()).unwrap();
+        assert_eq!(cached_files(root.path()).unwrap()[0]["unavailable"], true);
+        files::atomic_write(&state_path, br#"{"unavailable":false}"#).unwrap();
+        assert_eq!(cached_files(root.path()).unwrap()[0]["unavailable"], false);
+    }
+    #[test]
     fn rejects_traversal_ids_and_non_libria_content() {
+        assert!(folder_query("root").unwrap().contains("'root' in parents"));
+        assert!(folder_query("book-folder_123").is_ok());
+        assert!(folder_query("root' or trashed = true or '").is_err());
         assert!(validate_id("../book").is_err());
         assert!(validate_id("book?alt=media").is_err());
         assert!(validate_id("valid_Book-123").is_ok());
@@ -805,12 +1152,14 @@ mod tests {
             .unwrap();
         tokio::task::yield_now().await;
         socket
-            .write_all(b"-code HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .write_all(b"-code&picked_file_ids=selected-book HTTP/1.1\r\nHost: localhost\r\n\r\n")
             .await
             .unwrap();
         let mut reply = String::new();
         socket.read_to_string(&mut reply).await.unwrap();
         assert!(reply.starts_with("HTTP/1.1 200"));
-        assert_eq!(task.await.unwrap().unwrap(), "fixture-code");
+        let selection = task.await.unwrap().unwrap();
+        assert_eq!(selection.code, "fixture-code");
+        assert_eq!(selection.ids, vec!["selected-book"]);
     }
 }

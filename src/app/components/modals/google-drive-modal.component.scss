@@ -39,6 +39,11 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
 .search-box input { border: none; width: 100%; min-width: 0; color: var(--ink); background: transparent; font-size: 13px; }
 .search-box:focus-within { border-color: var(--accent); }
 .drive-files { display: grid; max-height: 300px; overflow: auto; }
+.drive-file-entry { display: flex; align-items: center; gap: 4px; }
+.drive-file-entry .file-row { flex: 1; min-width: 0; }
+.trash-button { flex-shrink: 0; padding: 8px; }
+.trash-button:not(:disabled), .danger-button { color: #a82e24; }
+.danger-button { border-color: currentColor; }
 .file-row { display: flex; align-items: center; gap: 12px; text-align: left; padding: 14px 10px; border: none; border-bottom: 1px solid var(--rule-soft); border-radius: 6px; }
 .file-icon { color: var(--accent); font-size: 28px; }
 .file-details { display: grid; gap: 4px; flex: 1; min-width: 0; }
@@ -75,6 +80,12 @@ input[type=checkbox] { accent-color: var(--accent); margin-top: 3px; }
 .decision-card { padding: 24px 0 8px; }
 .decision-card p { font-size: 13px; line-height: 1.65; color: var(--ink-soft); margin-top: 12px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.folder-path { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.folder-path button { max-width: 100%; overflow-wrap: anywhere; }
+.folder-path button[aria-current] { opacity: 1; color: var(--ink); font-weight: 600; }
+.save-destination { border-top: 1px solid var(--rule); margin-top: 18px; padding-top: 18px; }
+.save-destination label { display: block; font-size: 13px; margin-bottom: 8px; }
+.save-destination input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink); font: inherit; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }
 @media (max-width: 480px) {

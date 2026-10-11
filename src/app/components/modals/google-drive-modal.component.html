@@ -7,6 +7,43 @@
       <button class="drive-close icon-button" (click)="close()" [disabled]="drive.busy() && !drive.connecting()" [attr.aria-label]="'drive.close' | translate"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
     </header>
     <div class="drive-body">
+      @if (drive.trashPending(); as pending) {
+        <div class="decision-card" role="group" aria-labelledby="drive-trash-title">
+          <h3 id="drive-trash-title">{{ 'drive.trashTitle' | translate }}</h3>
+          <p class="document-name"><strong>{{ pending.file.name }}</strong></p>
+          <p>{{ pending.account }}</p>
+          <p>{{ 'drive.trashHint' | translate }}</p>
+          <div class="actions">
+            <button data-trash-cancel [disabled]="drive.busy()" (click)="drive.trashPending.set(null)">{{ 'drive.cancel' | translate }}</button>
+            <button class="danger-button" [disabled]="working() || !drive.canTrash(pending.file) || drive.status()?.account?.email !== pending.account" (click)="drive.confirmTrash()">{{ 'drive.trash' | translate }}</button>
+          </div>
+          @if (drive.busy()) { <p role="status">{{ 'drive.trashing' | translate }}</p> }
+          @if (drive.error()) { <p class="notice error" role="alert">{{ drive.error() }}</p> }
+        </div>
+      } @else {
+      @if (drive.offlineFiles().length && !drive.pending() && drive.mode() !== 'save') {
+        <details class="more-options" open>
+          <summary>{{ 'drive.offlineDocuments' | translate }}</summary>
+          <p class="fine-print">{{ 'drive.offlineHint' | translate }}</p>
+          @for (file of drive.offlineFiles(); track file.path) {
+            <button class="file-row" [disabled]="drive.busy()" (click)="drive.openOffline(file)">
+              <span class="material-symbols-outlined file-icon" aria-hidden="true">{{ file.pending ? 'cloud_upload' : 'cloud_done' }}</span>
+              <span class="file-details"><strong>{{ file.name }}</strong><small>{{ file.account }} · {{ (file.pending ? 'drive.savedLocally' : 'drive.availableOffline') | translate }}</small></span>
+            </button>
+          }
+        </details>
+      }
+      @if (drive.offlineError()) { <p class="notice error" role="alert">{{ 'drive.offlineListFailed' | translate }}</p> }
+      @if (drive.pending() && !drive.status()?.connected) {
+        <div class="decision-card">
+          <h3>{{ 'drive.unsavedTitle' | translate }}</h3><p>{{ 'drive.unsaved' | translate }}</p>
+          <div class="actions">
+            <button [disabled]="working()" (click)="drive.saveAndOpen()">{{ 'drive.saveOpen' | translate }}</button>
+            <button [disabled]="working()" (click)="drive.discardAndOpen()">{{ 'drive.discardOpen' | translate }}</button>
+            <button (click)="drive.pending.set(null)">{{ 'drive.cancel' | translate }}</button>
+          </div>
+        </div>
+      }
       @if (!drive.available) {
         <p class="notice">{{ 'drive.desktopOnly' | translate }}</p>
       } @else if (!drive.status() && drive.busy()) {
@@ -45,30 +82,59 @@
               <button class="text-button" [disabled]="working()" (click)="drive.pending.set(null)">{{ 'drive.cancel' | translate }}</button></div>
           </div>
         } @else {
+          @if (drive.mode() !== 'save') {
           <nav class="drive-tabs" [attr.aria-label]="'drive.sections' | translate">
             <button [class.active]="tab() === 'documents'" [attr.aria-pressed]="tab() === 'documents'" (click)="tab.set('documents')">{{ 'drive.documentsTab' | translate }}</button>
             @if (drive.fileService.store.book()) { <button [class.active]="tab() === 'current'" [attr.aria-pressed]="tab() === 'current'" (click)="tab.set('current')">{{ 'drive.currentTab' | translate }}</button> }
           </nav>
-          @if (tab() === 'documents' || !drive.fileService.store.book()) {
-            <p class="section-description">{{ 'drive.openHint' | translate }}</p>
+          }
+          @if (drive.mode() === 'save' || tab() === 'documents' || !drive.fileService.store.book()) {
+            <p class="section-description">{{ (drive.mode() === 'save' ? 'drive.chooseFolder' : 'drive.openHint') | translate }}</p>
+            @if (drive.mode() === 'save') {
+              <div class="folder-path"><span class="material-symbols-outlined" aria-hidden="true">folder</span><strong>{{ drive.folder.id === 'root' ? ('drive.myDrive' | translate) : drive.folder.name }}</strong>
+                <button [disabled]="working()" (click)="drive.pickFolder()">{{ 'drive.pickFolder' | translate }}</button>
+              </div>
+            } @else {
+            <div class="actions"><button class="primary" [disabled]="working()" (click)="drive.pickDocument()"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span>{{ 'drive.pickDocument' | translate }}</button></div>
+            <p class="fine-print">{{ 'drive.pickerHint' | translate }}</p>
             <div class="file-toolbar">
               <label class="search-box"><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" [value]="query()" (input)="query.set($any($event.target).value)" [placeholder]="'drive.searchPlaceholder' | translate" [attr.aria-label]="'drive.searchPlaceholder' | translate"></label>
               <button class="icon-button" [disabled]="working()" (click)="drive.list()" [attr.aria-label]="'drive.refresh' | translate" [attr.title]="'drive.refresh' | translate"><span class="material-symbols-outlined" aria-hidden="true">refresh</span></button>
             </div>
             <div class="drive-files" [attr.aria-busy]="drive.busy()">
               @for (file of filteredFiles(); track file.id) {
-                <button class="file-row" [disabled]="working() || file.capabilities?.canDownload === false" (click)="drive.download(file)">
-                  <span class="material-symbols-outlined file-icon" aria-hidden="true">description</span>
+                <div class="drive-file-entry">
+                <button class="file-row" [disabled]="working() || (!drive.isFolder(file) && (drive.mode() === 'save' || file.capabilities?.canDownload === false))" (click)="query.set(''); drive.download(file)">
+                  <span class="material-symbols-outlined file-icon" aria-hidden="true">{{ drive.isFolder(file) ? 'folder' : 'description' }}</span>
                   <span class="file-details"><strong>{{ file.name }}</strong>
-                    @if (file.capabilities?.canDownload === false) { <small>{{ 'drive.notDownloadable' | translate }}</small> }
+                    @if (!drive.isFolder(file) && file.capabilities?.canDownload === false) { <small>{{ 'drive.notDownloadable' | translate }}</small> }
                     @else if (file.modifiedTime) { <small>{{ 'drive.modified' | translate }} {{ file.modifiedTime | date:'dd/MM/yyyy HH:mm' }}</small> }
                   </span><span class="material-symbols-outlined open-icon" aria-hidden="true">arrow_forward</span>
                 </button>
+                @if (!drive.isFolder(file) && drive.mode() === 'browse') {
+                  <button class="trash-button" [disabled]="working() || !drive.canTrash(file)" (click)="drive.requestTrash(file)" [attr.aria-label]="('drive.trash' | translate) + ': ' + file.name" [attr.title]="(drive.isCurrentDocument(file) ? 'drive.trashCloseFirst' : file.capabilities?.canTrash !== true ? 'drive.trashNoPermission' : 'drive.trash') | translate">
+                    <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                  </button>
+                }
+                </div>
               } @empty {
-                @if (!drive.busy() && drive.listed()) { <div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span><h3>{{ (query() ? 'drive.noMatches' : 'drive.noDocuments') | translate }}</h3><p>{{ (query() ? 'drive.searchHint' : 'drive.emptyHint') | translate }}</p></div> }
+                @if (!drive.busy() && drive.listed()) { <div class="empty-state"><span class="material-symbols-outlined" aria-hidden="true">folder_open</span><h3>{{ (query() ? 'drive.noMatches' : 'drive.emptyFolder') | translate }}</h3><p>{{ (query() ? 'drive.searchHint' : 'drive.emptyHint') | translate }}</p></div> }
               }
             </div>
             @if (drive.cursor()) { <button class="load-more" [disabled]="working()" (click)="drive.list(true)">{{ 'drive.more' | translate }}</button> }
+            }
+            @if (drive.mode() === 'save') {
+              <div class="save-destination">
+                <label for="drive-filename">{{ 'drive.filename' | translate }}</label>
+                <input id="drive-filename" [value]="drive.filename()" (input)="drive.filename.set($any($event.target).value)" [disabled]="working()" maxlength="200">
+                <p class="fine-print">{{ 'drive.newCopyHint' | translate }}</p>
+                @if (drive.folder.capabilities?.canAddChildren === false) { <p class="notice">{{ 'drive.readOnlyFolder' | translate }}</p> }
+                <div class="actions">
+                  <button [disabled]="working()" (click)="drive.mode.set('browse')">{{ 'drive.cancel' | translate }}</button>
+                  <button class="primary" [disabled]="working() || !drive.status()?.writable || !drive.filename().trim() || !drive.fileService.store.book() || drive.folder.capabilities?.canAddChildren === false" (click)="drive.upload()">{{ 'drive.saveHere' | translate }}</button>
+                </div>
+              </div>
+            }
           } @else {
             <div class="current-document"><span class="material-symbols-outlined file-icon" aria-hidden="true">description</span><div><span class="eyebrow">{{ 'drive.currentTab' | translate }}</span><h3>{{ drive.fileService.store.book()?.title }}</h3></div></div>
             @if (drive.fileService.driveLink(); as link) {
@@ -76,15 +142,20 @@
                 <p class="sync-status" role="status"><span class="material-symbols-outlined" aria-hidden="true">{{ drive.fileService.syncState() === 'saved' ? 'cloud_done' : 'cloud_sync' }}</span>{{ ('drive.state.' + drive.fileService.syncState()) | translate }}</p>
                 <p class="fine-print document-name">{{ link.name }}</p>
                 @if (drive.fileService.syncState() === 'conflict') {
-                  <p>{{ 'drive.conflict' | translate }}</p><div class="actions"><button class="primary" [disabled]="working() || !drive.status()?.writable" (click)="drive.upload()">{{ 'drive.keepMine' | translate }}</button><button [disabled]="working()" (click)="drive.useRemote()">{{ 'drive.useRemote' | translate }}</button></div>
+                  @if (drive.fileService.conflictVersion()) {
+                    <p>{{ 'drive.replaceHint' | translate }}</p><button class="danger-button" [disabled]="working() || !drive.status()?.writable" (click)="drive.replaceRemote()">{{ 'drive.replaceOriginal' | translate }}</button>
+                  } @else {
+                    <button [disabled]="working()" (click)="drive.sync()">{{ 'drive.syncNow' | translate }}</button>
+                  }
+                  <p>{{ 'drive.conflict' | translate }}</p><div class="actions"><button class="primary" [disabled]="working() || !drive.status()?.writable" (click)="drive.beginUpload()">{{ 'drive.keepMine' | translate }}</button><button [disabled]="working()" (click)="drive.useRemote()">{{ 'drive.useRemote' | translate }}</button></div>
                 } @else {
                   <p class="section-description">{{ 'drive.linkedHint' | translate }}</p><button class="primary" [disabled]="working()" (click)="drive.sync()">{{ 'drive.syncNow' | translate }}</button>
                 }
                 <label class="auto-sync"><input type="checkbox" [checked]="drive.fileService.autoSync()" (change)="drive.fileService.autoSync.set($any($event.target).checked)"><span><strong>{{ 'drive.autoSyncLabel' | translate }}</strong><small>{{ 'drive.autoSyncHint' | translate }}</small></span></label>
               </div>
-              <details class="more-options"><summary>{{ 'drive.moreOptions' | translate }}</summary><div class="actions"><button [disabled]="working() || !drive.status()?.writable" (click)="drive.upload()">{{ 'drive.uploadCopy' | translate }}</button><button [disabled]="working()" (click)="drive.fileService.saveLibriaFile(true)">{{ 'drive.localCopy' | translate }}</button></div><p class="fine-print">{{ 'drive.localCopyHint' | translate }}</p></details>
+              <details class="more-options"><summary>{{ 'drive.moreOptions' | translate }}</summary><div class="actions"><button [disabled]="working() || !drive.status()?.writable" (click)="drive.beginUpload()">{{ 'drive.uploadCopy' | translate }}</button><button [disabled]="working()" (click)="drive.fileService.saveLibriaFile(true)">{{ 'drive.localCopy' | translate }}</button></div><p class="fine-print">{{ 'drive.localCopyHint' | translate }}</p></details>
             } @else {
-              <p class="section-description">{{ 'drive.uploadHint' | translate }}</p><button class="primary" [disabled]="working() || !drive.status()?.writable" (click)="drive.upload()">{{ 'drive.saveToDrive' | translate }}</button>
+              <p class="section-description">{{ 'drive.uploadHint' | translate }}</p><button class="primary" [disabled]="working() || !drive.status()?.writable" (click)="drive.beginUpload()">{{ 'drive.saveToDrive' | translate }}</button>
             }
             <p class="local-note"><span class="material-symbols-outlined" aria-hidden="true">computer</span>{{ 'drive.localHint' | translate }}</p>
             @if (drive.fileService.syncError()) { <p role="alert" class="notice error">{{ drive.fileService.syncError() }}</p> }
@@ -95,6 +166,7 @@
       @if (drive.connecting() && drive.status()?.connected) { <button (click)="drive.cancel()">{{ 'drive.cancel' | translate }}</button> }
       @if (drive.error()) { <p role="alert" class="notice error">{{ drive.error() }}</p> }
       @if (drive.message()) { <p role="status" class="notice">{{ drive.message() | translate }}</p> }
+      }
     </div>
   </section>
 </div>

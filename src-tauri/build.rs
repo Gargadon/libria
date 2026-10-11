@@ -1,4 +1,5 @@
 fn main() {
+    println!("cargo:rerun-if-changed=../package.json");
     // Development and unit tests do not need the packaged PDF runtime.
     // Keep the resource directory valid on a fresh checkout before preparation.
     if std::env::var("PROFILE").as_deref() == Ok("debug") {
