@@ -34,6 +34,6 @@
     "resources": { "../build/tauri-resources/": "runtime/" },
     "fileAssociations": [{ "ext": ["libria"], "name": "Documento Libria", "mimeType": "application/x-libria", "role": "Editor" }],
     "linux": { "deb": { "depends": ["ghostscript"] } },
-    "windows": { "nsis": { "displayLanguageSelector": true, "languages": ["Spanish", "English"] } }
+    "windows": { "nsis": { "installMode": "both", "displayLanguageSelector": true, "languages": ["Spanish", "English"] } }
   }
 }

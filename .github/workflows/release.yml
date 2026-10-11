@@ -23,21 +23,35 @@ jobs:
         include:
           - os: windows-latest
             platform: windows-x64
+            arch: x64
+            bundles: nsis
+          - os: windows-11-arm
+            platform: windows-arm64
+            arch: arm64
+            toolchain: stable-aarch64-pc-windows-msvc
             bundles: nsis
           - os: ubuntu-24.04
             platform: linux-x64
+            arch: x64
+            bundles: deb,appimage
+          - os: ubuntu-24.04-arm
+            platform: linux-arm64
+            arch: arm64
             bundles: deb,appimage
           - os: macos-15-intel
             platform: macos-x64
+            arch: x64
             bundles: dmg
           - os: macos-15
             platform: macos-arm64
+            arch: arm64
             bundles: dmg
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          architecture: ${{ matrix.arch }}
       - name: Validate release version
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -47,6 +61,13 @@ jobs:
         with:
           bun-version: 1.3.14
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.toolchain || 'stable' }}
+      - name: Verify native build architecture
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          node -e "const {execFileSync} = require('node:child_process'); const expected = process.env.EXPECTED_ARCH; const rustArch = expected === 'arm64' ? 'aarch64' : 'x86_64'; const rust = execFileSync('rustc', ['-vV'], {encoding:'utf8'}); if (process.arch !== expected || !rust.includes('host: ' + rustArch + '-')) throw new Error('Node y Rust deben usar la arquitectura ' + expected); console.log('Arquitectura nativa verificada: ' + expected);"
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -82,15 +103,18 @@ jobs:
           # in Ubuntu 24.04 libraries. Keep those libraries intact in AppImages.
           NO_STRIP: ${{ runner.os == 'Linux' && '1' || '' }}
         run: bun run tauri:build -- --verbose --bundles ${{ matrix.bundles }}
+      - name: Verify packaged PDF runtime
+        if: startsWith(github.ref, 'refs/tags/')
+        timeout-minutes: 5
+        run: node scripts/smoke-pdf-runtime.mjs
+      - name: Stage installer artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        run: node scripts/stage-installers.mjs ${{ matrix.platform }}
       - uses: actions/upload-artifact@v4
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: libria-${{ matrix.platform }}
-          path: |
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/dmg/*.dmg
+          path: dist/installers/*
           if-no-files-found: error
 
   publish:
@@ -109,5 +133,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --generate-notes
+          find release -type f -print0 | sort -z | xargs -0 sha256sum | sed 's|  .*/|  |' > SHA256SUMS
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG — Cervantes Edition" --notes-from-tag
+          fi
           find release -type f -exec gh release upload "$RELEASE_TAG" {} --clobber \;
+          gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
