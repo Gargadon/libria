@@ -1,0 +1,147 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.metadataTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.metadataDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  <div class="sb__section">{{ 'sidebar.cover' | translate }}</div>
+  <div class="sb__cover-zone">
+    @if (panel.assetService.assets()['cover']) {
+      <div class="sb__cover-preview">
+        <img [src]="panel.assetService.assets()['cover']" [alt]="'sidebar.cover' | translate" />
+        <button class="sb__cover-del" (click)="panel.removeCover()">×</button>
+      </div>
+    } @else {
+      <label class="sb__cover-upload">
+        <input type="file" (change)="panel.onCoverFile($event)" accept="image/*" hidden />
+        <div class="sb__cover-icon">🖼️</div>
+        <div class="sb__cover-text">{{ 'sidebar.uploadCover' | translate }}</div>
+        <div class="sb__cover-hint">{{ 'sidebar.coverHint' | translate }}</div>
+      </label>
+    }
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.general' | translate }}</div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.title' | translate }}</label>
+    <input
+      type="text"
+      class="sb__input"
+      [(ngModel)]="panel.localMetadata.title"
+      (blur)="panel.syncMetadata()"
+    />
+  </div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.subtitle' | translate }}</label>
+    <input
+      type="text"
+      class="sb__input"
+      [(ngModel)]="panel.localMetadata.subtitle"
+      (blur)="panel.syncMetadata()"
+    />
+  </div>
+  <div class="sb__grid">
+    <div class="sb__field">
+      <label class="sb__label">{{ 'sidebar.year' | translate }}</label>
+      <input
+        type="number"
+        class="sb__input"
+        [(ngModel)]="panel.localMetadata.year"
+        (blur)="panel.syncMetadata()"
+      />
+    </div>
+    <div class="sb__field">
+      <label class="sb__label">ISBN</label>
+      <input
+        type="text"
+        class="sb__input"
+        [(ngModel)]="panel.localMetadata.isbn"
+        (blur)="panel.syncMetadata()"
+      />
+    </div>
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.documentLang' | translate }}</label>
+    <select
+      class="sb__select"
+      [(ngModel)]="panel.localMetadata.lang"
+      (change)="panel.syncMetadata()"
+    >
+      <option value="es-MX">Español (México)</option>
+      <option value="es-ES">Español (España)</option>
+      <option value="en-US">English (US)</option>
+      <option value="en-GB">English (UK)</option>
+      <option value="fr">Français</option>
+      <option value="it">Italiano</option>
+      <option value="pt-BR">Português (Brasil)</option>
+    </select>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.credits' | translate }}</div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.publisher' | translate }}</label>
+    <input
+      type="text"
+      class="sb__input"
+      [(ngModel)]="panel.localMetadata.publisher"
+      (blur)="panel.syncMetadata()"
+    />
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.authors' | translate }}</label>
+    <div class="sb__list-editor">
+      @for (a of panel.localMetadata.authors; track $index) {
+        <div class="sb__list-item">
+          <input
+            type="text"
+            class="sb__input"
+            [(ngModel)]="panel.localMetadata.authors[$index]"
+            (blur)="panel.syncMetadata()"
+          />
+          <button class="sb__list-del" (click)="panel.removeAuthor($index)">×</button>
+        </div>
+      }
+      <button class="sb__btn-link" (click)="panel.addAuthor()">
+        {{ 'sidebar.addAuthor' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.editors' | translate }}</label>
+    <div class="sb__list-editor">
+      @for (e of panel.localMetadata.editors; track $index) {
+        <div class="sb__list-item">
+          <input
+            type="text"
+            class="sb__input"
+            [(ngModel)]="panel.localMetadata.editors[$index]"
+            (blur)="panel.syncMetadata()"
+          />
+          <button class="sb__list-del" (click)="panel.removeEditor($index)">×</button>
+        </div>
+      }
+      <button class="sb__btn-link" (click)="panel.addEditor()">
+        {{ 'sidebar.addEditor' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.printing' | translate }}</div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.pageSize' | translate }}</label>
+    <select
+      class="sb__select"
+      [(ngModel)]="panel.localMetadata.paperSize"
+      (change)="panel.syncMetadata()"
+    >
+      <option value="5x8">{{ 'sidebar.sizePocket' | translate }}</option>
+      <option value="6x9">{{ 'sidebar.sizeTrade' | translate }}</option>
+      <option value="Letter">{{ 'sidebar.sizeLetter' | translate }}</option>
+      <option value="A5">{{ 'sidebar.sizeA5' | translate }}</option>
+      <option value="A4">{{ 'sidebar.sizeA4' | translate }}</option>
+      <option value="A6">{{ 'sidebar.sizeA6' | translate }}</option>
+    </select>
+  </div>
+</div>

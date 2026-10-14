@@ -1,0 +1,178 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.productivity' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.goalsTitle' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  <!-- 1. PACING CHART -->
+  <div class="sb__section">{{ 'sidebar.pacingChart' | translate }}</div>
+  <div class="sb__help" style="margin-bottom: 12px">
+    {{ 'sidebar.pacingChartDesc' | translate }}
+  </div>
+
+  @if (mainChapters().length > 0) {
+    <!-- SVG PACING CHART -->
+    <div
+      class="sb__chart-container"
+      style="
+        background: var(--paper-2);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 16px;
+      "
+    >
+      <svg viewBox="0 0 300 160" width="100%" height="150" style="display: block">
+        <!-- Grid Lines -->
+        <line x1="30" y1="10" x2="290" y2="10" stroke="var(--rule-soft)" stroke-dasharray="2" />
+        <line x1="30" y1="70" x2="290" y2="70" stroke="var(--rule-soft)" stroke-dasharray="2" />
+        <line x1="30" y1="130" x2="290" y2="130" stroke="var(--rule)" />
+
+        <!-- Y-Axis Labels -->
+        <text x="5" y="14" font-size="9" fill="var(--ink-mute)" font-family="monospace">
+          {{ maxWords().toLocaleString() }}
+        </text>
+        <text x="5" y="74" font-size="9" fill="var(--ink-mute)" font-family="monospace">
+          {{ (maxWords() / 2).toLocaleString() }}
+        </text>
+        <text x="20" y="134" font-size="9" fill="var(--ink-mute)" font-family="monospace">0</text>
+
+        <!-- Average Line (dashed) -->
+        @if (averageWords() > 0) {
+          <line
+            x1="30"
+            [attr.y1]="130 - (averageWords() / maxWords()) * 120"
+            x2="290"
+            [attr.y2]="130 - (averageWords() / maxWords()) * 120"
+            stroke="var(--accent)"
+            stroke-dasharray="3"
+            stroke-width="1.5"
+          />
+        }
+
+        <!-- Bars -->
+        @for (c of mainChapters(); track c.id; let i = $index) {
+          <!-- Bar rect -->
+          <rect
+            [attr.x]="30 + i * (260 / mainChapters().length) + 2"
+            [attr.y]="130 - (c.words / maxWords()) * 120"
+            [attr.width]="260 / mainChapters().length - 4"
+            [attr.height]="(c.words / maxWords()) * 120"
+            [attr.fill]="
+              c.status === 'ok' ? '#10b981' : c.status === 'outline' ? '#fb923c' : '#facc15'
+            "
+            style="transition: all 0.3s ease; cursor: help"
+            [attr.title]="
+              c.title + ': ' + c.words.toLocaleString() + ' ' + ('sidebar.wordCount' | translate)
+            "
+          ></rect>
+          <!-- X-Axis Labels -->
+          @if (mainChapters().length <= 15) {
+            <text
+              [attr.x]="30 + i * (260 / mainChapters().length) + 130 / mainChapters().length"
+              y="144"
+              font-size="8"
+              fill="var(--ink-mute)"
+              text-anchor="middle"
+              font-family="inherit"
+            >
+              {{ i + 1 }}
+            </text>
+          }
+        }
+      </svg>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          margin-top: 8px;
+          color: var(--ink-mute);
+        "
+      >
+        <span
+          >{{ 'sidebar.averageChapterLength' | translate }}:
+          <strong>{{ averageWords() | number }}</strong></span
+        >
+      </div>
+    </div>
+  } @else {
+    <div class="sb__help" style="text-align: center; padding: 24px 0">
+      {{ 'sidebar.emptyManuscript' | translate }}
+    </div>
+  }
+
+  <!-- 2. POMODORO WIDGET -->
+  <div class="sb__section">{{ 'sidebar.pomodoroSettings' | translate }}</div>
+
+  <div class="sb__row sb__row--col" style="margin-bottom: 12px">
+    <label class="sb__label"
+      >{{ 'sidebar.focusMins' | translate }} ({{ pomo.focusDuration() }}m)</label
+    >
+    <input
+      class="sb__range"
+      type="range"
+      min="5"
+      max="60"
+      step="5"
+      style="width: 100%; margin: 8px 0"
+      [ngModel]="pomo.focusDuration()"
+      (ngModelChange)="pomo.focusDuration.set($event)"
+    />
+  </div>
+
+  <div class="sb__row sb__row--col" style="margin-bottom: 12px">
+    <label class="sb__label"
+      >{{ 'sidebar.shortBreakMins' | translate }} ({{ pomo.shortBreakDuration() }}m)</label
+    >
+    <input
+      class="sb__range"
+      type="range"
+      min="1"
+      max="30"
+      step="1"
+      style="width: 100%; margin: 8px 0"
+      [ngModel]="pomo.shortBreakDuration()"
+      (ngModelChange)="pomo.shortBreakDuration.set($event)"
+    />
+  </div>
+
+  <div class="sb__row sb__row--col" style="margin-bottom: 16px">
+    <label class="sb__label"
+      >{{ 'sidebar.longBreakMins' | translate }} ({{ pomo.longBreakDuration() }}m)</label
+    >
+    <input
+      class="sb__range"
+      type="range"
+      min="5"
+      max="45"
+      step="5"
+      style="width: 100%; margin: 8px 0"
+      [ngModel]="pomo.longBreakDuration()"
+      (ngModelChange)="pomo.longBreakDuration.set($event)"
+    />
+  </div>
+
+  <!-- 3. DAILY TARGET CALCULATIONS -->
+  @if (store.writingGoals.targetWords() > 0 && store.daysToDeadline() !== null) {
+    <div class="sb__section">{{ 'sidebar.goalsTitle' | translate }}</div>
+    <div
+      class="sb__row sb__row--col"
+      style="
+        background: var(--paper-2);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 12px;
+      "
+    >
+      <div style="font-size: 11px; color: var(--ink-mute); margin-bottom: 4px">
+        {{ 'sidebar.dailyGoalRequired' | translate }}
+      </div>
+      <div style="font-size: 20px; font-weight: bold; color: var(--accent)">
+        {{ dailyTargetWords() | number }}
+      </div>
+      <div style="font-size: 10px; color: var(--ink-mute); margin-top: 4px">
+        {{ 'sidebar.dailyGoalRequiredSuffix' | translate }}
+      </div>
+    </div>
+  }
+</div>

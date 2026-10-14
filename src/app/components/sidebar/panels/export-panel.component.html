@@ -1,0 +1,208 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.exportTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.exportDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  <!-- Modo de exportación -->
+  <div class="sb__section">{{ 'sidebar.exportScope' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.exportPrefs.exportMode() === 'all'"
+        (click)="store.updateExportPrefs({ exportMode: 'all' })"
+      >
+        {{ 'sidebar.exportAll' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.exportPrefs.exportMode() === 'selection'"
+        (click)="store.updateExportPrefs({ exportMode: 'selection' })"
+      >
+        {{ 'sidebar.exportSelection' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de capítulos (solo en modo selección) -->
+  @if (store.exportPrefs.exportMode() === 'selection') {
+    <div class="sb__chapter-pick">
+      <div class="sb__chapter-pick-head">
+        <span class="sb__label">{{ 'sidebar.exportPickChapters' | translate }}</span>
+        <div class="sb__chapter-pick-actions">
+          <button class="sb__btn-link" (click)="selectAllChapters()">
+            {{ 'sidebar.exportSelectAll' | translate }}
+          </button>
+          <button
+            class="sb__btn-link"
+            (click)="store.updateExportPrefs({ selectedChapterIds: [] })"
+          >
+            {{ 'sidebar.exportSelectNone' | translate }}
+          </button>
+        </div>
+      </div>
+      @for (ch of store.chapters(); track ch.id) {
+        <label class="sb__chapter-pick-item">
+          <input
+            type="checkbox"
+            [checked]="store.exportPrefs.selectedChapterIds().includes(ch.id)"
+            (change)="toggleExportChapter(ch.id, $any($event.target).checked)"
+          />
+          <span class="sb__chapter-pick-label">
+            @if (ch.number) {
+              <span class="sb__chapter-pick-num">{{ ch.number }}</span>
+            }
+            {{ ch.title || ('sidebar.untitled' | translate) }}
+          </span>
+        </label>
+      }
+    </div>
+  }
+
+  <!-- Formatos disponibles -->
+  <div class="sb__section">{{ 'sidebar.exportFormat' | translate }}</div>
+
+  @if (store.exportPrefs.exportMode() === 'all') {
+    <div class="sb__export-card">
+      <div class="sb__export-icon">EPUB</div>
+      <div class="sb__export-info">
+        <div class="sb__export-name">{{ 'sidebar.ebook' | translate }}</div>
+        <div class="sb__export-desc">{{ 'sidebar.ebookDesc' | translate }}</div>
+        <button
+          class="sb__btn-primary"
+          (click)="exportService.exportEpub()"
+          [disabled]="store.isExporting()"
+        >
+          {{ 'sidebar.generateEPUB' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="sb__export-card">
+      <div class="sb__export-icon" style="background: var(--terra); color: var(--paper)">PDF</div>
+      <div class="sb__export-info">
+        <div class="sb__export-name">{{ 'sidebar.pdf' | translate }}</div>
+        <div class="sb__export-desc">{{ 'sidebar.pdfDesc' | translate }}</div>
+        <button class="sb__btn-primary" (click)="exportPdf()" [disabled]="store.isExporting()">
+          {{ 'sidebar.generatePDF' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="sb__export-card">
+    <div class="sb__export-icon">DOCX</div>
+    <div class="sb__export-info">
+      <div class="sb__export-name">{{ 'sidebar.word' | translate }}</div>
+      <div class="sb__export-desc">{{ 'sidebar.wordDesc' | translate }}</div>
+      <button
+        class="sb__btn-primary"
+        (click)="exportService.exportDocx()"
+        [disabled]="
+          store.isExporting() ||
+          (store.exportPrefs.exportMode() === 'selection' &&
+            store.exportPrefs.selectedChapterIds().length === 0)
+        "
+      >
+        {{ 'sidebar.generateDOCX' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__export-card">
+    <div class="sb__export-icon" style="background: #3a8a58; color: var(--paper)">ODT</div>
+    <div class="sb__export-info">
+      <div class="sb__export-name">{{ 'sidebar.odt' | translate }}</div>
+      <div class="sb__export-desc">{{ 'sidebar.odtDesc' | translate }}</div>
+      <button
+        class="sb__btn-primary"
+        (click)="exportService.exportOdt()"
+        [disabled]="
+          store.isExporting() ||
+          (store.exportPrefs.exportMode() === 'selection' &&
+            store.exportPrefs.selectedChapterIds().length === 0)
+        "
+      >
+        {{ 'sidebar.generateODT' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Opciones -->
+  @if (store.exportPrefs.exportMode() === 'all') {
+    <div class="sb__section">{{ 'sidebar.exportOptions' | translate }}</div>
+    <div class="sb__row">
+      <div class="sb__label">{{ 'sidebar.includeCover' | translate }}</div>
+      <div class="sb__radio">
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="store.exportPrefs.includeCover()"
+          (click)="store.updateExportPrefs({ includeCover: true })"
+        >
+          {{ 'sidebar.yes' | translate }}
+        </button>
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="!store.exportPrefs.includeCover()"
+          (click)="store.updateExportPrefs({ includeCover: false })"
+        >
+          {{ 'sidebar.no' | translate }}
+        </button>
+      </div>
+    </div>
+    @if (store.exportPrefs.includeCover()) {
+      @if (assetService.assets()['cover']) {
+        <div class="sb__cover-chip sb__cover-chip--ok">
+          <img [src]="assetService.assets()['cover']" class="sb__cover-chip-img" alt="" />
+          <span>{{ 'sidebar.coverReady' | translate }}</span>
+        </div>
+      } @else {
+        <div class="sb__cover-chip sb__cover-chip--warn">
+          <span class="material-symbols-outlined">warning</span>
+          <span>{{ 'sidebar.coverNotSet' | translate }}</span>
+          <button class="sb__btn-link" (click)="store.setNav('metadata')">
+            {{ 'sidebar.coverGoTo' | translate }}
+          </button>
+        </div>
+      }
+    }
+    <div class="sb__row">
+      <div class="sb__label">{{ 'sidebar.includeNotes' | translate }}</div>
+      <div class="sb__radio">
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="store.exportPrefs.includeNotes()"
+          (click)="store.updateExportPrefs({ includeNotes: true })"
+        >
+          {{ 'sidebar.yes' | translate }}
+        </button>
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="!store.exportPrefs.includeNotes()"
+          (click)="store.updateExportPrefs({ includeNotes: false })"
+        >
+          {{ 'sidebar.no' | translate }}
+        </button>
+      </div>
+    </div>
+    <div class="sb__row">
+      <div class="sb__label">{{ 'sidebar.pdfx' | translate }}</div>
+      <div class="sb__radio">
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="store.tweaks.pdfxCompliant()"
+          (click)="store.updateTweak('pdfxCompliant', true)"
+        >
+          {{ 'sidebar.yes' | translate }}
+        </button>
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="!store.tweaks.pdfxCompliant()"
+          (click)="store.updateTweak('pdfxCompliant', false)"
+        >
+          {{ 'sidebar.no' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

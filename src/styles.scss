@@ -2302,6 +2302,10 @@ button.tb__dropdown-item {
   margin-top: 0;
 }
 
+.ed__doc:focus {
+  outline: none;
+}
+
 .ed__doc::before {
   content: "";
   position: absolute;

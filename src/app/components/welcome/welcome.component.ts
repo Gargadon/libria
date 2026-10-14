@@ -6,6 +6,7 @@ import { RecentProject } from '../../models/book.models';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
+import { RecoveryService } from '../../services/recovery.service';
 import { GoogleDriveService } from '../../services/google-drive.service';
 
 @Component({
@@ -26,6 +27,12 @@ import { GoogleDriveService } from '../../services/google-drive.service';
 
         <div class="welcome__body">
           <div class="welcome__local-files">
+          @if (recovery.versions().length) {
+            <button class="welcome__recent-item" (click)="recovery.show()">
+              <span class="material-symbols-outlined" aria-hidden="true">history</span>
+              <div class="welcome__recent-info"><strong>{{ 'recovery.title' | translate }}</strong><span>{{ recovery.versions()[0].title }} · {{ formatDate(recovery.versions()[0].savedAt) }}</span></div>
+            </button>
+          }
           @if (recentProjects().length) {
             <div class="welcome__recent">
               <div class="welcome__recent-title">{{ 'welcome.recent' | translate }}</div>
@@ -65,7 +72,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
           </div>
 
           <div class="welcome__actions">
-            <button class="welcome__btn welcome__btn--primary" (click)="store.createNewProject()">
+            <button class="welcome__btn welcome__btn--primary" (click)="fileService.newProject()">
               <span class="material-symbols-outlined">add</span>
               <div class="welcome__btn-text">
                 <strong>{{ 'welcome.newProject' | translate }}</strong>
@@ -250,6 +257,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
   `]
 })
 export class WelcomeComponent {
+  readonly recovery = inject(RecoveryService);
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
   readonly drive = inject(GoogleDriveService);

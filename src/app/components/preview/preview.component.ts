@@ -3,7 +3,7 @@ import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
-import { ExportService } from '../../services/export.service';
+import { PrintHtmlService } from '../../services/export/print-html.service';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { BlockViewComponent } from '../block-view/block-view.component';
 import { EditorPositionService } from '../../services/editor-position.service';
@@ -288,7 +288,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
   private readonly editorPosition = inject(EditorPositionService);
   readonly assetService = inject(AssetService);
-  readonly exportService = inject(ExportService);
+  readonly printHtml = inject(PrintHtmlService);
   readonly sanitizer = inject(DomSanitizer);
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
 
@@ -498,7 +498,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
           for (const [id, info] of Object.entries(layout.chapters)) {
             pageMap[id] = info.startPage;
           }
-          const html = this.exportService.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap, true);
+          const html = this.printHtml.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap, true);
           const generation = ++this.vivliostyleLoadGeneration;
           clearTimeout(this.vivliostyleMeasureTimeout);
           const desktopFontsCss = (window as any).desktopAPI?.getFontsCss?.();

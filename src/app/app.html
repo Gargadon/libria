@@ -12,6 +12,8 @@
      [style.--serif]="store.tweaks.customBookFont() ? store.bookFontFamily() : null"
      [style.--display]="store.tweaks.customTitleFont() ? store.titleFontFamily() : null"
      [attr.data-screen-label]="'app.title' | translate">
+  @if (recovery.visible()) { <app-recovery-modal></app-recovery-modal> }
+  @if (recovery.error()) { <p role="alert">{{ 'recovery.error' | translate }}</p> }
   <app-topbar (aboutRequested)="showAbout.set(true)"></app-topbar>
   @if (drive.visible()) { <app-google-drive-modal></app-google-drive-modal> }
   

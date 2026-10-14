@@ -70,12 +70,13 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
 - **Verificación de actualizaciones:** Botón dedicado en el diálogo de *Acerca de* (About) para verificar manualmente si hay nuevas versiones de la aplicación desde GitHub o mediante el actualizador automático.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
+- **Recuperación y versiones:** Copia local independiente cada 5 segundos cuando hay cambios, también para libros sin guardar. Historial persistente con puntos cada 2 minutos, hasta 10 por sesión y 50 en total (aproximadamente 200 MB). Desde el botón de historial o la bienvenida se puede restaurar como copia o añadir un capítulo recuperado con sus imágenes y comentarios. Las copias viven en los datos locales de la aplicación/navegador y no sustituyen un respaldo externo.
 - **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
 - **Previsualización ocultable:** Alterna la visibilidad del panel de previsualización con `Ctrl+Shift+P` para maximizar el espacio de escritura.
 
 ### Importación y Exportación
 
-- **Importar:** Desde DOCX (con formato) y TXT (texto plano).
+- **Importar:** Desde DOCX (negritas, cursivas, subrayado, enlaces, encabezados, listas, tablas, imágenes compatibles y notas al pie) y TXT (texto plano). Se muestran los avisos de conversión; las imágenes dentro de tablas/listas se colocan después del bloque. La importación conserva estructura semántica, no la paginación exacta de Word.
 - **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC, tipografía embebida y soporte completo de listas, tablas y notas al pie.
 - **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido (negrita, cursiva, imágenes), tweaks tipográficos aplicados, portada y TOC opcionales.
 - **Exportación PDF profesional:** Composición con Vivliostyle, CSS Paged Media, páginas recto/verso, cajas de margen, numeración real del índice y estilos tipográficos aplicados.
@@ -104,6 +105,8 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 | **Herramientas de desarrollo** | [Bun](https://bun.sh/) + Rust estable |
 | **Corrector ortográfico** | Corrector del WebView del sistema |
 | **Dependencias clave** | `@vivliostyle/cli` (PDF), `docx` (DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
+
+La separación del editor, los paneles y los exportadores está descrita en [la guía de arquitectura](docs/architecture.md).
 
 ### Arquitectura de Datos
 

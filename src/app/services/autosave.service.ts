@@ -14,7 +14,7 @@ export class AutosaveService {
   init(intervalMs = 120_000) {
     if (this.intervalId) return;
     this.intervalId = setInterval(() => {
-      if (this.store.isDirty() && this.fileService.canSilentSave) {
+      if (this.store.isDirty() && !this.store.isSaving() && this.fileService.canSilentSave) {
         this.fileService.saveLibriaFile().then((saved) => {
           if (saved) this.lastSavedAt.set(new Date());
         });

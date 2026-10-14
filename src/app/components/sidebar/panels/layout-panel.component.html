@@ -1,0 +1,232 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.layoutTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.layoutDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  <div class="sb__section">{{ 'sidebar.margins' | translate }}</div>
+  <div class="sb__grid">
+    <div class="sb__field">
+      <label class="sb__label">{{ 'sidebar.top' | translate }}</label>
+      <input
+        type="number"
+        class="sb__input"
+        [ngModel]="store.tweaks.marginTop()"
+        (ngModelChange)="store.updateTweak('marginTop', $event)"
+      />
+    </div>
+    <div class="sb__field">
+      <label class="sb__label">{{ 'sidebar.bottom' | translate }}</label>
+      <input
+        type="number"
+        class="sb__input"
+        [ngModel]="store.tweaks.marginBottom()"
+        (ngModelChange)="store.updateTweak('marginBottom', $event)"
+      />
+    </div>
+    <div class="sb__field">
+      <label class="sb__label">{{ 'sidebar.inner' | translate }}</label>
+      <input
+        type="number"
+        class="sb__input"
+        [ngModel]="store.tweaks.marginInner()"
+        (ngModelChange)="store.updateTweak('marginInner', $event)"
+      />
+    </div>
+    <div class="sb__field">
+      <label class="sb__label">{{ 'sidebar.outer' | translate }}</label>
+      <input
+        type="number"
+        class="sb__input"
+        [ngModel]="store.tweaks.marginOuter()"
+        (ngModelChange)="store.updateTweak('marginOuter', $event)"
+      />
+    </div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.titleTypography' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
+    <select
+      class="sb__select sb__select--font"
+      [value]="fonts.titleFontSelectVal()"
+      (change)="fonts.onTitleFontSelect($any($event.target).value)"
+    >
+      <optgroup [label]="'sidebar.serif' | translate">
+        <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
+        <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
+        <option value="lora" style="font-family: 'Lora', serif">Lora</option>
+        <option value="spectral" style="font-family: 'Spectral', serif">Spectral</option>
+      </optgroup>
+      <optgroup [label]="'sidebar.sansSerif' | translate">
+        <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
+        <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
+      </optgroup>
+      @if (fonts.systemFontFamilies().length > 0) {
+        <optgroup [label]="'sidebar.systemFonts' | translate">
+          @for (family of fonts.systemFontFamilies(); track family) {
+            <option [value]="family" [style.fontFamily]="family">{{ family }}</option>
+          }
+        </optgroup>
+      }
+      <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
+    </select>
+  </div>
+  @if (fonts.showCustomTitleFontInput()) {
+    <div class="sb__row sb__row--col">
+      <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+      <input
+        class="sb__input"
+        type="text"
+        [ngModel]="store.tweaks.customTitleFont()"
+        (ngModelChange)="store.updateTweak('customTitleFont', $event)"
+        placeholder="Georgia"
+      />
+    </div>
+  }
+  <div class="sb__row sb__row--col">
+    <div class="sb__label">
+      {{ 'sidebar.titleSize' | translate: { value: store.tweaks.titleFontSize() } }}
+    </div>
+    <input
+      type="range"
+      min="12"
+      max="36"
+      step="0.5"
+      [ngModel]="store.tweaks.titleFontSize()"
+      (ngModelChange)="store.updateTweak('titleFontSize', $event)"
+    />
+  </div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.alignment' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleAlignment() === 'left'"
+        (click)="store.updateTweak('titleAlignment', 'left')"
+      >
+        {{ 'sidebar.alignLeft' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleAlignment() === 'center'"
+        (click)="store.updateTweak('titleAlignment', 'center')"
+      >
+        {{ 'sidebar.alignCenter' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleAlignment() === 'right'"
+        (click)="store.updateTweak('titleAlignment', 'right')"
+      >
+        {{ 'sidebar.alignRight' | translate }}
+      </button>
+    </div>
+  </div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.style' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleBold()"
+        (click)="store.updateTweak('titleBold', !store.tweaks.titleBold())"
+      >
+        <b>B</b>
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleItalic()"
+        (click)="store.updateTweak('titleItalic', !store.tweaks.titleItalic())"
+      >
+        <i>I</i>
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.titleUnderline()"
+        (click)="store.updateTweak('titleUnderline', !store.tweaks.titleUnderline())"
+      >
+        <u>U</u>
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.pageElements' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.sceneBreak' | translate }}</div>
+    <select
+      class="sb__select"
+      [ngModel]="store.tweaks.sceneBreakType()"
+      (ngModelChange)="store.updateTweak('sceneBreakType', $event)"
+    >
+      <option value="asterisks3">* * *</option>
+      <option value="asterisks">✦ ✦ ✦</option>
+      <option value="dots">· · ·</option>
+      <option value="flourish">~ o ~</option>
+      <option value="none">{{ 'sidebar.space' | translate }}</option>
+    </select>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.pageNumbers' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.showPageNumbers()"
+        (click)="store.updateTweak('showPageNumbers', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!store.tweaks.showPageNumbers()"
+        (click)="store.updateTweak('showPageNumbers', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.pageNumPos' | translate }}</div>
+    <select
+      class="sb__select"
+      [ngModel]="store.tweaks.pageNumberPosition()"
+      (ngModelChange)="store.updateTweak('pageNumberPosition', $event)"
+    >
+      <option value="bottom-center">{{ 'sidebar.bottomCenter' | translate }}</option>
+      <option value="bottom-edges">{{ 'sidebar.bottomEdges' | translate }}</option>
+      <option value="top-edges">{{ 'sidebar.topEdges' | translate }}</option>
+    </select>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.header' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.showHeader()"
+        (click)="store.updateTweak('showHeader', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!store.tweaks.showHeader()"
+        (click)="store.updateTweak('showHeader', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+  @if (store.tweaks.showHeader()) {
+    <div class="sb__row sb__row--col">
+      <div class="sb__label">{{ 'sidebar.headerText' | translate }}</div>
+      <input
+        type="text"
+        class="sb__input"
+        [attr.placeholder]="'sidebar.headerPlaceholder' | translate"
+        [ngModel]="store.tweaks.headerText()"
+        (ngModelChange)="store.updateTweak('headerText', $event)"
+      />
+    </div>
+  }
+</div>

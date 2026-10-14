@@ -1,0 +1,158 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.settingsTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.settingsDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  @if (panel.drive.available) {
+    <div class="sb__section">Google Drive</div>
+    <div class="sb__drive-settings">
+      <p class="sb__drive-description">{{ 'drive.settingsDescription' | translate }}</p>
+      <button class="sb__btn-primary sb__drive-button" (click)="panel.drive.show()">
+        <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+        {{ 'drive.settingsButton' | translate }}
+      </button>
+    </div>
+  }
+  <div class="sb__section">{{ 'sidebar.appLang' | translate }}</div>
+  <div class="sb__row">
+    <select
+      class="sb__select"
+      [ngModel]="panel.store.personalConfig().language"
+      (ngModelChange)="panel.setLanguage($event)"
+    >
+      <option value="es">{{ 'lang.es' | translate }}</option>
+      <option value="en">{{ 'lang.en' | translate }}</option>
+      <option value="fr">{{ 'lang.fr' | translate }}</option>
+      <option value="it">{{ 'lang.it' | translate }}</option>
+      <option value="de">{{ 'lang.de' | translate }}</option>
+      <option value="pt">{{ 'lang.pt' | translate }}</option>
+    </select>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.avatar' | translate }}</div>
+  <div class="sb__avatar-zone">
+    @if (panel.store.personalConfig().avatar) {
+      <div class="sb__avatar-preview">
+        <img [src]="panel.store.personalConfig().avatar" [alt]="'sidebar.avatar' | translate" />
+        <button class="sb__avatar-del" (click)="panel.removeAvatar()">×</button>
+        <div class="sb__help">{{ 'sidebar.avatarHelp' | translate }}</div>
+      </div>
+    } @else {
+      <label class="sb__avatar-upload">
+        <input type="file" (change)="panel.onAvatarFile($event)" accept="image/*" hidden />
+        <div class="sb__avatar-icon">👤</div>
+        <div class="sb__avatar-text">{{ 'sidebar.uploadPhoto' | translate }}</div>
+      </label>
+    }
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.profile' | translate }}</div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.authorName' | translate }}</label>
+    <input
+      class="sb__input"
+      type="text"
+      [attr.placeholder]="'sidebar.namePlaceholder' | translate"
+      [ngModel]="panel.store.personalConfig().userName"
+      (ngModelChange)="panel.updateUserName($event)"
+    />
+    <div class="sb__help">{{ 'sidebar.nameHelp' | translate }}</div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.appearance' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.theme' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.mode() === 'light'"
+        (click)="panel.store.setThemeMode('light')"
+      >
+        {{ 'sidebar.light' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.mode() === 'dark'"
+        (click)="panel.store.setThemeMode('dark')"
+      >
+        {{ 'sidebar.dark' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.layoutLabel' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.sidebarLabel' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.sidebar() === 'left'"
+        (click)="panel.store.updateTweak('sidebar', 'left')"
+      >
+        {{ 'sidebar.left' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.sidebar() === 'right'"
+        (click)="panel.store.updateTweak('sidebar', 'right')"
+      >
+        {{ 'sidebar.right' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.spelling' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.checker' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.spellcheck()"
+        (click)="panel.store.updateTweak('spellcheck', true)"
+      >
+        {{ 'sidebar.enabled' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.spellcheck()"
+        (click)="panel.store.updateTweak('spellcheck', false)"
+      >
+        {{ 'sidebar.disabled' | translate }}
+      </button>
+    </div>
+  </div>
+  @if (panel.spellCheckService.isAvailable) {
+    <div class="sb__section">{{ 'sidebar.dictionary' | translate }}</div>
+    <div class="sb__row sb__row--col">
+      <label class="sb__label">{{ 'sidebar.addWord' | translate }}</label>
+      <div class="sb__dict-add-row">
+        <input
+          class="sb__input"
+          type="text"
+          [attr.placeholder]="'sidebar.wordPlaceholder' | translate"
+          [(ngModel)]="panel.newDictWord"
+          (keydown.enter)="panel.addDictWord()"
+        />
+        <button
+          class="sb__btn-primary sb__dict-add-btn"
+          [disabled]="!panel.newDictWord.trim()"
+          (click)="panel.addDictWord()"
+        >
+          +
+        </button>
+      </div>
+    </div>
+    @if (panel.dictWords().length > 0) {
+      <div class="sb__dict-list">
+        @for (w of panel.dictWords(); track w) {
+          <div class="sb__dict-item">
+            <span class="sb__dict-word">{{ w }}</span>
+            <button class="sb__dict-del" (click)="panel.removeDictWord(w)">×</button>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="sb__help">{{ 'sidebar.dictEmpty' | translate }}</div>
+    }
+  }
+</div>

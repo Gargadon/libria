@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { sceneBreakGlyph } from '../../utils/block-maps';
 import { PomodoroService } from '../../services/pomodoro.service';
+import { RecoveryService } from '../../services/recovery.service';
 import { GoogleDriveService } from '../../services/google-drive.service';
 
 @Component({
@@ -23,6 +24,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
           <div class="tb__brandN">Libria</div>
           <div class="tb__brandV">{{ editionLabel }}</div>
         </div>
+        <button class="tb__icon" [attr.title]="'recovery.title' | translate" [attr.aria-label]="'recovery.title' | translate" (click)="recovery.show()"><span class="material-symbols-outlined" aria-hidden="true">history</span></button>
         @if (drive.available) {
           <button class="tb__icon" [attr.title]="(fileService.driveLink() ? 'drive.state.' + fileService.syncState() : 'drive.open') | translate" (click)="drive.show()">
             <span class="material-symbols-outlined">{{ fileService.syncState() === 'conflict' ? 'warning' : fileService.syncState() === 'working' ? 'sync' : fileService.syncState() === 'pending' ? 'cloud_off' : fileService.driveLink() ? 'cloud_done' : 'cloud' }}</span>
@@ -424,6 +426,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
   `
 })
 export class TopbarComponent {
+  readonly recovery = inject(RecoveryService);
   readonly store = inject(BookStore);
   readonly drive = inject(GoogleDriveService);
   readonly fileService = inject(FileService);

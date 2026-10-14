@@ -450,5 +450,14 @@
   "drive.pickerHint": "Il selettore si apre nel browser. Qui compaiono i documenti accessibili a Libria.",
   "drive.waitingPicker": "Seleziona un file o una cartella nel browser, poi torna a Libria.",
   "drive.replaceOriginal": "Sostituisci l’originale con la mia versione",
-  "drive.replaceHint": "Questa azione sovrascrive la versione di Drive con la copia locale, mantenendo lo stesso file. Se Drive cambia ancora, il salvataggio si interrompe."
+  "drive.replaceHint": "Questa azione sovrascrive la versione di Drive con la copia locale, mantenendo lo stesso file. Se Drive cambia ancora, il salvataggio si interrompe.",
+  "recovery.title": "Recupero e versioni",
+  "recovery.close": "Chiudi",
+  "recovery.description": "Copie locali automatiche ogni 5 secondi in presenza di modifiche. Versioni storiche ogni 2 minuti, fino a 10 per sessione e 50 in totale (circa 200 MB). Il recupero apre una copia senza sovrascrivere l’originale. Conserva anche un backup esterno.",
+  "recovery.error": "Impossibile salvare o leggere il recupero locale. Salva il lavoro in un file e riprova.",
+  "recovery.empty": "Nessuna versione salvata.",
+  "recovery.restore": "Ripristina come copia",
+  "recovery.chapter": "Capitolo",
+  "recovery.addChapter": "Aggiungi capitolo recuperato",
+  "importReport.title": "Avvisi di importazione"
 }

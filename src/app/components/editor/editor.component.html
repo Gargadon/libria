@@ -1,0 +1,743 @@
+@if (store.ui.zenMode()) {
+  <button
+    type="button"
+    class="ed__zen-exit"
+    (click)="store.toggleZenMode()"
+    [attr.title]="'topbar.zenMode' | translate"
+    [attr.aria-label]="'topbar.zenMode' | translate"
+    aria-pressed="true"
+  >
+    <span class="material-symbols-outlined" aria-hidden="true">fullscreen_exit</span>
+  </button>
+}
+
+@if (store.activeChapter(); as chapter) {
+  <main class="ed">
+    @if (selectionToolbar(); as toolbar) {
+      <div
+        class="ed__selection-toolbar"
+        [style.left.px]="toolbar.left"
+        [style.top.px]="toolbar.top"
+        (mousedown)="$event.preventDefault()"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" title="Negrita" (click)="applyInlineFormat('bold')">
+          <span class="material-symbols-outlined">format_bold</span>
+        </button>
+        <button type="button" title="Cursiva" (click)="applyInlineFormat('italic')">
+          <span class="material-symbols-outlined">format_italic</span>
+        </button>
+        <button type="button" title="Subrayado" (click)="applyInlineFormat('underline')">
+          <span class="material-symbols-outlined">format_underlined</span>
+        </button>
+        <span class="ed__selection-toolbar-sep"></span>
+        <button type="button" title="Limpiar formato" (click)="applyInlineFormat('removeFormat')">
+          <span class="material-symbols-outlined">format_clear</span>
+        </button>
+      </div>
+    }
+    <div class="ed__bar">
+      <div class="ed__crumbs">
+        <span class="ed__chip">
+          {{
+            chapter.kind === 'front'
+              ? ('editor.preliminares' | translate)
+              : chapter.kind === 'back'
+                ? ('editor.posliminares' | translate)
+                : ('editor.chapter'
+                  | translate: { number: chapter.number || ('editor.noNumber' | translate) })
+          }}
+        </span>
+        <span class="ed__sep">›</span>
+        <span class="ed__current">{{ chapter.title }}</span>
+      </div>
+      <div class="ed__tools">
+        <button
+          class="ed__t"
+          [attr.title]="'editor.italic' | translate"
+          (click)="execCommand('italic')"
+        >
+          <span class="material-symbols-outlined">format_italic</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.bold' | translate"
+          (click)="execCommand('bold')"
+        >
+          <span class="material-symbols-outlined">format_bold</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.underline' | translate"
+          (click)="execCommand('underline')"
+        >
+          <span class="material-symbols-outlined">format_underlined</span>
+        </button>
+        <span class="ed__tsep"></span>
+        <button
+          class="ed__t ed__t--wide"
+          [attr.title]="'editor.sceneBreak' | translate"
+          (click)="insertSceneBreak()"
+        >
+          <span class="material-symbols-outlined">horizontal_rule</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.pageBreak' | translate"
+          (click)="insertPageBreak()"
+        >
+          <span class="material-symbols-outlined">insert_page_break</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.blockQuote' | translate"
+          (click)="toggleQuote()"
+        >
+          <span class="material-symbols-outlined">format_quote</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.insertUnorderedList' | translate"
+          (click)="insertUnorderedList()"
+        >
+          <span class="material-symbols-outlined">format_list_bulleted</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.insertOrderedList' | translate"
+          (click)="insertOrderedList()"
+        >
+          <span class="material-symbols-outlined">format_list_numbered</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.insertTable' | translate"
+          (click)="insertTable()"
+        >
+          <span class="material-symbols-outlined">table</span>
+        </button>
+        @if (activeBlockType() === 'table') {
+          <span class="ed__tsep"></span>
+          <button
+            class="ed__t"
+            title="Insertar fila arriba"
+            (click)="tables.tableInsertRowAbove(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">expand_less</span>
+          </button>
+          <button
+            class="ed__t"
+            title="Insertar fila abajo"
+            (click)="tables.tableInsertRowBelow(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">expand_more</span>
+          </button>
+          <button
+            class="ed__t"
+            title="Insertar columna izquierda"
+            (click)="tables.tableInsertColLeft(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <button
+            class="ed__t"
+            title="Insertar columna derecha"
+            (click)="tables.tableInsertColRight(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+          <span class="ed__tsep"></span>
+          <button
+            class="ed__t"
+            title="Eliminar fila"
+            (click)="tables.tableDeleteRow(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">remove</span>
+          </button>
+          <button
+            class="ed__t"
+            title="Eliminar columna"
+            (click)="tables.tableDeleteCol(lastFocusedIndex)"
+          >
+            <span class="material-symbols-outlined">backspace</span>
+          </button>
+        }
+        <button
+          class="ed__t"
+          [attr.title]="'editor.insertImage' | translate"
+          (click)="insertImage()"
+        >
+          <span class="material-symbols-outlined">add_photo_alternate</span>
+        </button>
+        <button
+          class="ed__t"
+          [attr.title]="'editor.insertFootnote' | translate"
+          (click)="footnotes.insertFootnote(lastFocusedIndex)"
+        >
+          <span class="material-symbols-outlined">superscript</span>
+        </button>
+        <span class="ed__tsep"></span>
+        <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
+          <i class="ed__statusDot" [class]="'ed__statusDot--' + status()"></i> {{ statusLabel() }}
+        </button>
+      </div>
+    </div>
+
+    <div class="ed__paper">
+      <div class="ed__sheet">
+        <article
+          class="ed__doc"
+          [style.font-family]="store.bookFontFamily()"
+          [style.font-size.px]="ptToPx(store.tweaks.fontSize())"
+          [style.line-height]="store.tweaks.lineHeight()"
+          [style.--p-gap.px]="ptToPx(store.tweaks.paragraphSpacing())"
+          [style.--indent-size]="store.tweaks.indentSize() + 'cm'"
+          [style.--drop-lines]="store.tweaks.dropCapLines()"
+          [class.ed__doc--indent]="store.tweaks.indentFirstLine()"
+          [class.ed__doc--justify]="store.tweaks.justifyText()"
+          [class.ed__doc--hyphen]="store.tweaks.hyphenation()"
+        >
+          @if (chapter.templateId === 'toc') {
+            <div class="ed__toc-preview">
+              <div class="ed__toc-label">{{ 'editor.tocPreviewLabel' | translate }}</div>
+              @for (c of tocChapters(); track c.id) {
+                <div
+                  class="ed__toc-entry"
+                  [class.ed__toc-entry--front]="c.kind === 'front'"
+                  [class.ed__toc-entry--back]="c.kind === 'back'"
+                >
+                  @if (c.kind === 'chapter' && c.number != null) {
+                    <span class="ed__toc-num">{{ c.number }}</span>
+                  }
+                  <span class="ed__toc-title">{{ c.title }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            @for (b of chapter.body; track $index) {
+              <div
+                class="ed__block-container"
+                [attr.data-selection-region]="isTitleBlock(b.type) ? 'title' : 'content'"
+                [class.ed__block-container--has-note]="notes.blockNotes().has($index)"
+              >
+                @if (notes.blockNotes().has($index)) {
+                  <button
+                    class="ed__note-indicator"
+                    (click)="notes.addNoteToBlock(chapter.id, $index)"
+                    [attr.title]="'editor.viewNotes' | translate"
+                  >
+                    <span class="material-symbols-outlined">chat_bubble</span>
+                    <span class="ed__note-count">{{ notes.blockNotes().get($index) }}</span>
+                  </button>
+                }
+                <div class="ed__block-actions">
+                  <button
+                    class="ed__block-btn"
+                    (click)="notes.addNoteToBlock(chapter.id, $index)"
+                    [attr.title]="'editor.addNote' | translate"
+                  >
+                    <span class="material-symbols-outlined">chat_bubble</span>
+                  </button>
+                  <select (change)="onTypeChange(chapter.id, $index, $event)" [value]="b.type">
+                    <option value="p">{{ 'editor.blockParagraph' | translate }}</option>
+                    <option value="first-p">{{ 'editor.blockFirstP' | translate }}</option>
+                    <option value="chapter-title">
+                      {{ 'editor.blockChapterTitle' | translate }}
+                    </option>
+                    <option value="h2">{{ 'editor.blockH2' | translate }}</option>
+                    <option value="h3">{{ 'editor.blockH3' | translate }}</option>
+                    <option value="chapter-num">{{ 'editor.blockChapterNum' | translate }}</option>
+                    <option value="list-unordered">
+                      {{ 'editor.blockUnorderedList' | translate }}
+                    </option>
+                    <option value="list-ordered">
+                      {{ 'editor.blockOrderedList' | translate }}
+                    </option>
+                    <option value="table">{{ 'editor.blockTable' | translate }}</option>
+                    <option value="scene-break">{{ 'editor.blockSceneBreak' | translate }}</option>
+                    <option value="page-break">{{ 'editor.blockPageBreak' | translate }}</option>
+                    <option value="epigraph">{{ 'editor.blockEpigraph' | translate }}</option>
+                    <option value="verse">{{ 'editor.blockVerse' | translate }}</option>
+                    <option value="code">{{ 'editor.blockCode' | translate }}</option>
+                    <option value="blockquote">{{ 'editor.blockQuote' | translate }}</option>
+                    <option value="image">{{ 'editor.blockImage' | translate }}</option>
+                  </select>
+                </div>
+                @switch (b.type) {
+                  @case ('halftitle') {
+                    <h1
+                      class="bk-halftitle"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h1>
+                  }
+                  @case ('title') {
+                    <h1
+                      class="bk-title"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h1>
+                  }
+                  @case ('subtitle') {
+                    <div
+                      class="bk-subtitle"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></div>
+                  }
+                  @case ('author') {
+                    <div
+                      class="bk-author"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></div>
+                  }
+                  @case ('publisher') {
+                    <div
+                      class="bk-publisher"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></div>
+                  }
+                  @case ('dedication') {
+                    <div
+                      class="bk-dedication"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></div>
+                  }
+                  @case ('chapter-num') {
+                    <div
+                      class="bk-chnum"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize()) * 0.8"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></div>
+                  }
+                  @case ('chapter-title') {
+                    <h2
+                      class="bk-chtitle"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h2>
+                  }
+                  @case ('h1') {
+                    <h2
+                      class="bk-h1"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize())"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h2>
+                  }
+                  @case ('h2') {
+                    <h3
+                      class="bk-h2"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize() * 0.85)"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h3>
+                  }
+                  @case ('h3') {
+                    <h4
+                      class="bk-h3"
+                      [style.font-family]="store.titleFontFamily()"
+                      [style.font-size.px]="ptToPx(store.tweaks.titleFontSize() * 0.72)"
+                      [style.text-align]="store.tweaks.titleAlignment()"
+                      [style.font-weight]="store.tweaks.titleBold() ? 'bold' : 'normal'"
+                      [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
+                      [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></h4>
+                  }
+                  @case ('first-p') {
+                    <p class="bk-first" [class.has-dropcap]="store.tweaks.dropCap()">
+                      <span
+                        contenteditable="true"
+                        [spellcheck]="store.tweaks.spellcheck()"
+                        [attr.lang]="store.domLang()"
+                        [appContenteditable]="
+                          (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')
+                        "
+                        [contenteditableHtml]="b.html"
+                        (input)="onInput(chapter.id, $index, $event)"
+                        (focus)="onFocus($index)"
+                        (keydown)="onKeyDown(chapter.id, $index, $event)"
+                        (paste)="onPaste(chapter.id, $index, $event)"
+                        style="outline: none"
+                      ></span>
+                    </p>
+                  }
+                  @case ('p') {
+                    <p
+                      class="bk-p"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></p>
+                  }
+                  @case ('code') {
+                    <pre
+                      class="bk-code"
+                    ><code spellcheck="false" contenteditable="true" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
+                  }
+                  @case ('epigraph') {
+                    <div class="bk-epigraph">
+                      <blockquote
+                        class="bk-epigraph__q"
+                        contenteditable="true"
+                        [spellcheck]="store.tweaks.spellcheck()"
+                        [attr.lang]="store.domLang()"
+                        [appContenteditable]="b.text"
+                        [contenteditableHtml]="b.html"
+                        (input)="onInput(chapter.id, $index, $event)"
+                        (focus)="onFocus($index)"
+                        (keydown)="onKeyDown(chapter.id, $index, $event)"
+                        (paste)="onPaste(chapter.id, $index, $event)"
+                      ></blockquote>
+                      <cite
+                        class="bk-epigraph__att"
+                        contenteditable="true"
+                        spellcheck="false"
+                        [appContenteditable]="b.attribution"
+                        (input)="onAttributionInput(chapter.id, $index, $event)"
+                        (focus)="onFocus($index)"
+                        (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      ></cite>
+                    </div>
+                  }
+                  @case ('verse') {
+                    <pre
+                      class="bk-verse"
+                    ><code contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
+                  }
+                  @case ('blockquote') {
+                    <blockquote
+                      class="bk-quote"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></blockquote>
+                  }
+                  @case ('scene-break') {
+                    <div class="bk-break">{{ sceneBreakGlyph(store.tweaks.sceneBreakType()) }}</div>
+                  }
+                  @case ('page-break') {
+                    <div class="bk-page-break">
+                      <span>{{ 'editor.pageBreakLabel' | translate }}</span>
+                    </div>
+                  }
+                  @case ('image') {
+                    <figure class="bk-image" #imageFigure>
+                      @if (b.src && assetService.assets()[b.src]) {
+                        <div class="bk-image__wrap">
+                          <img
+                            [src]="assetService.assets()[b.src]"
+                            alt=""
+                            class="bk-image__img"
+                            [style.width.px]="b.width"
+                            [style.height.px]="b.height"
+                            [style.transform]="imageTransform(b)"
+                            #imageEl
+                          />
+                          <div class="bk-image__tools">
+                            <button
+                              class="bk-image__tool"
+                              (click)="images.rotateImage(chapter.id, $index, b, -90)"
+                              [attr.title]="'editor.imageRotateCCW' | translate"
+                            >
+                              <span class="material-symbols-outlined">rotate_left</span>
+                            </button>
+                            <button
+                              class="bk-image__tool"
+                              (click)="images.rotateImage(chapter.id, $index, b, 90)"
+                              [attr.title]="'editor.imageRotateCW' | translate"
+                            >
+                              <span class="material-symbols-outlined">rotate_right</span>
+                            </button>
+                            <button
+                              class="bk-image__tool"
+                              (click)="images.flipImage(chapter.id, $index, b, 'h')"
+                              [attr.title]="'editor.imageFlipH' | translate"
+                            >
+                              <span class="material-symbols-outlined">flip</span>
+                            </button>
+                            <button
+                              class="bk-image__tool"
+                              (click)="images.flipImage(chapter.id, $index, b, 'v')"
+                              [attr.title]="'editor.imageFlipV' | translate"
+                            >
+                              <span class="material-symbols-outlined">flip_to_front</span>
+                            </button>
+                          </div>
+                          <span
+                            class="bk-image__resize"
+                            (mousedown)="
+                              images.onImageResizeStart($event, chapter.id, $index, imageEl)
+                            "
+                          ></span>
+                        </div>
+                        <figcaption
+                          class="bk-image__cap"
+                          contenteditable="true"
+                          [appContenteditable]="b.caption"
+                          (input)="images.onImageCaptionInput(chapter.id, $index, $event)"
+                          [attr.data-placeholder]="'editor.imageCaption' | translate"
+                        ></figcaption>
+                      } @else {
+                        <div
+                          class="bk-image__placeholder"
+                          (click)="images.pickImageForBlock(chapter.id, $index)"
+                        >
+                          <span class="material-symbols-outlined">add_photo_alternate</span>
+                          <span>{{ 'editor.imagePlaceholder' | translate }}</span>
+                        </div>
+                      }
+                    </figure>
+                  }
+                  @case ('list-unordered') {
+                    <ul
+                      class="bk-list"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></ul>
+                  }
+                  @case ('list-ordered') {
+                    <ol
+                      class="bk-list"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="b.text"
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></ol>
+                  }
+                  @case ('table') {
+                    <table
+                      class="bk-table"
+                      contenteditable="true"
+                      [spellcheck]="store.tweaks.spellcheck()"
+                      [attr.lang]="store.domLang()"
+                      [appTableContent]="b.html"
+                      (input)="onTableInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                    ></table>
+                  }
+                  @default {
+                    <div class="bk-unknown">[{{ b.type }}]</div>
+                  }
+                }
+              </div>
+            }
+          }
+          <div class="ed__end">{{ 'editor.endFragment' | translate }}</div>
+        </article>
+      </div>
+    </div>
+
+    @if (chapter.footnotes?.length) {
+      <div class="ed__fnpanel">
+        <div class="ed__fnpanel-title">{{ 'editor.footnotes' | translate }}</div>
+        @let sortedFns = sortFootnotesByPosition(chapter.footnotes, chapter.body);
+        @for (fn of sortedFns; track fn.id; let fi = $index) {
+          <div class="ed__fnpanel-item">
+            <span class="ed__fnpanel-num">{{ fi + 1 }}.</span>
+            <textarea
+              class="ed__fnpanel-input"
+              [value]="fn.content"
+              (input)="footnotes.onFootnoteInput(chapter.id, fn.id, $event)"
+              placeholder="{{ 'editor.footnotePlaceholder' | translate }}"
+            ></textarea>
+            <button
+              class="ed__fnpanel-del"
+              (click)="footnotes.onDeleteFootnote(chapter.id, fn.id)"
+              [attr.title]="'editor.delete' | translate"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="ed__statbar">
+      <span style="color: var(--terra); font-weight: 500">{{ statusLabel() }}</span>
+      <span class="ed__dot2"></span>
+      <span>{{ 'editor.readTime' | translate: { min: chapter.readMin } }}</span>
+      <span class="ed__dot2"></span>
+      <span>{{
+        'editor.wordCount'
+          | translate: { count: (chapter.words || 0).toLocaleString(currentLang()) }
+      }}</span>
+      <span class="ed__dot2"></span>
+      <span
+        role="status"
+        [attr.title]="
+          fileService.driveLink() && !store.isDirty() ? ('drive.offlineHint' | translate) : null
+        "
+        >{{
+          (store.isDirty()
+            ? 'editor.unsaved'
+            : fileService.driveLink() && fileService.syncState() !== 'saved'
+              ? 'drive.savedLocally'
+              : 'editor.saved'
+          ) | translate
+        }}</span
+      >
+      <span style="flex: 1"></span>
+      <span>{{ 'editor.layoutLabel' | translate: { version: environment.version } }}</span>
+    </div>
+  </main>
+}
+
+@if (notes.showNoteDialog()) {
+  <app-notes-chat-modal
+    [blockIndex]="notes.noteTargetIndex()!"
+    [chapterId]="notes.noteTargetChapterId()"
+    (close)="notes.closeNoteDialog()"
+  >
+  </app-notes-chat-modal>
+}

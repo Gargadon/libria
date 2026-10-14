@@ -1,0 +1,31 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.attachmentsTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.attachmentsDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  @if (imageAssets().length === 0) {
+    <div class="sb__help">{{ 'sidebar.attachmentsEmpty' | translate }}</div>
+  } @else {
+    <div class="sb__section">
+      {{ 'sidebar.attachmentsCount' | translate: { count: imageAssets().length } }}
+    </div>
+    <div class="sb__attachments-grid">
+      @for (asset of imageAssets(); track asset.key) {
+        <div class="sb__attachment">
+          <div class="sb__attachment-img">
+            <img [src]="asset.data" alt="" />
+          </div>
+          <div class="sb__attachment-info">
+            <span class="sb__attachment-name">{{ asset.key }}</span>
+            <div class="sb__attachment-actions">
+              <button class="sb__btn-link" (click)="insertAttachment(asset.key)">
+                {{ 'sidebar.attachmentsInsert' | translate }}
+              </button>
+              <button class="sb__attachment-del" (click)="deleteAttachment(asset.key)">×</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

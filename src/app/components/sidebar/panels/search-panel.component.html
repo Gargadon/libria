@@ -1,0 +1,70 @@
+<div class="sb__head">
+  <div class="sb__crumb">
+    <span class="sb__dot"></span>
+    <span>{{ 'sidebar.searchTitle' | translate }}</span>
+  </div>
+</div>
+<div class="sb__content sb__content--padding">
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.searchLabel' | translate }}</label>
+    <input
+      class="sb__input"
+      type="text"
+      [attr.placeholder]="'sidebar.searchPlaceholder' | translate"
+      [ngModel]="store.searchQuery()"
+      (ngModelChange)="store.search($event)"
+      (keydown.enter)="store.search($any($event.target).value)"
+      autofocus
+    />
+  </div>
+  <div class="sb__row sb__row--col">
+    <label class="sb__label">{{ 'sidebar.replaceLabel' | translate }}</label>
+    <div class="sb__search-replace-row">
+      <input
+        class="sb__input"
+        type="text"
+        [attr.placeholder]="'sidebar.replacePlaceholder' | translate"
+        [ngModel]="store.replaceQuery()"
+        (ngModelChange)="store.setReplaceQuery($event)"
+      />
+      <button
+        class="sb__btn-primary sb__search-replace-btn"
+        (click)="store.replaceAll(store.replaceQuery())"
+        [disabled]="!store.searchResults().length"
+      >
+        {{ 'sidebar.replaceAll' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__section">
+    {{
+      store.searchResults().length === 1
+        ? ('sidebar.resultCount' | translate: { count: 1 })
+        : ('sidebar.resultCount_plural' | translate: { count: store.searchResults().length })
+    }}
+  </div>
+
+  @if (store.searchResults().length > 0) {
+    <div class="sb__search-results">
+      @for (
+        r of store.searchResults();
+        track r.chapterId + '-' + r.blockIndex + '-' + r.matchIndex
+      ) {
+        <button class="sb__search-item" (click)="goToResult(r)">
+          <div class="sb__search-meta">
+            <span class="sb__search-chapter">{{ r.chapterTitle }}</span>
+            <span class="sb__search-par">¶ {{ r.blockIndex + 1 }}</span>
+          </div>
+          <div class="sb__search-frag" [innerHTML]="searchFrag(r)"></div>
+        </button>
+      }
+    </div>
+  }
+
+  @if (store.searchQuery() && !store.searchResults().length) {
+    <div class="sb__help">
+      {{ 'sidebar.noResults' | translate: { query: store.searchQuery() } }}
+    </div>
+  }
+</div>

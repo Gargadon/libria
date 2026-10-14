@@ -1,0 +1,367 @@
+<div class="sb__head">
+  <div class="sb__title">{{ 'sidebar.stylesTitle' | translate }}</div>
+  <div class="sb__author">{{ 'sidebar.stylesDesc' | translate }}</div>
+</div>
+<div class="sb__content sb__content--padding">
+  <div class="sb__section-row">
+    <span class="sb__section">{{ 'sidebar.themes' | translate }}</span>
+    <button
+      class="sb__theme-import-btn"
+      (click)="panel.importTheme()"
+      [title]="'sidebar.importTheme' | translate"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px">upload</span>
+      {{ 'sidebar.importTheme' | translate }}
+    </button>
+  </div>
+  <div class="sb__themes">
+    @for (theme of panel.allThemes(); track theme.id) {
+      <button
+        class="sb__theme-card"
+        [class.sb__theme-card--active]="panel.activeThemeId() === theme.id"
+        [class.sb__theme-card--custom]="theme.isCustom"
+        (click)="panel.applyTheme(theme)"
+        [id]="'theme-' + theme.id"
+      >
+        <span class="sb__theme-preview" [style.fontFamily]="panel.themePreviewFont(theme)">Aa</span>
+        <span class="sb__theme-name">{{
+          theme.isCustom ? theme.name : (theme.name | translate)
+        }}</span>
+        @if (theme.isCustom) {
+          <span class="sb__theme-actions">
+            <span
+              class="sb__theme-action"
+              (click)="panel.exportTheme(theme, $event)"
+              [title]="'sidebar.exportTheme' | translate"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="panel.exportTheme(theme, $event)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 14px">download</span>
+            </span>
+            <span
+              class="sb__theme-action sb__theme-action--del"
+              (click)="panel.deleteTheme(theme.id, $event)"
+              [title]="'sidebar.deleteTheme' | translate"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="panel.deleteTheme(theme.id, $event)"
+            >
+              ×
+            </span>
+          </span>
+        }
+      </button>
+    }
+  </div>
+  @if (panel.showSaveThemeInput()) {
+    <div class="sb__theme-save">
+      <input
+        class="sb__input sb__theme-save-input"
+        type="text"
+        [placeholder]="'sidebar.themeNamePlaceholder' | translate"
+        [value]="panel.newThemeName()"
+        (input)="panel.newThemeName.set($any($event.target).value)"
+        (keydown.enter)="panel.confirmSaveTheme()"
+        (keydown.escape)="panel.showSaveThemeInput.set(false)"
+        #themeNameInput
+        autofocus
+      />
+      <div class="sb__theme-save-btns">
+        <button
+          class="sb__opt sb__opt--on"
+          (click)="panel.confirmSaveTheme()"
+          [disabled]="!panel.newThemeName().trim()"
+        >
+          {{ 'sidebar.confirmSaveTheme' | translate }}
+        </button>
+        <button class="sb__opt" (click)="panel.showSaveThemeInput.set(false)">
+          {{ 'sidebar.cancelSaveTheme' | translate }}
+        </button>
+      </div>
+    </div>
+  } @else {
+    <button class="sb__btn-link" (click)="panel.showSaveThemeInput.set(true)">
+      + {{ 'sidebar.saveAsTheme' | translate }}
+    </button>
+  }
+  <div class="sb__section">{{ 'sidebar.bodyTypography' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
+    <select
+      class="sb__select sb__select--font"
+      [value]="panel.fonts.bookFontSelectVal()"
+      (change)="panel.fonts.onBookFontSelect($any($event.target).value)"
+    >
+      <optgroup [label]="'sidebar.serif' | translate">
+        <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
+        <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
+        <option value="lora" style="font-family: 'Lora', serif">Lora</option>
+        <option value="spectral" style="font-family: 'Spectral', serif">Spectral</option>
+      </optgroup>
+      <optgroup [label]="'sidebar.sansSerif' | translate">
+        <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
+        <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
+      </optgroup>
+      @if (panel.fonts.systemFontFamilies().length > 0) {
+        <optgroup [label]="'sidebar.systemFonts' | translate">
+          @for (family of panel.fonts.systemFontFamilies(); track family) {
+            <option [value]="family" [style.fontFamily]="family">{{ family }}</option>
+          }
+        </optgroup>
+      }
+      <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
+    </select>
+  </div>
+  @if (panel.fonts.showCustomBookFontInput()) {
+    <div class="sb__row sb__row--col">
+      <label class="sb__label">{{ 'sidebar.customFontName' | translate }}</label>
+      <input
+        class="sb__input"
+        type="text"
+        [ngModel]="panel.store.tweaks.customBookFont()"
+        (ngModelChange)="panel.store.updateTweak('customBookFont', $event)"
+        placeholder="Georgia"
+      />
+    </div>
+  }
+
+  <div class="sb__section">{{ 'sidebar.paragraph' | translate }}</div>
+  <div class="sb__row sb__row--col">
+    <div class="sb__label">
+      {{ 'sidebar.fontSize' | translate: { value: panel.store.tweaks.fontSize() } }}
+    </div>
+    <input
+      type="range"
+      min="8"
+      max="16"
+      step="0.5"
+      [ngModel]="panel.store.tweaks.fontSize()"
+      (ngModelChange)="panel.store.updateTweak('fontSize', $event)"
+    />
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <div class="sb__label">
+      {{ 'sidebar.lineHeight' | translate: { value: panel.store.tweaks.lineHeight() } }}
+    </div>
+    <input
+      type="range"
+      min="1"
+      max="2.5"
+      step="0.1"
+      [ngModel]="panel.store.tweaks.lineHeight()"
+      (ngModelChange)="panel.store.updateTweak('lineHeight', $event)"
+    />
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <div class="sb__label">
+      {{ 'sidebar.spacing' | translate: { value: panel.store.tweaks.paragraphSpacing() } }}
+    </div>
+    <input
+      type="range"
+      min="0"
+      max="24"
+      step="0.5"
+      [ngModel]="panel.store.tweaks.paragraphSpacing()"
+      (ngModelChange)="panel.store.updateTweak('paragraphSpacing', $event)"
+    />
+  </div>
+
+  <div class="sb__section">{{ 'sidebar.options' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.indent' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.indentFirstLine()"
+        (click)="panel.store.updateTweak('indentFirstLine', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.indentFirstLine()"
+        (click)="panel.store.updateTweak('indentFirstLine', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (panel.store.tweaks.indentFirstLine()) {
+    <div class="sb__row sb__row--col">
+      <div class="sb__label">
+        {{ 'sidebar.indentSize' | translate: { value: panel.store.tweaks.indentSize() } }}
+      </div>
+      <input
+        type="range"
+        min="0.1"
+        max="2"
+        step="0.1"
+        [ngModel]="panel.store.tweaks.indentSize()"
+        (ngModelChange)="panel.store.updateTweak('indentSize', $event)"
+      />
+    </div>
+  }
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.justify' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.justifyText()"
+        (click)="panel.store.updateTweak('justifyText', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.justifyText()"
+        (click)="panel.store.updateTweak('justifyText', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.hyphenation' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.hyphenation()"
+        (click)="panel.store.updateTweak('hyphenation', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.hyphenation()"
+        (click)="panel.store.updateTweak('hyphenation', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.smartQuotes' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.smartQuotes()"
+        (click)="panel.store.updateTweak('smartQuotes', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.smartQuotes()"
+        (click)="panel.store.updateTweak('smartQuotes', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.smartDashes' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.smartDashes()"
+        (click)="panel.store.updateTweak('smartDashes', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.smartDashes()"
+        (click)="panel.store.updateTweak('smartDashes', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.smartEllipsis' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.smartEllipsis()"
+        (click)="panel.store.updateTweak('smartEllipsis', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.smartEllipsis()"
+        (click)="panel.store.updateTweak('smartEllipsis', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (panel.store.domLang() === 'es') {
+    <div class="sb__row">
+      <div class="sb__label">{{ 'sidebar.smartOpeningSigns' | translate }}</div>
+      <div class="sb__radio">
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="panel.store.tweaks.smartOpeningSigns()"
+          (click)="panel.store.updateTweak('smartOpeningSigns', true)"
+        >
+          {{ 'sidebar.yes' | translate }}
+        </button>
+        <button
+          class="sb__opt"
+          [class.sb__opt--on]="!panel.store.tweaks.smartOpeningSigns()"
+          (click)="panel.store.updateTweak('smartOpeningSigns', false)"
+        >
+          {{ 'sidebar.no' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="sb__section">{{ 'sidebar.dropCap' | translate }}</div>
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.dropCapToggle' | translate }}</div>
+    <div class="sb__radio">
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.dropCap()"
+        (click)="panel.store.updateTweak('dropCap', true)"
+      >
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button
+        class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.dropCap()"
+        (click)="panel.store.updateTweak('dropCap', false)"
+      >
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (panel.store.tweaks.dropCap()) {
+    <div class="sb__row sb__row--col">
+      <div class="sb__label">
+        {{ 'sidebar.dropCapLines' | translate: { value: panel.store.tweaks.dropCapLines() } }}
+      </div>
+      <input
+        type="range"
+        min="2"
+        max="5"
+        step="1"
+        [ngModel]="panel.store.tweaks.dropCapLines()"
+        (ngModelChange)="panel.store.updateTweak('dropCapLines', $event)"
+      />
+    </div>
+  }
+</div>

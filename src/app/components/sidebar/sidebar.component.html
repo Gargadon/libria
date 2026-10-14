@@ -1,0 +1,641 @@
+<aside class="sb">
+  <button class="sb__close" (click)="store.closeSidebar()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+
+  @switch (store.ui.activeNav()) {
+    <!-- MANUSCRIPT VIEW -->
+    @case ('manuscript') {
+      <div class="sb__head">
+        <div class="sb__crumb">
+          <span class="sb__dot"></span>
+          <span>{{ 'sidebar.library' | translate }}</span>
+        </div>
+        <div class="sb__title">{{ store.book()?.title }}</div>
+        <div class="sb__author">
+          {{ 'sidebar.by' | translate }}
+          {{ store.book()?.authors?.[0] ?? ('sidebar.noAuthor' | translate) }}
+        </div>
+
+        <div class="sb__stats">
+          <div class="sb__stat">
+            <div class="sb__statN">{{ store.totalWords().toLocaleString(currentLang()) }}</div>
+            <div class="sb__statL">{{ 'sidebar.words' | translate }}</div>
+          </div>
+          <div class="sb__stat">
+            <div class="sb__statN">~{{ store.totalReadMin() }}<span>m</span></div>
+            <div class="sb__statL">{{ 'sidebar.reading' | translate }}</div>
+          </div>
+          <div class="sb__stat">
+            <div class="sb__statN">{{ store.mainChaptersCount() }}</div>
+            <div class="sb__statL">{{ 'sidebar.chapters' | translate }}</div>
+          </div>
+        </div>
+      </div>
+
+      @if (store.writingGoals.targetWords() > 0 || store.writingGoals.deadline()) {
+        <div class="sb__goals">
+          @if (store.writingGoals.targetWords() > 0) {
+            <div class="sb__goals-label">
+              {{
+                'sidebar.goalsProgress'
+                  | translate
+                    : {
+                        current: store.totalWords().toLocaleString(currentLang()),
+                        target: store.writingGoals.targetWords().toLocaleString(currentLang()),
+                      }
+              }}
+            </div>
+            <div class="sb__goals-bar">
+              <div class="sb__goals-fill" [style.width.%]="store.wordsProgress()"></div>
+            </div>
+          }
+          @if (store.daysToDeadline() !== null) {
+            <div
+              class="sb__goals-deadline"
+              [class.sb__goals-deadline--warn]="(store.daysToDeadline() ?? 99) <= 7"
+            >
+              @if ((store.daysToDeadline() ?? 0) > 0) {
+                {{ 'sidebar.goalsDeadlineDays' | translate: { days: store.daysToDeadline() } }}
+              } @else if ((store.daysToDeadline() ?? 0) === 0) {
+                {{ 'sidebar.goalsDeadlineToday' | translate }}
+              } @else {
+                {{
+                  'sidebar.goalsDeadlineOver'
+                    | translate: { days: Math.abs(store.daysToDeadline() ?? 0) }
+                }}
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="sb__content">
+        <ng-container
+          *ngTemplateOutlet="
+            groupTemplate;
+            context: { label: ('sidebar.preliminares' | translate), items: frontChapters() }
+          "
+        ></ng-container>
+        <ng-container
+          *ngTemplateOutlet="
+            groupTemplate;
+            context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true }
+          "
+        ></ng-container>
+        <ng-container
+          *ngTemplateOutlet="
+            groupTemplate;
+            context: { label: ('sidebar.posliminares' | translate), items: backChapters() }
+          "
+        ></ng-container>
+      </div>
+
+      <div class="sb__element-settings">
+        @if (store.activeChapter(); as active) {
+          <div class="sb__section">{{ 'sidebar.elementSettings' | translate }}</div>
+          @if (active.kind === 'chapter' || active.kind === 'front' || active.kind === 'back') {
+            <div class="sb__row">
+              <div class="sb__label">{{ 'sidebar.chapterStatus' | translate }}</div>
+              <div class="sb__radio">
+                <button
+                  class="sb__opt sb__opt--status-ok"
+                  [class.sb__opt--on]="active.status === 'ok'"
+                  (click)="store.updateChapterMeta(active.id, { status: 'ok' })"
+                >
+                  {{ 'sidebar.statusOk' | translate }}
+                </button>
+                <button
+                  class="sb__opt sb__opt--status-draft"
+                  [class.sb__opt--on]="
+                    active.status === 'draft' ||
+                    active.status === 'front' ||
+                    active.status === 'back' ||
+                    !active.status
+                  "
+                  (click)="store.updateChapterMeta(active.id, { status: 'draft' })"
+                >
+                  {{ 'sidebar.statusDraft' | translate }}
+                </button>
+                <button
+                  class="sb__opt sb__opt--status-outline"
+                  [class.sb__opt--on]="active.status === 'outline'"
+                  (click)="store.updateChapterMeta(active.id, { status: 'outline' })"
+                >
+                  {{ 'sidebar.statusOutline' | translate }}
+                </button>
+              </div>
+            </div>
+          }
+          <div class="sb__row">
+            <div class="sb__label">{{ 'sidebar.oddPage' | translate }}</div>
+            <div class="sb__radio">
+              <button
+                class="sb__opt"
+                [class.sb__opt--on]="active.forceOddPage"
+                (click)="store.updateChapterMeta(active.id, { forceOddPage: true })"
+              >
+                {{ 'sidebar.yes' | translate }}
+              </button>
+              <button
+                class="sb__opt"
+                [class.sb__opt--on]="!active.forceOddPage"
+                (click)="store.updateChapterMeta(active.id, { forceOddPage: false })"
+              >
+                {{ 'sidebar.no' | translate }}
+              </button>
+            </div>
+          </div>
+          <div class="sb__help">{{ 'sidebar.oddPageHelp' | translate }}</div>
+        }
+      </div>
+
+      <div class="sb__foot">
+        @if (showGoalsEditor()) {
+          <div class="sb__goals-editor">
+            <div class="sb__goals-editor-title">{{ 'sidebar.goalsTitle' | translate }}</div>
+            <div class="sb__row sb__row--col">
+              <label class="sb__label">{{ 'sidebar.goalsTargetWords' | translate }}</label>
+              <input
+                type="number"
+                class="sb__input"
+                min="0"
+                step="1000"
+                [ngModel]="store.writingGoals.targetWords()"
+                (ngModelChange)="updateGoalWords($event)"
+              />
+            </div>
+            <div class="sb__row sb__row--col">
+              <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+              <input
+                type="date"
+                class="sb__input"
+                [ngModel]="store.writingGoals.deadline()"
+                (ngModelChange)="updateGoalDeadline($event)"
+              />
+            </div>
+            <button class="sb__btn-link" (click)="showGoalsEditor.set(false)">
+              {{ 'sidebar.goalsDone' | translate }}
+            </button>
+          </div>
+        } @else {
+          <button class="sb__action-btn" (click)="showGoalsEditor.set(true)">
+            <span class="material-symbols-outlined">flag</span>
+            {{ 'sidebar.goalsEdit' | translate }}
+          </button>
+        }
+        <div class="sb__add-wrapper">
+          <button class="sb__add" (click)="toggleAddMenu($event)">
+            {{ 'sidebar.addElement' | translate }}
+          </button>
+          @if (showAddMenu()) {
+            <div class="sb__add-menu">
+              <div class="sb__add-item sb__add-item--group" (click)="toggleFrontSubmenu($event)">
+                <span>{{ 'sidebar.addFront' | translate }}</span>
+                <span class="sb__add-arrow" [class.sb__add-arrow--open]="showFrontSubmenu()"
+                  >›</span
+                >
+              </div>
+              @if (showFrontSubmenu()) {
+                <div class="sb__add-submenu">
+                  <div
+                    class="sb__add-item sb__add-item--sub"
+                    (click)="addFromTemplate('title-page')"
+                  >
+                    {{ 'sidebar.templateTitlePage' | translate }}
+                  </div>
+                  <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('credits')">
+                    {{ 'sidebar.templateCredits' | translate }}
+                  </div>
+                  <div
+                    class="sb__add-item sb__add-item--sub"
+                    (click)="addFromTemplate('dedication')"
+                  >
+                    {{ 'sidebar.templateDedication' | translate }}
+                  </div>
+                  <div
+                    class="sb__add-item sb__add-item--sub"
+                    (click)="addFromTemplate('acknowledgments')"
+                  >
+                    {{ 'sidebar.templateAcknowledgments' | translate }}
+                  </div>
+                  <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('toc')">
+                    {{ 'sidebar.templateToc' | translate }}
+                  </div>
+                  <div
+                    class="sb__add-item sb__add-item--sub sb__add-item--sep"
+                    (click)="add('front')"
+                  >
+                    {{ 'sidebar.addFrontBlank' | translate }}
+                  </div>
+                </div>
+              }
+              <div class="sb__add-item" (click)="add('chapter')">
+                {{ 'sidebar.addChapter' | translate }}
+              </div>
+              <div class="sb__add-item" (click)="add('back')">
+                {{ 'sidebar.addBack' | translate }}
+              </div>
+            </div>
+          }
+        </div>
+
+        <button class="sb__action-btn" (click)="triggerImport()" [disabled]="importing()">
+          @if (importing()) {
+            <span class="sb__spinner"></span>
+          } @else {
+            <span class="material-symbols-outlined">publish</span>
+          }
+          {{ 'sidebar.importFile' | translate }}
+        </button>
+        <input
+          type="file"
+          #importInput
+          hidden
+          (change)="onImportFile($event)"
+          accept=".docx,.txt"
+        />
+        @if (importService.warnings().length) {
+          <div role="status" style="padding: 12px; overflow-wrap: anywhere">
+            <strong>{{ 'importReport.title' | translate }}</strong>
+            <ul>
+              @for (warning of importService.warnings(); track $index) {
+                <li>{{ warning }}</li>
+              }
+            </ul>
+            <button (click)="importService.warnings.set([])">
+              {{ 'recovery.close' | translate }}
+            </button>
+          </div>
+        }
+
+        <div class="sb__legend">
+          <span><i class="lg lg--ok"></i> {{ 'sidebar.reviewed' | translate }}</span>
+          <span><i class="lg lg--draft"></i> {{ 'sidebar.draft' | translate }}</span>
+          <span><i class="lg lg--out"></i> {{ 'sidebar.outline' | translate }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- STYLES VIEW -->
+    @case ('styles') {
+      <app-sidebar-styles></app-sidebar-styles>
+    }
+
+    <!-- LAYOUT VIEW -->
+    @case ('layout') {
+      <app-sidebar-layout></app-sidebar-layout>
+    }
+
+    <!-- METADATA VIEW -->
+    @case ('metadata') {
+      <app-sidebar-metadata></app-sidebar-metadata>
+    }
+
+    <!-- EXPORT VIEW -->
+    @case ('export') {
+      <app-sidebar-export></app-sidebar-export>
+    }
+
+    <!-- SEARCH VIEW -->
+    @case ('search') {
+      <app-sidebar-search></app-sidebar-search>
+    }
+
+    @case ('attachments') {
+      <app-sidebar-attachments></app-sidebar-attachments>
+    }
+
+    @case ('settings') {
+      <app-sidebar-settings></app-sidebar-settings>
+    }
+
+    @case ('worldbuilding') {
+      @if (activeWorldElement(); as el) {
+        <!-- DETAILED VIEW OF A SHEET -->
+        <div class="sb__head" style="padding-bottom: 8px">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+            <button
+              class="sb__btn-link"
+              style="display: flex; align-items: center; gap: 4px; padding: 0"
+              (click)="selectedWorldElement.set(null)"
+            >
+              <span class="material-symbols-outlined" style="font-size: 16px">arrow_back</span>
+              <span>{{ 'sidebar.goalsDone' | translate }}</span>
+            </button>
+          </div>
+          <div class="sb__title" style="margin-top: 4px">{{ el.name }}</div>
+          <div
+            class="sb__author"
+            style="
+              text-transform: uppercase;
+              font-size: 10px;
+              font-weight: bold;
+              color: var(--accent);
+              margin-top: 2px;
+            "
+          >
+            {{
+              (selectedWorldElement()?.type === 'character'
+                ? 'sidebar.characters'
+                : 'sidebar.locations'
+              ) | translate
+            }}
+          </div>
+        </div>
+
+        <div
+          class="sb__content sb__content--padding"
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: calc(100% - 110px);
+            overflow-y: auto;
+            padding-top: 8px;
+          "
+        >
+          <div class="sb__row sb__row--col">
+            <label class="sb__label">{{ 'sidebar.chapterTitle' | translate }}</label>
+            <input
+              class="sb__input"
+              type="text"
+              [ngModel]="el.name"
+              #nameInput
+              (ngModelChange)="saveWorldElement($event, el.content)"
+            />
+          </div>
+
+          <div
+            class="sb__row sb__row--col"
+            style="flex: 1; display: flex; flex-direction: column; min-height: 250px"
+          >
+            <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+            <textarea
+              class="sb__input"
+              style="
+                flex: 1;
+                min-height: 200px;
+                font-family: inherit;
+                font-size: 12px;
+                line-height: 1.5;
+                resize: vertical;
+              "
+              [ngModel]="el.content"
+              [placeholder]="'sidebar.contentPlaceholder' | translate"
+              #contentInput
+              (ngModelChange)="saveWorldElement(nameInput.value, $event)"
+            ></textarea>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px">
+            <button
+              class="sb__btn-primary"
+              style="width: 100%; background: #ef4444; border-color: #ef4444"
+              (click)="deleteWorldElement(el.id, selectedWorldElement()?.type)"
+            >
+              {{ 'sidebar.deleteElement' | translate }}
+            </button>
+          </div>
+        </div>
+      } @else {
+        <!-- LIST VIEW OF SHEETS -->
+        <div class="sb__head">
+          <div class="sb__title">{{ 'sidebar.worldbuildingTitle' | translate }}</div>
+          <div class="sb__author">{{ 'sidebar.worldbuildingDesc' | translate }}</div>
+        </div>
+
+        <div class="sb__content sb__content--padding">
+          <!-- CHARACTERS SECTION -->
+          <div
+            class="sb__section"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 8px;
+              margin-top: 0;
+            "
+          >
+            <span>{{ 'sidebar.characters' | translate }}</span>
+            <button
+              class="sb__btn-link"
+              style="font-size: 11px; font-weight: bold; padding: 2px 6px"
+              (click)="promptAddCharacter()"
+            >
+              {{ 'sidebar.addCharacter' | translate }}
+            </button>
+          </div>
+
+          @if (store.characters().length === 0) {
+            <div class="sb__help" style="margin-bottom: 20px; font-style: italic">
+              {{ 'sidebar.noCharacters' | translate }}
+            </div>
+          } @else {
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px">
+              @for (c of store.characters(); track c.id) {
+                <div
+                  class="sb__card"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 12px;
+                    background: var(--paper-2);
+                    border: 1px solid var(--rule);
+                    border-radius: 4px;
+                    cursor: pointer;
+                  "
+                  (click)="selectedWorldElement.set({ type: 'character', id: c.id })"
+                >
+                  <span style="font-weight: bold; font-size: 12px; color: var(--ink)">{{
+                    c.name
+                  }}</span>
+                  <span
+                    class="material-symbols-outlined"
+                    style="font-size: 16px; color: var(--ink-mute)"
+                    >edit</span
+                  >
+                </div>
+              }
+            </div>
+          }
+
+          <!-- LOCATIONS SECTION -->
+          <div
+            class="sb__section"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 8px;
+              margin-top: 16px;
+            "
+          >
+            <span>{{ 'sidebar.locations' | translate }}</span>
+            <button
+              class="sb__btn-link"
+              style="font-size: 11px; font-weight: bold; padding: 2px 6px"
+              (click)="promptAddLocation()"
+            >
+              {{ 'sidebar.addLocation' | translate }}
+            </button>
+          </div>
+
+          @if (store.locations().length === 0) {
+            <div class="sb__help" style="font-style: italic">
+              {{ 'sidebar.noLocations' | translate }}
+            </div>
+          } @else {
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              @for (l of store.locations(); track l.id) {
+                <div
+                  class="sb__card"
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 12px;
+                    background: var(--paper-2);
+                    border: 1px solid var(--rule);
+                    border-radius: 4px;
+                    cursor: pointer;
+                  "
+                  (click)="selectedWorldElement.set({ type: 'location', id: l.id })"
+                >
+                  <span style="font-weight: bold; font-size: 12px; color: var(--ink)">{{
+                    l.name
+                  }}</span>
+                  <span
+                    class="material-symbols-outlined"
+                    style="font-size: 16px; color: var(--ink-mute)"
+                    >edit</span
+                  >
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+    @case ('productivity') {
+      <app-sidebar-productivity></app-sidebar-productivity>
+    }
+  }
+  @if (showInputModal()) {
+    <app-input-modal
+      [title]="modalTitle()"
+      [label]="modalLabel()"
+      [initialValue]="modalValue()"
+      [inputType]="modalInputType()"
+      (close)="showInputModal.set(false)"
+      (submit)="onInputSubmit($event)"
+    ></app-input-modal>
+  }
+
+  @if (showConfirmModal()) {
+    <app-confirm-modal
+      [title]="'sidebar.deleteTitle' | translate"
+      [message]="confirmMessage()"
+      (close)="showConfirmModal.set(false)"
+      (confirm)="onConfirmDelete()"
+    ></app-confirm-modal>
+  }
+
+  @if (store.isExporting()) {
+    <div class="sb__export-overlay">
+      <div class="sb__export-modal">
+        <div class="sb__export-spinner"></div>
+        <div class="sb__export-status">{{ store.exportStatus() }}</div>
+      </div>
+    </div>
+  }
+</aside>
+
+<ng-template #groupTemplate let-label="label" let-items="items" let-numbered="numbered">
+  <div class="sbg">
+    <div class="sbg__label">{{ label }}</div>
+    <ul class="sbg__list">
+      @let maxW = store.maxWords();
+      @for (c of items; track c.id; let i = $index; let first = $first; let last = $last) {
+        <li
+          draggable="true"
+          [class.sbi--dragging]="draggedChapterId() === c.id"
+          [class.sbi--drop-before]="dropTargetId() === c.id && !dropAfter()"
+          [class.sbi--drop-after]="dropTargetId() === c.id && dropAfter()"
+          (dragstart)="startChapterDrag(c.id, $event)"
+          (dragover)="overChapter(c.id, $event)"
+          (drop)="dropChapter(c.id, $event)"
+          (dragend)="endChapterDrag()"
+        >
+          <button
+            class="sbi"
+            [class.sbi--on]="store.activeChapterId() === c.id"
+            (click)="store.setActiveChapter(c.id)"
+          >
+            <span
+              class="sbi__num"
+              (dblclick)="editNumber(c, $event)"
+              [attr.title]="'sidebar.doubleClickNumber' | translate"
+            >
+              {{ numbered ? (c.number || 0 | number: '2.0-0') : '·' }}
+            </span>
+            <span class="sbi__body">
+              <div class="sbi__title-row">
+                <span
+                  class="sbi__t"
+                  (dblclick)="editTitle(c, $event)"
+                  [attr.title]="'sidebar.doubleClickTitle' | translate"
+                  >{{ c.title }}</span
+                >
+                <div class="sbi__actions">
+                  <button
+                    class="sbi__move"
+                    [class.sbi__move--hidden]="first"
+                    (click)="moveChapter(c.id, 'up', $event)"
+                    [attr.title]="'sidebar.moveUp' | translate"
+                  >
+                    <span class="material-symbols-outlined">arrow_upward</span>
+                  </button>
+                  <button
+                    class="sbi__move"
+                    [class.sbi__move--hidden]="last"
+                    (click)="moveChapter(c.id, 'down', $event)"
+                    [attr.title]="'sidebar.moveDown' | translate"
+                  >
+                    <span class="material-symbols-outlined">arrow_downward</span>
+                  </button>
+                  <button
+                    class="sbi__del"
+                    (click)="deleteChapter(c, $event)"
+                    [attr.title]="'sidebar.deleteElement' | translate"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <span class="sbi__bar">
+                <span
+                  class="sbi__fill"
+                  [class]="'sbi__fill--' + (c.status || 'draft')"
+                  [style.width.%]="c.words ? Math.max(4, Math.round((c.words / maxW) * 100)) : 6"
+                ></span>
+              </span>
+              <span class="sbi__meta">
+                {{
+                  c.words
+                    ? translate.instant('sidebar.wordCount', {
+                        count: c.words.toLocaleString(currentLang()),
+                      })
+                    : '—'
+                }}
+                {{ c.readMin ? translate.instant('sidebar.readMin', { min: c.readMin }) : '' }}
+              </span>
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+</ng-template>

@@ -9,6 +9,7 @@ import { environment } from '../../environments/environment';
 import { migrateLibriaDocument, validateLibriaDocument } from '../utils/document-validator';
 
 export interface BookState {
+  documentSession: number;
   book: Book | null;
   chapters: Chapter[];
   notes: Note[];
@@ -48,6 +49,7 @@ export interface BookState {
 }
 
 const initialState: BookState = {
+  documentSession: 0,
   book: null,
   chapters: [],
   notes: [],
@@ -230,6 +232,7 @@ export const BookStore = signalStore(
     })
   })),
   withMethods((store) => ({
+    markAsDirty() { patchState(store, { isDirty: true }); },
     saveSnapshot() {
       patchState(store, (state) => {
         const last = state.past[state.past.length - 1];
@@ -286,6 +289,9 @@ export const BookStore = signalStore(
       assetService.load(migrated.assets || {});
       const personalMode = store.personalConfig().mode;
       patchState(store, {
+        documentSession: store.documentSession() + 1,
+        past: [],
+        future: [],
         book: migrated.metadata,
         chapters: migrated.chapters,
         notes: migrated.notes || [],
@@ -335,6 +341,7 @@ export const BookStore = signalStore(
         ]
       };
       patchState(store, {
+        documentSession: store.documentSession() + 1,
         book: newBook,
         chapters: [firstChapter],
         notes: [],
@@ -497,6 +504,7 @@ export const BookStore = signalStore(
     closeDocument(assetService: AssetService) {
       assetService.clear();
       patchState(store, {
+        documentSession: store.documentSession() + 1,
         book: null,
         chapters: [],
         notes: [],
@@ -655,9 +663,10 @@ export const BookStore = signalStore(
         };
       });
     },
-    addChapters(newChapters: Chapter[]) {
+    addChapters(newChapters: Chapter[], newNotes: Note[] = []) {
       patchState(store, (state) => ({
         chapters: [...state.chapters, ...newChapters],
+        notes: [...state.notes, ...newNotes],
         isDirty: true
       }));
     },

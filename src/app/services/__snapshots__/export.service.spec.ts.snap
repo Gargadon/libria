@@ -1,0 +1,635 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`export format regression > keeps the docx archive contents 1`] = `
+{
+  "[Content_Types].xml": "<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default ContentType="image/png" Extension="png"/><Default ContentType="image/jpeg" Extension="jpeg"/><Default ContentType="image/jpeg" Extension="jpg"/><Default ContentType="image/bmp" Extension="bmp"/><Default ContentType="image/gif" Extension="gif"/><Default ContentType="image/svg+xml" Extension="svg"/><Default ContentType="application/vnd.openxmlformats-package.relationships+xml" Extension="rels"/><Default ContentType="application/xml" Extension="xml"/><Default ContentType="application/vnd.openxmlformats-officedocument.obfuscatedFont" Extension="odttf"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml" PartName="/word/document.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml" PartName="/word/styles.xml"/><Override ContentType="application/vnd.openxmlformats-package.core-properties+xml" PartName="/docProps/core.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml" PartName="/docProps/custom.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml" PartName="/docProps/app.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml" PartName="/word/numbering.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml" PartName="/word/footnotes.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml" PartName="/word/endnotes.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml" PartName="/word/settings.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml" PartName="/word/fontTable.xml"/><Override ContentType="application/vnd.openxmlformats-officedocument.theme+xml" PartName="/word/theme/theme1.xml"/></Types>",
+  "docProps/app.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"/>",
+  "docProps/core.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Libro de prueba</dc:title><dc:creator>Autora</dc:creator><cp:lastModifiedBy>Un-named</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">2026-10-13T12:00:00.000Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2026-10-13T12:00:00.000Z</dcterms:modified></cp:coreProperties>",
+  "docProps/custom.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"/>",
+  "word/document.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document mc:Ignorable="w14 w15 wp14" xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" xmlns:cx2="http://schemas.microsoft.com/office/drawing/2015/10/21/chartex" xmlns:cx3="http://schemas.microsoft.com/office/drawing/2016/5/9/chartex" xmlns:cx4="http://schemas.microsoft.com/office/drawing/2016/5/10/chartex" xmlns:cx5="http://schemas.microsoft.com/office/drawing/2016/5/11/chartex" xmlns:cx6="http://schemas.microsoft.com/office/drawing/2016/5/12/chartex" xmlns:cx7="http://schemas.microsoft.com/office/drawing/2016/5/13/chartex" xmlns:cx8="http://schemas.microsoft.com/office/drawing/2016/5/14/chartex" xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" xmlns:am3d="http://schemas.microsoft.com/office/drawing/2017/model3d" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"><w:body><w:p><w:pPr><w:spacing w:after="100" w:before="3000"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="3810000" cy="5715000"/><wp:effectExtent t="0" r="0" b="0" l="0"/><wp:docPr id="1" name="" descr="" title=""/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="" descr=""/><pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId-STABLE" cstate="none"/><a:srcRect/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr bwMode="auto"><a:xfrm><a:off x="0" y="0"/><a:ext cx="3810000" cy="5715000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:pPr><w:pageBreakBefore/></w:pPr></w:p><w:p><w:pPr><w:spacing w:after="400" w:before="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Spectral" w:cs="Spectral" w:eastAsia="Spectral" w:hAnsi="Spectral"/><w:b/><w:bCs/><w:i w:val="false"/><w:iCs w:val="false"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr><w:t xml:space="preserve">Primero</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="80" w:line="384"/><w:ind w:firstLine="0"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b/><w:bCs/><w:i w:val="false"/><w:iCs w:val="false"/><w:smallCaps/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Texto</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b w:val="false"/><w:bCs w:val="false"/><w:i w:val="false"/><w:iCs w:val="false"/><w:smallCaps w:val="false"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve"> con </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b w:val="false"/><w:bCs w:val="false"/><w:i/><w:iCs/><w:smallCaps w:val="false"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">estilo</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="80" w:line="384"/><w:ind w:firstLine="284"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b w:val="false"/><w:bCs w:val="false"/><w:i w:val="false"/><w:iCs w:val="false"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Nota</w:t></w:r><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="1"/></w:r><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b w:val="false"/><w:bCs w:val="false"/><w:i w:val="false"/><w:iCs w:val="false"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">[1]</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="400" w:before="400"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:color w:val="888888"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">* * *</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr><w:spacing w:after="60" w:line="384"/><w:ind w:left="720" w:hanging="360"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Uno</w:t></w:r></w:p><w:p><w:pPr><w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr><w:spacing w:after="60" w:line="384"/><w:ind w:left="720" w:hanging="360"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Dos</w:t></w:r></w:p><w:tbl><w:tblPr><w:tblW w:type="pct" w:w="5000"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4"/><w:left w:val="single" w:color="auto" w:sz="4"/><w:bottom w:val="single" w:color="auto" w:sz="4"/><w:right w:val="single" w:color="auto" w:sz="4"/><w:insideH w:val="single" w:color="auto" w:sz="4"/><w:insideV w:val="single" w:color="auto" w:sz="4"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w="9026"/></w:tblGrid><w:tr><w:tc><w:p><w:pPr><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Celda</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:p><w:pPr><w:spacing w:after="0" w:before="200"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="762000" cy="762000"/><wp:effectExtent t="0" r="0" b="0" l="0"/><wp:docPr id="2" name="" descr="" title=""/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="" descr=""/><pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId-STABLE" cstate="none"/><a:srcRect/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr bwMode="auto"><a:xfrm flipV="false" flipH="true" rot="5400000"><a:off x="0" y="0"/><a:ext cx="762000" cy="762000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p><w:p><w:pPr><w:spacing w:after="200" w:before="60"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="555555"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">Imagen</w:t></w:r></w:p><w:p><w:pPr><w:pageBreakBefore/></w:pPr></w:p><w:p><w:pPr><w:spacing w:after="80" w:line="384"/><w:ind w:firstLine="0"/><w:jc w:val="left"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:b w:val="false"/><w:bCs w:val="false"/><w:i w:val="false"/><w:iCs w:val="false"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Final</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="708" w:footer="708" w:gutter="0"/><w:pgNumType/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>",
+  "word/endnotes.xml": "<?xml version="1.0" encoding="UTF-8"?><w:endnotes xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 wp14"><w:endnote w:type="separator" w:id="-1"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:separator/></w:r></w:p></w:endnote><w:endnote w:type="continuationSeparator" w:id="0"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r><w:r><w:continuationSeparator/></w:r></w:p></w:endnote></w:endnotes>",
+  "word/fontTable.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:fonts xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:w16cex="http://schemas.microsoft.com/office/word/2018/wordml/cex" xmlns:w16cid="http://schemas.microsoft.com/office/word/2016/wordml/cid" xmlns:w16="http://schemas.microsoft.com/office/word/2018/wordml" xmlns:w16sdtdh="http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash" xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex" mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh"/>",
+  "word/footnotes.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:footnotes xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 wp14"><w:footnote w:type="separator" w:id="-1"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r><w:r><w:separator/></w:r></w:p></w:footnote><w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r><w:r><w:continuationSeparator/></w:r></w:p></w:footnote><w:footnote w:id="1"><w:p><w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r><w:r><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">Texto de nota</w:t></w:r></w:p></w:footnote></w:footnotes>",
+  "word/numbering.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering mc:Ignorable="w14 w15 wp14" xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><w:abstractNum w:abstractNumId="1" w15:restartNumberingAfterBreak="0"><w:multiLevelType w:val="hybridMultilevel"/><w:lvl w:ilvl="0" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="●"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="1" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="○"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="2" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="■"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="2160" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="3" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="●"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="2880" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="4" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="○"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="3600" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="5" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="■"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="4320" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="6" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="●"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="5040" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="7" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="●"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="5760" w:hanging="360"/></w:pPr></w:lvl><w:lvl w:ilvl="8" w:tentative="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="●"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="6480" w:hanging="360"/></w:pPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="1"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num></w:numbering>",
+  "word/settings.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:wp14="http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" mc:Ignorable="w14 w15 wp14"><w:displayBackgroundShape/><w:evenAndOddHeaders w:val="false"/><w:compat><w:compatSetting w:val="15" w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word"/></w:compat></w:settings>",
+  "word/styles.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles mc:Ignorable="w14 w15" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Lora" w:cs="Lora" w:eastAsia="Lora" w:hAnsi="Lora"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:rPrDefault><w:pPrDefault/></w:docDefaults><w:style w:type="paragraph" w:styleId="Normal" w:default="1"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:styleId="TableNormal" w:default="true"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:tblPr><w:tblInd w:type="dxa" w:w="0"/><w:tblCellMar><w:top w:type="dxa" w:w="0"/><w:left w:type="dxa" w:w="108"/><w:bottom w:type="dxa" w:w="0"/><w:right w:type="dxa" w:w="108"/></w:tblCellMar></w:tblPr></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="Heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="2E74B5"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="Heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="2E74B5"/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="Heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="1F4D78"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading4"><w:name w:val="Heading 4"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:i/><w:iCs/><w:color w:val="2E74B5"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading5"><w:name w:val="Heading 5"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="2E74B5"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading6"><w:name w:val="Heading 6"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="1F4D78"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Strong"><w:name w:val="Strong"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:bCs/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/></w:style><w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:basedOn w:val="DefaultParagraphFont"/><w:uiPriority w:val="99"/><w:unhideWhenUsed/><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr></w:style><w:style w:type="character" w:styleId="FootnoteReference"><w:name w:val="footnote reference"/><w:basedOn w:val="DefaultParagraphFont"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="FootnoteText"><w:name w:val="footnote text"/><w:basedOn w:val="Normal"/><w:link w:val="FootnoteTextChar"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style><w:style w:type="character" w:styleId="FootnoteTextChar"><w:name w:val="Footnote Text Char"/><w:basedOn w:val="DefaultParagraphFont"/><w:link w:val="FootnoteText"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style><w:style w:type="character" w:styleId="EndnoteReference"><w:name w:val="endnote reference"/><w:basedOn w:val="DefaultParagraphFont"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:rPr><w:vertAlign w:val="superscript"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="EndnoteText"><w:name w:val="endnote text"/><w:basedOn w:val="Normal"/><w:link w:val="EndnoteTextChar"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style><w:style w:type="character" w:styleId="EndnoteTextChar"><w:name w:val="Endnote Text Char"/><w:basedOn w:val="DefaultParagraphFont"/><w:link w:val="EndnoteText"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style></w:styles>",
+  "word/theme/theme1.xml": "<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office Theme"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2><a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4><a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri Light" panose="020F0302020204030204"/><a:ea typeface=""/><a:cs typeface=""/><a:font script="Jpan" typeface="游ゴシック Light"/><a:font script="Hang" typeface="맑은 고딕"/><a:font script="Hans" typeface="等线 Light"/><a:font script="Hant" typeface="新細明體"/><a:font script="Arab" typeface="Times New Roman"/><a:font script="Hebr" typeface="Times New Roman"/><a:font script="Thai" typeface="Angsana New"/><a:font script="Ethi" typeface="Nyala"/><a:font script="Beng" typeface="Vrinda"/><a:font script="Gujr" typeface="Shruti"/><a:font script="Khmr" typeface="MoolBoran"/><a:font script="Knda" typeface="Tunga"/><a:font script="Guru" typeface="Raavi"/><a:font script="Cans" typeface="Euphemia"/><a:font script="Cher" typeface="Plantagenet Cherokee"/><a:font script="Yiii" typeface="Microsoft Yi Baiti"/><a:font script="Tibt" typeface="Microsoft Himalaya"/><a:font script="Thaa" typeface="MV Boli"/><a:font script="Deva" typeface="Mangal"/><a:font script="Telu" typeface="Gautami"/><a:font script="Taml" typeface="Latha"/><a:font script="Syrc" typeface="Estrangelo Edessa"/><a:font script="Orya" typeface="Kalinga"/><a:font script="Mlym" typeface="Kartika"/><a:font script="Laoo" typeface="DokChampa"/><a:font script="Sinh" typeface="Iskoola Pota"/><a:font script="Mong" typeface="Mongolian Baiti"/><a:font script="Viet" typeface="Times New Roman"/><a:font script="Uigh" typeface="Microsoft Uighur"/><a:font script="Geor" typeface="Sylfaen"/><a:font script="Armn" typeface="Arial"/><a:font script="Bugi" typeface="Leelawadee UI"/><a:font script="Bopo" typeface="Microsoft JhengHei"/><a:font script="Java" typeface="Javanese Text"/><a:font script="Lisu" typeface="Segoe UI"/><a:font script="Mymr" typeface="Myanmar Text"/><a:font script="Nkoo" typeface="Ebrima"/><a:font script="Olck" typeface="Nirmala UI"/><a:font script="Osma" typeface="Ebrima"/><a:font script="Phag" typeface="Phagspa"/><a:font script="Syrn" typeface="Estrangelo Edessa"/><a:font script="Syrj" typeface="Estrangelo Edessa"/><a:font script="Syre" typeface="Estrangelo Edessa"/><a:font script="Sora" typeface="Nirmala UI"/><a:font script="Tale" typeface="Microsoft Tai Le"/><a:font script="Talu" typeface="Microsoft New Tai Lue"/><a:font script="Tfng" typeface="Ebrima"/></a:majorFont><a:minorFont><a:latin typeface="Calibri" panose="020F0502020204030204"/><a:ea typeface=""/><a:cs typeface=""/><a:font script="Jpan" typeface="游明朝"/><a:font script="Hang" typeface="맑은 고딕"/><a:font script="Hans" typeface="等线"/><a:font script="Hant" typeface="新細明體"/><a:font script="Arab" typeface="Arial"/><a:font script="Hebr" typeface="Arial"/><a:font script="Thai" typeface="Cordia New"/><a:font script="Ethi" typeface="Nyala"/><a:font script="Beng" typeface="Vrinda"/><a:font script="Gujr" typeface="Shruti"/><a:font script="Khmr" typeface="DaunPenh"/><a:font script="Knda" typeface="Tunga"/><a:font script="Guru" typeface="Raavi"/><a:font script="Cans" typeface="Euphemia"/><a:font script="Cher" typeface="Plantagenet Cherokee"/><a:font script="Yiii" typeface="Microsoft Yi Baiti"/><a:font script="Tibt" typeface="Microsoft Himalaya"/><a:font script="Thaa" typeface="MV Boli"/><a:font script="Deva" typeface="Mangal"/><a:font script="Telu" typeface="Gautami"/><a:font script="Taml" typeface="Latha"/><a:font script="Syrc" typeface="Estrangelo Edessa"/><a:font script="Orya" typeface="Kalinga"/><a:font script="Mlym" typeface="Kartika"/><a:font script="Laoo" typeface="DokChampa"/><a:font script="Sinh" typeface="Iskoola Pota"/><a:font script="Mong" typeface="Mongolian Baiti"/><a:font script="Viet" typeface="Arial"/><a:font script="Uigh" typeface="Microsoft Uighur"/><a:font script="Geor" typeface="Sylfaen"/><a:font script="Armn" typeface="Arial"/><a:font script="Bugi" typeface="Leelawadee UI"/><a:font script="Bopo" typeface="Microsoft JhengHei"/><a:font script="Java" typeface="Javanese Text"/><a:font script="Lisu" typeface="Segoe UI"/><a:font script="Mymr" typeface="Myanmar Text"/><a:font script="Nkoo" typeface="Ebrima"/><a:font script="Olck" typeface="Nirmala UI"/><a:font script="Osma" typeface="Ebrima"/><a:font script="Phag" typeface="Phagspa"/><a:font script="Syrn" typeface="Estrangelo Edessa"/><a:font script="Syrj" typeface="Estrangelo Edessa"/><a:font script="Syre" typeface="Estrangelo Edessa"/><a:font script="Sora" typeface="Nirmala UI"/><a:font script="Tale" typeface="Microsoft Tai Le"/><a:font script="Talu" typeface="Microsoft New Tai Lue"/><a:font script="Tfng" typeface="Ebrima"/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:gradFill rotWithShape="true"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:lumMod val="110000"/><a:satMod val="105000"/><a:tint val="67000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="103000"/><a:tint val="73000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="109000"/><a:tint val="81000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="false"/></a:gradFill><a:gradFill rotWithShape="true"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:satMod val="103000"/><a:lumMod val="102000"/><a:tint val="94000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:satMod val="110000"/><a:lumMod val="100000"/><a:shade val="100000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="99000"/><a:satMod val="120000"/><a:shade val="78000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="false"/></a:gradFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln><a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst><a:outerShdw blurRad="57150" dist="19050" dir="5400000" algn="ctr" rotWithShape="false"><a:srgbClr val="000000"><a:alpha val="63000"/></a:srgbClr></a:outerShdw></a:effectLst></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/><a:satMod val="170000"/></a:schemeClr></a:solidFill><a:gradFill rotWithShape="true"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="93000"/><a:satMod val="150000"/><a:shade val="98000"/><a:lumMod val="102000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:tint val="98000"/><a:satMod val="130000"/><a:shade val="90000"/><a:lumMod val="103000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="63000"/><a:satMod val="120000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="false"/></a:gradFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements><a:objectDefaults/><a:extraClrSchemeLst/></a:theme>",
+}
+`;
+
+exports[`export format regression > keeps the epub archive contents 1`] = `
+{
+  "META-INF/container.xml": "<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>",
+  "OEBPS/chapters/one.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Primero</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
+<body><h2>Primero</h2><p class="first-p"><strong>Texto</strong> con <em>estilo</em></p><p>Nota<sup data-fn="fn-one">[1]</sup></p><p style="text-align:center;margin:1em 0;color:#888">* * *</p><ul class="kp-list"><li>Uno</li><li>Dos</li></ul><div class="kp-table-wrap"><table><tbody><tr><td>Celda</td></tr></tbody></table></div><figure style="text-align:center;margin:1em 0"><img src="../images/img-img-test.png" style="max-width:100%;display:block;margin:0 auto;width:80px;height:80px;transform:rotate(90deg) scaleX(-1)" alt=""/><figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">Imagen</figcaption></figure><div style="page-break-after:always"></div><div class="kp-fnpanel"><hr class="kp-fnpanel-rule"><div class="kp-fnpanel-item"><span class="kp-fnpanel-num">1.</span> <span class="kp-fnpanel-text">Texto de nota</span></div></div></body></html>",
+  "OEBPS/chapters/two.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Segundo</title><link rel="stylesheet" type="text/css" href="../styles.css"/></head>
+<body><p>Final</p></body></html>",
+  "OEBPS/content.opf": "<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="pub-id" version="3.0">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="pub-id">123</dc:identifier>
+    <dc:title>Libro de prueba</dc:title>
+    <dc:creator>Autora</dc:creator>
+    <dc:language>es-MX</dc:language>
+    <dc:publisher>Libria</dc:publisher>
+    <dc:date>2026-01-01</dc:date>
+    <meta property="dcterms:modified">2026-10-13T12:00:00Z</meta>
+  </metadata>
+  <manifest>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="css" href="styles.css" media-type="text/css"/>
+    <item id="cover-image" href="images/cover.png" media-type="image/png" properties="cover-image"/>
+    <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
+
+
+    <item id="img-img-test" href="images/img-img-test.png" media-type="image/png"/>
+
+    <item id="chapter_0" href="chapters/one.xhtml" media-type="application/xhtml+xml"/>
+    <item id="chapter_1" href="chapters/two.xhtml" media-type="application/xhtml+xml"/>
+
+  </manifest>
+  <spine>
+    <itemref idref="cover"/>
+
+    <itemref idref="nav"/>
+    <itemref idref="chapter_0"/>
+    <itemref idref="chapter_1"/>
+
+  </spine>
+</package>",
+  "OEBPS/cover.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Portada</title><style>body { margin: 0; padding: 0; text-align: center; } img { max-width: 100%; height: auto; }</style></head>
+<body><img src="images/cover.png" alt="Portada"/></body>
+</html>",
+  "OEBPS/nav.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Contenidos</title></head>
+<body><nav epub:type="toc"><h1>Contenidos</h1><ol><li><a href="chapters/one.xhtml">Primero</a></li><li><a href="chapters/two.xhtml">Segundo</a></li></ol></nav></body></html>",
+  "OEBPS/styles.css": "body { font-family: 'Lora', serif, serif; padding: 5%; line-height: 1.5; }
+h1, h2 { font-family: 'Spectral', serif, serif; text-align: center; }
+p { margin: 0; text-align: justify; }
+p + p { text-indent: 1.5em; }
+.first-p { text-indent: 0; }
+.kp-list { margin: 0.5em 0; padding-left: 1.5em; }
+.kp-list li { margin: 0.2em 0; }
+.kp-table-wrap { overflow-x: auto; margin: 1em 0; }
+.kp-table-wrap table { border-collapse: collapse; width: 100%; }
+.kp-table-wrap td, .kp-table-wrap th { border: 1px solid #ccc; padding: 6px; text-align: left; vertical-align: top; }
+.kp-fnpanel { margin-top: 2em; font-size: 0.85em; color: #555; }
+.kp-fnpanel-rule { border: 0; border-top: 1px solid #ccc; margin-bottom: 0.8em; }
+.kp-fnpanel-item { margin-bottom: 0.4em; line-height: 1.4; }
+.kp-fnpanel-num { font-weight: bold; }
+.kp-epigraph { text-align: center; margin: 1.5em 0; }
+.kp-epigraph blockquote { font-style: italic; font-size: 0.9em; margin: 0; }
+.kp-epigraph cite { display: block; margin-top: 0.5em; font-size: 0.85em; color: #555; }
+.kp-verse { font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-line; line-height: 1.6; margin: 1em 0; }
+.kp-code { background: #f5f3f1; padding: 1em; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
+.kp-code code { font-family: inherit; }
+.kp-toc { list-style: none; padding: 0; margin: 1em 0; }
+.kp-toc-item { padding: 0.35em 0; font-size: 1em; }
+.kp-toc-item a { text-decoration: none; color: inherit; }
+.kp-toc-item--front { color: #555; }
+.kp-toc-item--back { color: #555; }
+.kp-toc-num { font-variant-numeric: tabular-nums; margin-right: 0.4em; }
+.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }",
+}
+`;
+
+exports[`export format regression > keeps the odt archive contents 1`] = `
+{
+  "META-INF/manifest.xml": "<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2">
+  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+  <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
+  <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
+  <manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/>
+</manifest:manifest>",
+  "content.xml": "<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content
+    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+    xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+    xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+    xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+    xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    office:version="1.2">
+  <office:scripts/>
+  <office:font-face-decls/>
+  <office:automatic-styles>
+    <style:style style:name="Bold" style:family="text">
+      <style:text-properties fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="Italic" style:family="text">
+      <style:text-properties fo:font-style="italic"/>
+    </style:style>
+    <style:style style:name="Underline" style:family="text">
+      <style:text-properties style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Bold_Italic" style:family="text">
+      <style:text-properties fo:font-weight="bold" fo:font-style="italic"/>
+    </style:style>
+    <style:style style:name="Bold_Underline" style:family="text">
+      <style:text-properties fo:font-weight="bold" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Italic_Underline" style:family="text">
+      <style:text-properties fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Bold_Italic_Underline" style:family="text">
+      <style:text-properties fo:font-weight="bold" fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
+    </style:style>
+    <style:style style:name="Footnote" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.05in"/>
+      <style:text-properties fo:font-size="10pt"/>
+    </style:style>
+    <style:style style:name="Title" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:text-align="center" fo:margin-top="1in" fo:margin-bottom="0.5in"/>
+      <style:text-properties fo:font-size="24pt" fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="Subtitle" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.3in"/>
+      <style:text-properties fo:font-size="14pt" fo:font-style="italic"/>
+    </style:style>
+    <style:style style:name="Author" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.5in"/>
+      <style:text-properties fo:font-size="14pt"/>
+    </style:style>
+    <style:style style:name="Heading_1" style:family="paragraph">
+      <style:paragraph-properties fo:margin-top="0.4in" fo:margin-bottom="0.2in" fo:keep-with-next="always" fo:text-align="center"/>
+      <style:text-properties fo:font-size="18pt" fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="Heading_2" style:family="paragraph">
+      <style:paragraph-properties fo:margin-top="0.3in" fo:margin-bottom="0.15in" fo:keep-with-next="always"/>
+      <style:text-properties fo:font-size="14pt" fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="Heading_3" style:family="paragraph">
+      <style:paragraph-properties fo:margin-top="0.25in" fo:margin-bottom="0.1in" fo:keep-with-next="always"/>
+      <style:text-properties fo:font-size="12pt" fo:font-weight="bold"/>
+    </style:style>
+    <style:style style:name="Blockquote" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:margin-left="0.5in" fo:margin-right="0.5in" fo:margin-top="0.1in" fo:margin-bottom="0.1in" fo:text-align="justify"/>
+      <style:text-properties fo:font-size="11pt" fo:font-style="italic"/>
+    </style:style>
+    <style:style style:name="Preformatted" style:family="paragraph">
+      <style:paragraph-properties fo:margin-top="0.1in" fo:margin-bottom="0.1in" fo:margin-left="0.2in"/>
+      <style:text-properties fo:font-name="Courier New" fo:font-size="10pt" style:font-family-generic="modern"/>
+    </style:style>
+    <style:style style:name="Horizontal_Separator" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:text-align="center" fo:margin-top="0.2in" fo:margin-bottom="0.2in"/>
+    </style:style>
+    <style:style style:name="Page_Break" style:family="paragraph" style:parent-style-name="Standard">
+      <style:paragraph-properties fo:break-before="page"/>
+    </style:style>
+  </office:automatic-styles>
+  <office:body>
+    <office:text>
+      <text:h text:outline-level="1" text:style-name="Heading_1">Primero</text:h>
+<text:p text:style-name="Standard"><text:span text:style-name="Bold">Texto</text:span> con <text:span text:style-name="Italic">estilo</text:span></text:p>
+<text:p text:style-name="Standard">Nota<text:note text:id="ftn1" text:note-class="footnote"><text:note-citation>1</text:note-citation><text:note-body><text:p text:style-name="Footnote">Texto de nota</text:p></text:note-body></text:note>[1]</text:p>
+<text:p text:style-name="Horizontal_Separator">* * *</text:p>
+<text:list><text:list-item><text:p>Uno</text:p></text:list-item><text:list-item><text:p>Dos</text:p></text:list-item></text:list>
+<text:p>Celda</text:p>
+<text:p></text:p>
+<text:p text:style-name="Page_Break"/>
+<text:p text:style-name="Page_Break"/>
+<text:p text:style-name="Standard">Final</text:p>
+    </office:text>
+  </office:body>
+</office:document-content>",
+  "meta.xml": "<?xml version="1.0" encoding="UTF-8"?>
+<office:document-meta
+    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"
+    office:version="1.2">
+  <office:meta>
+    <meta:generator>Libria</meta:generator>
+    <dc:title>Libro de prueba</dc:title>
+    <dc:creator>Autora</dc:creator>
+    <meta:creation-date>2026-10-13T12:00:00.000Z</meta:creation-date>
+    <dc:language>es-MX</dc:language>
+  </office:meta>
+</office:document-meta>",
+  "styles.xml": "<?xml version="1.0" encoding="UTF-8"?>
+<office:document-styles
+    xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+    xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+    xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+    office:version="1.2">
+  <office:styles>
+    <style:default-style style:family="paragraph">
+      <style:paragraph-properties fo:line-height="150%" fo:margin-bottom="0.2in"/>
+      <style:text-properties fo:font-size="12pt" fo:font-family="Liberation Serif"/>
+    </style:default-style>
+  </office:styles>
+</office:document-styles>",
+}
+`;
+
+exports[`export format regression > keeps the print composition used by preview and PDF 1`] = `
+"<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <title>Libro de prueba</title>
+  <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+@page {
+  size: 5in 8in;
+  margin-top: 20mm;
+  margin-bottom: 20mm;
+}
+@page :left {
+  margin-left: 15mm;
+  margin-right: 25mm;
+}
+@page :right {
+  margin-left: 25mm;
+  margin-right: 15mm;
+}
+
+
+@page :first {
+  @top-left { content: none !important; }
+  @top-center { content: none !important; }
+  @top-right { content: none !important; }
+  @bottom-left { content: none !important; }
+  @bottom-center { content: none !important; }
+  @bottom-right { content: none !important; }
+}
+      
+@page {
+  @top-center {
+    content: "Libro de prueba";
+    
+        font-family: 'Lora', serif;
+        font-size: 9pt;
+        color: #555;
+        font-weight: normal;
+        font-style: normal;
+      
+    font-style: italic;
+  }
+}
+        
+@page {
+  @bottom-center {
+    content: counter(page);
+    
+        font-family: 'Lora', serif;
+        font-size: 9pt;
+        color: #555;
+        font-weight: normal;
+        font-style: normal;
+      
+  }
+}
+          
+
+body {
+  font-family: 'Lora', serif;
+  font-size: 12pt;
+  line-height: 1.6;
+  color: #000;
+  background: #fff;
+}
+
+/* ── Chapter separators ── */
+.ch { break-before: page; break-inside: auto; }
+.ch:first-child { break-before: auto; }
+.ch--recto { break-before: recto; }
+
+/* ── Paragraphs ── */
+.kp-p {
+  margin-top: 0.333em;
+  text-align: left;
+  
+  break-inside: auto;
+  widows: 2; orphans: 2;
+  overflow-wrap: break-word;
+}
+.kp-p + .kp-p,
+.kp-first + .kp-p {
+  text-indent: 0.5cm;
+  margin-top: 0.333em;
+}
+.kp-p:first-of-type { margin-top: 0; }
+
+.kp-first {
+  text-indent: 0;
+  text-align: left;
+  
+  break-inside: avoid;
+  widows: 2; orphans: 2;
+}
+.kp-first::first-line {
+  font-variant: small-caps;
+  letter-spacing: .04em;
+}
+
+.has-dropcap::first-letter {
+  font-family: 'Spectral', serif;
+  float: left;
+  font-size: calc(3 * 1.2em);
+  line-height: .85;
+  padding: 2pt 4pt 0 0;
+}
+
+
+/* ── Titles ── */
+.kp-halftitle {
+  font-family: 'Spectral', serif;
+  font-size: 19.2pt;
+  font-weight: bold; font-style: normal; text-decoration: none;
+  text-align: center;
+  line-height: 1.2;
+  margin: 50pt 0 0;
+  break-after: avoid;
+}
+.kp-title {
+  font-family: 'Spectral', serif;
+  font-size: 28.8pt;
+  font-weight: bold; font-style: normal; text-decoration: none;
+  text-align: center;
+  line-height: 1.1;
+  margin: 36pt 0 6pt;
+  break-after: avoid;
+}
+.kp-sub {
+  text-align: center;
+  font-style: italic;
+  font-size: 10.8pt;
+  margin-bottom: 28pt;
+  color: #3a3530;
+  break-inside: avoid;
+}
+.kp-author {
+  text-align: center;
+  font-size: 10.2pt;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 6pt;
+  break-inside: avoid;
+}
+.kp-pub {
+  text-align: center;
+  font-size: 8.4pt;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #5a554d;
+  margin-top: 56pt;
+  break-inside: avoid;
+}
+.kp-ded {
+  text-align: center;
+  font-style: italic;
+  line-height: 1.8;
+  margin: 48pt 16pt;
+  break-inside: avoid;
+}
+.kp-chnum {
+  font-family: 'Spectral', serif;
+  font-size: 11.2pt;
+  font-weight: bold; font-style: normal;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #5a554d;
+  margin: 6pt 0 4pt;
+  break-after: avoid;
+}
+.kp-chtitle {
+  font-family: 'Spectral', serif;
+  font-size: 16pt;
+  font-weight: bold; font-style: normal; text-decoration: none;
+  text-align: center;
+  line-height: 1.2;
+  margin: 0 0 22pt;
+  break-after: avoid;
+}
+.kp-chtitle::after {
+  content: "";
+  display: block;
+  width: 24pt;
+  height: 0.5px;
+  background: #1f1c18;
+  margin: 8pt auto 0;
+  opacity: .5;
+}
+.kp-h1 {
+  font-family: 'Spectral', serif;
+  font-size: 13.6pt;
+  font-weight: bold; font-style: normal;
+  text-align: center;
+  margin: 0 0 14pt;
+  break-after: avoid;
+}
+.kp-h2 {
+  font-family: 'Spectral', serif;
+  font-size: 11.5pt;
+  font-weight: bold; font-style: normal;
+  text-align: center;
+  margin: 0 0 10pt;
+  break-after: avoid;
+}
+.kp-h3 {
+  font-family: 'Spectral', serif;
+  font-size: 9.9pt;
+  font-weight: bold; font-style: normal;
+  text-align: center;
+  margin: 0 0 8pt;
+  break-after: avoid;
+}
+
+/* ── Other blocks ── */
+.kp-break {
+  text-align: center;
+  margin: 1em 0;
+  letter-spacing: .6em;
+  font-size: 9.6pt;
+  color: #5a554d;
+  break-inside: avoid;
+}
+.kp-quote {
+  margin: .5em 0;
+  padding: .3em 1em;
+  border-left: 2px solid #ccc;
+  color: #5a554d;
+  font-style: italic;
+}
+.kp-epigraph {
+  text-align: center;
+  margin: 1.2em 0;
+  break-inside: avoid;
+}
+.kp-epigraph__q {
+  font-style: italic;
+  font-size: 0.9em;
+  margin: 0;
+}
+.kp-epigraph__att {
+  display: block;
+  margin-top: 0.4em;
+  font-size: 0.85em;
+  color: #5a554d;
+}
+.kp-verse {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85em;
+  white-space: pre-line;
+  line-height: 1.6;
+  margin: 1em 0;
+  break-inside: avoid;
+}
+.kp-code {
+  background: #f5f3f1;
+  padding: 1em;
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  break-inside: avoid;
+}
+.kp-page-break {
+  display: block;
+  height: 0;
+  break-after: page;
+  page-break-after: always;
+}
+.kp-list {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.kp-list li {
+  margin: 0.2em 0;
+}
+.kp-table-wrap {
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.kp-table-wrap table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.kp-table-wrap td {
+  border: 1px solid #999;
+  padding: 5px 7px;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9em;
+}
+.kp-fnpanel {
+  margin-top: 30px;
+  font-size: 11pt;
+  color: #555;
+}
+.kp-fnpanel-rule {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin-bottom: 12px;
+}
+.kp-fnpanel-item {
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: flex;
+  gap: 4px;
+}
+.kp-fnpanel-num {
+  font-weight: 600;
+  min-width: 18px;
+  flex-shrink: 0;
+}
+.kp-fnpanel-text {
+  flex: 1;
+}
+.kp-toc-heading {
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 1.4em;
+}
+.kp-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.kp-toc-li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 0;
+  border-bottom: 1px dotted #ccc;
+}
+.kp-toc-link {
+  color: inherit;
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  text-decoration: none;
+}
+.kp-toc-link::after {
+  content: leader('.') target-counter(attr(href), page);
+  flex: 1;
+  margin-left: 0.45em;
+  text-align: right;
+  font-size: 0.85em;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+.kp-toc-li--front,
+.kp-toc-li--back {
+  font-size: 0.85em;
+  color: #555;
+  padding-left: 8px;
+}
+.kp-toc-name {
+  flex: 1;
+}
+.kp-toc-num {
+  min-width: 18px;
+  color: #888;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.kp-toc-pg {
+  min-width: 28px;
+  text-align: right;
+  font-size: 0.85em;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+</style>
+  <script id="libria-cfg" type="application/json">{"mi":25,"mo":15}</script>
+</head>
+<body>
+<div id="libria-chapter-1" class="ch" data-id="one">
+<h2 data-libria-block="0:0" class="kp-chtitle">Primero</h2>
+<p data-libria-block="0:1" class="kp-first has-dropcap"><strong>Texto</strong> con <em>estilo</em></p>
+<p data-libria-block="0:2" class="kp-p">Nota<sup data-fn="fn-one">[1]</sup></p>
+<div data-libria-block="0:3" class="kp-break">* * *</div>
+<ul data-libria-block="0:4" class="kp-list"><li>Uno</li><li>Dos</li></ul>
+<div data-libria-block="0:5" class="kp-table-wrap"><table><tbody><tr><td>Celda</td></tr></tbody></table></div>
+<figure data-libria-block="0:6" class="kp-image"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDPsAAAAASUVORK5CYII=" style="max-width:100%;display:block;margin:0 auto;width:80px;height:80px;transform:rotate(90deg) scaleX(-1)" alt=""><figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">Imagen</figcaption></figure>
+<div data-libria-block="0:7" class="kp-page-break"></div>
+<div class="kp-fnpanel"><hr class="kp-fnpanel-rule"><div class="kp-fnpanel-item"><span class="kp-fnpanel-num">1.</span> <span class="kp-fnpanel-text">Texto de nota</span></div></div></div>
+
+<div id="libria-chapter-2" class="ch" data-id="two">
+<p data-libria-block="1:0" class="kp-p">Final</p>
+</div>
+</body>
+</html>"
+`;

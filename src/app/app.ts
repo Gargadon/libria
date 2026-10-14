@@ -13,6 +13,8 @@ import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.com
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
 import { GoogleDriveModalComponent } from './components/modals/google-drive-modal.component';
+import { RecoveryService } from './services/recovery.service';
+import { RecoveryModalComponent } from './components/modals/recovery-modal.component';
 import { GoogleDriveService } from './services/google-drive.service';
 
 @Component({
@@ -29,12 +31,14 @@ import { GoogleDriveService } from './services/google-drive.service';
     WelcomeComponent,
     AboutModalComponent,
     GoogleDriveModalComponent,
+    RecoveryModalComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
+  readonly recovery = inject(RecoveryService);
   readonly drive = inject(GoogleDriveService);
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);
