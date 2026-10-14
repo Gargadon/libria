@@ -115,7 +115,7 @@ import { sceneBreakGlyph as sbGlyph, imageTransform as imgTransform, titleBlockS
                 </div>
               } @else {
               @for (b of chapter.body; track $index) {
-                <div class="ed__block-container" [class.ed__block-container--has-note]="blockNotes().has($index)">
+                <div class="ed__block-container" [attr.data-selection-region]="isTitleBlock(b.type) ? 'title' : 'content'" [class.ed__block-container--has-note]="blockNotes().has($index)">
                   @if (blockNotes().has($index)) {
                     <button class="ed__note-indicator" (click)="addNoteToBlock(chapter.id, $index)" [attr.title]="'editor.viewNotes' | translate">
                       <span class="material-symbols-outlined">chat_bubble</span>
@@ -520,6 +520,7 @@ export class EditorComponent implements OnDestroy {
   private _suppressInput = false;
   private _inputTimeout: any;
   private _storeUpdateTimeout: any;
+  private _pendingStoreUpdate: (() => void) | null = null;
   private _tableInputTimeout: any;
 
   // ─── Drag selection across blocks ────────────────────────────────────────────
@@ -535,6 +536,7 @@ export class EditorComponent implements OnDestroy {
   });
 
   onFocus(index: number) {
+    this._flushPendingInput();
     this.editorPosition.position.set({ chapterId: this.store.activeChapterId(), blockIndex: index });
     this.lastFocusedIndex = index;
     this.focusedBlockIndex.set(index);
@@ -542,6 +544,7 @@ export class EditorComponent implements OnDestroy {
 
   @HostListener('document:selectionchange')
   onDocumentSelectionChange() {
+    this._constrainSelection();
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       this.selectionToolbar.set(null);
@@ -584,6 +587,12 @@ export class EditorComponent implements OnDestroy {
   }
 
   onPaste(chapterId: string, blockIndex: number, event: ClipboardEvent) {
+    this._flushPendingInput();
+    const pastedText = event.clipboardData?.getData('text/plain');
+    if (pastedText && this._replaceCrossBlockSelection(pastedText)) {
+      event.preventDefault();
+      return;
+    }
     const chapter = this.store.activeChapter();
     if (!chapter) return;
     if (chapter.body[blockIndex] && this._nativeBlocks.has(chapter.body[blockIndex].type)) return;
@@ -677,11 +686,21 @@ export class EditorComponent implements OnDestroy {
     }, 1000);
 
     clearTimeout(this._storeUpdateTimeout);
-    this._storeUpdateTimeout = setTimeout(() => {
-      const text = element.innerText.replace(/\n$/, '');
-      const html = element.innerHTML;
+    // Capture before a split/merge can clear or reuse this DOM element.
+    const text = element.innerText.replace(/\n$/, '');
+    const html = element.innerHTML;
+    this._pendingStoreUpdate = () => {
       this.store.updateChapterBlock(chapterId, blockIndex, text, html);
-    }, 200);
+    };
+    this._storeUpdateTimeout = setTimeout(() => this._flushPendingInput(), 200);
+  }
+
+  private _flushPendingInput() {
+    clearTimeout(this._storeUpdateTimeout);
+    this._storeUpdateTimeout = null;
+    const update = this._pendingStoreUpdate;
+    this._pendingStoreUpdate = null;
+    update?.();
   }
 
   // ─── Mouse handlers for cross-block drag selection ─────────────────────────
@@ -753,6 +772,10 @@ export class EditorComponent implements OnDestroy {
 
         sel.removeAllRanges();
         sel.addRange(newRange);
+        // Keep the original drag anchor even when dragging backwards.
+        sel.setBaseAndExtent(this._anchorCaret.node, this._anchorCaret.offset,
+          currentRange.startContainer, currentRange.startOffset);
+        this._constrainSelection();
       }
     });
   }
@@ -775,8 +798,91 @@ export class EditorComponent implements OnDestroy {
 
   private _nativeBlocks = new Set(['list-ordered', 'list-unordered', 'table']);
 
+  @HostListener('beforeinput', ['$event'])
+  onBeforeInput(event: InputEvent) {
+    if (!event.cancelable || event.isComposing) return;
+    const replacement = event.inputType.startsWith('delete') ? ''
+      : event.inputType === 'insertText' ? event.data
+      : ['insertParagraph', 'insertLineBreak'].includes(event.inputType) ? '\n' : null;
+    if (replacement !== null && this._replaceCrossBlockSelection(replacement)) {
+      event.preventDefault();
+    }
+  }
+
+  private _replaceCrossBlockSelection(replacement: string): boolean {
+    this._constrainSelection();
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const start = this._contenteditableOf(range.startContainer);
+    const end = this._contenteditableOf(range.endContainer);
+    if (!start || !end || start === end) return false;
+    const containers = Array.from(document.querySelectorAll('.ed__block-container'));
+    const first = containers.indexOf(start.closest('.ed__block-container')!);
+    const last = containers.indexOf(end.closest('.ed__block-container')!);
+    const chapter = this.store.activeChapter();
+    if (!chapter || first < 0 || last <= first || last >= chapter.body.length) return false;
+    // Only the primary editable of a block belongs to the paragraph selection.
+    if (this._getEditableBlock(first) !== start || this._getEditableBlock(last) !== end) return false;
+
+    const prefix = range.cloneRange();
+    prefix.selectNodeContents(start);
+    prefix.setEnd(range.startContainer, range.startOffset);
+    const suffix = range.cloneRange();
+    suffix.selectNodeContents(end);
+    suffix.setStart(range.endContainer, range.endOffset);
+    const before = document.createElement('div');
+    before.append(prefix.cloneContents());
+    const after = document.createElement('div');
+    after.append(suffix.cloneContents());
+    const offset = before.textContent!.length;
+    const lines = replacement.replace(/\r\n?/g, '\n').split('\n');
+    const parts = lines.map((line, index) => {
+      const part = document.createElement('div');
+      if (index === 0) part.innerHTML = before.innerHTML;
+      part.append(document.createTextNode(line));
+      if (index === lines.length - 1) part.insertAdjacentHTML('beforeend', after.innerHTML);
+      return part;
+    });
+
+    this._flushPendingInput();
+    this.store.saveSnapshot();
+    for (let index = last; index > first; index--) this.store.deleteBlock(chapter.id, index);
+    this.store.updateChapterBlock(chapter.id, first, parts[0].textContent ?? '', parts[0].innerHTML);
+    for (let index = 1; index < parts.length; index++) {
+      this.store.insertBlock(chapter.id, first + index - 1, 'p', parts[index].textContent ?? '', parts[index].innerHTML);
+    }
+    start.innerHTML = parts[0].innerHTML;
+    start.focus();
+    this._placeCursorAt(start, offset + lines[0].length);
+    if (parts.length > 1) {
+      setTimeout(() => {
+        const target = this._getEditableBlock(first + parts.length - 1);
+        if (target) {
+          target.focus();
+          this._placeCursorAt(target, lines[lines.length - 1].length);
+        }
+      }, 16);
+    }
+    return true;
+  }
+
   onKeyDown(chapterId: string, blockIndex: number, event: KeyboardEvent) {
+    // Structural edits and history must see the latest text, with no delayed
+    // writes left pointing at indices that can change during the operation.
+    if (['Backspace', 'Delete', 'Enter'].includes(event.key)
+      || ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase()))) {
+      this._flushPendingInput();
+    }
     if (this._suppressInput) {
+      event.preventDefault();
+      return;
+    }
+
+    const replacement = ['Backspace', 'Delete'].includes(event.key) ? ''
+      : event.key === 'Enter' ? '\n'
+      : !event.ctrlKey && !event.metaKey && !event.altKey && !event.isComposing && Array.from(event.key).length === 1 ? event.key : null;
+    if (replacement !== null && this._replaceCrossBlockSelection(replacement)) {
       event.preventDefault();
       return;
     }
@@ -1150,39 +1256,53 @@ export class EditorComponent implements OnDestroy {
 
   /** Selects all text across every contenteditable block in the chapter. */
   private _selectAllBlocks(): void {
-    const doc = document.querySelector('.ed__doc');
-    if (!doc) return;
-
     const sel = window.getSelection();
     if (!sel) return;
-
-    const walker = document.createTreeWalker(
-      doc,
-      NodeFilter.SHOW_TEXT,
-      (node: Node) => {
-        let el = (node as Text).parentElement;
-        while (el) {
-          if (el.getAttribute?.('contenteditable') === 'true') return NodeFilter.FILTER_ACCEPT;
-          el = el.parentElement;
-        }
-        return NodeFilter.FILTER_SKIP;
-      }
-    );
-
-    const textNodes: Text[] = [];
-    let n: Text | null;
-    while ((n = walker.nextNode() as Text | null)) {
-      textNodes.push(n);
-    }
-
-    if (textNodes.length === 0) return;
-
-    const range = document.createRange();
-    range.setStart(textNodes[0], 0);
-    range.setEnd(textNodes[textNodes.length - 1], textNodes[textNodes.length - 1].length);
-
+    const anchor = sel.anchorNode ?? document.activeElement;
+    if (!anchor) return;
+    const range = this._selectionRegionRange(anchor);
+    if (!range) return;
     sel.removeAllRanges();
     sel.addRange(range);
+  }
+
+  isTitleBlock(type: string): boolean {
+    return ['halftitle', 'title', 'subtitle', 'chapter-num', 'chapter-title', 'h1'].includes(type);
+  }
+
+  /** The contiguous title or body region containing the selection anchor. */
+  private _selectionRegionRange(anchor: Node): Range | null {
+    const element = anchor.nodeType === Node.ELEMENT_NODE ? anchor as Element : anchor.parentElement;
+    const container = element?.closest('.ed__block-container');
+    const doc = container?.closest('.ed__doc');
+    if (!container || !doc) return null;
+    const containers = Array.from(doc.querySelectorAll('.ed__block-container'));
+    const index = containers.indexOf(container);
+    const region = container.getAttribute('data-selection-region');
+    let first = index;
+    let last = index;
+    while (first > 0 && containers[first - 1].getAttribute('data-selection-region') === region) first--;
+    while (last + 1 < containers.length && containers[last + 1].getAttribute('data-selection-region') === region) last++;
+    const editables = containers.slice(first, last + 1)
+      .flatMap(block => Array.from(block.querySelectorAll('[contenteditable="true"]')));
+    if (!editables.length) return null;
+    const range = document.createRange();
+    range.setStart(editables[0], 0);
+    const end = editables[editables.length - 1];
+    range.setEnd(end, end.childNodes.length);
+    return range;
+  }
+
+  private _constrainSelection(): void {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.anchorNode || !selection.focusNode) return;
+    const bounds = this._selectionRegionRange(selection.anchorNode);
+    if (!bounds || !bounds.startContainer.isConnected || !selection.focusNode.isConnected) return;
+    const side = bounds.comparePoint(selection.focusNode, selection.focusOffset);
+    if (side === 0) return;
+    selection.setBaseAndExtent(selection.anchorNode, selection.anchorOffset,
+      side < 0 ? bounds.startContainer : bounds.endContainer,
+      side < 0 ? bounds.startOffset : bounds.endOffset);
   }
 
   // ─── Other handlers ─────────────────────────────────────────────────────────
