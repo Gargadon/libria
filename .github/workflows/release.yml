@@ -128,6 +128,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6
+        with:
+          # --notes-from-tag reads the tag message from the local repository.
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: release
@@ -139,7 +143,7 @@ jobs:
         run: |
           find release -type f -print0 | sort -z | xargs -0 sha256sum | sed 's|  .*/|  |' > SHA256SUMS
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG — Rice Edition" --notes-from-tag
+            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG — Rice Edition" --notes-from-tag
           fi
           find release -type f -exec gh release upload "$RELEASE_TAG" {} --clobber \;
           gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
