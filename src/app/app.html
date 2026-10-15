@@ -1,4 +1,4 @@
-<div class="app"
+<div class="app" spellcheck="false"
      [class.app--dark]="store.tweaks.mode() === 'dark'"
      [class.app--sb-right]="store.tweaks.sidebar() === 'right'"
      [class.app--pv-closed]="!store.ui.previewOpen()"
@@ -58,6 +58,10 @@
 
   @if (showAbout()) {
     <app-about-modal (close)="showAbout.set(false)"></app-about-modal>
+  }
+
+  @if (showSpellcheck() && store.book()) {
+    <app-spellcheck-panel (close)="showSpellcheck.set(false)"></app-spellcheck-panel>
   }
 
   <!-- Update notification banner -->

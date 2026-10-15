@@ -74,19 +74,19 @@
         <ng-container
           *ngTemplateOutlet="
             groupTemplate;
-            context: { label: ('sidebar.preliminares' | translate), items: frontChapters() }
+            context: { label: ('sidebar.preliminares' | translate), items: frontChapters(), kind: 'front' }
           "
         ></ng-container>
         <ng-container
           *ngTemplateOutlet="
             groupTemplate;
-            context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true }
+            context: { label: ('sidebar.body' | translate), items: mainChapters(), numbered: true, kind: 'chapter' }
           "
         ></ng-container>
         <ng-container
           *ngTemplateOutlet="
             groupTemplate;
-            context: { label: ('sidebar.posliminares' | translate), items: backChapters() }
+            context: { label: ('sidebar.posliminares' | translate), items: backChapters(), kind: 'back' }
           "
         ></ng-container>
       </div>
@@ -308,6 +308,9 @@
 
     @case ('settings') {
       <app-sidebar-settings></app-sidebar-settings>
+    }
+    @case ('dictionary') {
+      <app-sidebar-dictionary></app-sidebar-dictionary>
     }
 
     @case ('worldbuilding') {
@@ -553,8 +556,12 @@
   }
 </aside>
 
-<ng-template #groupTemplate let-label="label" let-items="items" let-numbered="numbered">
-  <div class="sbg">
+<ng-template #groupTemplate let-label="label" let-items="items" let-numbered="numbered" let-kind="kind">
+  <div class="sbg"
+    [class.sbg--drop]="dropGroupKind() === kind"
+    (dragover)="overGroup(kind, $event)"
+    (dragleave)="leaveGroup($event)"
+    (drop)="dropGroup(kind, $event)">
     <div class="sbg__label">{{ label }}</div>
     <ul class="sbg__list">
       @let maxW = store.maxWords();

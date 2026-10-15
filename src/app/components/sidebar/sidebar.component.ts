@@ -1,4 +1,5 @@
 import { SidebarFontsState } from './panels/sidebar-fonts.state';
+import { SidebarDictionaryPanelComponent, SidebarDictionaryState } from './panels/dictionary-panel.component';
 import { SidebarStylesPanelComponent, SidebarStylesState } from './panels/styles-panel.component';
 import {
   SidebarMetadataPanelComponent,
@@ -53,8 +54,9 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
     SidebarSearchPanelComponent,
     SidebarAttachmentsPanelComponent,
     SidebarLayoutPanelComponent,
+    SidebarDictionaryPanelComponent,
   ],
-  providers: [SidebarFontsState, SidebarStylesState, SidebarMetadataState, SidebarSettingsState],
+  providers: [SidebarFontsState, SidebarStylesState, SidebarMetadataState, SidebarSettingsState, SidebarDictionaryState],
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {
@@ -62,7 +64,7 @@ export class SidebarComponent {
   readonly mainChapters = computed(() => this.store.chapters().filter((c) => c.kind === 'chapter'));
   readonly backChapters = computed(() => this.store.chapters().filter((c) => c.kind === 'back'));
   constructor() {
-    // Keep drafts and font/dictionary initialization alive across panel navigation.
+    // Keep drafts and font initialization alive across panel navigation.
     inject(SidebarMetadataState);
     inject(SidebarSettingsState);
     inject(SidebarFontsState);
@@ -234,6 +236,30 @@ export class SidebarComponent {
 
   readonly dropAfter = signal(false);
 
+  readonly dropGroupKind = signal<ChapterKind | null>(null);
+
+  overGroup(kind: ChapterKind, event: DragEvent) {
+    if (!this.draggedChapterId()) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    this.dropTargetId.set(null);
+    this.dropGroupKind.set(kind);
+  }
+
+  dropGroup(kind: ChapterKind, event: DragEvent) {
+    event.preventDefault();
+    const source = this.draggedChapterId();
+    if (source) this.store.reorderChapter(source, null, true, kind);
+    this.endChapterDrag();
+  }
+
+  leaveGroup(event: DragEvent) {
+    if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) {
+      this.dropGroupKind.set(null);
+      this.dropTargetId.set(null);
+    }
+  }
+
   startChapterDrag(id: string, event: DragEvent) {
     this.draggedChapterId.set(id);
     if (event.dataTransfer) {
@@ -243,9 +269,11 @@ export class SidebarComponent {
   }
 
   overChapter(id: string, event: DragEvent) {
+    event.stopPropagation();
+    this.dropGroupKind.set(null);
     const source = this.store.chapters().find((c) => c.id === this.draggedChapterId());
     const target = this.store.chapters().find((c) => c.id === id);
-    if (!source || !target || source.kind !== target.kind || source.id === id) {
+    if (!source || !target || source.id === id) {
       this.dropTargetId.set(null);
       return;
     }
@@ -257,6 +285,7 @@ export class SidebarComponent {
   }
 
   dropChapter(id: string, event: DragEvent) {
+    event.stopPropagation();
     event.preventDefault();
     const source = this.draggedChapterId();
     if (source && this.dropTargetId() === id) {
@@ -266,6 +295,7 @@ export class SidebarComponent {
   }
 
   endChapterDrag() {
+    this.dropGroupKind.set(null);
     this.draggedChapterId.set(null);
     this.dropTargetId.set(null);
   }

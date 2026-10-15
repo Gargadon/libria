@@ -16,6 +16,7 @@ import { GoogleDriveModalComponent } from './components/modals/google-drive-moda
 import { RecoveryService } from './services/recovery.service';
 import { RecoveryModalComponent } from './components/modals/recovery-modal.component';
 import { GoogleDriveService } from './services/google-drive.service';
+import { SpellcheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +33,7 @@ import { GoogleDriveService } from './services/google-drive.service';
     AboutModalComponent,
     GoogleDriveModalComponent,
     RecoveryModalComponent,
+    SpellcheckPanelComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -48,6 +50,12 @@ export class App {
 
   isResizing = false;
   showAbout = signal(false);
+  showSpellcheck = signal(false);
+
+  @HostListener('document:contextmenu', ['$event'])
+  onContextMenu(event: MouseEvent) {
+    event.preventDefault();
+  }
   updateVersion = signal<{ version: string; url?: string } | null>(null);
   checkResult = signal('');
 
@@ -57,6 +65,14 @@ export class App {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    if (event.key === 'F7') {
+      event.preventDefault();
+      if (this.store.activeChapter() && !event.repeat) {
+        this.store.updateTweak('spellcheck', true);
+        this.showSpellcheck.set(true);
+      }
+      return;
+    }
     if (event.key === 'F11') {
       event.preventDefault();
       if (this.store.book()) this.store.toggleZenMode();

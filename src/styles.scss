@@ -757,6 +757,18 @@ button.tb__dropdown-item {
   margin-bottom: 18px
 }
 
+::highlight(libria-spelling) {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #c83838;
+  text-decoration-thickness: 1.5px;
+}
+
+.sbg--drop {
+  outline: 2px solid var(--ink-mute);
+  outline-offset: -2px;
+}
+
 .sbg__label {
   font-size: 9.5px;
   letter-spacing: .16em;

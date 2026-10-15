@@ -23,6 +23,55 @@ describe('sidebar panel navigation', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  it('moves chapters across all sections and restores their metadata on undo', () => {
+    const store = TestBed.inject(BookStore);
+    const original = store.chapters().find(c => c.kind === 'chapter')!;
+    for (const kind of ['front', 'back', 'chapter'] as const) {
+      store.reorderChapter(original.id, null, true, kind);
+      const moved = store.chapters().find(c => c.id === original.id)!;
+      expect(moved.kind).toBe(kind);
+      expect(moved.body).toEqual(original.body);
+      expect(moved.status).toBe(kind === 'chapter' ? 'draft' : kind);
+      if (kind === 'chapter') expect(moved.number).toBeGreaterThan(0);
+      else expect(moved.number).toBeUndefined();
+    }
+    store.undo();
+    expect(store.chapters().find(c => c.id === original.id)!.kind).toBe('back');
+    store.undo();
+    store.undo();
+    expect(store.chapters().find(c => c.id === original.id)).toEqual(original);
+  });
+
+  it('accepts drops on chapters from another section and on an empty section', async () => {
+    const store = TestBed.inject(BookStore);
+    store.addChapter('front');
+    const fixture = TestBed.createComponent(SidebarComponent);
+    await fixture.whenStable();
+    const source = store.chapters().find(c => c.kind === 'chapter')!;
+    const target = store.chapters().find(c => c.kind === 'front')!;
+    const event = {
+      preventDefault: vi.fn(), stopPropagation: vi.fn(), clientY: 1,
+      currentTarget: { getBoundingClientRect: () => ({ top: 0, height: 10 }) },
+    } as unknown as DragEvent;
+    fixture.componentInstance.startChapterDrag(source.id, event);
+    fixture.componentInstance.overChapter(target.id, event);
+    fixture.componentInstance.dropChapter(target.id, event);
+    expect(store.chapters().findIndex(c => c.id === source.id)).toBe(
+      store.chapters().findIndex(c => c.id === target.id) - 1,
+    );
+    expect(store.chapters().find(c => c.id === source.id)!.kind).toBe('front');
+    for (const c of store.chapters().filter(c => c.kind === 'back')) store.deleteChapter(c.id);
+    await fixture.whenStable();
+    const group = fixture.nativeElement.querySelectorAll('.sbg')[2] as HTMLElement;
+    fixture.componentInstance.startChapterDrag(source.id, event);
+    group.dispatchEvent(new Event('dragover', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    expect(group.classList.contains('sbg--drop')).toBe(true);
+    group.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
+    expect(store.chapters().find(c => c.id === source.id)!.kind).toBe('back');
+    expect(fixture.componentInstance.draggedChapterId()).toBeNull();
+  });
+
   it('keeps an uncommitted metadata draft when navigating between panels', async () => {
     const store = TestBed.inject(BookStore);
     const original = store.book()!.title;
@@ -73,6 +122,7 @@ describe('sidebar panel navigation', () => {
       'styles',
       'metadata',
       'settings',
+      'dictionary',
       'productivity',
       'export',
       'search',

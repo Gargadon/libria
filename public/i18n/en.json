@@ -359,6 +359,8 @@
   "sidebar.attachmentsInsert": "Insert in document",
   "spellcheck.title": "Spell Check",
   "spellcheck.loading": "Loading dictionary",
+  "spellcheck.error": "Could not load the spelling dictionary. Please try again.",
+  "spellcheck.dictionaryError": "Could not add the word to the dictionary. Please try again.",
   "spellcheck.noErrors": "No errors found",
   "spellcheck.noSuggestions": "No suggestions",
   "spellcheck.ignore": "Ignore",
@@ -515,5 +517,13 @@
   "recovery.restore": "Restore as a copy",
   "recovery.chapter": "Chapter",
   "recovery.addChapter": "Add recovered chapter",
-  "importReport.title": "Import warnings"
+  "importReport.title": "Import warnings",
+  "dictionary.search": "Search words",
+  "dictionary.previous": "Previous",
+  "dictionary.next": "Next",
+  "dictionary.page": "{{current}} / {{total}} · {{words}} words",
+  "dictionary.noResults": "No matching words.",
+  "dictionary.error": "Could not update the dictionary. Please try again.",
+  "dictionary.retry": "Retry",
+  "dictionary.remove": "Remove word"
 }

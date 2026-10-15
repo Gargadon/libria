@@ -14,6 +14,7 @@ import { EditorTableService } from './tables.service';
 import { EditorImageService } from './images.service';
 import { EditorFootnoteService } from './footnotes.service';
 import { EditorNotesState } from './notes.state';
+import { EditorSpellingComponent, SpellingCorrection } from './editor-spelling.component';
 import {
   Component,
   inject,
@@ -54,6 +55,7 @@ import {
     TableContentDirective,
     FormsModule,
     NotesChatModalComponent,
+    EditorSpellingComponent,
   ],
   host: {
     style: 'display: flex; flex-direction: column; min-height: 0; flex: 1;',
@@ -61,6 +63,25 @@ import {
   templateUrl: './editor.component.html',
 })
 export class EditorComponent implements OnDestroy {
+  applySpellingCorrection(item: SpellingCorrection) {
+    this._flushPendingInput();
+    const chapter = this.store.activeChapter();
+    const container = item.element.closest('.ed__block-container');
+    const index = Array.from(document.querySelectorAll('.ed__block-container')).indexOf(container!);
+    if (!chapter || index < 0 || !item.element.isConnected || item.range.toString() !== item.word) return;
+    this.store.saveSnapshot();
+    item.element.focus();
+    item.range.deleteContents();
+    const replacement = document.createTextNode(item.replacement);
+    item.range.insertNode(replacement);
+    item.range.setStartAfter(replacement);
+    item.range.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(item.range);
+    this.store.updateChapterBlock(chapter.id, index,
+      item.element.innerText.replace(/\n$/, ''), item.element.innerHTML);
+  }
   readonly tables = inject(EditorTableService);
   readonly images = inject(EditorImageService);
   readonly footnotes = inject(EditorFootnoteService);

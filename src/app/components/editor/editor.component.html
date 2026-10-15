@@ -1,3 +1,4 @@
+<app-editor-spelling (correction)="applySpellingCorrection($event)"></app-editor-spelling>
 @if (store.ui.zenMode()) {
   <button
     type="button"
@@ -274,7 +275,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -294,7 +295,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -310,7 +311,7 @@
                       [style.font-family]="store.titleFontFamily()"
                       [style.text-align]="store.tweaks.titleAlignment()"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -326,7 +327,7 @@
                       [style.font-family]="store.titleFontFamily()"
                       [style.text-align]="store.tweaks.titleAlignment()"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -342,7 +343,7 @@
                       [style.font-family]="store.titleFontFamily()"
                       [style.text-align]="store.tweaks.titleAlignment()"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -358,7 +359,7 @@
                       [style.font-family]="store.titleFontFamily()"
                       [style.text-align]="store.tweaks.titleAlignment()"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -378,7 +379,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -398,7 +399,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -418,7 +419,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -438,7 +439,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -458,7 +459,7 @@
                       [style.font-style]="store.tweaks.titleItalic() ? 'italic' : 'normal'"
                       [style.text-decoration]="store.tweaks.titleUnderline() ? 'underline' : 'none'"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -472,7 +473,7 @@
                     <p class="bk-first" [class.has-dropcap]="store.tweaks.dropCap()">
                       <span
                         contenteditable="true"
-                        [spellcheck]="store.tweaks.spellcheck()"
+                        spellcheck="false" data-libria-spelling="true"
                         [attr.lang]="store.domLang()"
                         [appContenteditable]="
                           (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')
@@ -490,7 +491,7 @@
                     <p
                       class="bk-p"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -510,7 +511,7 @@
                       <blockquote
                         class="bk-epigraph__q"
                         contenteditable="true"
-                        [spellcheck]="store.tweaks.spellcheck()"
+                        spellcheck="false" data-libria-spelling="true"
                         [attr.lang]="store.domLang()"
                         [appContenteditable]="b.text"
                         [contenteditableHtml]="b.html"
@@ -533,13 +534,13 @@
                   @case ('verse') {
                     <pre
                       class="bk-verse"
-                    ><code contenteditable="true" [spellcheck]="store.tweaks.spellcheck()" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
+                    ><code contenteditable="true" spellcheck="false" data-libria-spelling="true" [attr.lang]="store.domLang()" [appContenteditable]="b.text" [contenteditableHtml]="b.html" (input)="onInput(chapter.id, $index, $event)" (focus)="onFocus($index)" (keydown)="onKeyDown(chapter.id, $index, $event)" (paste)="onPaste(chapter.id, $index, $event)"></code></pre>
                   }
                   @case ('blockquote') {
                     <blockquote
                       class="bk-quote"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -629,7 +630,7 @@
                     <ul
                       class="bk-list"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -643,7 +644,7 @@
                     <ol
                       class="bk-list"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appContenteditable]="b.text"
                       [contenteditableHtml]="b.html"
@@ -657,7 +658,7 @@
                     <table
                       class="bk-table"
                       contenteditable="true"
-                      [spellcheck]="store.tweaks.spellcheck()"
+                      spellcheck="false" data-libria-spelling="true"
                       [attr.lang]="store.domLang()"
                       [appTableContent]="b.html"
                       (input)="onTableInput(chapter.id, $index, $event)"

@@ -359,6 +359,8 @@
   "sidebar.attachmentsInsert": "Insertar en documento",
   "spellcheck.title": "Corrector ortográfico",
   "spellcheck.loading": "Cargando diccionario",
+  "spellcheck.error": "No se pudo cargar el diccionario ortográfico. Vuelve a intentarlo.",
+  "spellcheck.dictionaryError": "No se pudo añadir la palabra al diccionario. Vuelve a intentarlo.",
   "spellcheck.noErrors": "No se encontraron errores",
   "spellcheck.noSuggestions": "Sin sugerencias",
   "spellcheck.ignore": "Ignorar",
@@ -515,5 +517,13 @@
   "recovery.restore": "Restaurar como copia",
   "recovery.chapter": "Capítulo",
   "recovery.addChapter": "Añadir capítulo recuperado",
-  "importReport.title": "Avisos de importación"
+  "importReport.title": "Avisos de importación",
+  "dictionary.search": "Buscar palabras",
+  "dictionary.previous": "Anterior",
+  "dictionary.next": "Siguiente",
+  "dictionary.page": "{{current}} / {{total}} · {{words}} palabras",
+  "dictionary.noResults": "No hay palabras que coincidan.",
+  "dictionary.error": "No se pudo actualizar el diccionario. Vuelve a intentarlo.",
+  "dictionary.retry": "Reintentar",
+  "dictionary.remove": "Eliminar palabra"
 }

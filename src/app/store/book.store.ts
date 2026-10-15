@@ -24,7 +24,7 @@ export interface BookState {
     sidebarOpen: boolean;
     previewOpen: boolean;
     zenMode: boolean;
-    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'attachments' | 'productivity' | 'worldbuilding';
+    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding';
     focusBlockIndex: number | null;
   };
   exportPrefs: {
@@ -102,7 +102,7 @@ const initialState: BookState = {
     sidebarOpen: true,
     previewOpen: true,
     zenMode: false,
-    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings' | 'attachments' | 'productivity' | 'worldbuilding',
+    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding',
     focusBlockIndex: null,
   },
   exportPrefs: {
@@ -670,15 +670,29 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    reorderChapter(chapterId: string, targetId: string, after: boolean) {
+    reorderChapter(chapterId: string, targetId: string | null, after: boolean, kind?: ChapterKind) {
       const chapters = store.chapters();
       const source = chapters.find(c => c.id === chapterId);
       const target = chapters.find(c => c.id === targetId);
-      if (!source || !target || source === target || source.kind !== target.kind) return;
+      const destinationKind = target?.kind ?? kind;
+      if (!source || source === target || !destinationKind || (targetId !== null && !target)) return;
+      const moved: Chapter = source.kind === destinationKind ? source : {
+        ...source,
+        kind: destinationKind,
+        status: destinationKind === 'chapter' ? 'draft' : destinationKind,
+        number: destinationKind === 'chapter'
+          ? Math.max(0, ...chapters.filter(c => c.kind === 'chapter').map(c => c.number || 0)) + 1
+          : undefined,
+      };
       const reordered = chapters.filter(c => c.id !== chapterId);
-      const destination = reordered.findIndex(c => c.id === targetId) + (after ? 1 : 0);
-      reordered.splice(destination, 0, source);
-      if (reordered.every((c, i) => c.id === chapters[i].id)) return;
+      const groupEnd = reordered.map(c => c.kind).lastIndexOf(destinationKind);
+      const kinds: ChapterKind[] = ['front', 'chapter', 'back'];
+      const nextGroup = reordered.findIndex(c => kinds.indexOf(c.kind) > kinds.indexOf(destinationKind));
+      const destination = target
+        ? reordered.findIndex(c => c.id === targetId) + (after ? 1 : 0)
+        : groupEnd >= 0 ? groupEnd + 1 : nextGroup >= 0 ? nextGroup : reordered.length;
+      reordered.splice(destination, 0, moved);
+      if (reordered.every((c, i) => c === chapters[i])) return;
       patchState(store, state => ({
         past: [...state.past.slice(-19), { chapters: state.chapters, notes: state.notes }],
         future: [],

@@ -121,38 +121,4 @@
       </button>
     </div>
   </div>
-  @if (panel.spellCheckService.isAvailable) {
-    <div class="sb__section">{{ 'sidebar.dictionary' | translate }}</div>
-    <div class="sb__row sb__row--col">
-      <label class="sb__label">{{ 'sidebar.addWord' | translate }}</label>
-      <div class="sb__dict-add-row">
-        <input
-          class="sb__input"
-          type="text"
-          [attr.placeholder]="'sidebar.wordPlaceholder' | translate"
-          [(ngModel)]="panel.newDictWord"
-          (keydown.enter)="panel.addDictWord()"
-        />
-        <button
-          class="sb__btn-primary sb__dict-add-btn"
-          [disabled]="!panel.newDictWord.trim()"
-          (click)="panel.addDictWord()"
-        >
-          +
-        </button>
-      </div>
-    </div>
-    @if (panel.dictWords().length > 0) {
-      <div class="sb__dict-list">
-        @for (w of panel.dictWords(); track w) {
-          <div class="sb__dict-item">
-            <span class="sb__dict-word">{{ w }}</span>
-            <button class="sb__dict-del" (click)="panel.removeDictWord(w)">×</button>
-          </div>
-        }
-      </div>
-    } @else {
-      <div class="sb__help">{{ 'sidebar.dictEmpty' | translate }}</div>
-    }
-  }
 </div>

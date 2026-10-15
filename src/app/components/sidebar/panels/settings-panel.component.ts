@@ -1,11 +1,10 @@
-import { Component, inject, signal, ChangeDetectionStrategy, Injectable } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, Injectable } from '@angular/core';
 import { BookStore } from '../../../store/book.store';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { FormsModule } from '@angular/forms';
 
-import { SpellCheckService } from '../../../services/spell-check.service';
 
 import { GoogleDriveService } from '../../../services/google-drive.service';
 
@@ -45,29 +44,6 @@ export class SidebarSettingsState {
     this.store.setPersonalConfig(config);
   }
 
-  newDictWord = '';
-
-  async addDictWord() {
-    const word = this.newDictWord.trim();
-    if (!word) return;
-    const ok = await this.spellCheckService.addWord(word);
-    if (ok) {
-      this.dictWords.update((w) => [...w, word].sort((a, b) => a.localeCompare(b)));
-      this.newDictWord = '';
-    }
-  }
-
-  async removeDictWord(word: string) {
-    const ok = await this.spellCheckService.removeWord(word);
-    if (ok) {
-      this.dictWords.update((w) => w.filter((x) => x !== word));
-    }
-  }
-
-  readonly spellCheckService = inject(SpellCheckService);
-
-  dictWords = signal<string[]>([]);
-
   readonly translate = inject(TranslateService);
 
   private _resizeImage(base64: string, width: number, height: number): Promise<string> {
@@ -94,15 +70,6 @@ export class SidebarSettingsState {
     });
   }
 
-  async loadDictWords() {
-    if (this.spellCheckService.isAvailable) {
-      const words = await this.spellCheckService.getCustomDictionary();
-      this.dictWords.set(words);
-    }
-  }
-  constructor() {
-    void this.loadDictWords();
-  }
 }
 
 @Component({

@@ -337,6 +337,8 @@
   "editor.spellCheck": "Vérifier l'orthographe",
   "spellcheck.title": "Correcteur orthographique",
   "spellcheck.loading": "Chargement du dictionnaire",
+  "spellcheck.error": "Impossible de charger le dictionnaire. Réessayez.",
+  "spellcheck.dictionaryError": "Impossible d’ajouter le mot au dictionnaire. Réessayez.",
   "spellcheck.noErrors": "Aucune erreur trouvée",
   "spellcheck.noSuggestions": "Aucune suggestion",
   "spellcheck.ignore": "Ignorer",
@@ -459,5 +461,13 @@
   "recovery.restore": "Restaurer une copie",
   "recovery.chapter": "Chapitre",
   "recovery.addChapter": "Ajouter le chapitre récupéré",
-  "importReport.title": "Avertissements d’importation"
+  "importReport.title": "Avertissements d’importation",
+  "dictionary.search": "Rechercher des mots",
+  "dictionary.previous": "Précédent",
+  "dictionary.next": "Suivant",
+  "dictionary.page": "{{current}} / {{total}} · {{words}} mots",
+  "dictionary.noResults": "Aucun mot correspondant.",
+  "dictionary.error": "Impossible de mettre à jour le dictionnaire. Réessayez.",
+  "dictionary.retry": "Réessayer",
+  "dictionary.remove": "Supprimer le mot"
 }

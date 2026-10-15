@@ -343,6 +343,8 @@
   "sidebar.goalsEdit": "Ziele festlegen",
   "spellcheck.title": "Rechtschreibprüfung",
   "spellcheck.loading": "Wörterbuch wird geladen",
+  "spellcheck.error": "Das Wörterbuch konnte nicht geladen werden. Bitte erneut versuchen.",
+  "spellcheck.dictionaryError": "Das Wort konnte nicht zum Wörterbuch hinzugefügt werden. Bitte erneut versuchen.",
   "spellcheck.noErrors": "Keine Fehler gefunden",
   "spellcheck.noSuggestions": "Keine Vorschläge",
   "spellcheck.ignore": "Ignorieren",
@@ -465,5 +467,13 @@
   "recovery.restore": "Als Kopie wiederherstellen",
   "recovery.chapter": "Kapitel",
   "recovery.addChapter": "Wiederhergestelltes Kapitel hinzufügen",
-  "importReport.title": "Importwarnungen"
+  "importReport.title": "Importwarnungen",
+  "dictionary.search": "Wörter suchen",
+  "dictionary.previous": "Zurück",
+  "dictionary.next": "Weiter",
+  "dictionary.page": "{{current}} / {{total}} · {{words}} Wörter",
+  "dictionary.noResults": "Keine passenden Wörter.",
+  "dictionary.error": "Das Wörterbuch konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+  "dictionary.retry": "Erneut versuchen",
+  "dictionary.remove": "Wort entfernen"
 }

@@ -230,7 +230,7 @@ fn main() {
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             app.manage(drive::Drive::new(app.handle())?);
-            tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
+            let main_window = tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
                 .on_web_resource_request(|request, response| {
                     // Vivliostyle's bundled Knockout UI compiles data-bind expressions.
                     // Enable this only in the viewer document, not in Angular or book HTML.
@@ -250,6 +250,25 @@ fn main() {
                     }
                 })
                 .build()?;
+            #[cfg(windows)]
+            main_window.with_webview(|webview| {
+                use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings3;
+                use windows_core::Interface;
+                let result = unsafe {
+                    (|| -> windows_core::Result<()> {
+                        let settings = webview.controller().CoreWebView2()?.Settings()?;
+                        settings.SetAreDefaultContextMenusEnabled(false)?;
+                        settings.cast::<ICoreWebView2Settings3>()?
+                            .SetAreBrowserAcceleratorKeysEnabled(false)?;
+                        Ok(())
+                    })()
+                };
+                if let Err(error) = result {
+                    eprintln!("Could not disable browser accelerator keys: {error}");
+                }
+            })?;
+            #[cfg(not(windows))]
+            let _ = main_window;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

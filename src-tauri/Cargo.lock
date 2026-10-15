@@ -2153,7 +2153,7 @@ dependencies = [
 
 [[package]]
 name = "libria"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -2177,6 +2177,8 @@ dependencies = [
  "tempfile",
  "tokio",
  "url",
+ "webview2-com",
+ "windows-core",
 ]
 
 [[package]]

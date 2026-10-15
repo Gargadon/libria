@@ -268,6 +268,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">{{ 'topbar.layout' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">{{ 'topbar.properties' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'attachments'" (click)="store.setNav('attachments'); closeMenus()">{{ 'topbar.attachments' | translate }}</button>
+                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'dictionary'" (click)="store.setNav('dictionary'); closeMenus()">{{ 'sidebar.dictionary' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'productivity'" (click)="store.setNav('productivity'); closeMenus()">{{ 'topbar.productivity' | translate }}</button>
                 <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'worldbuilding'" (click)="store.setNav('worldbuilding'); closeMenus()">{{ 'topbar.worldbuilding' | translate }}</button>
               </div>
@@ -381,6 +382,10 @@ import { GoogleDriveService } from '../../services/google-drive.service';
           <button class="tb__icon" [attr.title]="'topbar.zenMode' | translate" (click)="store.toggleZenMode()" [class.tb__icon--on]="store.ui.zenMode()">
             <span class="material-symbols-outlined">{{ store.ui.zenMode() ? 'fullscreen_exit' : 'fullscreen' }}</span>
           </button>
+          <button class="tb__icon" [attr.title]="'sidebar.dictionary' | translate" [attr.aria-label]="'sidebar.dictionary' | translate"
+            [class.tb__icon--on]="store.ui.activeNav() === 'dictionary'" (click)="store.setNav('dictionary')">
+            <span class="material-symbols-outlined">dictionary</span>
+          </button>
           <button class="tb__icon" [attr.title]="'topbar.settings' | translate" (click)="store.setNav('settings')">
             <span class="material-symbols-outlined">settings</span>
           </button>
@@ -434,7 +439,7 @@ export class TopbarComponent {
   readonly environment = environment;
   readonly canUndo = computed(() => !!this.store.book() && this.store.past().length > 0);
   readonly canRedo = computed(() => !!this.store.book() && this.store.future().length > 0);
-  readonly editionLabel = `${environment.version} · ${environment.edition}`;
+  readonly editionLabel = `${environment.version} · ${environment.edition} Edition`;
 
   readonly displayAuthors = computed(() => {
     const book = this.store.book();

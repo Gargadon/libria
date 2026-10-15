@@ -1,6 +1,6 @@
 [package]
 name = "libria"
-version = "2.0.0"
+version = "2.1.0"
 description = "Creación y maquetación de libros"
 authors = ["David Kantun"]
 license = "AGPL-3.0-only"
@@ -39,3 +39,7 @@ fontdb = "0.24"
 lto = true
 codegen-units = 1
 strip = true
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows-core = "0.62"
