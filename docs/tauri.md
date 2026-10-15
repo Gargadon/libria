@@ -38,6 +38,8 @@ El workflow genera Windows x64, Linux x64 y macOS x64/arm64. Windows y Linux arm
 
 ## PDF y consumo
 
+En CI, macOS genera primero `Libria.app` con `--bundles app`. `scripts/build-macos-dmg.mjs` copia el bundle con `ditto`, añade el enlace a `/Applications` y crea directamente un DMG comprimido con `hdiutil create -srcfolder`; después comprueba la imagen con `hdiutil verify`. El DMG se publica en el directorio habitual `bundle/dmg` solo si pasa la verificación. Esto evita el ciclo explícito de montaje y desmontaje de `create-dmg`, que puede fallar con `timeout for DiskArbitration expired` en los runners. El nombre descargable se mantiene como `libria-<versión>-mac-<arquitectura>.dmg`. Las pruebas de escritorio incluyen una creación real de DMG cuando se ejecutan en macOS.
+
 Vivliostyle se ejecuta en un proceso independiente solo durante la exportación. El backend crea un directorio temporal, incrusta las fuentes, inicia el worker con argumentos controlados y espera como máximo tres minutos. El proceso directo se termina si se cancela la tarea; el directorio temporal se elimina al terminar. Ghostscript solo se ejecuta si se solicita PDF/X. Un fallo de conversión se informa como error; nunca se devuelve silenciosamente el PDF sin convertir.
 
 La ventana habitual usa WebView2 en Windows y WebKit en macOS/Linux. El motor adicional para PDF no permanece abierto al escribir, pero sí ocupa espacio en el paquete. Esta migración no garantiza un instalador menor ni una reducción concreta de memoria: hay que medir la suma de todos los procesos y comparar libros iguales, con y sin previsualización.
