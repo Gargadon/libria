@@ -98,6 +98,8 @@
   "sidebar.smartEllipsis": "Puntos suspensivos (... / …)",
   "sidebar.smartOpeningSigns": "Signos de apertura (?? / ¿, !! / ¡)",
   "sidebar.pdfx": "PDF/X compatible",
+  "sidebar.firstParagraphSmallCaps": "Versalitas en la primera línea",
+  "sidebar.hideFirstPageHeaderFooter": "Ocultar encabezado y número en la primera página",
   "sidebar.dropCap": "Letra Capitular (Inicio de capítulo)",
   "sidebar.dropCapToggle": "Capitalizar primera letra",
   "sidebar.dropCapLines": "Líneas que ocupa ({{value}})",

@@ -5,6 +5,7 @@ describe('browser shortcuts', () => {
   it('blocks reload, inspector, browser UI, navigation, print, and zoom', () => {
     for (const init of [
       { key: 'F5' }, { key: 'F12' }, { key: 'F3' }, { key: 'F6' },
+      { key: 'F4' }, { key: 'F4', ctrlKey: true },
       { key: 'r', ctrlKey: true }, { key: 'R', ctrlKey: true, shiftKey: true },
       { key: 'I', ctrlKey: true, shiftKey: true }, { key: 'i', metaKey: true, altKey: true },
       { key: 'l', ctrlKey: true }, { key: 'p', ctrlKey: true },
@@ -20,9 +21,10 @@ describe('browser shortcuts', () => {
     }
   });
 
-  it('preserves typing, editing, F7, and F11', () => {
+  it('preserves typing, editing, native Alt+F4 close, F7, and F11', () => {
     for (const init of [
       { key: 'F7' }, { key: 'F11' }, { key: 'Tab' }, { key: 'Escape' },
+      { key: 'F4', altKey: true },
       ...['a', 'c', 'x', 'v', 'z', 'y', 'ArrowLeft', 'Backspace'].map(key => ({ key, ctrlKey: true })),
       { key: '@', ctrlKey: true, altKey: true },
       { key: 'a' }, { key: 'Delete' },

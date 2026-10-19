@@ -42,7 +42,7 @@ export async function exportPdf(input, output, options, runtime, dependencies = 
   const executableBrowser = (dependencies.findBrowser || findBrowser)(runtime);
   const gs = options.pdfx ? (dependencies.findGhostscript || findGhostscript)(runtime) : null;
   const build = dependencies.build || (await import('@vivliostyle/cli')).build;
-  await build({ input, output, size: `${width}in,${height}in`, logLevel: 'silent', renderMode: 'local', executableBrowser });
+  await build({ input, output, title: options.title, author: options.author, size: `${width}in,${height}in`, logLevel: 'silent', renderMode: 'local', executableBrowser });
   if (gs) {
     const converted = output + '.pdfx';
     const result = (dependencies.spawnSync || spawnSync)(gs, [

@@ -328,6 +328,22 @@
     </div>
   }
 
+  <div class="sb__row">
+    <div class="sb__label">{{ 'sidebar.firstParagraphSmallCaps' | translate }}</div>
+    <div class="sb__radio">
+      <button class="sb__opt"
+        [class.sb__opt--on]="panel.store.tweaks.firstParagraphSmallCaps()"
+        (click)="panel.store.updateTweak('firstParagraphSmallCaps', true)">
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button class="sb__opt"
+        [class.sb__opt--on]="!panel.store.tweaks.firstParagraphSmallCaps()"
+        (click)="panel.store.updateTweak('firstParagraphSmallCaps', false)">
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
   <div class="sb__section">{{ 'sidebar.dropCap' | translate }}</div>
   <div class="sb__row">
     <div class="sb__label">{{ 'sidebar.dropCapToggle' | translate }}</div>

@@ -64,6 +64,8 @@ Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweak
 - **Detalles Tipográficos y de Automatización**:
   - `dropCap` (boolean): Habilita letras capitulares al inicio de cada capítulo.
   - `dropCapLines` (number): Número de líneas de altura para la letra capitular (ej: `3`).
+  - `firstParagraphSmallCaps` (boolean): Versalitas en la primera línea del párrafo inicial. Por defecto `true` para documentos anteriores.
+  - `hideFirstPageHeaderFooter` (boolean): Oculta encabezado y número de página en la primera hoja. Por defecto `true` para documentos anteriores; no reinicia la numeración.
   - `hyphenation` (boolean): Activa el guionado (separación silábica) automático.
   - `sceneBreakType` (string): Estilo de separador de escenas (`"asterisks"`, `"asterisks3"`, `"dots"`, `"flourish"`, `"none"`).
   - `smartQuotes` (boolean): Conversión automática a comillas inteligentes.
@@ -237,6 +239,8 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
         "pageNumberPosition": { "enum": ["bottom-center", "bottom-edges", "top-edges"] },
         "dropCap": { "type": "boolean" },
         "dropCapLines": { "type": "number" },
+        "firstParagraphSmallCaps": { "type": "boolean", "default": true },
+        "hideFirstPageHeaderFooter": { "type": "boolean", "default": true },
         "hyphenation": { "type": "boolean" },
         "smartQuotes": { "type": "boolean" },
         "smartDashes": { "type": "boolean" },

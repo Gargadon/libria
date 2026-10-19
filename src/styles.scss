@@ -3085,7 +3085,7 @@ button.tb__dropdown-item {
   text-indent: 0;
 }
 
-.bk-first::first-line {
+.ed__doc--small-caps .bk-first::first-line {
   font-variant: small-caps;
   letter-spacing: .06em;
 }
@@ -4089,10 +4089,12 @@ button.tb__dropdown-item {
   }
 }
 
-.kp-first::first-line {
+.kp--small-caps .kp-first::first-line {
   font-variant: small-caps;
   letter-spacing: .04em
 }
+
+.has-dropcap { display: flow-root; }
 
 .has-dropcap::first-letter {
   float: left;

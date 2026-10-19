@@ -148,7 +148,8 @@ ${spine}
       zip.file('OEBPS/content.opf', opf);
 
       const dropCapStyles = tweaks.dropCap
-        ? `.first-p::first-letter { float: left; font-size: 3.5em; line-height: 0.8; padding-right: 8px; font-weight: bold; }`
+        ? `.first-p { display: flow-root; }
+.first-p::first-letter { float: left; font-size: ${tweaks.dropCapLines * 1.2}em; line-height: 0.8; padding-right: 8px; font-weight: bold; }`
         : '';
       zip.file(
         'OEBPS/styles.css',
@@ -157,6 +158,7 @@ h1, h2 { font-family: ${titleFontFamily}, serif; text-align: center; }
 p { margin: 0; text-align: justify; }
 p + p { text-indent: 1.5em; }
 .first-p { text-indent: 0; }
+${tweaks.firstParagraphSmallCaps ? '.first-p::first-line { font-variant: small-caps; letter-spacing: .04em; }' : ''}
 .kp-list { margin: 0.5em 0; padding-left: 1.5em; }
 .kp-list li { margin: 0.2em 0; }
 .kp-table-wrap { overflow-x: auto; margin: 1em 0; }

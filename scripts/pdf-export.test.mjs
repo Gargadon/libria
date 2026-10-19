@@ -13,12 +13,14 @@ test('rejects invalid page sizes before starting a browser', async () => {
 
 test('passes the selected browser and exact page size to Vivliostyle', async () => {
   let options;
-  await exportPdf('book.html', 'book.pdf', { pageSize: { width: 5, height: 8 } }, '.', {
+  await exportPdf('book.html', 'book.pdf', { pageSize: { width: 5, height: 8 }, author: 'David Kantún', title: 'Libro' }, '.', {
     findBrowser: () => '/browser', build: async value => { options = value; },
   });
   assert.equal(options.size, '5in,8in');
   assert.equal(options.executableBrowser, '/browser');
   assert.equal(options.renderMode, 'local');
+  assert.equal(options.author, 'David Kantún');
+  assert.equal(options.title, 'Libro');
 });
 
 test('PDF/X conversion errors fail instead of returning a normal PDF', async () => {

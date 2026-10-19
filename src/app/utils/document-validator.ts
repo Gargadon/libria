@@ -38,6 +38,11 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
   if (Array.isArray(doc.preferences)) {
     throw new Error('Las preferencias de diseño deben ser un objeto.');
   }
+  for (const key of ['firstParagraphSmallCaps', 'hideFirstPageHeaderFooter']) {
+    if (doc.preferences[key] !== undefined && typeof doc.preferences[key] !== 'boolean') {
+      throw new Error(`La preferencia "${key}" debe ser un booleano.`);
+    }
+  }
   if (doc.session !== undefined && (!doc.session || typeof doc.session !== 'object' || Array.isArray(doc.session))) {
     throw new Error('La sesión del documento es inválida.');
   }
@@ -109,6 +114,9 @@ export function migrateLibriaDocument(input: unknown): LibriaDocument {
   if (!input || typeof input !== 'object') return input as LibriaDocument;
   const source = input as Record<string, any>;
   const preferences = { ...(source['preferences'] || {}) };
+  // Preserve the implicit appearance of documents saved before these controls existed.
+  preferences.firstParagraphSmallCaps ??= true;
+  preferences.hideFirstPageHeaderFooter ??= true;
 
   if (preferences.smartDashes === undefined && (preferences.emDash !== undefined || preferences.enDash !== undefined)) {
     preferences.smartDashes = Boolean(preferences.emDash ?? preferences.enDash);

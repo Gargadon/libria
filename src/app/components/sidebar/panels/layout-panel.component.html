@@ -217,6 +217,23 @@
       </button>
     </div>
   </div>
+  @if (store.tweaks.showHeader() || store.tweaks.showPageNumbers()) {
+    <div class="sb__row">
+      <div class="sb__label">{{ 'sidebar.hideFirstPageHeaderFooter' | translate }}</div>
+      <div class="sb__radio">
+        <button class="sb__opt"
+          [class.sb__opt--on]="store.tweaks.hideFirstPageHeaderFooter()"
+          (click)="store.updateTweak('hideFirstPageHeaderFooter', true)">
+          {{ 'sidebar.yes' | translate }}
+        </button>
+        <button class="sb__opt"
+          [class.sb__opt--on]="!store.tweaks.hideFirstPageHeaderFooter()"
+          (click)="store.updateTweak('hideFirstPageHeaderFooter', false)">
+          {{ 'sidebar.no' | translate }}
+        </button>
+      </div>
+    </div>
+  }
   @if (store.tweaks.showHeader()) {
     <div class="sb__row sb__row--col">
       <div class="sb__label">{{ 'sidebar.headerText' | translate }}</div>

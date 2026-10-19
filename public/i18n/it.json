@@ -92,6 +92,8 @@
   "sidebar.indentSize": "Dimensione rientro ({{value}}cm)",
   "sidebar.justify": "Giustifica testo",
   "sidebar.hyphenation": "Sillabazione automatica",
+  "sidebar.firstParagraphSmallCaps": "Maiuscoletto nella prima riga",
+  "sidebar.hideFirstPageHeaderFooter": "Nascondi intestazione e numero nella prima pagina",
   "sidebar.dropCap": "Capolettera (inizio capitolo)",
   "sidebar.dropCapToggle": "Usa capolettera",
   "sidebar.dropCapLines": "Righe occupate ({{value}})",

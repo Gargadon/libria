@@ -42,6 +42,8 @@ export class PdfExportService {
       const pageSize = pageSizeToInches(book.paperSize || '5x8');
 
       const pdfOptions: Record<string, any> = {
+        title: book.title,
+        author: book.authors?.filter(name => name.trim()).join(', ') || book.author || '',
         pageSize,
         printBackground: true,
         pdfx: t.pdfxCompliant || false,

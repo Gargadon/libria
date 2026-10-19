@@ -115,6 +115,26 @@ describe('sidebar panel navigation', () => {
     expect(loadSystemFonts).toHaveBeenCalledOnce();
   });
 
+  it('edits document small caps and first-page furniture from their panels', async () => {
+    const store = TestBed.inject(BookStore);
+    const fixture = TestBed.createComponent(SidebarComponent);
+    for (const [nav, label, key] of [
+      ['styles', 'sidebar.firstParagraphSmallCaps', 'firstParagraphSmallCaps'],
+      ['layout', 'sidebar.hideFirstPageHeaderFooter', 'hideFirstPageHeaderFooter'],
+    ] as const) {
+      store.setNav(nav);
+      await fixture.whenStable();
+      const row = [...fixture.nativeElement.querySelectorAll('.sb__row')].find((row: any) => row.textContent.includes(label)) as HTMLElement;
+      expect(row).toBeTruthy();
+      row.querySelectorAll<HTMLButtonElement>('button')[1].click();
+      await fixture.whenStable();
+      expect(store.tweaks[key]()).toBe(false);
+      row.querySelectorAll<HTMLButtonElement>('button')[0].click();
+      await fixture.whenStable();
+      expect(store.tweaks[key]()).toBe(true);
+    }
+  });
+
   it('renders every extracted panel and isolates drafts from a new sidebar instance', async () => {
     const store = TestBed.inject(BookStore);
     const fixture = TestBed.createComponent(SidebarComponent);

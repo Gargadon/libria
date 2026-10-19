@@ -79,7 +79,7 @@ html::-webkit-scrollbar { display: none; }
         font-style: normal;
       `;
 
-      marginBoxesCss = `
+      marginBoxesCss = t.hideFirstPageHeaderFooter !== false ? `
 @page :first {
   @top-left { content: none !important; }
   @top-center { content: none !important; }
@@ -88,7 +88,7 @@ html::-webkit-scrollbar { display: none; }
   @bottom-center { content: none !important; }
   @bottom-right { content: none !important; }
 }
-      `;
+      ` : '';
 
       if (showHdr) {
         marginBoxesCss += `
@@ -202,12 +202,13 @@ body {
   widows: 2; orphans: 2;
 }
 .kp-first::first-line {
-  font-variant: small-caps;
-  letter-spacing: .04em;
+  font-variant: ${t.firstParagraphSmallCaps !== false ? 'small-caps' : 'normal'};
+  letter-spacing: ${t.firstParagraphSmallCaps !== false ? '.04em' : 'normal'};
 }
 ${
   t.dropCap
     ? `
+.has-dropcap { display: flow-root; }
 .has-dropcap::first-letter {
   font-family: ${titleFontFamily};
   float: left;
@@ -538,6 +539,7 @@ ${
 <html lang="${escapeHtml(book.lang ?? 'es')}">
 <head>
   <meta charset="UTF-8">
+  <meta name="author" content="${escapeHtml(book.authors?.filter((name: string) => name.trim()).join(', ') || book.author || '')}">
   <title>${escapeHtml(book.title)}</title>
 ${fontTags}  <style>${css}${screenCss}</style>
   <script id="libria-cfg" type="application/json">{"mi":${t.marginInner},"mo":${t.marginOuter}}</script>

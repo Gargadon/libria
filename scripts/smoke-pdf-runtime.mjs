@@ -19,7 +19,7 @@ try {
     (_, relative) => `url(data:font/woff2;base64,${readFileSync(path.join(runtime, 'assets', relative)).toString('base64')})`,
   );
   const image = `data:image/svg+xml;base64,${Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="blue"/></svg>').toString('base64')}`;
-  writeFileSync(input, `<!doctype html><html lang="es"><head><title>Libria</title><style>
+  writeFileSync(input, `<!doctype html><html lang="es"><head><title>Libria</title><meta name="author" content="Autora de prueba"><style>
     ${fonts}
     body { font-family: 'DM Serif Display'; }
     section + section { break-before: page; }
@@ -27,7 +27,7 @@ try {
     <p>Español: áéíóú, ü, ñ. Français: œ, ç. Português: ã, õ.</p>
     <img alt="Imagen de prueba" src="${image}"></section>
     <section><h2>Segunda página</h2><p>Fuentes y recursos sin conexión.</p></section></body></html>`);
-  writeFileSync(options, JSON.stringify({ pageSize: { width: 5, height: 8 } }));
+  writeFileSync(options, JSON.stringify({ pageSize: { width: 5, height: 8 }, title: 'Libria', author: 'Autora de prueba' }));
   const result = spawnSync(path.join(runtime, process.platform === 'win32' ? 'node.exe' : 'node'), [
     path.join(runtime, 'pdf/pdf-export.mjs'), input, output, options, runtime,
   ], { stdio: 'inherit', windowsHide: true, timeout: 180_000 });
@@ -37,6 +37,7 @@ try {
   }
   const { PDFDocument, PDFDict, PDFName } = createRequire(path.join(runtime, 'pdf/package.json'))('pdf-lib');
   const document = await PDFDocument.load(readFileSync(output));
+  if (document.getAuthor() !== 'Autora de prueba') throw new Error('El PDF no conserva el metadato de autor');
   if (document.getPageCount() !== 2) throw new Error('La exportación no conserva los saltos de página');
   for (const page of document.getPages()) {
     if (Math.abs(page.getWidth() - 360) > 1 || Math.abs(page.getHeight() - 576) > 1) {

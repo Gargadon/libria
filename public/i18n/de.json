@@ -96,6 +96,8 @@
   "sidebar.smartDashes": "Intelligente Gedankenstriche (-- / —)",
   "sidebar.smartEllipsis": "Auslassungspunkte (... / …)",
   "sidebar.smartOpeningSigns": "Öffnungszeichen (?? / ¿, !! / ¡)",
+  "sidebar.firstParagraphSmallCaps": "Kapitälchen in der ersten Zeile",
+  "sidebar.hideFirstPageHeaderFooter": "Kopfzeile und Seitenzahl auf der ersten Seite ausblenden",
   "sidebar.dropCap": "Initiale (Kapitelanfang)",
   "sidebar.dropCapToggle": "Ersten Buchstaben vergrößern",
   "sidebar.dropCapLines": "Zeilen für Initiale ({{value}})",

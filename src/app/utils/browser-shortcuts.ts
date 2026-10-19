@@ -1,6 +1,8 @@
 /** Called after document handlers so Libria's own shortcuts keep their actions. */
 export function preventBrowserShortcut(event: KeyboardEvent): void {
   const key = event.key.toLowerCase();
+  // Let Windows request a normal close, including Libria's unsaved-changes guard.
+  if (key === 'f4' && event.altKey && !event.ctrlKey && !event.metaKey) return;
   const command = event.ctrlKey || event.metaKey;
   const functionKey = /^f(?:[1-9]|1[0-2])$/.test(key) && !['f7', 'f11'].includes(key);
   const browserKey = ['browserback', 'browserforward', 'browserrefresh', 'browserhome', 'browsersearch', 'browserfavorites'].includes(key);

@@ -19,6 +19,8 @@ describe('document compatibility and rendering safety', () => {
 
     expect(migrated.preferences.smartDashes).toBe(false);
     expect(migrated.preferences.smartEllipsis).toBe(false);
+    expect(migrated.preferences.firstParagraphSmallCaps).toBe(true);
+    expect(migrated.preferences.hideFirstPageHeaderFooter).toBe(true);
     expect(migrated.notes).toEqual([]);
     expect(() => validateLibriaDocument(migrated)).not.toThrow();
   });
@@ -30,6 +32,21 @@ describe('document compatibility and rendering safety', () => {
       preferences: {},
       chapters: [{ id: 'ch-1', title: 'Inicio', body: [{ type: 'p', text: 42 }] }],
     })).toThrow(/texto del bloque/);
+  });
+
+  it('preserves explicit document typography choices across JSON round trips', () => {
+    const doc = {
+      libriaVersion: '2.1.0',
+      metadata: { title: 'Libro', author: 'Autor', paperSize: '6x9' },
+      preferences: { firstParagraphSmallCaps: false, hideFirstPageHeaderFooter: false },
+      chapters: [],
+    };
+    const migrated = migrateLibriaDocument(JSON.parse(JSON.stringify(doc)));
+    expect(migrated.preferences.firstParagraphSmallCaps).toBe(false);
+    expect(migrated.preferences.hideFirstPageHeaderFooter).toBe(false);
+    expect(validateLibriaDocument(migrated)).toBe(true);
+    migrated.preferences.firstParagraphSmallCaps = 'false' as any;
+    expect(() => validateLibriaDocument(migrated)).toThrow(/firstParagraphSmallCaps/);
   });
 
   it('sanitizes rich text before export', () => {

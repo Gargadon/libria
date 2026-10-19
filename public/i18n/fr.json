@@ -92,6 +92,8 @@
   "sidebar.indentSize": "Taille du retrait ({{value}}cm)",
   "sidebar.justify": "Justifier le texte",
   "sidebar.hyphenation": "Césure automatique",
+  "sidebar.firstParagraphSmallCaps": "Petites capitales sur la première ligne",
+  "sidebar.hideFirstPageHeaderFooter": "Masquer l’en-tête et le numéro sur la première page",
   "sidebar.dropCap": "Lettrine (début de chapitre)",
   "sidebar.dropCapToggle": "Mettre en majuscule la première lettre",
   "sidebar.dropCapLines": "Lignes occupées ({{value}})",

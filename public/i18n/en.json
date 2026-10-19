@@ -98,6 +98,8 @@
   "sidebar.smartEllipsis": "Auto Ellipsis",
   "sidebar.smartOpeningSigns": "Auto Opening Signs (ES only)",
   "sidebar.pdfx": "PDF/X compliant",
+  "sidebar.firstParagraphSmallCaps": "Small caps on the first line",
+  "sidebar.hideFirstPageHeaderFooter": "Hide header and page number on the first page",
   "sidebar.dropCap": "Drop Cap (Chapter Start)",
   "sidebar.dropCapToggle": "Capitalize first letter",
   "sidebar.dropCapLines": "Lines it spans ({{value}})",

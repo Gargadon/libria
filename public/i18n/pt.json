@@ -97,6 +97,8 @@
   "sidebar.smartDashes": "Traços inteligentes (-- / —)",
   "sidebar.smartEllipsis": "Reticências inteligentes (... / …)",
   "sidebar.smartOpeningSigns": "Sinais de abertura (?? / ¿, !! / ¡)",
+  "sidebar.firstParagraphSmallCaps": "Versaletes na primeira linha",
+  "sidebar.hideFirstPageHeaderFooter": "Ocultar cabeçalho e número na primeira página",
   "sidebar.dropCap": "Letra Capitular (Início do capítulo)",
   "sidebar.dropCapToggle": "Capitalizar primeira letra",
   "sidebar.dropCapLines": "Linhas que ocupa ({{value}})",

@@ -143,11 +143,42 @@ describe('export format regression', () => {
     await service.exportPdf();
     expect(window.desktopAPI!.printFromHTML).toHaveBeenCalledWith(
       expect.stringContaining('Texto'),
-      expect.objectContaining({ printBackground: true, displayHeaderFooter: false }),
+      expect.objectContaining({ printBackground: true, displayHeaderFooter: false, author: 'Autora', title: 'Libro de prueba' }),
     );
     expect(saved.filename).toBe('Libro de prueba.pdf');
     expect([...saved.bytes]).toEqual([37, 80, 68, 70]);
     expect(store.isExporting()).toBe(false);
+  });
+
+  it('composes document choices for small caps and first-page furniture', () => {
+    const compose = () => service.buildPrintHtml(store.book(), store.chapters(), store.tweaks(), store.bookFontFamily(), store.titleFontFamily());
+    const original = compose();
+    expect(original).toContain('font-variant: small-caps;');
+    expect(original).toContain('@page :first');
+    expect(original).toContain('.has-dropcap { display: flow-root; }');
+    store.updateTweak('firstParagraphSmallCaps', false);
+    store.updateTweak('hideFirstPageHeaderFooter', false);
+    const changed = compose();
+    expect(changed).toContain('font-variant: normal;');
+    expect(changed).not.toContain('@page :first');
+    expect(changed).toContain('content: counter(page)');
+    // Loading an older document must restore its historical appearance,
+    // rather than inheriting the previously opened document's switches.
+    const legacyDocument = { libriaVersion: '2.1.0', metadata: store.book(), preferences: {}, chapters: store.chapters() };
+    store.loadDocument(legacyDocument as any, TestBed.inject(AssetService));
+    expect(store.tweaks.firstParagraphSmallCaps()).toBe(true);
+    expect(store.tweaks.hideFirstPageHeaderFooter()).toBe(true);
+  });
+
+  it('passes all authors to PDF export and falls back to the legacy author field', async () => {
+    store.updateBookMetadata({ authors: ['Autora', 'Coautor'] });
+    await service.exportPdf();
+    expect(window.desktopAPI!.printFromHTML).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ author: 'Autora, Coautor' }));
+    expect(window.desktopAPI!.printFromHTML).toHaveBeenLastCalledWith(expect.stringContaining('<meta name="author" content="Autora, Coautor">'), expect.anything());
+    store.updateBookMetadata({ authors: [], author: 'Autor antiguo' });
+    await service.exportPdf();
+    expect(window.desktopAPI!.printFromHTML).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ author: 'Autor antiguo' }));
+    expect(window.desktopAPI!.printFromHTML).toHaveBeenLastCalledWith(expect.stringContaining('<meta name="author" content="Autor antiguo">'), expect.anything());
   });
 
   it('honors chapter selection', async () => {

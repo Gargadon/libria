@@ -82,6 +82,7 @@ export interface Tweaks {
   marginOuter: number;
   showPageNumbers: boolean;
   showHeader: boolean;
+  hideFirstPageHeaderFooter: boolean;
   headerText: string;
   // Advanced Decoration
   sceneBreakType: 'asterisks' | 'asterisks3' | 'dots' | 'flourish' | 'none';
@@ -96,6 +97,7 @@ export interface Tweaks {
   // Typographic tweaks
   dropCap: boolean;
   dropCapLines: number;
+  firstParagraphSmallCaps: boolean;
   hyphenation: boolean;
   smartQuotes: boolean;
   smartDashes: boolean;
