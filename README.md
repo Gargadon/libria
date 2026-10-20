@@ -17,7 +17,9 @@ Libria abandona el concepto de "página en blanco" tradicional por un sistema de
 - **Secciones especializadas:** Preliminares (`halftitle`, `title`, `subtitle`, `author`, `publisher`, `dedication`, `chapter-num`), cuerpo de la obra y posliminares.
 - **Estados de capítulo:** Control visual del progreso (Borrador, Esquema, Listo) con indicadores de color.
 - **Métricas en tiempo real:** Recuento de palabras y tiempo de lectura estimado por capítulo y total.
-- **Bloques enriquecidos:** Párrafos, títulos, citas, saltos de escena, saltos de página, imágenes y más.
+- **Bloques enriquecidos:** Párrafos con negrita, cursiva, subrayado y enlaces; títulos, citas, epígrafes con atribución, listas, tablas, código, saltos de escena, saltos de página e imágenes.
+- **Plantillas de capítulos:** Portadilla, créditos, dedicatoria, agradecimientos e índice, con opción de iniciar un capítulo en página impar.
+- **Metadatos y portada:** Título, subtítulo, varios autores y editores, editorial, año, ISBN, idioma del documento e imagen de portada.
 - **Imágenes:** Inserción desde el portapapeles (Ctrl+V), desde el panel de attachments o cargando archivos. Rotación (90°, 180°, 270°), volteo horizontal y vertical, con ajuste automático de orientación EXIF. Las transformaciones se reflejan en todas las previsualizaciones (Kindle, iPhone y Papel).
 - **Reordenación de capítulos:** Botones de subir/bajar en el panel lateral para reposicionar capítulos dentro de su sección (preliminares, cuerpo, posliminares).
 - **Búsqueda y reemplazo global:** Vista de contexto con coincidencias resaltadas.
@@ -30,13 +32,16 @@ Un panel de control con parámetros ajustables para ver cómo quedará tu libro 
 - **Temas Predefinidos:** Opciones integradas como *Clásico*, *Moderno* y *Minimalista* (este último con ajustes específicos como remoción de márgenes superiores).
 - **Tipografía:** Spectral, Lora, EB Garamond, Crimson Pro, Inter, Montserrat — y cualquier fuente instalada en tu sistema (con campos personalizados para fuente del libro y de títulos).
 - **Control absoluto:** Márgenes (interior/exterior/superior/inferior), interlineado, espaciado de párrafos, sangrías, justificación y alineación.
-- **Detalles profesionales:** Letras capitulares (drop caps), guionización automática en 5 idiomas, **comillas inteligentes**, **guiones em/en**, **puntos suspensivos tipográficos** y **signos de apertura inteligentes**.
-- **Encabezados y pies:** Texto personalizado, numeración de página con posición configurable.
+- **Detalles profesionales:** Letras capitulares (drop caps) con altura configurable, versalitas en la primera línea del primer párrafo, separadores de escena configurables, guionización automática en 5 idiomas, **comillas inteligentes**, **guiones em/en**, **puntos suspensivos tipográficos** y **signos de apertura inteligentes**.
+- **Encabezados y pies:** Texto personalizado, numeración de página con posición configurable y opción de ocultar ambos en la primera página de cada capítulo.
 - **Paginación dinámica:** Previsualiza en formatos estándar (5×8, 6×9, A5, A4, A6, Carta) o simulando dispositivos Kindle o iPhone.
 
 ### Revisión Ortográfica Integrada
 
-El editor utiliza el corrector del WebView del sistema para subrayar errores y mostrar sugerencias. Los idiomas disponibles dependen de los diccionarios del sistema. Las diferencias del diccionario personal respecto a Electron están descritas en [la guía de Tauri](docs/tauri.md).
+- **Corrector propio sin conexión:** Motor `nspell` con diccionarios incluidos de español, inglés, francés, italiano y portugués. Utiliza el idioma del documento, independiente del idioma de la interfaz.
+- **Corrección durante la escritura:** Subrayado de errores y sugerencias mediante clic derecho, con opciones para ignorar palabras o añadirlas al diccionario personal. El subrayado requiere compatibilidad del WebView con CSS Highlights.
+- **Revisión del capítulo:** Panel accesible con `F7` para recorrer errores, ver su contexto y aplicar sugerencias conservando el formato enriquecido.
+- **Diccionario personal:** Panel lateral con búsqueda, paginación, alta y eliminación de palabras. Se guarda en el almacenamiento nativo de escritorio o en LocalStorage en la versión web.
 
 ### Notas al Pie
 
@@ -53,7 +58,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 
 - **Notas marginales:** Comenta fragmentos específicos del texto con hilos de discusión.
 - **Roles definidos:** Autor, Editor, Corrector y Editorial.
-- **Hilos de conversación:** Respuestas anidadas para discutir cambios estilísticos o estructurales.
+- **Hilos de conversación:** Respuestas en cada nota para discutir cambios estilísticos o estructurales.
 - **Control de estado:** Marca notas como resueltas o no aplicables.
 
 ### Fichas Creativas (Worldbuilding)
@@ -68,7 +73,9 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Temporizador Pomodoro:** Control de ciclos de enfoque y descansos (cortos y largos) con alertas sonoras integradas en la barra superior.
 - **Gráfica de rendimiento (Pacing):** Visualización del conteo de palabras por capítulo en formato SVG dinámico, con cálculo de meta de palabras diaria en base a fechas límite.
 - **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
-- **Verificación de actualizaciones:** Botón dedicado en el diálogo de *Acerca de* (About) para verificar manualmente si hay nuevas versiones de la aplicación desde GitHub o mediante el actualizador automático.
+- **Consulta de actualizaciones:** El botón de *Acerca de* abre la página de descargas en GitHub; la instalación de nuevas versiones es manual.
+- **Proyectos recientes:** Acceso a los últimos cinco documentos locales desde la bienvenida y listado independiente de copias de Drive disponibles en el equipo.
+- **Protección al cerrar:** Aviso de cambios sin guardar y opciones para guardar, descartar o cancelar el cierre.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.
 - **Recuperación y versiones:** Copia local independiente cada 5 segundos cuando hay cambios, también para libros sin guardar. Historial persistente con puntos cada 2 minutos, hasta 10 por sesión y 50 en total (aproximadamente 200 MB). Desde el botón de historial o la bienvenida se puede restaurar como copia o añadir un capítulo recuperado con sus imágenes y comentarios. Las copias viven en los datos locales de la aplicación/navegador y no sustituyen un respaldo externo.
 - **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
@@ -79,8 +86,11 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Importar:** Desde DOCX (negritas, cursivas, subrayado, enlaces, encabezados, listas, tablas, imágenes compatibles y notas al pie) y TXT (texto plano). Se muestran los avisos de conversión; las imágenes dentro de tablas/listas se colocan después del bloque. La importación conserva estructura semántica, no la paginación exacta de Word.
 - **Exportación EPUB 3.0:** Estándar de la industria para distribución digital, con portada, TOC, tipografía embebida y soporte completo de listas, tablas y notas al pie.
 - **Exportación DOCX:** Todos los tipos de bloque, formato enriquecido (negrita, cursiva, imágenes), tweaks tipográficos aplicados, portada y TOC opcionales.
-- **Exportación PDF profesional:** Composición con Vivliostyle, CSS Paged Media, páginas recto/verso, cajas de margen, numeración real del índice y estilos tipográficos aplicados.
-- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas, imágenes y objetivos de escritura.
+- **Exportación ODT:** Documento OpenDocument con formato enriquecido, imágenes, listas, tablas y notas al pie nativas.
+- **Exportación por capítulos:** DOCX y ODT permiten exportar el libro completo o seleccionar capítulos. EPUB y PDF se ofrecen para el libro completo.
+- **Exportación PDF profesional (escritorio):** Composición con Vivliostyle, CSS Paged Media, páginas recto/verso, cajas de margen, numeración real del índice y estilos tipográficos aplicados.
+- **PDF/X opcional:** Conversión mediante Ghostscript para flujos de imprenta. En Windows se incluye en el paquete; en macOS/Linux se necesita una instalación del sistema. Si la conversión falla, se informa del error.
+- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas al pie, comentarios, imágenes, objetivos de escritura y fichas de personajes y lugares. Compatible con los documentos existentes de la versión Electron; consulta [la especificación del formato](FORMATO_LIBRIA.md).
 
 ### Internacionalización
 
@@ -103,8 +113,8 @@ Libria está construida con las tecnologías más modernas para garantizar fluid
 | **Estilos** | SCSS (Sass) por componente |
 | **Lenguajes** | TypeScript 6.0 (Modo Estricto) y Rust |
 | **Herramientas de desarrollo** | [Bun](https://bun.sh/) + Rust estable |
-| **Corrector ortográfico** | Corrector del WebView del sistema |
-| **Dependencias clave** | `@vivliostyle/cli` (PDF), `docx` (DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX) |
+| **Corrector ortográfico** | `nspell` y diccionarios Hunspell incluidos |
+| **Dependencias clave** | `@vivliostyle/cli` (PDF), `docx` (DOCX), `jszip` (EPUB), `hyphen` (guionado), `mammoth` (importación DOCX), `nspell` (ortografía) |
 
 La separación del editor, los paneles y los exportadores está descrita en [la guía de arquitectura](docs/architecture.md).
 
@@ -112,7 +122,7 @@ La separación del editor, los paneles y los exportadores está descrita en [la 
 
 El estado de la aplicación se gestiona mediante un **Signals Store** altamente optimizado que incluye:
 
-- **Historial de Deshacer/Rehacer:** Hasta 50 snapshots de seguridad.
+- **Historial de Deshacer/Rehacer:** Hasta 20 instantáneas de capítulos y comentarios en memoria, independiente del historial persistente de recuperación.
 - **Búsqueda Global:** Motor de búsqueda indexado con contexto de coincidencias.
 - **Preferencias de usuario:** Persistencia de configuración (idioma, avatar, nombre, ancho de previsualización) en LocalStorage.
 - **Temas personalizados:** Carga e inicialización automática de temas del usuario a nivel de estado en el BookStore.
@@ -127,7 +137,7 @@ El estado de la aplicación se gestiona mediante un **Signals Store** altamente 
 - **Bun**: 1.3.14 o superior
 - **Rust estable** y [prerrequisitos nativos de Tauri](https://v2.tauri.app/start/prerequisites/)
 
-El empaquetado incluye el motor PDF, que se inicia solo al exportar. Consulta los requisitos nativos, los comandos y las diferencias respecto a Electron en [la guía de Tauri](docs/tauri.md).
+La aplicación de escritorio está disponible para Windows, Linux y macOS. El empaquetado incluye Node y Chrome Headless Shell para exportar PDF sin conexión; el motor PDF se inicia solo al exportar. Durante el desarrollo utiliza Node y Edge/Chrome/Chromium del sistema (`LIBRIA_PDF_BROWSER` permite elegir el ejecutable). Consulta los requisitos nativos, los comandos y las diferencias respecto a Electron en [la guía de Tauri](docs/tauri.md).
 
 ### Instalación y Ejecución
 
@@ -135,8 +145,9 @@ El empaquetado incluye el motor PDF, que se inicia solo al exportar. Consulta lo
 # 1. Clonar el repositorio
 git clone https://github.com/gargadon/libria.git
 
-# 2. Instalar dependencias
-bun install
+# 2. Entrar al proyecto e instalar dependencias
+cd libria
+bun install --frozen-lockfile
 
 # 3. Iniciar servidor de desarrollo
 bun run start          # http://localhost:4300
@@ -153,7 +164,12 @@ bun run tauri:build
 
 ### Google Drive
 
-La aplicación de escritorio permite conectar una cuenta, abrir y guardar documentos `.libria` en Drive y sincronizarlos cada 30 segundos o manualmente. Mantiene una copia local y detecta cambios en ambas versiones antes de subir. El vínculo con Drive se guarda por separado, sin modificar la estructura del documento. Incluye credenciales de aplicación ofuscadas; consulta la [configuración OAuth y sincronización](docs/google-drive.md).
+- **Cuenta y documentos:** Conexión mediante el navegador del sistema, apertura y guardado de archivos `.libria`, selector de Google Picker y elección de carpeta de destino. Los tokens se conservan en el almacén de credenciales del sistema.
+- **Trabajo sin conexión:** Guardado local inmediato y subida en segundo plano, con indicación de cambios pendientes. Las copias de «Drive en este equipo» pueden abrirse sin internet ni sesión activa.
+- **Sincronización:** Automática cada 30 segundos y al recuperar la conexión, o manual. Solo se sincroniza el documento abierto. Detecta cambios remotos y conflictos; permite reemplazar la versión remota, crear una copia en Drive o guardar un respaldo local antes de abrir la remota.
+- **Gestión de archivos:** Lista paginada, búsqueda entre las páginas cargadas y envío de documentos a la papelera con confirmación; conserva las copias locales.
+
+El vínculo con Drive se guarda fuera del documento `.libria`. Incluye credenciales de aplicación ofuscadas; consulta la [configuración OAuth y los detalles de sincronización](docs/google-drive.md).
 
 ### Plugins (propuesta de API)
 
@@ -169,6 +185,16 @@ La [especificación de plugins](docs/plugins.md) define una API pública para a�
 | `bun run test` | Ejecutar tests con Vitest |
 | `bun run tauri:dev` | Servidor Angular + ventana Tauri |
 | `bun run tauri:build` | Build + instaladores Tauri |
+| `bun run tauri:prepare` | Preparar el runtime PDF y los recursos nativos |
+| `bun run version:sync` | Sincronizar la versión de `package.json` con Cargo y el runtime PDF |
+| `bun run test:desktop` | Pruebas de scripts de escritorio y empaquetado |
+| `bun run test:drive` | Pruebas del backend de Google Drive |
+| `bun run test:native` | Pruebas del backend Rust |
+| `bun run benchmark:desktop` | Medir procesos y consumo de la aplicación de escritorio |
+
+La versión se modifica únicamente en el `package.json` de la raíz; los comandos de compilación y pruebas nativas sincronizan las copias necesarias. Consulta también la [guía de medición de rendimiento](docs/benchmark.md).
+
+Al migrar desde Electron, los documentos y temas exportados siguen siendo compatibles. Las preferencias, los recientes y las recuperaciones locales no se importan automáticamente, y Drive requiere una nueva autorización. Consulta [la guía de migración a Tauri](docs/tauri.md#compatibilidad-con-la-versión-electron).
 
 ---
 
