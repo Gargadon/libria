@@ -208,7 +208,9 @@ body {
 ${
   t.dropCap
     ? `
-.has-dropcap { display: flow-root; }
+/* Vivliostyle needs a regular block to split ::first-line from the rest
+   of the paragraph. flow-root bypasses its line styling layout. */
+.has-dropcap { display: ${screenPreview ? 'flow-root' : 'block'}; }
 .has-dropcap::first-letter {
   font-family: ${titleFontFamily};
   float: left;

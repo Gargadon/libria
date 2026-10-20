@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
@@ -15,6 +15,7 @@ class FakeTranslateLoader implements TranslateLoader {
 }
 
 describe('App', () => {
+  afterEach(() => { delete window.desktopAPI; vi.restoreAllMocks(); });
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
@@ -25,6 +26,42 @@ describe('App', () => {
         })
       ]
     }).compileComponents();
+  });
+
+  it.each([
+    { update: '2.1.2', expected: 'https://github.com/Gargadon/libria/releases/latest' },
+    { update: { version: '2.1.2' }, expected: 'https://github.com/Gargadon/libria/releases/latest' },
+    { update: { version: '2.1.2', url: '' }, expected: 'https://github.com/Gargadon/libria/releases/latest' },
+    { update: { version: '2.1.2', url: 'https://github.com/Gargadon/libria/releases/download/v2.1.2/libria-2.1.2-win-x64.exe' }, expected: 'https://github.com/Gargadon/libria/releases/download/v2.1.2/libria-2.1.2-win-x64.exe' },
+  ])('offers a working download for update $update', async ({ update, expected }) => {
+    let notify!: (value: unknown) => void;
+    const openExternal = vi.fn().mockResolvedValue(undefined);
+    window.desktopAPI = {
+      onUpdateAvailable: (callback: typeof notify) => { notify = callback; },
+      openExternal,
+      setSpellCheckerLanguage: vi.fn().mockResolvedValue(undefined),
+    } as unknown as DesktopAPI;
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    notify(update);
+    fixture.detectChanges();
+    const button = fixture.nativeElement.querySelector('.update-banner__action') as HTMLButtonElement;
+    expect(button).not.toBeNull();
+    button.click();
+    await fixture.whenStable();
+    expect(openExternal).toHaveBeenCalledWith(expected);
+    expect(fixture.componentInstance.updateVersion()?.version).toBe('2.1.2');
+  });
+
+  it('reports a failed download link and keeps the action available for retry', async () => {
+    window.desktopAPI = { openExternal: vi.fn().mockRejectedValue(new Error('opener failed')), setSpellCheckerLanguage: vi.fn().mockResolvedValue(undefined) } as unknown as DesktopAPI;
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.updateVersion.set({ version: '2.1.2' });
+    await app.openUpdate();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.check-result')?.textContent).toContain('No se pudo abrir la descarga');
+    expect(fixture.nativeElement.querySelector('.update-banner__action')).not.toBeNull();
   });
 
   it('should create the app', () => {

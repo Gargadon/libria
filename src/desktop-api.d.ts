@@ -42,7 +42,7 @@ interface DesktopAPI {
   addWordToDictionary(word: string): Promise<boolean>;
   removeWordFromDictionary(word: string): Promise<boolean>;
 
-  // Auto-updater
+  // Update checks and manual installer download
   checkForUpdates(): void;
   openExternal(url: string): Promise<void>;
 }

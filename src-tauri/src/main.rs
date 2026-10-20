@@ -4,6 +4,7 @@ mod drive;
 mod files;
 mod fonts;
 mod pdf;
+mod updates;
 
 use serde_json::{json, Value};
 use std::{path::PathBuf, sync::Mutex};
@@ -182,35 +183,6 @@ fn dictionary(
     Ok(json!(if action == "add" { !exists } else { exists }))
 }
 
-#[tauri::command]
-async fn check_updates(app: tauri::AppHandle) -> Result<Option<Value>, String> {
-    let client = reqwest::Client::builder()
-        .user_agent("Libria")
-        .timeout(std::time::Duration::from_secs(15))
-        .build()
-        .map_err(|e| e.to_string())?;
-    let response = client
-        .get("https://api.github.com/repos/Gargadon/libria/releases/latest")
-        .send()
-        .await
-        .map_err(|_| "No se pudo consultar GitHub")?;
-    let release: Value = response
-        .error_for_status()
-        .map_err(|_| "No se pudo consultar GitHub")?
-        .json()
-        .await
-        .map_err(|_| "Respuesta de GitHub inválida")?;
-    let tag = release["tag_name"]
-        .as_str()
-        .ok_or("Versión inválida")?
-        .trim_start_matches('v');
-    let latest = semver::Version::parse(tag).map_err(|_| "Versión inválida")?;
-    let current = &app.package_info().version;
-    Ok((latest > *current).then(
-        || json!({ "version": tag, "url": "https://github.com/Gargadon/libria/releases/latest" }),
-    ))
-}
-
 fn main() {
     tauri::Builder::default()
         .manage(PendingPath(Mutex::new(document_argument(
@@ -279,7 +251,7 @@ fn main() {
             write_file,
             save_export,
             dictionary,
-            check_updates,
+            updates::check_updates,
             pdf::fonts_css,
             fonts::system_fonts,
             fonts::font_variants,

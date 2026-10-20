@@ -73,7 +73,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Temporizador Pomodoro:** Control de ciclos de enfoque y descansos (cortos y largos) con alertas sonoras integradas en la barra superior.
 - **Gráfica de rendimiento (Pacing):** Visualización del conteo de palabras por capítulo en formato SVG dinámico, con cálculo de meta de palabras diaria en base a fechas límite.
 - **Tema claro/oscuro:** Alterna entre ambos modos con persistencia en preferencias personales. El tema oscuro no afecta la previsualización de dispositivos físicos.
-- **Consulta de actualizaciones:** El botón de *Acerca de* abre la página de descargas en GitHub; la instalación de nuevas versiones es manual.
+- **Consulta de actualizaciones:** Desde *Acerca de* se comprueba si hay una versión nueva. El aviso siempre ofrece **Descargar**: abre en el navegador el instalador para el sistema y la arquitectura actuales (EXE en Windows, DMG en macOS o AppImage en Linux), o la página de versiones si no hay un instalador compatible. La instalación es manual.
 - **Proyectos recientes:** Acceso a los últimos cinco documentos locales desde la bienvenida y listado independiente de copias de Drive disponibles en el equipo.
 - **Protección al cerrar:** Aviso de cambios sin guardar y opciones para guardar, descartar o cancelar el cierre.
 - **Autoguardado:** Guardado silencioso automático cada 2 minutos si el archivo ya tiene ruta.

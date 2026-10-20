@@ -155,7 +155,7 @@ describe('export format regression', () => {
     const original = compose();
     expect(original).toContain('font-variant: small-caps;');
     expect(original).toContain('@page :first');
-    expect(original).toContain('.has-dropcap { display: flow-root; }');
+    expect(original).toContain('.has-dropcap { display: block; }');
     store.updateTweak('firstParagraphSmallCaps', false);
     store.updateTweak('hideFirstPageHeaderFooter', false);
     const changed = compose();
@@ -168,6 +168,21 @@ describe('export format regression', () => {
     store.loadDocument(legacyDocument as any, TestBed.inject(AssetService));
     expect(store.tweaks.firstParagraphSmallCaps()).toBe(true);
     expect(store.tweaks.hideFirstPageHeaderFooter()).toBe(true);
+  });
+
+  it.each([
+    { name: 'PDF', fontsHref: undefined, pagedPreview: false, display: 'block' },
+    { name: 'Vivliostyle preview', fontsHref: 'https://libria.test/fonts.css', pagedPreview: true, display: 'block' },
+    { name: 'browser columns', fontsHref: 'https://libria.test/fonts.css', pagedPreview: false, display: 'flow-root' },
+  ])('keeps first-line styling compatible with $name', ({ fontsHref, pagedPreview, display }) => {
+    const html = service.buildPrintHtml(
+      store.book(), store.chapters(), store.tweaks(),
+      store.bookFontFamily(), store.titleFontFamily(), fontsHref, {}, undefined, pagedPreview,
+    );
+    expect(html).toContain(`.has-dropcap { display: ${display}; }`);
+    expect(html).toContain('.kp-first::first-line {\n  font-variant: small-caps;');
+    expect(html).toContain('.has-dropcap::first-letter {');
+    expect(html).toContain('class="kp-first has-dropcap"');
   });
 
   it('passes all authors to PDF export and falls back to the legacy author field', async () => {

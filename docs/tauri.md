@@ -2,7 +2,7 @@
 
 Angular conserva el editor, el estado, el formato `.libria`, la previsualización y las exportaciones EPUB/DOCX/ODT. `src/desktop.ts` instala `window.desktopAPI` antes de arrancar Angular. En el navegador no lo instala y se mantienen las alternativas web.
 
-El backend Rust en `src-tauri` gestiona ventanas, archivos, diálogos, asociación de documentos, instancia única, diccionario personal y Google Drive. Los tokens de Drive se guardan en el almacén de credenciales del sistema mediante `keyring`; no llegan al frontend. La interfaz usa el menú integrado de Libria y sus atajos, también en Windows y macOS. La consulta de actualizaciones abre la página de descargas; no instala actualizaciones automáticamente.
+El backend Rust en `src-tauri` gestiona ventanas, archivos, diálogos, asociación de documentos, instancia única, diccionario personal y Google Drive. Los tokens de Drive se guardan en el almacén de credenciales del sistema mediante `keyring`; no llegan al frontend. La interfaz usa el menú integrado de Libria y sus atajos, también en Windows y macOS. La consulta de actualizaciones compara la versión con la última release estable de GitHub. El aviso siempre ofrece Descargar, también si recibe una notificación antigua sin URL. Abre en el navegador el instalador publicado para el sistema y la arquitectura actuales (EXE en Windows, DMG en macOS o AppImage en Linux); si no existe, abre la página de versiones para elegir otra descarga. Los fallos al abrir el enlace se muestran y permiten reintentar. La instalación es manual; no sustituye la aplicación ni la reinicia automáticamente.
 
 ## Desarrollo
 

@@ -59,8 +59,15 @@ export class App {
   updateVersion = signal<{ version: string; url?: string } | null>(null);
   checkResult = signal('');
 
-  openUpdate(url?: string) {
-    if (url) (window as any).desktopAPI?.openExternal(url);
+  async openUpdate(url?: string) {
+    const destination = url?.trim() || 'https://github.com/Gargadon/libria/releases/latest';
+    this.checkResult.set('');
+    try {
+      if (window.desktopAPI) await window.desktopAPI.openExternal(destination);
+      else window.open(destination, '_blank', 'noopener,noreferrer');
+    } catch {
+      this.checkResult.set('No se pudo abrir la descarga. Inténtalo de nuevo.');
+    }
   }
 
   @HostListener('document:keydown', ['$event'])
