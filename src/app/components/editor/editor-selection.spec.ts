@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EditorComponent } from './editor.component';
 import { BookStore } from '../../store/book.store';
-import { contenteditableOf, setEditorSelection } from './editor-dom';
+import { contenteditableOf, setEditorSelection, selectedEditorContent } from './editor-dom';
 
 const caretDescriptor = Object.getOwnPropertyDescriptor(document, 'caretRangeFromPoint');
 const rectDescriptor = Object.getOwnPropertyDescriptor(Range.prototype, 'getBoundingClientRect');
@@ -124,6 +124,19 @@ describe('rendered editor drag selection', () => {
       expect(selection.toString()).toContain('Primer párrafo');
       expect(selection.toString()).toContain('Segundo párrafo');
       expect(selection.toString()).not.toContain('Capítulo 1');
+      // Native range serialization includes the intervening block controls.
+      // Both forward/backward selection and Ctrl+A must copy manuscript only.
+      const clipboard = new Map<string, string>();
+      const copy = new Event('copy', { bubbles: true, cancelable: true });
+      Object.defineProperty(copy, 'clipboardData', {
+        value: { setData: (type: string, value: string) => clipboard.set(type, value) },
+      });
+      editor.dispatchEvent(copy);
+      expect(copy.defaultPrevented).toBe(true);
+      expect(clipboard.get('text/plain')).toBe('Primer párrafo\nSegundo párrafo');
+      expect(clipboard.get('text/html')).not.toMatch(/chat_bubble|<select|<button|editor\.blockParagraph/);
+      expect(store.activeChapter()!.body).toHaveLength(3);
+
       expect(editor.getAttribute('contenteditable')).toBe('true');
       expect(document.activeElement).toBe(editor);
       let expected = 'X';
@@ -154,6 +167,29 @@ describe('rendered editor drag selection', () => {
       expect(document.activeElement).toBe(paragraphs[0]);
     },
   );
+  it('copies a partial rich selection without controls and preserves paragraph breaks', () => {
+    const editor = document.createElement('article');
+    editor.className = 'ed__doc';
+    editor.innerHTML = '<div class="ed__block-container"><p contenteditable="true">Inicio <strong>uno</strong></p></div>' +
+      '<div class="ed__block-container"><div class="ed__block-actions"><button>chat_bubble</button><select><option>Párrafo</option></select></div>' +
+      '<p contenteditable="true"><em>dos</em> final</p></div>';
+    document.body.append(editor);
+    try {
+      const strong = editor.querySelector('strong')!;
+      const em = editor.querySelector('em')!;
+      const selection = window.getSelection()!;
+      selection.setBaseAndExtent(strong.firstChild!, 1, em.firstChild!, 2);
+      const forward = selectedEditorContent()!;
+      expect(forward.text).toBe('no\ndo');
+      expect(forward.html).toContain('<strong>no</strong>');
+      expect(forward.html).toContain('<em>do</em>');
+      expect(forward.html).not.toMatch(/chat_bubble|Párrafo|<button|<select/);
+      selection.setBaseAndExtent(em.firstChild!, 2, strong.firstChild!, 1);
+      expect(selectedEditorContent()).toEqual(forward);
+    } finally {
+      editor.remove();
+    }
+  });
   it.each([null, 'false'])(
     'restores the editor editing state if setting the selection fails (%s)',
     (previous) => {

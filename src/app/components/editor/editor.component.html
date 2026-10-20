@@ -225,6 +225,7 @@
                 @if (notes.blockNotes().has($index)) {
                   <button
                     class="ed__note-indicator"
+                    contenteditable="false" data-editor-control
                     (click)="notes.addNoteToBlock(chapter.id, $index)"
                     [attr.title]="'editor.viewNotes' | translate"
                   >
@@ -232,7 +233,7 @@
                     <span class="ed__note-count">{{ notes.blockNotes().get($index) }}</span>
                   </button>
                 }
-                <div class="ed__block-actions">
+                <div class="ed__block-actions" contenteditable="false" data-editor-control>
                   <button
                     class="ed__block-btn"
                     (click)="notes.addNoteToBlock(chapter.id, $index)"
@@ -572,7 +573,7 @@
                             [style.transform]="imageTransform(b)"
                             #imageEl
                           />
-                          <div class="bk-image__tools">
+                          <div class="bk-image__tools" contenteditable="false" data-editor-control>
                             <button
                               class="bk-image__tool"
                               (click)="images.rotateImage(chapter.id, $index, b, -90)"

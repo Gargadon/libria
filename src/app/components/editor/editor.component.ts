@@ -5,6 +5,7 @@ import {
   getCaretOffset,
   constrainSelection,
   selectAllBlocks,
+  selectedEditorContent,
   setEditorSelection,
   selectionRegionRange,
   getEditorSelectionSurface,
@@ -501,6 +502,16 @@ export class EditorComponent implements OnDestroy {
       if (chapter && editable && index >= 0 && (isHistory || isEdit))
         this.onKeyDown(chapter.id, index, event, editable);
     }
+  }
+
+  @HostListener('copy', ['$event'])
+  onEditorCopy(event: ClipboardEvent) {
+    if (!event.clipboardData) return;
+    const content = selectedEditorContent();
+    if (!content) return;
+    event.clipboardData.setData('text/plain', content.text);
+    event.clipboardData.setData('text/html', content.html);
+    event.preventDefault();
   }
 
   @HostListener('paste', ['$event'])

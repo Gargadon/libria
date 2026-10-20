@@ -172,3 +172,35 @@ export function constrainSelection(): void {
     side < 0 ? bounds.startOffset : bounds.endOffset,
   );
 }
+
+/** Serialize only manuscript content, never the controls between selected blocks. */
+export function selectedEditorContent(): { text: string; html: string } | null {
+  const selection = window.getSelection();
+  if (!selection?.rangeCount || selection.isCollapsed) return null;
+  const range = selection.getRangeAt(0);
+  const start = contenteditableOf(range.startContainer);
+  const end = contenteditableOf(range.endContainer);
+  const editor = start?.closest('.ed__doc');
+  if (!editor || end?.closest('.ed__doc') !== editor) return null;
+  const content = document.createElement('div');
+  content.append(range.cloneContents());
+  content.querySelectorAll('button, select, input, textarea, [data-editor-control]').forEach(el => el.remove());
+  content.querySelectorAll('.ed__block-actions, .ed__note-indicator').forEach(el => el.remove());
+  // Keep semantic markup without carrying editor styling or editing attributes.
+  content.querySelectorAll('*').forEach(el => {
+    for (const attribute of Array.from(el.attributes)) {
+      if (attribute.name === 'class' || attribute.name === 'contenteditable' ||
+          attribute.name === 'spellcheck' || attribute.name.startsWith('data-libria-') ||
+          attribute.name === 'data-selection-region' ||
+          attribute.name.startsWith('ng-') || attribute.name.startsWith('_ng'))
+        el.removeAttribute(attribute.name);
+    }
+  });
+  const html = content.innerHTML;
+  content.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+  Array.from(content.querySelectorAll('p, h1, h2, h3, h4, h5, h6, div, blockquote, pre, li, tr, figcaption'))
+    .reverse().forEach(el => {
+      if (el.textContent && !el.textContent.endsWith('\n')) el.append('\n');
+    });
+  return { html, text: (content.textContent || '').replace(/\n+$/, '') };
+}
