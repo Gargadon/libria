@@ -4,7 +4,7 @@
 </div>
 <div class="sb__content sb__content--padding">
   @if (imageAssets().length === 0) {
-    <div class="sb__help">{{ 'sidebar.attachmentsEmpty' | translate }}</div>
+    <div class="sb__help sb__attachments-empty">{{ 'sidebar.attachmentsEmpty' | translate }}</div>
   } @else {
     <div class="sb__section">
       {{ 'sidebar.attachmentsCount' | translate: { count: imageAssets().length } }}

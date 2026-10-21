@@ -2,6 +2,7 @@
 @use 'material-symbols';
 
 :root {
+  --ui-color-scheme: light;
   --paper: #ffffff;
   --paper-2: #f5f5f5;
   --paper-3: #e8e8e8;
@@ -27,10 +28,10 @@
   --serif: "Spectral", "Source Serif 4", Georgia, serif;
   --display: "DM Serif Display", "Spectral", Georgia, serif;
   --ui: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 .app--dark {
+  --ui-color-scheme: dark;
   --paper: #1a1a1a;
   --paper-2: #222222;
   --paper-3: #2d2d2d;
@@ -88,6 +89,20 @@ input,
 textarea,
 select {
   user-select: text;
+}
+
+/* Theme native popups, dropdown arrows and number steppers with the app,
+   independently of the operating system's preferred color scheme. */
+input,
+textarea,
+select {
+  color-scheme: var(--ui-color-scheme);
+}
+
+select option,
+select optgroup {
+  background: var(--paper-2);
+  color: var(--ink);
 }
 
 html,
@@ -1575,6 +1590,10 @@ button.tb__dropdown-item {
 }
 
 /* ===== Attachments Panel ===== */
+.sb__attachments-empty {
+  margin-top: 8px;
+}
+
 .sb__attachments-grid {
   display: flex;
   flex-direction: column;
@@ -1617,7 +1636,7 @@ button.tb__dropdown-item {
 .sb__attachment-name {
   font-size: 10px;
   color: var(--ink-mute);
-  font-family: monospace;
+  font-family: var(--ui);
   word-break: break-all;
 }
 
@@ -2367,14 +2386,20 @@ button.tb__dropdown-item {
 }
 
 .ed__block-actions select {
+  font-family: var(--ui);
   font-size: 10px;
-  background: none;
+  background: var(--paper);
   border: none;
-  color: var(--ink-soft);
+  color: var(--ink);
   cursor: pointer;
   outline: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.ed__block-actions select option {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .ed__block-actions select::selection {
@@ -5172,7 +5197,7 @@ body.print-digital {
   border-radius: 6px;
   color: var(--ink-mute);
   font-size: 12px;
-  font-family: var(--mono);
+  font-family: var(--ui);
   text-align: center;
 }
 
@@ -5190,7 +5215,8 @@ body.print-digital {
 
 .tb__pomodoro-time,
 .tb__pomo-timer-display {
-  font-family: var(--mono) !important;
+  font-family: var(--ui);
+  font-variant-numeric: tabular-nums;
 }
 
 .tb__pomodoro-btn {

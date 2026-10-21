@@ -88,6 +88,8 @@ export class EditorComponent implements OnDestroy {
   readonly footnotes = inject(EditorFootnoteService);
   readonly notes = inject(EditorNotesState);
   readonly store = inject(BookStore);
+  readonly shortcutModifier = (window.desktopAPI?.platform === 'darwin' ||
+    (!window.desktopAPI && /Mac|iPhone|iPad/.test(navigator.platform))) ? 'Cmd' : 'Ctrl';
   readonly fileService = inject(FileService);
   readonly assetService = inject(AssetService);
   readonly translate = inject(TranslateService);
@@ -238,6 +240,7 @@ export class EditorComponent implements OnDestroy {
     const selection = window.getSelection();
     if (!selection) return;
 
+    this._flushPendingInput();
     const saved = this._savedSelection;
     const surface = getEditorSelectionSurface();
     const chapter = this.store.activeChapter();
@@ -464,6 +467,7 @@ export class EditorComponent implements OnDestroy {
 
   @HostListener('keydown', ['$event'])
   onEditorKeyDown(event: KeyboardEvent) {
+    if (event.defaultPrevented || this.handleFormattingShortcut(event)) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       selectAllBlocks();
@@ -477,19 +481,6 @@ export class EditorComponent implements OnDestroy {
       const index = Array.from(document.querySelectorAll('.ed__block-container')).indexOf(
         container!,
       );
-      if (
-        (event.ctrlKey || event.metaKey) &&
-        !event.altKey &&
-        ['b', 'i', 'u'].includes(event.key.toLowerCase())
-      ) {
-        event.preventDefault();
-        this.applyInlineFormat(
-          ({ b: 'bold', i: 'italic', u: 'underline' } as const)[
-            event.key.toLowerCase() as 'b' | 'i' | 'u'
-          ],
-        );
-        return;
-      }
       const isHistory =
         (event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase());
       const isEdit =
@@ -502,6 +493,43 @@ export class EditorComponent implements OnDestroy {
       if (chapter && editable && index >= 0 && (isHistory || isEdit))
         this.onKeyDown(chapter.id, index, event, editable);
     }
+  }
+
+  private handleFormattingShortcut(event: KeyboardEvent): boolean {
+    if (event.defaultPrevented || event.isComposing || event.altKey ||
+        !(event.ctrlKey || event.metaKey)) return false;
+    const target = event.target;
+    if (!(target instanceof HTMLElement) ||
+        (!target.closest('[contenteditable="true"]') && target !== getEditorSelectionSurface()) ||
+        target.closest('input, textarea, select, button')) return false;
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const editable = contenteditableOf(range.startContainer);
+    const editor = editable?.closest('.ed__doc');
+    if (!editor || contenteditableOf(range.endContainer)?.closest('.ed__doc') !== editor) return false;
+    const key = event.key.toLowerCase();
+    const inline = !event.shiftKey
+      ? ({ b: 'bold', i: 'italic', u: 'underline', '\\': 'removeFormat' } as const)[key as 'b' | 'i' | 'u' | '\\']
+      : undefined;
+    let action: (() => void) | undefined;
+    if (inline) action = () => {
+      this._savedSelection = range.cloneRange();
+      this.applyInlineFormat(inline);
+    };
+    else if (key === 'enter') action = () => event.shiftKey ? this.insertSceneBreak() : this.insertPageBreak();
+    else if (event.shiftKey) {
+      const digit = event.code || `Digit${key}`;
+      action = ({ Digit7: () => this.insertOrderedList(), Digit8: () => this.insertUnorderedList(),
+        Digit9: () => this.toggleQuote() } as Record<string, () => void>)[digit];
+    }
+    if (!action) return false;
+    event.preventDefault();
+    this._flushPendingInput();
+    const container = editable!.closest('.ed__block-container');
+    this.lastFocusedIndex = Array.from(editor.querySelectorAll('.ed__block-container')).indexOf(container!);
+    action();
+    return true;
   }
 
   @HostListener('copy', ['$event'])
@@ -625,6 +653,7 @@ export class EditorComponent implements OnDestroy {
     event: KeyboardEvent,
     sourceElement?: HTMLElement,
   ) {
+    if (this.handleFormattingShortcut(event)) return;
     // Structural edits and history must see the latest text, with no delayed
     // writes left pointing at indices that can change during the operation.
     if (

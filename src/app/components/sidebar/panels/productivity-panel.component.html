@@ -28,13 +28,13 @@
         <line x1="30" y1="130" x2="290" y2="130" stroke="var(--rule)" />
 
         <!-- Y-Axis Labels -->
-        <text x="5" y="14" font-size="9" fill="var(--ink-mute)" font-family="monospace">
+        <text x="5" y="14" font-size="9" fill="var(--ink-mute)" font-family="var(--ui)">
           {{ maxWords().toLocaleString() }}
         </text>
-        <text x="5" y="74" font-size="9" fill="var(--ink-mute)" font-family="monospace">
+        <text x="5" y="74" font-size="9" fill="var(--ink-mute)" font-family="var(--ui)">
           {{ (maxWords() / 2).toLocaleString() }}
         </text>
-        <text x="20" y="134" font-size="9" fill="var(--ink-mute)" font-family="monospace">0</text>
+        <text x="20" y="134" font-size="9" fill="var(--ink-mute)" font-family="var(--ui)">0</text>
 
         <!-- Average Line (dashed) -->
         @if (averageWords() > 0) {

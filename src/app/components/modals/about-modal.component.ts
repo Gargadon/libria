@@ -180,7 +180,7 @@ import packageJson from '../../../../package.json';
     }
 
     .about__row dd {
-      font-family: var(--mono);
+      font-family: var(--ui);
       font-size: 12px;
       color: var(--ink);
       margin: 0;

@@ -327,7 +327,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                     [attr.title]="'Pomodoro'" 
                     (click)="toggleMenu('pomodoro', $event)">
               <span class="material-symbols-outlined" style="font-size: 18px;" [style.color]="pomo.isActive() ? 'var(--accent)' : 'inherit'">{{ pomo.isActive() ? 'timer' : 'timer_off' }}</span>
-              <span class="tb__pomodoro-time" style="font-size: 12px; font-weight: bold; font-family: monospace;">{{ pomo.getFormattedTime() }}</span>
+              <span class="tb__pomodoro-time" style="font-size: 12px; font-weight: bold; font-family: var(--ui); font-variant-numeric: tabular-nums;">{{ pomo.getFormattedTime() }}</span>
             </button>
             @if (openMenu() === 'pomodoro') {
               <div class="tb__compact-dropdown tb__pomodoro-dropdown" style="right: 0; left: auto; min-width: 220px; padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--rule); background: var(--paper); color: var(--ink);">
@@ -341,7 +341,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                   }
                 </div>
 
-                <div class="tb__pomo-timer-display" style="font-size: 32px; font-weight: bold; text-align: center; margin: 12px 0; font-family: monospace; letter-spacing: 1px;">{{ pomo.getFormattedTime() }}</div>
+                <div class="tb__pomo-timer-display" style="font-size: 32px; font-weight: bold; text-align: center; margin: 12px 0; font-family: var(--ui); font-variant-numeric: tabular-nums; letter-spacing: 1px;">{{ pomo.getFormattedTime() }}</div>
 
                 <div class="tb__pomo-controls" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
                   @if (!pomo.isActive()) {

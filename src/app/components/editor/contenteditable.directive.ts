@@ -50,7 +50,9 @@ export class ContenteditableDirective implements OnInit, OnChanges {
       }
     } else {
       const text = this.model ?? '';
-      if (el.textContent !== text) {
+      // Undo can remove formatting without changing the characters. Comparing
+      // text alone leaves stale <b>/<i>/<u> markup in the editable DOM.
+      if (el.textContent !== text || el.childElementCount > 0) {
         el.textContent = text;
       }
     }

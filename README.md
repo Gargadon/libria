@@ -81,6 +81,22 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Objetivos de escritura:** Metas diarias de palabras con barra de progreso y seguimiento visual.
 - **Previsualización ocultable:** Alterna la visibilidad del panel de previsualización con `Ctrl+Shift+P` para maximizar el espacio de escritura.
 
+### Atajos de Formato
+
+Disponibles con el foco en el editor. En macOS se utiliza `Cmd` en lugar de `Ctrl`. Los atajos de formato de texto funcionan dentro de un párrafo y en selecciones entre varios párrafos, con Deshacer/Rehacer.
+
+| Acción | Atajo |
+| :--- | :--- |
+| Negrita | `Ctrl+B` |
+| Cursiva | `Ctrl+I` |
+| Subrayado | `Ctrl+U` |
+| Limpiar formato | `Ctrl+\` |
+| Insertar lista numerada | `Ctrl+Shift+7` |
+| Insertar lista con viñetas | `Ctrl+Shift+8` |
+| Alternar cita en el bloque actual | `Ctrl+Shift+9` |
+| Insertar salto de página | `Ctrl+Enter` |
+| Insertar salto de escena | `Ctrl+Shift+Enter` |
+
 ### Importación y Exportación
 
 - **Importar:** Desde DOCX (negritas, cursivas, subrayado, enlaces, encabezados, listas, tablas, imágenes compatibles y notas al pie) y TXT (texto plano). Se muestran los avisos de conversión; las imágenes dentro de tablas/listas se colocan después del bloque. La importación conserva estructura semántica, no la paginación exacta de Word.

@@ -22,17 +22,17 @@
         (mousedown)="$event.preventDefault()"
         (click)="$event.stopPropagation()"
       >
-        <button type="button" title="Negrita" (click)="applyInlineFormat('bold')">
+        <button type="button" [attr.title]="'Negrita (' + shortcutModifier + '+B)'" (click)="applyInlineFormat('bold')">
           <span class="material-symbols-outlined">format_bold</span>
         </button>
-        <button type="button" title="Cursiva" (click)="applyInlineFormat('italic')">
+        <button type="button" [attr.title]="'Cursiva (' + shortcutModifier + '+I)'" (click)="applyInlineFormat('italic')">
           <span class="material-symbols-outlined">format_italic</span>
         </button>
-        <button type="button" title="Subrayado" (click)="applyInlineFormat('underline')">
+        <button type="button" [attr.title]="'Subrayado (' + shortcutModifier + '+U)'" (click)="applyInlineFormat('underline')">
           <span class="material-symbols-outlined">format_underlined</span>
         </button>
         <span class="ed__selection-toolbar-sep"></span>
-        <button type="button" title="Limpiar formato" (click)="applyInlineFormat('removeFormat')">
+        <button type="button" [attr.title]="'Limpiar formato (' + shortcutModifier + '+\\)'" (click)="applyInlineFormat('removeFormat')">
           <span class="material-symbols-outlined">format_clear</span>
         </button>
       </div>
@@ -55,21 +55,21 @@
       <div class="ed__tools">
         <button
           class="ed__t"
-          [attr.title]="'editor.italic' | translate"
+          [attr.title]="('editor.italic' | translate) + ' (' + shortcutModifier + '+I)'"
           (click)="execCommand('italic')"
         >
           <span class="material-symbols-outlined">format_italic</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.bold' | translate"
+          [attr.title]="('editor.bold' | translate) + ' (' + shortcutModifier + '+B)'"
           (click)="execCommand('bold')"
         >
           <span class="material-symbols-outlined">format_bold</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.underline' | translate"
+          [attr.title]="('editor.underline' | translate) + ' (' + shortcutModifier + '+U)'"
           (click)="execCommand('underline')"
         >
           <span class="material-symbols-outlined">format_underlined</span>
@@ -77,35 +77,35 @@
         <span class="ed__tsep"></span>
         <button
           class="ed__t ed__t--wide"
-          [attr.title]="'editor.sceneBreak' | translate"
+          [attr.title]="('editor.sceneBreak' | translate) + ' (' + shortcutModifier + '+Shift+Enter)'"
           (click)="insertSceneBreak()"
         >
           <span class="material-symbols-outlined">horizontal_rule</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.pageBreak' | translate"
+          [attr.title]="('editor.pageBreak' | translate) + ' (' + shortcutModifier + '+Enter)'"
           (click)="insertPageBreak()"
         >
           <span class="material-symbols-outlined">insert_page_break</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.blockQuote' | translate"
+          [attr.title]="('editor.blockQuote' | translate) + ' (' + shortcutModifier + '+Shift+9)'"
           (click)="toggleQuote()"
         >
           <span class="material-symbols-outlined">format_quote</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.insertUnorderedList' | translate"
+          [attr.title]="('editor.insertUnorderedList' | translate) + ' (' + shortcutModifier + '+Shift+8)'"
           (click)="insertUnorderedList()"
         >
           <span class="material-symbols-outlined">format_list_bulleted</span>
         </button>
         <button
           class="ed__t"
-          [attr.title]="'editor.insertOrderedList' | translate"
+          [attr.title]="('editor.insertOrderedList' | translate) + ' (' + shortcutModifier + '+Shift+7)'"
           (click)="insertOrderedList()"
         >
           <span class="material-symbols-outlined">format_list_numbered</span>
@@ -472,22 +472,21 @@
                     ></h4>
                   }
                   @case ('first-p') {
-                    <p class="bk-first" [class.has-dropcap]="store.tweaks.dropCap()">
-                      <span
-                        contenteditable="true"
-                        spellcheck="false" data-libria-spelling="true"
-                        [attr.lang]="store.domLang()"
-                        [appContenteditable]="
-                          (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')
-                        "
-                        [contenteditableHtml]="b.html"
-                        (input)="onInput(chapter.id, $index, $event)"
-                        (focus)="onFocus($index)"
-                        (keydown)="onKeyDown(chapter.id, $index, $event)"
-                        (paste)="onPaste(chapter.id, $index, $event)"
-                        style="outline: none"
-                      ></span>
-                    </p>
+                    <p
+                      class="bk-first" [class.has-dropcap]="store.tweaks.dropCap()"
+                      contenteditable="true"
+                      spellcheck="false" data-libria-spelling="true"
+                      [attr.lang]="store.domLang()"
+                      [appContenteditable]="
+                        (b.drop && !b.text?.startsWith(b.drop) ? b.drop : '') + (b.text || '')
+                      "
+                      [contenteditableHtml]="b.html"
+                      (input)="onInput(chapter.id, $index, $event)"
+                      (focus)="onFocus($index)"
+                      (keydown)="onKeyDown(chapter.id, $index, $event)"
+                      (paste)="onPaste(chapter.id, $index, $event)"
+                      style="outline: none"
+                    ></p>
                   }
                   @case ('p') {
                     <p
