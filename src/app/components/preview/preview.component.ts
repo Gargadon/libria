@@ -4,15 +4,44 @@ import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
 import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
 import { PrintHtmlService } from '../../services/export/print-html.service';
-import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { BlockViewComponent } from '../block-view/block-view.component';
+import { PaperPreviewService, PaperLayout } from '../../services/preview/paper-preview.service';
 import { EditorPositionService } from '../../services/editor-position.service';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, BlockViewComponent],
+  imports: [CommonModule, BlockViewComponent, TranslateModule],
+  providers: [PaperPreviewService],
+  styles: `
+    .pv__paper-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, .85);
+      color: #333;
+      font: 14px/1.5 var(--ui);
+      pointer-events: none;
+    }
+    .pv__paper-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #ddd;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: paper-spin .8s linear infinite;
+    }
+    @keyframes paper-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .pv__paper-spinner { animation: none; }
+    }
+  `,
   template: `
     <style [innerHTML]="printStyles()"></style>
 
@@ -96,7 +125,7 @@ import { EditorPositionService } from '../../services/editor-position.service';
                  (change)="goToPage($any($event.target).value)"
                  (keydown.enter)="goToPage($any($event.target).value)"
                  aria-label="Número de página">
-          <span>/ {{ measuredTotalPages() }}</span>
+          <span>/ {{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</span>
         </div>
 
         <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
@@ -149,9 +178,10 @@ import { EditorPositionService } from '../../services/editor-position.service';
             }
           </div>
 
-          <!-- THE PAPEL: Vivliostyle owns the complete page, including
+          <!-- THE PAPEL: Cached Vivliostyle pages include
                mirrored margins, headers, footers and page numbers. -->
-          <div class="print__page" *ngIf="mode() === 'print'"
+          <div class="print__page" *ngIf="mode() === 'print' || paperReady()"
+            [style.display]="mode() === 'print' ? null : 'none'"
             [style.transform]="'scale(' + printZoom() + ')'"
             [style.transform-origin]="'top left'"
             [style.padding-top.px]="0"
@@ -159,12 +189,21 @@ import { EditorPositionService } from '../../services/editor-position.service';
             [style.padding-left.px]="0"
             [style.padding-right.px]="0">
             <div class="print__content print__content--vivliostyle" style="position: relative; overflow: hidden;">
-              <iframe *ngIf="vivliostyleViewerUrl()" #printIframe
-                [src]="vivliostyleViewerUrl()"
+              <iframe #printIframe src="paper-preview.html" title="Vista previa de papel"
+                [attr.aria-busy]="paperLoading()"
                 scrolling="no"
                 style="width:100%;height:100%;border:none;display:block;"
-                (load)="onVivliostyleLoad()"
+                (load)="onPrintFrameLoad()"
               ></iframe>
+              @if (paperLoading()) {
+                <div class="pv__paper-loading" role="status" aria-live="polite" aria-atomic="true">
+                  <span class="pv__paper-spinner" aria-hidden="true"></span>
+                  <span>{{ 'preview.loadingPaper' | translate }}</span>
+                </div>
+              }
+              @if (paperPreview.error()) {
+                <p role="alert" style="position:absolute;inset:16px;background:white;color:#333;padding:12px;">{{ paperPreview.error() }}</p>
+              }
             </div>
           </div>
         </div>
@@ -172,7 +211,7 @@ import { EditorPositionService } from '../../services/editor-position.service';
 
       <div class="pv__foot">
         <div class="pv__metric">
-          <div class="pv__mN">{{ measuredTotalPages() }}</div>
+          <div class="pv__mN">{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</div>
           <div class="pv__mL">páginas</div>
         </div>
         <div class="pv__metric">
@@ -290,7 +329,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private readonly editorPosition = inject(EditorPositionService);
   readonly assetService = inject(AssetService);
   readonly printHtml = inject(PrintHtmlService);
-  readonly sanitizer = inject(DomSanitizer);
+  readonly paperPreview = inject(PaperPreviewService);
+  readonly paperReady = signal(false);
+  readonly paperLoading = computed(() => this.mode() === 'print' && !this.paperPreview.error()
+    && (!this.paperReady() || !this.paperPreview.layout() || this.paperPreview.busy()));
+  private previousPaperLayout: PaperLayout | null = null;
+  private lastPrintAnchor = '';
   readonly mode = signal<'kindle' | 'iphone' | 'print'>('kindle');
 
   private _chaptersDebounce: any = null;
@@ -304,12 +348,6 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private measureTimeout?: any;
   private printHtmlTimeout?: any;
 
-  printIframeHtml = signal<SafeHtml>('');
-  vivliostyleViewerUrl = signal<SafeResourceUrl>('');
-  iframeContentHeight = signal(0);
-  private vivliostyleObjectUrl = '';
-  private vivliostyleMeasureTimeout?: any;
-  private vivliostyleLoadGeneration = 0;
 
   measuredTotalPages = signal(1);
   realPageOffsets = signal<Record<string, number>>({});
@@ -325,30 +363,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const chapters = this.store.chapters();
     const mode = this.mode();
 
-    // Print mode: use real DOM measurements when the print iframe has been rendered
-    if (mode === 'print') {
-      const printOffsets = this.printPageOffsets();
-      if (Object.keys(printOffsets).length > 0) {
-        const layout: Record<string, { startPage: number, pages: number, hasBlankBefore: boolean }> = {};
-        for (let i = 0; i < chapters.length; i++) {
-          const ch = chapters[i];
-          const off = printOffsets[ch.id];
-          if (off !== undefined) {
-            const nextOff = i < chapters.length - 1 ? printOffsets[chapters[i + 1].id] : undefined;
-            const pages = nextOff !== undefined
-              ? Math.max(1, nextOff - off)
-              : Math.max(1, this.measuredTotalPages() - off);
-            layout[ch.id] = { startPage: off + 1, pages, hasBlankBefore: false };
-          } else {
-            const prevEnd = i > 0
-              ? (layout[chapters[i - 1].id]?.startPage ?? 1) + (layout[chapters[i - 1].id]?.pages ?? 1)
-              : 1;
-            layout[ch.id] = { startPage: prevEnd, pages: this.estimateChapterPages(ch), hasBlankBefore: false };
-          }
-        }
-        return { chapters: layout, total: this.measuredTotalPages() };
-      }
-    }
+    const paper = this.paperPreview.layout();
+    if (mode === 'print' && paper) return { chapters: paper.chapters, total: paper.pages.length };
 
     // Kindle/iPhone or no print measurements yet — use realChapterPages + estimates
     const realPagesMap = mode !== 'print' ? this.realChapterPages() : {};
@@ -417,8 +433,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   constructor() {
     effect(() => {
       const id = this.store.activeChapterId();
-      this.editorPosition.position();
-      this.mode();
+      const position = this.editorPosition.position();
+      const mode = this.mode();
       const renderedChapters = this.chapters();
       this.realPageOffsets();
       this.printPageOffsets();
@@ -427,6 +443,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
         // first run happens against an empty flow and leaves the preview on
         // page one when it is opened from a later chapter.
         if (!id || renderedChapters.length === 0) return;
+        if (mode === 'print') {
+          const anchor = `${id}:${position?.blockIndex ?? 0}`;
+          if (anchor === this.lastPrintAnchor) return;
+          this.lastPrintAnchor = anchor;
+        } else this.lastPrintAnchor = '';
         this.navigateToChapter(id);
       });
     });
@@ -476,49 +497,50 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       });
     });
 
-    // Print iframe HTML generation (debounced 300ms)
     effect(() => {
-      const m = this.mode();
-      if (m !== 'print') return;
-
+      const mode = this.mode();
+      if (mode !== 'print') {
+        untracked(() => {
+          clearTimeout(this.printHtmlTimeout);
+          if (this.paperReady()) this.paperPreview.suspend();
+          else this.paperPreview.detach();
+        });
+        return;
+      }
+      const ready = this.paperReady();
       const book = this.store.book();
-      const chapters = this.store.chapters();
-      const t = this.store.tweaks();
-      const bodyFont = this.store.bookFontFamily();
-      const titleFont = this.store.titleFontFamily();
-      const assets = this.assetService.getAll();
-
-      if (!book) return;
-
-      const layout = this.bookLayout();
+      const input = book && {
+        book, chapters: this.store.chapters(), tweaks: this.store.tweaks(),
+        bodyFont: this.store.bookFontFamily(), titleFont: this.store.titleFontFamily(),
+        assets: this.assetService.assets(),
+      };
       untracked(() => {
         clearTimeout(this.printHtmlTimeout);
-        this.printHtmlTimeout = setTimeout(() => {
-          const fontsHref = new URL('fonts.css', document.baseURI).href;
-          const pageMap: Record<string, number> = {};
-          for (const [id, info] of Object.entries(layout.chapters)) {
-            pageMap[id] = info.startPage;
-          }
-          const html = this.printHtml.buildPrintHtml(book, chapters, t, bodyFont, titleFont, fontsHref, assets, pageMap, true);
-          const generation = ++this.vivliostyleLoadGeneration;
-          clearTimeout(this.vivliostyleMeasureTimeout);
-          const desktopFontsCss = (window as any).desktopAPI?.getFontsCss?.();
-          const fontsCssPromise = desktopFontsCss instanceof Promise
-            ? desktopFontsCss.catch(() => '')
-            : fetch(fontsHref).then(response => response.ok ? response.text() : '').catch(() => '');
-          fontsCssPromise.then((fontCss: string) => {
-            if (generation !== this.vivliostyleLoadGeneration) return;
-            const sourceHtml = fontCss
-              ? html.replace('</head>', `<style id="libria-preview-fonts">${fontCss.replace(/font-display:\s*swap/g, 'font-display: block')}</style></head>`)
-              : html;
-            if (this.vivliostyleObjectUrl) URL.revokeObjectURL(this.vivliostyleObjectUrl);
-            this.vivliostyleObjectUrl = URL.createObjectURL(new Blob([sourceHtml], { type: 'text/html' }));
-            const viewerUrl = new URL('vivliostyle/index.html', document.baseURI);
-            // Vivliostyle's viewer reads the hash parameters literally.
-            viewerUrl.hash = `src=${this.vivliostyleObjectUrl}&bookMode=false&renderAllPages=true&spread=false`;
-            this.vivliostyleViewerUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(viewerUrl.href));
-          });
-        }, 300);
+        if (ready && input) this.printHtmlTimeout = setTimeout(() => this.paperPreview.update(input), 300);
+      });
+    });
+
+    effect(() => {
+      const layout = this.paperPreview.layout();
+      const mode = this.mode();
+      if (!layout || mode !== 'print') return;
+      untracked(() => {
+        const previous = this.previousPaperLayout;
+        const oldIndex = this.globalPage();
+        const oldPage = previous?.pages[oldIndex];
+        const oldChapter = oldPage?.chapterId;
+        let target = Math.min(oldIndex, Math.max(0, layout.pages.length - 1));
+        if (oldChapter && previous?.chapters[oldChapter] && layout.chapters[oldChapter]) {
+          const local = oldIndex - previous.chapters[oldChapter].startPage + 1;
+          const next = layout.chapters[oldChapter];
+          target = next.startPage - 1 + Math.min(local, next.pages - 1);
+        }
+        this.measuredTotalPages.set(Math.max(1, layout.pages.length));
+        this.printPageOffsets.set(Object.fromEntries(Object.entries(layout.chapters).map(([id, chapter]) => [id, chapter.startPage - 1])));
+        this.globalPage.set(target);
+        this.previousPaperLayout = layout;
+        if (!previous) this.navigateToChapter(this.store.activeChapterId());
+        this.paperPreview.showPage(this.globalPage());
       });
     });
   }
@@ -540,90 +562,27 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.resizeObserver) this.resizeObserver.disconnect();
     clearTimeout(this.measureTimeout);
     clearTimeout(this.printHtmlTimeout);
-    clearTimeout(this.vivliostyleMeasureTimeout);
-    if (this.vivliostyleObjectUrl) URL.revokeObjectURL(this.vivliostyleObjectUrl);
+    clearTimeout(this._chaptersDebounce);
+    this.paperPreview.destroy();
   }
 
-  onVivliostyleLoad() {
+  async onPrintFrameLoad() {
     const iframe = this.printIframeEl?.nativeElement;
-    if (!iframe?.contentDocument || !iframe?.contentWindow) return;
-    const doc = iframe.contentDocument;
-    let chromeStyle = doc.getElementById('libria-vivliostyle-preview-style');
-    if (!chromeStyle) {
-      chromeStyle = doc.createElement('style');
-      chromeStyle.id = 'libria-vivliostyle-preview-style';
-      chromeStyle.textContent = `
-        /* Libria owns preview navigation; keep Vivliostyle's controls hidden. */
-        #vivliostyle-menu-bar,
-        #vivliostyle-page-slider-bar,
-        #vivliostyle-page-navigation-up,
-        #vivliostyle-page-navigation-down,
-        #vivliostyle-page-navigation-left,
-        #vivliostyle-page-navigation-right,
-        #vivliostyle-welcome {
-          display: none !important;
-        }
-        #vivliostyle-viewer-viewport {
-          top: 0 !important;
-          bottom: 0 !important;
-          margin-top: 0 !important;
-          margin-bottom: 0 !important;
-        }
-      `;
-      doc.head.appendChild(chromeStyle);
+    const doc = iframe?.contentDocument;
+    if (!doc) return;
+    try {
+      await this.paperPreview.initialize(doc, page => {
+        this.globalPage.set(page);
+        this.paperPreview.showPage(page);
+      });
+      if (this.printIframeEl?.nativeElement === iframe && this.mode() === 'print') this.paperReady.set(true);
+    } catch (error) {
+      console.error('Paper compositor initialization failed', error);
+      this.paperPreview.error.set('No se pudo cargar la vista previa.');
     }
-    const slider = doc.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
-    const total = Number(slider?.max || 1);
-    this.measuredTotalPages.set(Math.max(1, total));
-    this.globalPage.set(Math.max(0, Math.min(this.globalPage(), total - 1)));
-    this.setVivliostylePage(this.globalPage());
-
-    // A long document paginates asynchronously. Wait until the Viewer has
-    // published its final page count instead of trusting the initial value 1.
-    let attempts = 0;
-    let stableCount = 0;
-    let previousTotal = 0;
-    const measure = () => {
-      const currentIframe = this.printIframeEl?.nativeElement;
-      const currentSlider = currentIframe?.contentDocument?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
-      const currentTotal = Number(currentSlider?.max || 1);
-      this.measuredTotalPages.set(Math.max(1, currentTotal));
-      this.globalPage.set(Math.max(0, Math.min(this.globalPage(), currentTotal - 1)));
-      stableCount = currentTotal === previousTotal ? stableCount + 1 : 0;
-      previousTotal = currentTotal;
-      this.navigateToChapter(this.store.activeChapterId());
-      // The Viewer first exposes a partial count (often 16) while it is still
-      // composing. Keep polling until the count has stabilized or the safety
-      // limit is reached.
-      // Keep the initial partial value (commonly 16) from becoming the final
-      // value. Large books may take several seconds to finish composition.
-      if ((stableCount < 12 || attempts < 20) && attempts++ < 80) {
-        this.vivliostyleMeasureTimeout = setTimeout(measure, 250);
-      }
-    };
-    clearTimeout(this.vivliostyleMeasureTimeout);
-    this.vivliostyleMeasureTimeout = setTimeout(measure, 250);
   }
 
-  private navigateVivliostyle(direction: 'next' | 'previous') {
-    const iframe = this.printIframeEl?.nativeElement;
-    if (!iframe?.contentDocument) return;
-    const selector = direction === 'next'
-      ? '#vivliostyle-page-navigation-right'
-      : '#vivliostyle-page-navigation-left';
-    (iframe.contentDocument.querySelector(selector) as HTMLElement | null)?.click();
-  }
-
-  private setVivliostylePage(page: number) {
-    const slider = this.printIframeEl?.nativeElement.contentDocument
-      ?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
-    if (!slider) return;
-    const max = Number(slider.max || this.measuredTotalPages());
-    const target = Math.max(0, Math.min(Math.trunc(page), Math.max(0, max - 1)));
-    slider.value = String(target + 1);
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
-    slider.dispatchEvent(new Event('change', { bubbles: true }));
-  }
+  private setPrintPage(page: number) { this.paperPreview.showPage(page); }
 
   public toPixels(value: string): number {
     const num = parseFloat(value);
@@ -716,17 +675,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const blockIndex = position?.chapterId === chapterId ? position.blockIndex : 0;
     const isPrint = this.mode() === 'print';
     if (isPrint) {
-      const doc = this.printIframeEl?.nativeElement.contentDocument;
-      const chapterIndex = this.store.chapters().findIndex(ch => ch.id === chapterId);
-      const anchor = doc?.querySelector(`[data-libria-block="${chapterIndex}:${blockIndex}"]`)
-        ?? doc?.querySelector(`[data-id="${CSS.escape(chapterId)}"]`);
-      const page = anchor?.closest('[data-vivliostyle-page-container]');
-      const pages = Array.from(doc?.querySelectorAll('[data-vivliostyle-page-container]') ?? []);
-      if (page && pages.includes(page)) {
-        const target = pages.indexOf(page);
-        this.globalPage.set(target);
-        this.setVivliostylePage(target);
-      }
+      const layout = this.paperPreview.layout();
+      const target = layout?.blockPages[chapterId]?.[blockIndex]
+        ?? ((layout?.chapters[chapterId]?.startPage ?? 1) - 1);
+      this.globalPage.set(target);
+      this.setPrintPage(target);
       return;
     }
     const flow = this.kpFlowEl?.nativeElement;
@@ -750,7 +703,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       target = startPage - 1;
     }
     this.globalPage.set(Math.max(0, target));
-    if (isPrint) this.setVivliostylePage(target);
+    if (isPrint) this.setPrintPage(target);
   }
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
@@ -825,7 +778,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.globalPage() < max - 1) {
       this.globalPage.update(p => p + 1);
       if (this.mode() === 'print') {
-        this.navigateVivliostyle('next');
+        this.setPrintPage(this.globalPage());
       } else {
         this.syncActiveChapter();
       }
@@ -835,7 +788,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.globalPage() > 0) {
       this.globalPage.update(p => p - 1);
       if (this.mode() === 'print') {
-        this.navigateVivliostyle('previous');
+        this.setPrintPage(this.globalPage());
       } else {
         this.syncActiveChapter();
       }
@@ -849,13 +802,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const target = page - 1;
     this.globalPage.set(target);
     if (this.mode() === 'print') {
-      const slider = this.printIframeEl?.nativeElement.contentDocument
-        ?.querySelector<HTMLInputElement>('#vivliostyle-page-slider');
-      if (slider) {
-        slider.value = String(target + 1);
-        slider.dispatchEvent(new Event('input', { bubbles: true }));
-        slider.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      this.setPrintPage(target);
     } else {
       this.syncActiveChapter();
     }

@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Vista previa de papel</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: white;
+      }
+      #paper-display {
+        position: relative;
+      }
+      #paper-worker {
+        position: fixed;
+        left: -100000px;
+        top: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="paper-display"></div>
+    <div id="paper-worker" aria-hidden="true"></div>
+  </body>
+</html>

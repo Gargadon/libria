@@ -6,6 +6,12 @@ import { blockToHtml, chapterFootnotesHtml } from '../../utils/block-html';
 import { pageSizeCss, sceneBreakGlyph } from '../../utils/block-maps';
 
 import { align, escapeHtml } from './export-utils';
+import type { Chapter } from '../../models/book.models';
+
+export interface PrintChapterContext {
+  allChapters: Chapter[];
+  chapterIndex: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class PrintHtmlService {
@@ -20,6 +26,7 @@ export class PrintHtmlService {
     assets: Record<string, string> = {},
     pageMap?: Record<string, number>,
     pagedPreview = false,
+    chapterContext?: PrintChapterContext,
   ): string {
     const pageSize = pageSizeCss(book.paperSize || '5x8');
     const screenPreview = !!fontsHref && !pagedPreview;
@@ -458,7 +465,7 @@ ${
   text-decoration: none;
 }
 .kp-toc-link::after {
-  content: ${screenPreview ? "''" : "leader('.') target-counter(attr(href), page)"};
+  content: ${screenPreview ? "''" : chapterContext ? "leader('.') attr(data-libria-page)" : "leader('.') target-counter(attr(href), page)"};
   flex: 1;
   margin-left: 0.45em;
   text-align: right;
@@ -492,7 +499,7 @@ ${
 `;
 
     const printIds = new Map(
-      chapters.map((ch: any, idx: number) => [ch.id, `libria-chapter-${idx + 1}`]),
+      (chapterContext?.allChapters ?? chapters).map((ch: any, idx: number) => [ch.id, `libria-chapter-${idx + 1}`]),
     );
     const chaptersHtml = chapters
       .map((ch: any, idx: number) => {
@@ -500,7 +507,7 @@ ${
 
         let body: string;
         if (ch.templateId === 'toc') {
-          const tocItems = chapters
+          const tocItems = (chapterContext?.allChapters ?? chapters)
             .filter((c: any) => c.templateId !== 'toc')
             .map((c: any) => {
               const page = pageMap?.[c.id];
@@ -510,7 +517,8 @@ ${
                 c.kind === 'chapter' && c.number != null
                   ? `<span class="kp-toc-num">${c.number}.</span> `
                   : '';
-              return `<li class="kp-toc-li kp-toc-li--${c.kind}"><a class="kp-toc-link" href="#${printIds.get(c.id)}"><span class="kp-toc-name">${num}${escapeHtml(c.title)}</span>${pgCell}</a></li>`;
+              const resolvedPage = chapterContext ? ` data-libria-page="${page ?? 1}" data-libria-chapter-target="${escapeHtml(c.id)}"` : '';
+              return `<li class="kp-toc-li kp-toc-li--${c.kind}"><a class="kp-toc-link" href="#${printIds.get(c.id)}"${resolvedPage}><span class="kp-toc-name">${num}${escapeHtml(c.title)}</span>${pgCell}</a></li>`;
             })
             .join('\n');
           body = `<h2 class="kp-toc-heading" style="font-family:${titleFontFamily}">${escapeHtml(ch.title)}</h2>\n<ol class="kp-toc-list">${tocItems}</ol>`;
@@ -521,7 +529,7 @@ ${
                 tweaks: t,
                 assets,
                 hyphenateHtml: (s: string) => this.hyphenService.hyphenateHtml(s),
-              }).replace(/^(\s*<[a-z][a-z0-9-]*)/i, `$1 data-libria-block="${idx}:${blockIndex}"`),
+              }).replace(/^(\s*<[a-z][a-z0-9-]*)/i, `$1 data-libria-block="${chapterContext?.chapterIndex ?? idx}:${blockIndex}"`),
             )
             .join('\n');
         }
@@ -534,7 +542,7 @@ ${
     let fontTags = '';
     if (fontsHref) {
       const base = new URL('.', fontsHref).href;
-      fontTags = `  <base href="${base}">\n  <link rel="stylesheet" href="fonts.css">\n`;
+      fontTags = `  <base href="${base}">\n  <link rel="stylesheet" href="${escapeHtml(fontsHref)}">\n`;
     }
     const bodyContent = screenPreview
       ? `<div class="pv-clip"><div class="pv-slider"><div class="pv-flow">\n${chaptersHtml}\n</div></div></div>`

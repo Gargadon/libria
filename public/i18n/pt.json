@@ -271,6 +271,7 @@
   "editor.footnotePlaceholder": "Escreva a nota de rodapé…",
   "editor.delete": "Excluir",
   "editor.spellCheck": "Verificar ortografia",
+  "preview.loadingPaper": "Preparando pré-visualização…",
   "topbar.preview": "Pré-visualização (Ctrl+Shift+P)",
   "topbar.zenMode": "Modo zen (F11 · Esc para sair)",
   "editor.layoutLabel": "Diagramação · Libria {{version}}",

@@ -335,6 +335,7 @@
   "sidebar.goalsDeadlineLabel": "Date limite",
   "sidebar.goalsDone": "Terminé",
   "sidebar.goalsEdit": "Définir les objectifs",
+  "preview.loadingPaper": "Préparation de l’aperçu…",
   "topbar.preview": "Aperçu (Ctrl+Maj+P)",
   "editor.spellCheck": "Vérifier l'orthographe",
   "spellcheck.title": "Correcteur orthographique",

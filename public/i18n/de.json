@@ -266,6 +266,7 @@
   "editor.footnotePlaceholder": "Fußnote eingeben…",
   "editor.delete": "Löschen",
   "editor.spellCheck": "Rechtschreibung prüfen",
+  "preview.loadingPaper": "Vorschau wird vorbereitet…",
   "topbar.preview": "Vorschau (Strg+Umschalt+P)",
   "topbar.zenMode": "Zen-Modus (F11 · Esc zum Beenden)",
   "editor.layoutLabel": "Layout · Libria {{version}}",

@@ -276,6 +276,7 @@
   "editor.footnotePlaceholder": "Write the footnote…",
   "editor.delete": "Delete",
   "editor.spellCheck": "Spell check",
+  "preview.loadingPaper": "Preparing preview…",
   "topbar.preview": "Preview (Ctrl+Shift+P)",
   "topbar.zenMode": "Zen mode (F11 · Esc to exit)",
   "editor.layoutLabel": "Layout · Libria {{version}}",

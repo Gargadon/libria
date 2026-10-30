@@ -276,6 +276,7 @@
   "editor.footnotePlaceholder": "Escriba la nota al pie…",
   "editor.delete": "Eliminar",
   "editor.spellCheck": "Revisar ortografía",
+  "preview.loadingPaper": "Preparando vista previa…",
   "topbar.preview": "Previsualización (Ctrl+Mayús+P)",
   "topbar.zenMode": "Modo zen (F11 · Esc para salir)",
   "editor.layoutLabel": "Maquetación · Libria {{version}}",
