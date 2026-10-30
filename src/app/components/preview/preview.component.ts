@@ -216,6 +216,7 @@ import { EditorPositionService } from '../../services/editor-position.service';
           [style.--p-gap.px]="ptToPx(store.tweaks.paragraphSpacing())"
           [style.--indent-size]="store.tweaks.indentSize() + 'cm'"
           [style.--drop-lines]="store.tweaks.dropCapLines()"
+          [style.--drop-leading]="store.tweaks.lineHeight()"
           [class.kp--indent]="store.tweaks.indentFirstLine()"
           [class.kp--no-indent]="!store.tweaks.indentFirstLine()"
           [class.kp--justify]="store.tweaks.justifyText()"

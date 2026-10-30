@@ -1,3 +1,4 @@
+import { FontSelectComponent } from './font-select.component';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../../store/book.store';
 
@@ -9,7 +10,7 @@ import { SidebarFontsState } from './sidebar-fonts.state';
 @Component({
   selector: 'app-sidebar-layout',
   standalone: true,
-  imports: [FormsModule, TranslateModule],
+  imports: [FormsModule, TranslateModule, FontSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: contents' },
   templateUrl: './layout-panel.component.html',

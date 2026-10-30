@@ -214,7 +214,9 @@ ${
 .has-dropcap::first-letter {
   font-family: ${titleFontFamily};
   float: left;
-  font-size: calc(${dropLines} * 1.2em);
+  /* Match the float's height to the requested lines, including leading.
+     Subtract the top padding and a half-point rounding allowance. */
+  font-size: ${((dropLines * t.lineHeight * t.fontSize - 2.5) / .85).toFixed(4)}pt;
   line-height: .85;
   padding: 2pt 4pt 0 0;
 }

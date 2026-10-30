@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/styles.scss"
+        ],
+        "createdAt": "2026-10-30T17:35:26.928Z",
+        "reason": "Agent review: reported .bk-quote border marks a book quotation, a domain-appropriate typographic convention; unrelated to the drop-cap correction."
+      }
+    ]
+  }
+}

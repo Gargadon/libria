@@ -1,3 +1,4 @@
+import { FontSelectComponent } from './font-select.component';
 import {
   Component,
   inject,
@@ -124,7 +125,7 @@ export class SidebarStylesState {
 @Component({
   selector: 'app-sidebar-styles',
   standalone: true,
-  imports: [FormsModule, TranslateModule],
+  imports: [FormsModule, TranslateModule, FontSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: contents' },
   templateUrl: './styles-panel.component.html',

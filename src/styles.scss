@@ -4123,7 +4123,9 @@ button.tb__dropdown-item {
 
 .has-dropcap::first-letter {
   float: left;
-  font-size: calc(var(--drop-lines, 3) * 1.25em);
+  /* Fit the requested line boxes at the current device font size and leading.
+     Allow for the 3px top padding and half a pixel of rounding. */
+  font-size: calc((var(--drop-lines, 3) * var(--drop-leading, 1.6) * 1em - 3.5px) / .85);
   line-height: .85;
   padding: 3px 4px 0 0;
   color: #1f1c18;

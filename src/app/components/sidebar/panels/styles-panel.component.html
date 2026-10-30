@@ -88,30 +88,12 @@
   <div class="sb__section">{{ 'sidebar.bodyTypography' | translate }}</div>
   <div class="sb__row">
     <div class="sb__label">{{ 'sidebar.font' | translate }}</div>
-    <select
-      class="sb__select sb__select--font"
+    <app-font-select
       [value]="panel.fonts.bookFontSelectVal()"
-      (change)="panel.fonts.onBookFontSelect($any($event.target).value)"
-    >
-      <optgroup [label]="'sidebar.serif' | translate">
-        <option value="eb-garamond" style="font-family: 'EB Garamond', serif">EB Garamond</option>
-        <option value="crimson-pro" style="font-family: 'Crimson Pro', serif">Crimson Pro</option>
-        <option value="lora" style="font-family: 'Lora', serif">Lora</option>
-        <option value="spectral" style="font-family: 'Spectral', serif">Spectral</option>
-      </optgroup>
-      <optgroup [label]="'sidebar.sansSerif' | translate">
-        <option value="inter" style="font-family: 'Inter', sans-serif">Inter</option>
-        <option value="montserrat" style="font-family: 'Montserrat', sans-serif">Montserrat</option>
-      </optgroup>
-      @if (panel.fonts.systemFontFamilies().length > 0) {
-        <optgroup [label]="'sidebar.systemFonts' | translate">
-          @for (family of panel.fonts.systemFontFamilies(); track family) {
-            <option [value]="family" [style.fontFamily]="family">{{ family }}</option>
-          }
-        </optgroup>
-      }
-      <option value="__custom__">{{ 'sidebar.customFont' | translate }}</option>
-    </select>
+      [fontFamily]="panel.store.bookFontFamily()"
+      [systemFonts]="panel.fonts.systemFontFamilies()"
+      (valueChange)="panel.fonts.onBookFontSelect($event)"
+    />
   </div>
   @if (panel.fonts.showCustomBookFontInput()) {
     <div class="sb__row sb__row--col">

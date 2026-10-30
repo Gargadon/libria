@@ -347,7 +347,9 @@ body {
 .has-dropcap::first-letter {
   font-family: 'Spectral', serif;
   float: left;
-  font-size: calc(3 * 1.2em);
+  /* Match the float's height to the requested lines, including leading.
+     Subtract the top padding and a half-point rounding allowance. */
+  font-size: 64.8235pt;
   line-height: .85;
   padding: 2pt 4pt 0 0;
 }
