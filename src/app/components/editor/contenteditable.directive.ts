@@ -39,8 +39,11 @@ export class ContenteditableDirective implements OnInit, OnChanges {
   }
 
   private writeContent(el: HTMLElement): void {
-    if (el === document.activeElement) {
-      this.currentText = ((el as any).innerText ?? el.textContent ?? '').replace(/\n$/, '');
+    // Nunca se reescribe el bloque mientras el usuario escribe en él: el DOM puede ir
+    // por delante del modelo (el guardado va con retardo) y reescribirlo perdería el
+    // texto recién escrito, incluido el reemplazo de una selección.
+    if (el === document.activeElement || (this.selectionInside(el) && this.domText(el) !== (this.model ?? ''))) {
+      this.currentText = this.domText(el);
       return;
     }
     const html = this.contenteditableHtml ?? '';
@@ -56,7 +59,19 @@ export class ContenteditableDirective implements OnInit, OnChanges {
         el.textContent = text;
       }
     }
-    this.currentText = ((el as any).innerText ?? el.textContent ?? '').replace(/\n$/, '');
+    this.currentText = this.domText(el);
+  }
+
+  private domText(el: HTMLElement): string {
+    return ((el as any).innerText ?? el.textContent ?? '').replace(/\n$/, '');
+  }
+
+  /** El foco puede estar en la superficie compartida; el caret sigue dentro del bloque. */
+  private selectionInside(el: HTMLElement): boolean {
+    const selection = document.getSelection();
+    if (!selection || selection.rangeCount === 0) return false;
+    const anchor = selection.anchorNode;
+    return !!anchor && el.contains(anchor);
   }
 
 }

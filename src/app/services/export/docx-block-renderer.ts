@@ -2,10 +2,30 @@ import { sanitizeRichHtml } from '../../utils/block-html';
 
 import type { Paragraph, TextRun, FootnoteReferenceRun } from 'docx';
 
-import { align, escapeHtml } from './export-utils';
+import { escapeHtml } from './export-utils';
+
+export interface DocxRevisionContext {
+  author: string;
+  date: string;
+}
+
+interface RunStyle {
+  font: string;
+  size: number;
+  bold?: boolean;
+  italics?: boolean;
+  underline?: boolean;
+  smallCaps?: boolean;
+}
 
 export class DocxBlockRenderer {
-  constructor(private readonly _docx: any) {}
+  private revisionId = 0;
+
+  constructor(
+    private readonly _docx: any,
+    private readonly revision?: DocxRevisionContext,
+  ) {}
+
   async addFootnotesToDoc(doc: any, footnoteDefs: { id: number; text: string }[]) {
     if (!footnoteDefs.length) return;
     try {
@@ -25,13 +45,7 @@ export class DocxBlockRenderer {
 
   p(
     b: { text?: string; html?: string },
-    opts: {
-      font: string;
-      size: number;
-      bold?: boolean;
-      italics?: boolean;
-      underline?: boolean;
-    },
+    opts: RunStyle,
     align: string,
     before = 0,
     after = 0,
@@ -40,133 +54,116 @@ export class DocxBlockRenderer {
     return new this._docx.Paragraph({
       alignment: align as any,
       spacing: { before, after },
-      children: fnIdToNum ? this.blockToChildren(b, opts, fnIdToNum) : this.htmlToTextRuns(b, opts),
+      children: this.parse(b, opts, fnIdToNum),
     });
   }
 
-  htmlToTextRuns(
-    b: { text?: string; html?: string },
-    opts: {
-      font: string;
-      size: number;
-      bold?: boolean;
-      italics?: boolean;
-      underline?: boolean;
-      smallCaps?: boolean;
-    },
-  ): TextRun[] {
-    const raw = b.html ? sanitizeRichHtml(b.html) : escapeHtml(b.text ?? '');
-    if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
-
-    const runs: TextRun[] = [];
-    const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
-    let m: RegExpExecArray | null;
-
-    let bold = !!opts.bold;
-    let italic = !!opts.italics;
-    let uline = !!opts.underline;
-
-    while ((m = re.exec(raw)) !== null) {
-      if (m[3] !== undefined) {
-        const text = m[3]
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&nbsp;/g, '\u00A0');
-        runs.push(
-          new this._docx.TextRun({
-            text,
-            font: opts.font,
-            size: opts.size,
-            bold,
-            italics: italic,
-            underline: uline ? { type: this._docx.UnderlineType.SINGLE } : undefined,
-            smallCaps: opts.smallCaps && runs.length === 0,
-          }),
-        );
-      } else if (m[1] === '' && m[2] !== 'br') {
-        const tag = m[2];
-        if (tag === 'b' || tag === 'strong') bold = true;
-        if (tag === 'i' || tag === 'em') italic = true;
-        if (tag === 'u' || tag === 'ins') uline = true;
-      } else if (m[1] === '/') {
-        const tag = m[2];
-        if (tag === 'b' || tag === 'strong') bold = !!opts.bold;
-        if (tag === 'i' || tag === 'em') italic = !!opts.italics;
-        if (tag === 'u' || tag === 'ins') uline = !!opts.underline;
-      }
-    }
-
-    return runs.length
-      ? runs
-      : [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
+  htmlToTextRuns(b: { text?: string; html?: string }, opts: RunStyle): TextRun[] {
+    return this.parse(b, opts) as TextRun[];
   }
 
   blockToChildren(
     b: { text?: string; html?: string },
-    opts: {
-      font: string;
-      size: number;
-      bold?: boolean;
-      italics?: boolean;
-      underline?: boolean;
-      smallCaps?: boolean;
-    },
+    opts: RunStyle,
     fnIdToNum: Record<string, number>,
   ): (TextRun | FootnoteReferenceRun)[] {
-    const raw = b.html ? sanitizeRichHtml(b.html) : escapeHtml(b.text ?? '');
-    if (!raw) return [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
+    return this.parse(b, opts, fnIdToNum);
+  }
 
-    const children: (TextRun | FootnoteReferenceRun)[] = [];
+  /**
+   * Convierte el HTML enriquecido en ejecuciones de DOCX. Las marcas de revisión
+   * (`ins`/`del`) se convierten en revisiones nativas de Word cuando hay contexto de
+   * revisión; sin él se descartan como formato normal.
+   */
+  private parse(
+    b: { text?: string; html?: string },
+    opts: RunStyle,
+    fnIdToNum?: Record<string, number>,
+  ): (TextRun | FootnoteReferenceRun)[] {
+    const raw = b.html ? sanitizeRichHtml(b.html) : escapeHtml(b.text ?? '');
+    if (!raw) return [this.emptyRun(opts)];
+
+    const runs: (TextRun | FootnoteReferenceRun)[] = [];
     const re = /<(\/?)(\w+)(?:\s[^>]*)?\/?>|([^<]+)/g;
     let m: RegExpExecArray | null;
 
     let bold = !!opts.bold;
     let italic = !!opts.italics;
     let uline = !!opts.underline;
+    let inserted = false;
+    let deleted = false;
 
     while ((m = re.exec(raw)) !== null) {
       if (m[3] !== undefined) {
-        const text = m[3]
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&nbsp;/g, '\u00A0');
-        children.push(
-          new this._docx.TextRun({
-            text,
-            font: opts.font,
-            size: opts.size,
-            bold,
-            italics: italic,
-            underline: uline ? { type: this._docx.UnderlineType.SINGLE } : undefined,
-            smallCaps: opts.smallCaps && children.length === 0,
-          }),
-        );
-      } else if (m[1] === '' && m[2] !== 'br') {
-        const tag = m[2];
-        if (tag === 'b' || tag === 'strong') bold = true;
-        if (tag === 'i' || tag === 'em') italic = true;
-        if (tag === 'u' || tag === 'ins') uline = true;
-        if (tag === 'sup') {
-          const mid = m[0];
-          const fnMatch = mid.match(/data-fn="([^"]+)"/);
-          if (fnMatch && fnIdToNum[fnMatch[1]]) {
-            children.push(new this._docx.FootnoteReferenceRun(fnIdToNum[fnMatch[1]]));
-          }
-        }
-      } else if (m[1] === '/') {
-        const tag = m[2];
-        if (tag === 'b' || tag === 'strong') bold = !!opts.bold;
-        if (tag === 'i' || tag === 'em') italic = !!opts.italics;
-        if (tag === 'u' || tag === 'ins') uline = !!opts.underline;
+        runs.push(this.textRun(decodeEntities(m[3]), {
+          ...opts,
+          bold,
+          italics: italic,
+          underline: uline,
+        }, deleted ? 'del' : inserted ? 'ins' : null, opts.smallCaps && runs.length === 0));
+        continue;
       }
+
+      const closing = m[1] === '/';
+      const tag = m[2];
+
+      if (!closing && tag === 'sup' && fnIdToNum) {
+        const fnMatch = m[0].match(/data-fn="([^"]+)"/);
+        if (fnMatch && fnIdToNum[fnMatch[1]]) {
+          runs.push(new this._docx.FootnoteReferenceRun(fnIdToNum[fnMatch[1]]));
+        }
+      }
+      if (tag === 'br') continue;
+
+      const active = closing ? false : true;
+      if (tag === 'b' || tag === 'strong') bold = active;
+      if (tag === 'i' || tag === 'em') italic = active;
+      if (tag === 'u') uline = active;
+      if (tag === 'ins') inserted = active;
+      if (tag === 'del') deleted = active;
     }
 
-    return children.length
-      ? children
-      : [new this._docx.TextRun({ text: '', font: opts.font, size: opts.size })];
+    return runs.length ? runs : [this.emptyRun(opts)];
   }
+
+  private emptyRun(opts: RunStyle): TextRun {
+    return new this._docx.TextRun({ text: '', font: opts.font, size: opts.size });
+  }
+
+  private textRun(
+    text: string,
+    style: RunStyle,
+    revision: 'ins' | 'del' | null,
+    smallCaps: boolean | undefined,
+  ): TextRun {
+    const base = {
+      text,
+      font: style.font,
+      size: style.size,
+      bold: style.bold,
+      italics: style.italics,
+      underline: style.underline ? { type: this._docx.UnderlineType.SINGLE } : undefined,
+      smallCaps,
+    };
+    if (!revision || !this.revision) return new this._docx.TextRun(base);
+    if (!this._docx.InsertedTextRun || !this._docx.DeletedTextRun) return new this._docx.TextRun(base);
+
+    const changed = {
+      id: ++this.revisionId,
+      author: this.revision.author,
+      date: this.revision.date,
+    };
+    return revision === 'ins'
+      ? new this._docx.InsertedTextRun({ ...base, ...changed })
+      : new this._docx.DeletedTextRun({ ...base, ...changed });
+  }
+}
+
+function decodeEntities(value: string): string {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, '\u00A0');
 }

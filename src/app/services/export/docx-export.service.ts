@@ -27,6 +27,7 @@ import {
   imageExt,
 } from './export-utils';
 import { DocxBlockRenderer } from './docx-block-renderer';
+import { withReviewMarks } from '../../utils/review-changes';
 
 @Injectable({ providedIn: 'root' })
 export class DocxExportService {
@@ -39,11 +40,18 @@ export class DocxExportService {
   async exportDocx() {
     this.store.setExporting(true, this.ts.instant('sidebar.exportingDocx'));
     if (!this._docx) this._docx = await import('docx');
-    const renderer = new DocxBlockRenderer(this._docx);
+    const prefs = this.store.exportPrefs();
+    const round = this.store.review()?.round;
+    const revision = prefs.includeReviewMarks && round
+      ? { author: round.author, date: round.startedAt }
+      : undefined;
+    const renderer = new DocxBlockRenderer(this._docx, revision);
     try {
       const book = this.store.book();
-      const prefs = this.store.exportPrefs();
-      const chapters = resolveChapters(this.store.chapters(), prefs);
+      const chapters = resolveChapters(
+        withReviewMarks(this.store.chapters(), prefs.includeReviewMarks ? this.store.review() : null),
+        prefs,
+      );
       const t = this.store.tweaks();
       const assets = this.assetService.getAll();
       if (!book) return;

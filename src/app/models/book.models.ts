@@ -1,7 +1,12 @@
 export type ChapterKind = 'front' | 'chapter' | 'back';
 export type ChapterStatus = 'ok' | 'draft' | 'outline' | 'front' | 'back';
 
+/** Versión del esquema del archivo, independiente de la versión de la aplicación. */
+export const LIBRIA_SCHEMA_VERSION = 2;
+
 export interface Block {
+  /** Ancla estable: sobrevive a la inserción de bloques anteriores. */
+  id?: string;
   type: string;
   text?: string;
   html?: string;
@@ -142,6 +147,27 @@ export interface WritingGoals {
   deadline: string;
 }
 
+/** Ronda de revisión editorial abierta sobre el documento. */
+export interface ReviewRound {
+  id: string;
+  author: string;
+  role: NoteRole;
+  startedAt: string;
+  baselineRevision: number;
+  /** Revisión de esquema con la que se abrió la ronda. */
+  schemaVersion: number;
+}
+
+/**
+ * Estado de revisión. Las marcas no se guardan: se derivan comparando `baseline`
+ * (texto aceptado) con los capítulos actuales (texto propuesto).
+ */
+export interface ReviewState {
+  mode: 'off' | 'track';
+  round: ReviewRound | null;
+  baseline: Chapter[] | null;
+}
+
 export interface Misspelling {
   word: string;
   blockIndex: number;
@@ -191,6 +217,12 @@ export interface LocationSheet {
 
 export interface LibriaDocument {
   libriaVersion: string;
+  /** Esquema del formato; 1 en documentos anteriores a la identidad de bloques. */
+  schemaVersion?: number;
+  /** Contador monótono de guardados con contenido. */
+  revision?: number;
+  modifiedAt?: string;
+  modifiedBy?: string;
   metadata: Book | null;
   preferences: Tweaks;
   session: {
@@ -202,4 +234,6 @@ export interface LibriaDocument {
   writingGoals?: WritingGoals;
   characters?: CharacterSheet[];
   locations?: LocationSheet[];
+  /** Control de cambios: ronda abierta y estado aceptado de referencia. */
+  review?: ReviewState | null;
 }

@@ -15,6 +15,8 @@ import { AboutModalComponent } from './components/modals/about-modal.component';
 import { GoogleDriveModalComponent } from './components/modals/google-drive-modal.component';
 import { RecoveryService } from './services/recovery.service';
 import { RecoveryModalComponent } from './components/modals/recovery-modal.component';
+import { ReviewService } from './services/review.service';
+import { ReviewModalComponent } from './components/modals/review-modal.component';
 import { GoogleDriveService } from './services/google-drive.service';
 import { SpellcheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
 
@@ -33,6 +35,7 @@ import { SpellcheckPanelComponent } from './components/spellcheck-panel/spellche
     AboutModalComponent,
     GoogleDriveModalComponent,
     RecoveryModalComponent,
+    ReviewModalComponent,
     SpellcheckPanelComponent,
   ],
   templateUrl: './app.html',
@@ -41,6 +44,7 @@ import { SpellcheckPanelComponent } from './components/spellcheck-panel/spellche
 })
 export class App {
   readonly recovery = inject(RecoveryService);
+  readonly review = inject(ReviewService);
   readonly drive = inject(GoogleDriveService);
   readonly store = inject(BookStore);
   readonly fileService = inject(FileService);

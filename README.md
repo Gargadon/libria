@@ -60,6 +60,7 @@ Diseñado para el trabajo colaborativo entre autores y editores:
 - **Roles definidos:** Autor, Editor, Corrector y Editorial.
 - **Hilos de conversación:** Respuestas en cada nota para discutir cambios estilísticos o estructurales.
 - **Control de estado:** Marca notas como resueltas o no aplicables.
+- **Control de cambios:** Abre una ronda de revisión con autor y rol; las ediciones se registran como propuestas y se aceptan o rechazan párrafo a párrafo desde la vista de revisión, con marcas de inserción y supresión. Se exporta con revisiones nativas de Word (DOCX), con marcas visuales (ODT, EPUB, PDF) o como registro de cambios en Markdown.
 
 ### Fichas Creativas (Worldbuilding)
 
@@ -106,7 +107,7 @@ Disponibles con el foco en el editor. En macOS se utiliza `Cmd` en lugar de `Ctr
 - **Exportación por capítulos:** DOCX y ODT permiten exportar el libro completo o seleccionar capítulos. EPUB y PDF se ofrecen para el libro completo.
 - **Exportación PDF profesional (escritorio):** Composición con Vivliostyle, CSS Paged Media, páginas recto/verso, cajas de margen, numeración real del índice y estilos tipográficos aplicados.
 - **PDF/X opcional:** Conversión mediante Ghostscript para flujos de imprenta. En Windows se incluye en el paquete; en macOS/Linux se necesita una instalación del sistema. Si la conversión falla, se informa del error.
-- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas al pie, comentarios, imágenes, objetivos de escritura y fichas de personajes y lugares. Compatible con los documentos existentes de la versión Electron; consulta [la especificación del formato](FORMATO_LIBRIA.md).
+- **Formato abierto `.libria`:** Archivo JSON autocontenido con metadatos, preferencias, capítulos, notas al pie, comentarios, imágenes, objetivos de escritura, fichas de personajes y lugares, y el estado de la ronda de revisión. Compatible con los documentos existentes de la versión Electron; consulta [la especificación del formato](FORMATO_LIBRIA.md).
 
 ### Internacionalización
 

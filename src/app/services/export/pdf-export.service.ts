@@ -7,6 +7,7 @@ import { AssetService } from '../asset.service';
 import { ExportFileService } from './export-file.service';
 import { resolveChapters, pageSizeToInches } from './export-utils';
 import { PrintHtmlService } from './print-html.service';
+import { withReviewMarks } from '../../utils/review-changes';
 
 @Injectable({ providedIn: 'root' })
 export class PdfExportService {
@@ -23,7 +24,10 @@ export class PdfExportService {
       if (!book) return;
 
       const prefs = this.store.exportPrefs();
-      const chapters = resolveChapters(this.store.chapters(), prefs);
+      const chapters = resolveChapters(
+        withReviewMarks(this.store.chapters(), prefs.includeReviewMarks ? this.store.review() : null),
+        prefs,
+      );
       const t = this.store.tweaks();
       const bodyFontFamily = this.store.bookFontFamily();
       const titleFontFamily = this.store.titleFontFamily();

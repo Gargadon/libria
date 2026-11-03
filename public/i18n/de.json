@@ -478,5 +478,21 @@
   "dictionary.noResults": "Keine passenden Wörter.",
   "dictionary.error": "Das Wörterbuch konnte nicht aktualisiert werden. Bitte erneut versuchen.",
   "dictionary.retry": "Erneut versuchen",
-  "dictionary.remove": "Wort entfernen"
+  "dictionary.remove": "Wort entfernen",
+  "review.title": "Überarbeitung",
+  "review.close": "Schließen",
+  "review.startHint": "Öffne eine Runde, um Änderungen als Vorschläge zu erfassen: Du kannst sie Absatz für Absatz annehmen oder ablehnen.",
+  "review.author": "Prüfer",
+  "review.role": "Rolle",
+  "review.start": "Überarbeitung starten",
+  "review.pending": "{{count}} offene Änderungen",
+  "review.acceptAll": "Alle annehmen",
+  "review.rejectAll": "Alle ablehnen",
+  "review.finish": "Beenden und alles annehmen",
+  "review.discard": "Runde verwerfen",
+  "review.report": "Bericht speichern",
+  "review.empty": "Keine offenen Änderungen.",
+  "review.accept": "Annehmen",
+  "review.reject": "Ablehnen",
+  "sidebar.includeReviewMarks": "Überarbeitungsmarkierungen einschließen"
 }

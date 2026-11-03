@@ -528,5 +528,21 @@
   "dictionary.noResults": "No hay palabras que coincidan.",
   "dictionary.error": "No se pudo actualizar el diccionario. Vuelve a intentarlo.",
   "dictionary.retry": "Reintentar",
-  "dictionary.remove": "Eliminar palabra"
+  "dictionary.remove": "Eliminar palabra",
+  "review.title": "Revisión",
+  "review.close": "Cerrar",
+  "review.startHint": "Abre una ronda para registrar las ediciones como propuestas: podrás aceptarlas o rechazarlas párrafo a párrafo.",
+  "review.author": "Revisor",
+  "review.role": "Rol",
+  "review.start": "Iniciar revisión",
+  "review.pending": "{{count}} cambios pendientes",
+  "review.acceptAll": "Aceptar todo",
+  "review.rejectAll": "Rechazar todo",
+  "review.finish": "Terminar y aceptar",
+  "review.discard": "Descartar ronda",
+  "review.report": "Guardar informe",
+  "review.empty": "No hay cambios pendientes.",
+  "review.accept": "Aceptar",
+  "review.reject": "Rechazar",
+  "sidebar.includeReviewMarks": "Incluir marcas de revisión"
 }

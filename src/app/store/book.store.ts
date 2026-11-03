@@ -1,15 +1,20 @@
 import { computed, effect, inject } from '@angular/core';
 import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
-import { Book, BookTheme, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote, CharacterSheet, LocationSheet } from '../models/book.models';
+import { Book, BookTheme, Block, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote, CharacterSheet, LocationSheet, ReviewRound, ReviewState } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
 import { AssetService } from '../services/asset.service';
 import { CustomThemesService } from '../services/custom-themes.service';
 import { environment } from '../../environments/environment';
-import { migrateLibriaDocument, validateLibriaDocument } from '../utils/document-validator';
+import { migrateLibriaDocument, validateLibriaDocument, withBlockIds } from '../utils/document-validator';
+import { createId } from '../utils/ids';
 
 export interface BookState {
   documentSession: number;
+  /** Contador monótono de guardados con contenido; base de las revisiones del documento. */
+  documentRevision: number;
+  modifiedAt: string;
+  modifiedBy: string;
   book: Book | null;
   chapters: Chapter[];
   notes: Note[];
@@ -30,6 +35,7 @@ export interface BookState {
   exportPrefs: {
     includeCover: boolean;
     includeNotes: boolean;
+    includeReviewMarks: boolean;
     exportMode: 'all' | 'selection';
     selectedChapterIds: string[];
   };
@@ -46,16 +52,22 @@ export interface BookState {
   customThemes: BookTheme[];
   characters: CharacterSheet[];
   locations: LocationSheet[];
+  /** Ronda de revisión abierta y estado aceptado de referencia. */
+  review: ReviewState | null;
 }
 
 const initialState: BookState = {
   documentSession: 0,
+  documentRevision: 0,
+  modifiedAt: '',
+  modifiedBy: '',
   book: null,
   chapters: [],
   notes: [],
   activeChapterId: '',
   characters: [],
   locations: [],
+  review: null,
   tweaks: {
     sidebar: 'right',
     mode: 'light',
@@ -110,6 +122,7 @@ const initialState: BookState = {
   exportPrefs: {
     includeCover: true,
     includeNotes: false,
+    includeReviewMarks: false,
     exportMode: 'all' as 'all' | 'selection',
     selectedChapterIds: [] as string[],
   },
@@ -292,6 +305,9 @@ export const BookStore = signalStore(
       const personalMode = store.personalConfig().mode;
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        documentRevision: typeof migrated.revision === 'number' ? migrated.revision : 0,
+        modifiedAt: migrated.modifiedAt ?? '',
+        modifiedBy: migrated.modifiedBy ?? '',
         past: [],
         future: [],
         book: migrated.metadata,
@@ -299,6 +315,7 @@ export const BookStore = signalStore(
         notes: migrated.notes || [],
         characters: migrated.characters || [],
         locations: migrated.locations || [],
+        review: migrated.review ?? null,
         activeChapterId: migrated.session?.lastActiveChapterId || migrated.chapters[0]?.id || '',
         tweaks: { ...store.tweaks(), ...(migrated.preferences || {}), mode: personalMode },
         writingGoals: { ...initialState.writingGoals, ...(migrated.writingGoals || {}) },
@@ -338,18 +355,22 @@ export const BookStore = signalStore(
         number: 1,
         status: 'draft',
         body: [
-          { type: 'chapter-title', text: labels.chapter },
-          { type: 'p', text: '' }
+          { id: createId('blk'), type: 'chapter-title', text: labels.chapter },
+          { id: createId('blk'), type: 'p', text: '' }
         ]
       };
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        documentRevision: 0,
+        modifiedAt: '',
+        modifiedBy: '',
         book: newBook,
         chapters: [firstChapter],
         notes: [],
         characters: [],
         locations: [],
         activeChapterId: firstChapter.id,
+        review: null,
         isDirty: true,
         past: [],
         future: [],
@@ -507,10 +528,14 @@ export const BookStore = signalStore(
       assetService.clear();
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        documentRevision: 0,
+        modifiedAt: '',
+        modifiedBy: '',
         book: null,
         chapters: [],
         notes: [],
         activeChapterId: '',
+        review: null,
         isDirty: false,
         past: [],
         future: [],
@@ -553,6 +578,50 @@ export const BookStore = signalStore(
     markAsSaved() {
       patchState(store, { isDirty: false });
     },
+    /** Sello del documento; lo fija el guardado, no el contenido en cada lectura. */
+    setDocumentStamp(revision: number, modifiedAt: string, modifiedBy: string) {
+      patchState(store, { documentRevision: revision, modifiedAt, modifiedBy });
+    },
+    beginReview(round: ReviewRound, baseline: Chapter[]) {
+      patchState(store, { review: { mode: 'track', round, baseline }, isDirty: true });
+    },
+    setReviewBaseline(baseline: Chapter[]) {
+      const review = store.review();
+      if (!review) return;
+      patchState(store, { review: { ...review, baseline }, isDirty: true });
+    },
+    endReview() {
+      patchState(store, { review: null, isDirty: true });
+    },
+    setChapters(chapters: Chapter[]) {
+      patchState(store, { chapters, isDirty: true });
+    },
+    replaceBlock(chapterId: string, blockIndex: number, block: Block) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((chapter) => {
+          if (chapter.id !== chapterId) return chapter;
+          const body = chapter.body.map((current, index) => (index === blockIndex ? { ...block } : current));
+          const words = calculateWords(body);
+          return { ...chapter, body, words, readMin: calculateReadMin(words) };
+        }),
+        isDirty: true,
+      }));
+    },
+    insertBlockAt(chapterId: string, blockIndex: number, block: Block) {
+      patchState(store, (state) => ({
+        chapters: state.chapters.map((chapter) => {
+          if (chapter.id !== chapterId) return chapter;
+          const body = [
+            ...chapter.body.slice(0, blockIndex),
+            { ...block },
+            ...chapter.body.slice(blockIndex),
+          ];
+          const words = calculateWords(body);
+          return { ...chapter, body, words, readMin: calculateReadMin(words) };
+        }),
+        isDirty: true,
+      }));
+    },
     setIsSaving(isSaving: boolean) {
       patchState(store, { isSaving });
     },
@@ -572,8 +641,8 @@ export const BookStore = signalStore(
           number: kind === 'chapter' ? (lastChapter?.number ?? 0) + 1 : undefined,
           status: 'draft',
           body: kind === 'chapter'
-            ? [{ type: 'chapter-title', text: untitledLabel(store.personalConfig().language) }, { type: 'p', text: '' }]
-            : [{ type: 'p', text: '' }]
+            ? [{ id: createId('blk'), type: 'chapter-title', text: untitledLabel(store.personalConfig().language) }, { id: createId('blk'), type: 'p', text: '' }]
+            : [{ id: createId('blk'), type: 'p', text: '' }]
         };
         let insertAt = chapters.length;
         if (kind === 'front') {
@@ -648,7 +717,7 @@ export const BookStore = signalStore(
           readMin: 0,
           status: 'front' as any,
           templateId,
-          body: bodyMap[templateId](),
+          body: bodyMap[templateId]().map((block) => ({ ...block, id: createId('blk') })),
         };
 
         const chapters = state.chapters;
@@ -667,7 +736,7 @@ export const BookStore = signalStore(
     },
     addChapters(newChapters: Chapter[], newNotes: Note[] = []) {
       patchState(store, (state) => ({
-        chapters: [...state.chapters, ...newChapters],
+        chapters: [...state.chapters, ...newChapters.map((chapter) => withBlockIds(chapter))],
         notes: [...state.notes, ...newNotes],
         isDirty: true
       }));
@@ -771,7 +840,7 @@ export const BookStore = signalStore(
           if (c.id !== chapterId) return c;
           const newBody = [
             ...c.body.slice(0, afterIndex + 1),
-            { type, text, ...(html ? { html } : {}) },
+            { id: createId('blk'), type, text, ...(html ? { html } : {}) },
             ...c.body.slice(afterIndex + 1)
           ];
           const words = calculateWords(newBody);
@@ -786,8 +855,8 @@ export const BookStore = signalStore(
           if (c.id !== chapterId) return c;
           const newBody = [
             ...c.body.slice(0, blockIndex),
-            { ...c.body[blockIndex], text: c.body[blockIndex].text?.substring(0, cursorPosition) || '', html: undefined },
-            { type: 'p', text: c.body[blockIndex].text?.substring(cursorPosition) || '' },
+            { ...c.body[blockIndex], id: c.body[blockIndex].id ?? createId('blk'), text: c.body[blockIndex].text?.substring(0, cursorPosition) || '', html: undefined },
+            { id: createId('blk'), type: 'p', text: c.body[blockIndex].text?.substring(cursorPosition) || '' },
             ...c.body.slice(blockIndex + 1)
           ];
           const words = calculateWords(newBody);
@@ -863,7 +932,7 @@ export const BookStore = signalStore(
                 ...c,
                 body: [
                   ...c.body.slice(0, afterIndex + 1),
-                  { type: 'image', src: assetKey, width, height },
+                  { id: createId('blk'), type: 'image', src: assetKey, width, height },
                   ...c.body.slice(afterIndex + 1)
                 ]
               }

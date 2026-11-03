@@ -1,4 +1,4 @@
-# Especificación del Formato `.libria` (Esquema v1.8.5)
+# Especificación del Formato `.libria` (Esquema 2)
 
 El formato `.libria` es un estándar basado en JSON diseñado para el almacenamiento persistente de manuscritos en la aplicación Libria. Permite agrupar en un único archivo el contenido textual (organizado en bloques y capítulos), la estructura jerárquica del libro, los metadatos bibliográficos, los comentarios editoriales enriquecidos, los objetivos de escritura y los ajustes finos de maquetación tipográfica.
 
@@ -9,7 +9,19 @@ El formato `.libria` es un estándar basado en JSON diseñado para el almacenami
 Un documento `.libria` es un objeto JSON raíz con las siguientes propiedades:
 
 ### 1. `libriaVersion` (string)
-Indica la versión de Libria con la que se generó el archivo. Ej: `"1.8.5"`. Este valor identifica la versión de la aplicación que guardó el documento; no es un número de revisión independiente del JSON Schema.
+Indica la versión de Libria con la que se generó el archivo. Ej: `"2.1.1"`. Este valor identifica la versión de la aplicación que guardó el documento; no es un número de revisión independiente del JSON Schema.
+
+### 1b. `schemaVersion` (number, opcional)
+Versión del **esquema del formato**, independiente de la versión de la aplicación. Los documentos anteriores a la identidad de bloques no lo declaran y se tratan como versión `1`; la versión actual es `2`. Una versión de Libria rechaza los documentos con un `schemaVersion` mayor que el que admite, para no degradar datos que no comprende.
+
+### 1c. `revision`, `modifiedAt`, `modifiedBy` (opcionales)
+Sello de la última edición del documento, escrito por el guardado:
+
+- `revision` (number): contador monótono que avanza con cada guardado con contenido. Es la base para comparar versiones y anclar revisiones editoriales.
+- `modifiedAt` (string): fecha ISO 8601 del último guardado.
+- `modifiedBy` (string): nombre visible del autor del último guardado.
+
+No cambian al leer el documento: solo al guardarlo. Esto mantiene estable la comparación de contenido entre guardados.
 
 ### 2. `metadata` (object)
 Información bibliográfica básica de la obra. Basado en la interfaz `Book`.
@@ -77,6 +89,15 @@ Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweak
 Guarda datos de sesión de la última edición.
 - `lastActiveChapterId` (string): ID del último capítulo seleccionado en el editor.
 
+### 4b. `review` (object, opcional)
+Control de cambios editorial. Las marcas **no** se guardan: se derivan comparando `baseline` (estado aceptado) con `chapters` (estado propuesto).
+
+- `mode` (string): `"off"` o `"track"`.
+- `round` (object, opcional): ronda abierta. Contiene `id`, `author`, `role` (`"author"`, `"editor"`, `"corrector"`, `"publisher"`), `startedAt` (ISO 8601), `baselineRevision` (revisión del documento al abrirla) y `schemaVersion`.
+- `baseline` (array, opcional): copia del estado aceptado de los capítulos al iniciar la ronda, con los mismos identificadores de bloque que `chapters`. Aceptar un cambio rebasa este estado; rechazarlo restaura el bloque en `chapters`.
+
+Mientras hay una ronda abierta, `chapters` contiene el texto propuesto (lo que se muestra y se edita) y `baseline` el aceptado. `words` y `readMin` describen siempre el texto de `chapters`. Una versión anterior de Libria lee este objeto pero lo descarta al guardar, así que conviene cerrar la ronda antes de volver a una versión antigua.
+
 ### 5. `chapters` (array)
 Lista ordenada de objetos `Chapter`. Cada capítulo se compone de:
 
@@ -90,6 +111,7 @@ Lista ordenada de objetos `Chapter`. Cada capítulo se compone de:
 - `forceOddPage` (boolean, opcional): Fuerza al capítulo a iniciar en página impar (maquetación impresa).
 - `templateId` (string, opcional): Identificador de plantilla si es un capítulo especial de maquetación (`"title-page"`, `"credits"`, `"dedication"`, `"acknowledgments"`, `"toc"`).
 - `body` (array): Lista de **bloques** (`Block`) que contienen el texto y recursos del capítulo:
+  - `id` (string, opcional): Identificador estable del bloque. Es el ancla de comentarios, notas de revisión y control de cambios: sobrevive a la inserción o eliminación de otros bloques, algo que un índice posicional no garantiza. Los documentos que no lo traen lo reciben al cargarse y se persiste en el siguiente guardado. Debe ser único dentro del capítulo.
   - `type` (string): Tipo de bloque. Ejemplos:
     - `"halftitle"`: Portadilla.
     - `"title"` / `"subtitle"` / `"author"` / `"publisher"`: Datos de portada.
@@ -177,7 +199,7 @@ Antes de validar, Libria normaliza documentos creados por versiones anteriores:
 - deriva `metadata.authors` desde `metadata.author`, inicializa `metadata.editors` y usa `"es-MX"` como idioma predeterminado;
 - migra las preferencias antiguas `emDash`/`enDash`, `ellipsis` y `openingSigns` a `smartDashes`, `smartEllipsis` y `smartOpeningSigns`, respectivamente.
 
-La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, más de 10 000 capítulos, más de 100 000 bloques por capítulo, bloques sin `type`, valores no textuales en `text`/`html` y recursos individuales mayores de 100 MiB. El HTML enriquecido se sanea al renderizar y exportar; se admiten las etiquetas `b`, `i`, `u`, `strong`, `em`, `span`, `sub`, `sup`, `br`, `p`, `table`, `thead`, `tbody`, `tr`, `td`, `th`, `ul`, `ol`, `li`, `blockquote` y `cite`, con los atributos `class` y `style`.
+La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, más de 10 000 capítulos, más de 100 000 bloques por capítulo, bloques sin `type`, valores no textuales en `text`/`html` y recursos individuales mayores de 100 MiB. El HTML enriquecido se sanea al renderizar y exportar; se admiten las etiquetas `b`, `i`, `u`, `strong`, `em`, `span`, `sub`, `sup`, `br`, `p`, `table`, `thead`, `tbody`, `tr`, `td`, `th`, `ul`, `ol`, `li`, `blockquote`, `cite`, `ins` y `del`, con los atributos `class` y `style`. Las etiquetas `ins` y `del` solo aparecen en contenido generado por la vista de revisión y por las exportaciones con marcas; nunca se guardan en los bloques del manuscrito.
 
 ---
 
@@ -186,11 +208,15 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Libria Document Schema v1.8.5",
+  "title": "Libria Document Schema v2",
   "type": "object",
   "required": ["libriaVersion", "metadata", "preferences", "chapters"],
   "properties": {
     "libriaVersion": { "type": "string" },
+    "schemaVersion": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "modifiedAt": { "type": "string" },
+    "modifiedBy": { "type": "string" },
     "metadata": {
       "type": "object",
       "required": ["title", "author", "paperSize"],
@@ -277,6 +303,7 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
               "type": "object",
               "required": ["type"],
               "properties": {
+                "id": { "type": "string", "minLength": 1, "maxLength": 200 },
                 "type": { "type": "string" },
                 "text": { "type": "string" },
                 "html": { "type": "string" },
@@ -348,6 +375,14 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
       "properties": {
         "targetWords": { "type": "integer" },
         "deadline": { "type": "string" }
+      }
+    },
+    "review": {
+      "type": ["object", "null"],
+      "properties": {
+        "mode": { "enum": ["off", "track"] },
+        "round": { "type": ["object", "null"] },
+        "baseline": { "type": ["array", "null"], "items": { "type": "object" } }
       }
     },
     "characters": {

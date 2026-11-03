@@ -185,6 +185,27 @@
         </button>
       </div>
     </div>
+    @if (store.review()?.round) {
+      <div class="sb__row">
+        <div class="sb__label">{{ 'sidebar.includeReviewMarks' | translate }}</div>
+        <div class="sb__radio">
+          <button
+            class="sb__opt"
+            [class.sb__opt--on]="store.exportPrefs.includeReviewMarks()"
+            (click)="store.updateExportPrefs({ includeReviewMarks: true })"
+          >
+            {{ 'sidebar.yes' | translate }}
+          </button>
+          <button
+            class="sb__opt"
+            [class.sb__opt--on]="!store.exportPrefs.includeReviewMarks()"
+            (click)="store.updateExportPrefs({ includeReviewMarks: false })"
+          >
+            {{ 'sidebar.no' | translate }}
+          </button>
+        </div>
+      </div>
+    }
     <div class="sb__row">
       <div class="sb__label">{{ 'sidebar.pdfx' | translate }}</div>
       <div class="sb__radio">

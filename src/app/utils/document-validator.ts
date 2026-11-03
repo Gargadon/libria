@@ -1,4 +1,5 @@
-import { LibriaDocument } from '../models/book.models';
+import { LIBRIA_SCHEMA_VERSION, LibriaDocument } from '../models/book.models';
+import { createId } from './ids';
 
 /**
  * Valida la integridad estructural de un documento .libria.
@@ -11,6 +12,51 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
 
   if (typeof doc.libriaVersion !== 'string') {
     throw new Error('La versión del formato ("libriaVersion") es inválida o no está presente.');
+  }
+
+  if (doc.schemaVersion !== undefined) {
+    if (!Number.isInteger(doc.schemaVersion) || doc.schemaVersion < 1) {
+      throw new Error('La versión de esquema ("schemaVersion") es inválida.');
+    }
+    if (doc.schemaVersion > LIBRIA_SCHEMA_VERSION) {
+      throw new Error(
+        `El documento usa el esquema ${doc.schemaVersion} y esta versión de Libria admite hasta el ${LIBRIA_SCHEMA_VERSION}. Actualiza la aplicación para abrirlo.`,
+      );
+    }
+  }
+  if (doc.revision !== undefined && (!Number.isInteger(doc.revision) || doc.revision < 0)) {
+    throw new Error('La revisión del documento es inválida.');
+  }
+  if (doc.modifiedAt !== undefined && typeof doc.modifiedAt !== 'string') {
+    throw new Error('La fecha de modificación del documento es inválida.');
+  }
+  if (doc.modifiedBy !== undefined && typeof doc.modifiedBy !== 'string') {
+    throw new Error('El autor de la última modificación del documento es inválido.');
+  }
+
+  if (doc.review !== undefined && doc.review !== null) {
+    const review = doc.review;
+    if (typeof review !== 'object' || Array.isArray(review)) {
+      throw new Error('El estado de revisión del documento es inválido.');
+    }
+    if (review.mode !== undefined && !['off', 'track'].includes(review.mode)) {
+      throw new Error('El modo de revisión del documento es inválido.');
+    }
+    if (review.round !== undefined && review.round !== null) {
+      if (typeof review.round !== 'object' || typeof review.round.author !== 'string' || typeof review.round.startedAt !== 'string') {
+        throw new Error('La ronda de revisión del documento es inválida.');
+      }
+    }
+    if (review.baseline !== undefined && review.baseline !== null) {
+      if (!Array.isArray(review.baseline)) {
+        throw new Error('El estado aceptado de la revisión debe ser una lista de capítulos.');
+      }
+      for (const chapter of review.baseline) {
+        if (!chapter || typeof chapter !== 'object' || typeof chapter.id !== 'string' || !Array.isArray(chapter.body)) {
+          throw new Error('El estado aceptado de la revisión contiene un capítulo inválido.');
+        }
+      }
+    }
   }
 
   if (!doc.metadata || typeof doc.metadata !== 'object') {
@@ -69,6 +115,7 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
       throw new Error(`El identificador de capítulo "${ch.id}" está repetido.`);
     }
     chapterIds.add(ch.id);
+    const blockIds = new Set<string>();
     if (typeof ch.title !== 'string') {
       throw new Error(`El capítulo en el índice ${i} ("${ch.id}") no tiene un título ("title") válido.`);
     }
@@ -85,6 +132,15 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
       const block = ch.body[j];
       if (!block || typeof block !== 'object' || typeof block.type !== 'string') {
         throw new Error(`El bloque ${j} del capítulo "${ch.id}" es inválido.`);
+      }
+      if (block.id !== undefined) {
+        if (typeof block.id !== 'string' || !block.id || block.id.length > 200) {
+          throw new Error(`El identificador del bloque ${j} del capítulo "${ch.id}" es inválido.`);
+        }
+        if (blockIds.has(block.id)) {
+          throw new Error(`El identificador de bloque "${block.id}" está repetido en el capítulo "${ch.id}".`);
+        }
+        blockIds.add(block.id);
       }
       if (block.text !== undefined && typeof block.text !== 'string') {
         throw new Error(`El texto del bloque ${j} del capítulo "${ch.id}" es inválido.`);
@@ -135,14 +191,51 @@ export function migrateLibriaDocument(input: unknown): LibriaDocument {
 
   return {
     ...source,
+    // Los documentos anteriores no declaran esquema; se tratan como versión 1.
+    schemaVersion: Number.isInteger(source['schemaVersion']) && source['schemaVersion'] > 0
+      ? source['schemaVersion']
+      : 1,
     metadata,
     preferences,
     session: { ...(source['session'] || {}) },
-    chapters: Array.isArray(source['chapters']) ? source['chapters'] : [],
+    chapters: Array.isArray(source['chapters'])
+      ? source['chapters'].map((chapter: any) => withBlockIds(chapter))
+      : [],
     notes: Array.isArray(source['notes']) ? source['notes'] : [],
     assets: source['assets'] && typeof source['assets'] === 'object' ? source['assets'] : {},
     writingGoals: source['writingGoals'] || undefined,
     characters: Array.isArray(source['characters']) ? source['characters'] : [],
     locations: Array.isArray(source['locations']) ? source['locations'] : [],
+    review: normalizeReview(source['review']),
   } as LibriaDocument;
+}
+
+/** Normaliza la ronda de revisión y garantiza anclas en el estado aceptado. */
+function normalizeReview(review: any) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) return null;
+  const baseline = Array.isArray(review.baseline)
+    ? review.baseline.map((chapter: any) => withBlockIds(chapter))
+    : null;
+  return {
+    ...review,
+    mode: review.mode === 'track' ? 'track' : 'off',
+    round: review.round ?? null,
+    baseline,
+  };
+}
+
+/**
+ * Asigna un identificador estable a cada bloque que no lo tenga. Es una migración
+ * perezosa: no se escribe en disco hasta el siguiente guardado.
+ */
+export function withBlockIds<T extends { body?: unknown }>(chapter: T): T {
+  const body = (chapter as any)?.body;
+  if (!Array.isArray(body)) return chapter;
+  let changed = false;
+  const next = body.map((block: any) => {
+    if (!block || typeof block !== 'object' || typeof block.id === 'string') return block;
+    changed = true;
+    return { ...block, id: createId('blk') };
+  });
+  return changed ? ({ ...chapter, body: next } as T) : chapter;
 }

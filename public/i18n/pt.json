@@ -478,5 +478,21 @@
   "recovery.restore": "Restaurar como cópia",
   "recovery.chapter": "Capítulo",
   "recovery.addChapter": "Adicionar capítulo recuperado",
-  "importReport.title": "Avisos de importação"
+  "importReport.title": "Avisos de importação",
+  "review.title": "Revisão",
+  "review.close": "Fechar",
+  "review.startHint": "Abra uma rodada para registrar as alterações como propostas: você poderá aceitá-las ou rejeitá-las parágrafo a parágrafo.",
+  "review.author": "Revisor",
+  "review.role": "Função",
+  "review.start": "Iniciar revisão",
+  "review.pending": "{{count}} alterações pendentes",
+  "review.acceptAll": "Aceitar tudo",
+  "review.rejectAll": "Rejeitar tudo",
+  "review.finish": "Concluir e aceitar tudo",
+  "review.discard": "Descartar rodada",
+  "review.report": "Salvar relatório",
+  "review.empty": "Nenhuma alteração pendente.",
+  "review.accept": "Aceitar",
+  "review.reject": "Rejeitar",
+  "sidebar.includeReviewMarks": "Incluir marcas de revisão"
 }

@@ -472,5 +472,21 @@
   "dictionary.noResults": "Aucun mot correspondant.",
   "dictionary.error": "Impossible de mettre à jour le dictionnaire. Réessayez.",
   "dictionary.retry": "Réessayer",
-  "dictionary.remove": "Supprimer le mot"
+  "dictionary.remove": "Supprimer le mot",
+  "review.title": "Révision",
+  "review.close": "Fermer",
+  "review.startHint": "Ouvrez une session pour enregistrer les modifications comme propositions : vous pourrez les accepter ou les refuser paragraphe par paragraphe.",
+  "review.author": "Réviseur",
+  "review.role": "Rôle",
+  "review.start": "Commencer la révision",
+  "review.pending": "{{count}} modifications en attente",
+  "review.acceptAll": "Tout accepter",
+  "review.rejectAll": "Tout refuser",
+  "review.finish": "Terminer et tout accepter",
+  "review.discard": "Abandonner la session",
+  "review.report": "Enregistrer le rapport",
+  "review.empty": "Aucune modification en attente.",
+  "review.accept": "Accepter",
+  "review.reject": "Refuser",
+  "sidebar.includeReviewMarks": "Inclure les marques de révision"
 }

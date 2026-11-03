@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { AssetService } from './asset.service';
-import { LibriaDocument } from '../models/book.models';
+import { LibriaDocument, LIBRIA_SCHEMA_VERSION } from '../models/book.models';
 import { RecentProjectsService } from './recent-projects.service';
 import { environment } from '../../environments/environment';
 import { migrateLibriaDocument, validateLibriaDocument } from '../utils/document-validator';
@@ -204,6 +204,10 @@ export class FileService {
     const { mode: _mode, ...rest } = this.store.tweaks();
     return {
       libriaVersion: environment.version,
+      schemaVersion: LIBRIA_SCHEMA_VERSION,
+      revision: this.store.documentRevision(),
+      modifiedAt: this.store.modifiedAt(),
+      modifiedBy: this.store.modifiedBy(),
       metadata: this.store.book(),
       preferences: { ...rest, mode: undefined as any },
       session: {
@@ -214,7 +218,8 @@ export class FileService {
       assets: this.assetService.getAll(),
       writingGoals: this.store.writingGoals(),
       characters: this.store.characters(),
-      locations: this.store.locations()
+      locations: this.store.locations(),
+      review: this.store.review()
     };
   }
 
@@ -236,9 +241,22 @@ export class FileService {
 
   async saveLibriaFile(saveAs: boolean = false, syncAfterSave = true): Promise<boolean> {
     this.store.setIsSaving(true);
+    // El sello se fija antes de serializar para que lo escrito y el estado en memoria
+    // coincidan; si el guardado no se completa (diálogo cancelado, error, cambio de
+    // documento) se restaura para no fabricar una revisión inexistente.
+    const previousStamp = {
+      revision: this.store.documentRevision(),
+      modifiedAt: this.store.modifiedAt(),
+      modifiedBy: this.store.modifiedBy(),
+    };
+    this.store.setDocumentStamp(
+      previousStamp.revision + 1,
+      new Date().toISOString(),
+      this.store.personalConfig().userName || '',
+    );
+    const epoch = this.epoch;
     const doc = this.buildDoc();
     const json = JSON.stringify(doc, null, 2);
-    const epoch = this.epoch;
     let saved = false;
 
     try {
@@ -253,6 +271,7 @@ export class FileService {
             this.syncState.set(json === this.driveLink()?.baseline ? 'saved' : 'pending');
             if (syncAfterSave) void this.syncDrive();
           }
+          saved = true;
           return true;
         }
         let path = this.currentPath;
@@ -308,6 +327,9 @@ export class FileService {
         await this.showError('No se pudo guardar el documento', (err as Error).message);
       }
     } finally {
+      if (!saved && epoch === this.epoch) {
+        this.store.setDocumentStamp(previousStamp.revision, previousStamp.modifiedAt, previousStamp.modifiedBy);
+      }
       // Small delay to make the bar visible even for fast saves
       setTimeout(() => {
         this.store.setIsSaving(false);

@@ -472,5 +472,21 @@
   "dictionary.noResults": "Nessuna parola corrispondente.",
   "dictionary.error": "Impossibile aggiornare il dizionario. Riprova.",
   "dictionary.retry": "Riprova",
-  "dictionary.remove": "Rimuovi parola"
+  "dictionary.remove": "Rimuovi parola",
+  "review.title": "Revisione",
+  "review.close": "Chiudi",
+  "review.startHint": "Apri una sessione per registrare le modifiche come proposte: potrai accettarle o rifiutarle paragrafo per paragrafo.",
+  "review.author": "Revisore",
+  "review.role": "Ruolo",
+  "review.start": "Inizia revisione",
+  "review.pending": "{{count}} modifiche in sospeso",
+  "review.acceptAll": "Accetta tutto",
+  "review.rejectAll": "Rifiuta tutto",
+  "review.finish": "Termina e accetta tutto",
+  "review.discard": "Annulla sessione",
+  "review.report": "Salva rapporto",
+  "review.empty": "Nessuna modifica in sospeso.",
+  "review.accept": "Accetta",
+  "review.reject": "Rifiuta",
+  "sidebar.includeReviewMarks": "Includi le marcature di revisione"
 }

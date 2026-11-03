@@ -6,6 +6,7 @@ import { sortFootnotesByPosition } from '../../models/book.models';
 import { AssetService } from '../asset.service';
 
 import { sanitizeRichHtml } from '../../utils/block-html';
+import { withReviewMarks } from '../../utils/review-changes';
 
 import type JSZip from 'jszip';
 
@@ -40,7 +41,10 @@ export class EpubExportService {
       const zip = new JSZip();
       const book = this.store.book();
       const prefs = this.store.exportPrefs();
-      const allChapters = this.store.chapters();
+      const allChapters = withReviewMarks(
+        this.store.chapters(),
+        prefs.includeReviewMarks ? this.store.review() : null,
+      );
       const chapters = resolveChapters(allChapters, prefs);
       const assets = this.assetService.getAll();
       const tweaks = this.store.tweaks();

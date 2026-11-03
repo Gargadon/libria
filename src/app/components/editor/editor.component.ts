@@ -710,9 +710,10 @@ export class EditorComponent implements OnDestroy {
       // ── Quotes: convert " to smart quotes ──────────────────────────────
       case '"': {
         if (!this.store.tweaks.smartQuotes()) return;
-        event.preventDefault();
         const sel = window.getSelection();
-        if (!sel || !sel.isCollapsed) return;
+        if (!sel || sel.rangeCount === 0) return;
+        // La comilla sustituye a la selección: `insertText` reemplaza el rango activo.
+        event.preventDefault();
 
         const offset = this._getCaretOffset(el);
         const text = el.innerText.replace(/\n$/, '');
@@ -729,9 +730,9 @@ export class EditorComponent implements OnDestroy {
       // ── Apostrophe: convert ' to smart apostrophe ────────────────────────
       case "'": {
         if (!this.store.tweaks.smartQuotes()) return;
-        event.preventDefault();
         const sel = window.getSelection();
-        if (!sel || !sel.isCollapsed) return;
+        if (!sel || sel.rangeCount === 0) return;
+        event.preventDefault();
 
         const offset = this._getCaretOffset(el);
         const text = el.innerText.replace(/\n$/, '');
@@ -813,6 +814,12 @@ export class EditorComponent implements OnDestroy {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
         this.store.saveSnapshot();
+
+        // Escribir un salto sobre una selección la sustituye, como cualquier tecla.
+        if (!sel.isCollapsed) {
+          sel.deleteFromDocument();
+          sel.collapseToStart();
+        }
 
         const range = sel.getRangeAt(0);
         const currentText = el.innerText.replace(/\n$/, '');

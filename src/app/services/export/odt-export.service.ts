@@ -6,6 +6,7 @@ import { sortFootnotesByPosition } from '../../models/book.models';
 import { AssetService } from '../asset.service';
 
 import { sanitizeRichHtml } from '../../utils/block-html';
+import { withReviewMarks } from '../../utils/review-changes';
 
 import type JSZip from 'jszip';
 
@@ -29,7 +30,10 @@ export class OdtExportService {
       const zip = new JSZip();
       const book = this.store.book();
       const prefs = this.store.exportPrefs();
-      const allChapters = this.store.chapters();
+      const allChapters = withReviewMarks(
+        this.store.chapters(),
+        prefs.includeReviewMarks ? this.store.review() : null,
+      );
       const chapters = resolveChapters(allChapters, prefs);
       const assets = this.assetService.getAll();
 
@@ -92,6 +96,18 @@ export class OdtExportService {
 
       const contentParts: string[] = [];
 
+      // Los estilos de marca solo se incluyen cuando la exportación lleva revisiones;
+      // así el documento exportado sin marcas no cambia.
+      const revisionStyles = prefs.includeReviewMarks
+        ? `
+    <style:style style:name="RevInsert" style:family="text">
+      <style:text-properties fo:color="#1a7f4b" style:text-underline-style="solid" style:text-underline-type="single" style:text-underline-width="auto" style:text-underline-color="#1a7f4b"/>
+    </style:style>
+    <style:style style:name="RevDelete" style:family="text">
+      <style:text-properties fo:color="#a33232" style:text-line-through-style="solid" style:text-line-through-type="single"/>
+    </style:style>`
+        : '';
+
       const htmlToOdtXml = (
         htmlText: string,
         fnMap: Record<string, { num: number; content: string }>,
@@ -105,6 +121,8 @@ export class OdtExportService {
         let bold = false;
         let italic = false;
         let uline = false;
+        let inserted = false;
+        let deleted = false;
 
         while ((m = re.exec(htmlText)) !== null) {
           if (m[3] !== undefined) {
@@ -117,6 +135,7 @@ export class OdtExportService {
                 .replace(/&quot;/g, '"')
                 .replace(/&nbsp;/g, '\u00A0'),
             );
+            let formatted = text;
             if (bold || italic || uline) {
               let styleName = '';
               if (bold && italic && uline) styleName = 'Bold_Italic_Underline';
@@ -127,15 +146,19 @@ export class OdtExportService {
               else if (italic) styleName = 'Italic';
               else if (uline) styleName = 'Underline';
 
-              xml += `<text:span text:style-name="${styleName}">${text}</text:span>`;
-            } else {
-              xml += text;
+              formatted = `<text:span text:style-name="${styleName}">${text}</text:span>`;
             }
+            // Las marcas de revisión se envuelven por fuera del formato del texto.
+            if (deleted) formatted = `<text:span text:style-name="RevDelete">${formatted}</text:span>`;
+            else if (inserted) formatted = `<text:span text:style-name="RevInsert">${formatted}</text:span>`;
+            xml += formatted;
           } else if (m[1] === '' && m[2] !== 'br') {
             const tag = m[2];
             if (tag === 'b' || tag === 'strong') bold = true;
             if (tag === 'i' || tag === 'em') italic = true;
-            if (tag === 'u' || tag === 'ins') uline = true;
+            if (tag === 'u') uline = true;
+            if (tag === 'ins') inserted = true;
+            if (tag === 'del') deleted = true;
             if (tag === 'sup') {
               const mid = m[0];
               const fnMatch = mid.match(/data-fn="([^"]+)"/);
@@ -149,7 +172,9 @@ export class OdtExportService {
             const tag = m[2];
             if (tag === 'b' || tag === 'strong') bold = false;
             if (tag === 'i' || tag === 'em') italic = false;
-            if (tag === 'u' || tag === 'ins') uline = false;
+            if (tag === 'u') uline = false;
+            if (tag === 'ins') inserted = false;
+            if (tag === 'del') deleted = false;
           } else if (m[2] === 'br') {
             xml += '<text:line-break/>';
           }
@@ -280,7 +305,7 @@ export class OdtExportService {
     </style:style>
     <style:style style:name="Bold_Italic_Underline" style:family="text">
       <style:text-properties fo:font-weight="bold" fo:font-style="italic" style:text-underline-style="solid" style:text-underline-width="auto" style:text-underline-color="font-color"/>
-    </style:style>
+    </style:style>${revisionStyles}
     <style:style style:name="Footnote" style:family="paragraph" style:parent-style-name="Standard">
       <style:paragraph-properties fo:margin-top="0in" fo:margin-bottom="0.05in"/>
       <style:text-properties fo:font-size="10pt"/>

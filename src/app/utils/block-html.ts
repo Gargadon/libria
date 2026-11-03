@@ -13,7 +13,7 @@ function rawText(b: Block): string {
 }
 
 const RICH_HTML_CONFIG = {
-  ALLOWED_TAGS: ['a', 's', 'b', 'i', 'u', 'strong', 'em', 'span', 'sub', 'sup', 'br', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'blockquote', 'cite'],
+  ALLOWED_TAGS: ['a', 's', 'b', 'i', 'u', 'strong', 'em', 'span', 'sub', 'sup', 'br', 'p', 'table', 'thead', 'tbody', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'blockquote', 'cite', 'ins', 'del'],
   ALLOWED_ATTR: ['class', 'style', 'href', 'colspan', 'rowspan'],
 };
 

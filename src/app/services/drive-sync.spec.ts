@@ -12,6 +12,8 @@ describe('Drive synchronization', () => {
     let dirty = true;
     const store = { book: () => ({ title }), tweaks: () => ({}), activeChapterId: () => null,
       chapters: () => [], notes: () => [], writingGoals: () => ({}), characters: () => [], locations: () => [],
+      documentRevision: () => 0, modifiedAt: () => '', modifiedBy: () => '', setDocumentStamp: vi.fn(),
+      personalConfig: () => ({ userName: 'writer' }), review: () => null,
       markAsSaved: vi.fn(() => { dirty = false; }), setIsSaving: vi.fn(), closeDocument: vi.fn(),
       loadDocument: vi.fn((document: any) => { title = document.metadata.title; dirty = false; }), isDirty: () => dirty };
     const api = { driveCacheFile: vi.fn().mockResolvedValue('local.libria'),

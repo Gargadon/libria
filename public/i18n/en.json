@@ -528,5 +528,21 @@
   "dictionary.noResults": "No matching words.",
   "dictionary.error": "Could not update the dictionary. Please try again.",
   "dictionary.retry": "Retry",
-  "dictionary.remove": "Remove word"
+  "dictionary.remove": "Remove word",
+  "review.title": "Review",
+  "review.close": "Close",
+  "review.startHint": "Open a round to record edits as suggestions: accept or reject them paragraph by paragraph.",
+  "review.author": "Reviewer",
+  "review.role": "Role",
+  "review.start": "Start review",
+  "review.pending": "{{count}} pending changes",
+  "review.acceptAll": "Accept all",
+  "review.rejectAll": "Reject all",
+  "review.finish": "Finish and accept",
+  "review.discard": "Discard round",
+  "review.report": "Save report",
+  "review.empty": "No pending changes.",
+  "review.accept": "Accept",
+  "review.reject": "Reject",
+  "sidebar.includeReviewMarks": "Include review marks"
 }
