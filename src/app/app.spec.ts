@@ -15,7 +15,7 @@ class FakeTranslateLoader implements TranslateLoader {
 }
 
 describe('App', () => {
-  afterEach(() => { delete window.desktopAPI; vi.restoreAllMocks(); });
+  afterEach(() => { delete window.desktopAPI; vi.restoreAllMocks(); vi.unstubAllGlobals(); });
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
@@ -62,6 +62,74 @@ describe('App', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.check-result')?.textContent).toContain('No se pudo abrir la descarga');
     expect(fixture.nativeElement.querySelector('.update-banner__action')).not.toBeNull();
+  });
+
+  it('opens a native file drop from the welcome screen and retains its path', async () => {
+    vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+    let drop!: (paths: string[]) => void;
+    const readFile = vi.fn();
+    window.desktopAPI = {
+      onFilesDropped: (callback: typeof drop) => { drop = callback; },
+      readFile,
+      driveCachedLink: vi.fn().mockResolvedValue(null),
+      setSpellCheckerLanguage: vi.fn().mockResolvedValue(undefined),
+    } as unknown as DesktopAPI;
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.store.createNewProject();
+    const content = app.fileService.documentContent();
+    app.fileService.closeProject();
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('app-welcome')).not.toBeNull();
+    readFile.mockResolvedValue(content);
+    drop(['/books/novel.libria']);
+    await vi.waitFor(() => expect(app.fileService.currentPath).toBe('/books/novel.libria'));
+    await fixture.whenStable();
+    expect(app.store.book()).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-welcome')).toBeNull();
+    expect(app.fileService.canSilentSave).toBe(true);
+  });
+
+  it('handles file drops without intercepting chapter drags', async () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    const open = vi.spyOn(app.fileService, 'openDroppedFiles').mockResolvedValue();
+    const file = new File(['{}'], 'book.libria');
+    const event = (types: string[]) => ({
+      dataTransfer: { types, files: [file], dropEffect: 'none' },
+      preventDefault: vi.fn(),
+    });
+    const chapter = event(['text/plain']);
+    app.onFileDragOver(chapter as unknown as DragEvent);
+    await app.onFileDrop(chapter as unknown as DragEvent);
+    expect(chapter.preventDefault).not.toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
+    const drop = event(['Files']);
+    app.onFileDragOver(drop as unknown as DragEvent);
+    expect(drop.dataTransfer.dropEffect).toBe('copy');
+    await app.onFileDrop(drop as unknown as DragEvent);
+    expect(drop.preventDefault).toHaveBeenCalled();
+    expect(open).toHaveBeenCalledWith([file]);
+  });
+
+  it('preserves the current document on cancelled or invalid drops and clears its save target on success', async () => {
+    const app = TestBed.createComponent(App).componentInstance;
+    const files = app.fileService;
+    app.store.createNewProject();
+    const content = files.documentContent();
+    files.currentPath = '/old.libria';
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const dropped = { name: 'book.LIBRIA', text: async () => content } as File;
+    await files.openDroppedFiles([dropped]);
+    expect(confirm).toHaveBeenCalled();
+    expect(files.currentPath).toBe('/old.libria');
+    confirm.mockReturnValue(true);
+    await files.openDroppedFiles([{ name: 'bad.libria', text: async () => '{}' } as File]);
+    expect(files.currentPath).toBe('/old.libria');
+    expect(window.alert).toHaveBeenCalled();
+    await files.openDroppedFiles([dropped]);
+    expect(files.currentPath).toBeNull();
+    expect(files.driveLink()).toBeNull();
   });
 
   it('should create the app', () => {

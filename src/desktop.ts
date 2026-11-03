@@ -1,6 +1,7 @@
 import { isTauri, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { message } from '@tauri-apps/plugin-dialog';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { arch, platform } from '@tauri-apps/plugin-os';
@@ -12,6 +13,7 @@ export async function initializeDesktop(): Promise<void> {
   const closeListeners = new Set<() => void>();
   const fileListeners = new Set<(path: string) => void>();
   let earlyFile: string | null = null;
+  const dropListeners = new Set<(paths: string[]) => void>();
   const updateListeners = new Set<(update: { version: string; url?: string }) => void>();
   const updateResultListeners = new Set<(result: string) => void>();
   const desktopWindow = getCurrentWindow();
@@ -49,6 +51,7 @@ export async function initializeDesktop(): Promise<void> {
       void desktopWindow.close().catch((error) => { closing = false; console.error(error); });
     },
     onFileOpen: (callback) => { fileListeners.add(callback); },
+    onFilesDropped: (callback) => { dropListeners.add(callback); },
     getPendingPath: async () => {
       const pending = await invoke<string | null>('pending_path');
       const path = earlyFile ?? pending;
@@ -82,6 +85,11 @@ export async function initializeDesktop(): Promise<void> {
   await listen<string>('file:open', ({ payload }) => {
     if (!fileListeners.size) earlyFile = payload;
     else fileListeners.forEach(callback => callback(payload));
+  });
+  await getCurrentWebview().onDragDropEvent(({ payload }) => {
+    if (payload.type === 'drop') {
+      dropListeners.forEach(callback => callback(payload.paths));
+    }
   });
   window.desktopAPI = api;
 

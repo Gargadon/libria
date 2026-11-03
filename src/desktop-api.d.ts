@@ -27,6 +27,7 @@ interface DesktopAPI {
   onCloseRequested(callback: () => void): void;
   confirmClose(): void;
   onFileOpen(callback: (filePath: string) => void): void;
+  onFilesDropped?(callback: (paths: string[]) => void): void;
   getPendingPath(): Promise<string | null>;
   onUpdateAvailable(callback: (update: { version: string; url?: string }) => void): void;
   onUpdateCheckResult(callback: (result: string) => void): void;

@@ -338,6 +338,49 @@ export class FileService {
     return saved;
   }
 
+  private openingDrop = false;
+
+  async openDroppedPaths(paths: string[]): Promise<void> {
+    if (!window.desktopAPI) return;
+    const files = paths.map(path => ({
+      name: path.split(/[/\\]/).pop() || path,
+      text: () => window.desktopAPI!.readFile(path),
+    }));
+    await this.openDroppedFiles(files, paths.length === 1 ? paths[0] : undefined);
+  }
+
+  async openDroppedFiles(files: Pick<File, 'name' | 'text'>[], nativePath?: string): Promise<void> {
+    if (this.openingDrop) return;
+    this.openingDrop = true;
+    try {
+      if (files.length !== 1 || !/\.(libria|json)$/i.test(files[0].name)) {
+        await this.showError('No se pudo abrir el documento', 'Suelta un solo archivo .libria o .json.');
+        return;
+      }
+      const file = files[0];
+      const content = await file.text();
+      this.validateExternalDocument(content);
+      if (this.store.isDirty()) {
+        const question = 'Hay cambios sin guardar. ¿Quieres descartarlos y abrir este documento?';
+        const discard = this.isDesktop
+          ? await (await import('@tauri-apps/plugin-dialog')).confirm(question, { title: 'Abrir documento', kind: 'warning' })
+          : window.confirm(question);
+        if (!discard) return;
+      }
+      if (nativePath) {
+        await this.openLibriaFileByPath(nativePath);
+        return;
+      }
+      // A browser File has no writable native path. Clear the previous target so
+      // saving this document cannot overwrite the project that was open before.
+      this.openExternalDocument(content);
+    } catch (error) {
+      await this.showError('No se pudo abrir el documento', error instanceof Error ? error.message : String(error));
+    } finally {
+      this.openingDrop = false;
+    }
+  }
+
   async openLibriaFileByPath(path: string) {
     if (!this.isDesktop) return;
     try {
@@ -431,6 +474,8 @@ export class FileService {
     const api = (window as any).desktopAPI;
     if (api?.showError) {
       await api.showError(title, detail || 'Ocurrió un error inesperado.');
+    } else {
+      window.alert(`${title}: ${detail || 'Ocurrió un error inesperado.'}`);
     }
   }
 }

@@ -202,7 +202,12 @@ fn main() {
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             app.manage(drive::Drive::new(app.handle())?);
-            let main_window = tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?
+            let builder = tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?;
+            // WebView2 needs its HTML5 handler for internal chapter reordering.
+            // Linux/macOS use native file drops; Windows keeps DOM file drops.
+            #[cfg(windows)]
+            let builder = builder.disable_drag_drop_handler();
+            let main_window = builder
                 .on_web_resource_request(|request, response| {
                     // Vivliostyle's bundled Knockout UI compiles data-bind expressions.
                     // Enable this only in the viewer document, not in Angular or book HTML.

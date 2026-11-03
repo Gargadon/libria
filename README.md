@@ -1,6 +1,6 @@
 [![Release](https://github.com/Gargadon/libria/actions/workflows/release.yml/badge.svg)](https://github.com/Gargadon/libria/actions/workflows/release.yml)
 
-# Libria 2.1.1 — Rice Edition
+# Libria 2.2.0 — Dostoievski Edition
 
 ![Libria Banner](libria-banner.webp)
 

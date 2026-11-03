@@ -56,6 +56,20 @@ export class App {
   showAbout = signal(false);
   showSpellcheck = signal(false);
 
+  @HostListener('document:dragover', ['$event'])
+  onFileDragOver(event: DragEvent) {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  }
+
+  @HostListener('document:drop', ['$event'])
+  async onFileDrop(event: DragEvent) {
+    if (!event.dataTransfer?.types.includes('Files')) return;
+    event.preventDefault();
+    await this.fileService.openDroppedFiles(Array.from(event.dataTransfer.files));
+  }
+
   @HostListener('document:contextmenu', ['$event'])
   onContextMenu(event: MouseEvent) {
     event.preventDefault();
@@ -152,6 +166,9 @@ export class App {
         });
       });
     }
+    api?.onFilesDropped?.((paths: string[]) => {
+      this.ngZone.run(() => { void this.fileService.openDroppedPaths(paths); });
+    });
     if (api?.onFileOpen) {
       api.onFileOpen((filePath: string) => {
         this.ngZone.run(() => {
