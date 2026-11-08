@@ -1,5 +1,9 @@
 {
-  "libriaVersion": "1.5.1",
+  "libriaVersion": "2.2.0",
+  "schemaVersion": 2,
+  "revision": 2,
+  "modifiedAt": "2026-11-05T19:46:48.304Z",
+  "modifiedBy": "",
   "metadata": {
     "title": "El Principito",
     "subtitle": "Un clásico moderno",
@@ -18,7 +22,6 @@
   },
   "preferences": {
     "sidebar": "right",
-    "mode": "light",
     "bookFont": "lora",
     "customBookFont": null,
     "spellcheck": true,
@@ -34,6 +37,7 @@
     "marginOuter": 15,
     "showPageNumbers": true,
     "showHeader": true,
+    "hideFirstPageHeaderFooter": true,
     "headerText": "El Principito",
     "sceneBreakType": "asterisks",
     "titleAlignment": "center",
@@ -46,6 +50,7 @@
     "pageNumberPosition": "bottom-center",
     "dropCap": true,
     "dropCapLines": 3,
+    "firstParagraphSmallCaps": true,
     "hyphenation": true,
     "smartQuotes": true,
     "smartDashes": true,
@@ -68,35 +73,43 @@
       "body": [
         {
           "type": "chapter-title",
-          "text": "El Principito"
+          "text": "El Principito",
+          "id": "blk-4438f68c-b0fb-476b-a9e6-2320de67205c"
         },
         {
-          "type": "page-break"
+          "type": "page-break",
+          "id": "blk-ca8bd223-22da-4230-b0d9-0ce725b321e0"
         },
         {
           "type": "chapter-title",
-          "text": "El Principito"
+          "text": "El Principito",
+          "id": "blk-091be72c-8232-4b2b-ace3-3bdb59572e30"
         },
         {
           "type": "chapter-title",
-          "text": "Antoine de Saint-Exupéry"
+          "text": "Antoine de Saint-Exupéry",
+          "id": "blk-010eb8ce-a63b-4052-93c8-20cda5414504"
         },
         {
           "type": "p",
           "text": "",
-          "html": "<br>"
+          "html": "<br>",
+          "id": "blk-0bd3d76f-7e96-4cac-b3df-3276228ae4b4"
         },
         {
-          "type": "page-break"
+          "type": "page-break",
+          "id": "blk-f1d8d3ac-8b6b-4877-9bff-d4e1826d2a75"
         },
         {
           "type": "p",
           "text": "A Léon Werth:",
-          "html": "A Léon Werth:"
+          "html": "A Léon Werth:",
+          "id": "blk-0aa86a61-2700-416d-9cdd-e903ab529f4e"
         },
         {
           "type": "blockquote",
-          "text": "Pido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo."
+          "text": "Pido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo.",
+          "id": "blk-84a75169-90d6-451f-adc9-e4f550094a17"
         }
       ],
       "readMin": 1
@@ -112,27 +125,33 @@
       "body": [
         {
           "type": "chapter-title",
-          "text": "I"
+          "text": "I",
+          "id": "blk-e7f6bb5b-375a-470a-a2bd-9b4523b02a5c"
         },
         {
           "type": "first-p",
           "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
-          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo."
+          "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+          "id": "blk-294baf89-e877-48bc-a2ac-bc67142d6066"
         },
         {
           "type": "image",
           "src": "img-mq5sli4q-kps8",
           "width": 222,
-          "height": 134
+          "height": 134,
+          "id": "blk-cf334995-d78e-49d7-905f-2a953e69e21d",
+          "rotation": 0
         },
         {
           "type": "p",
-          "text": "En el libro se afirmaba: «La serpiente boa se traga su presa entera, sin masticarla. Luego ya no puede moverse y duerme durante los seis meses que dura su digestión»."
+          "text": "En el libro se afirmaba: «La serpiente boa se traga su presa entera, sin masticarla. Luego ya no puede moverse y duerme durante los seis meses que dura su digestión».",
+          "id": "blk-7c9522df-18a1-440a-bb94-42586b72c83b"
         },
         {
           "type": "p",
           "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
-          "html": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:"
+          "html": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
+          "id": "blk-775046a7-fbed-41b4-b40e-7a931cf67a4c"
         },
         {
           "type": "image",
@@ -140,19 +159,23 @@
           "width": 241,
           "height": 80,
           "rotation": 180,
-          "flipH": true
+          "flipH": true,
+          "id": "blk-72b085cc-032f-43e8-b9f8-4db8d1b36f71"
         },
         {
           "type": "p",
-          "text": "Enseñé mi obra de arte a las personas mayores y les pregunté si mi dibujo les daba miedo."
+          "text": "Enseñé mi obra de arte a las personas mayores y les pregunté si mi dibujo les daba miedo.",
+          "id": "blk-0d132e8f-75c4-483d-ba33-2db39503da32"
         },
         {
           "type": "p",
-          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron."
+          "text": "—¿Por qué habría de asustar un sombrero? —me respondieron.",
+          "id": "blk-801de037-b00e-43ad-a1a3-164fc82e6ae1"
         },
         {
           "type": "p",
-          "text": "Mi dibujo no representaba un sombrero. Representaba una serpiente boa que digiere un elefante. Dibujé entonces el interior de la serpiente boa a fin de que las personas mayores pudieran comprender. Siempre estas personas tienen necesidad de explicaciones. Mi dibujo número 2 era así:"
+          "text": "Mi dibujo no representaba un sombrero. Representaba una serpiente boa que digiere un elefante. Dibujé entonces el interior de la serpiente boa a fin de que las personas mayores pudieran comprender. Siempre estas personas tienen necesidad de explicaciones. Mi dibujo número 2 era así:",
+          "id": "blk-0931ab25-acd8-4e9a-9c8d-ab0ed103ef90"
         },
         {
           "type": "image",
@@ -160,32 +183,39 @@
           "width": 242,
           "height": 92,
           "flipH": true,
-          "rotation": 180
+          "rotation": 180,
+          "id": "blk-1c2a2584-145f-49fc-8ea6-360ee27d5360"
         },
         {
           "type": "p",
-          "text": "Las personas mayores me aconsejaron abandonar el dibujo de serpientes boas, ya fueran abiertas o cerradas, y poner más interés en la geografía, la historia, el cálculo y la gramática. De esta manera a la edad de seis años abandoné una magnífica carrera de pintor."
+          "text": "Las personas mayores me aconsejaron abandonar el dibujo de serpientes boas, ya fueran abiertas o cerradas, y poner más interés en la geografía, la historia, el cálculo y la gramática. De esta manera a la edad de seis años abandoné una magnífica carrera de pintor.",
+          "id": "blk-16453889-9cbd-4911-9881-cd18e6af436e"
         },
         {
           "type": "p",
-          "text": "Había quedado desilusionado por el fracaso de mis dibujos número 1 y número 2."
+          "text": "Había quedado desilusionado por el fracaso de mis dibujos número 1 y número 2.",
+          "id": "blk-7d4929ff-fe56-493a-9c3f-84a8dc671d4c"
         },
         {
           "type": "p",
-          "text": "Las personas mayores son incapaces de comprender algo por sí solas y es muy fastidioso para los niños darles explicaciones una y otra vez."
+          "text": "Las personas mayores son incapaces de comprender algo por sí solas y es muy fastidioso para los niños darles explicaciones una y otra vez.",
+          "id": "blk-effa5078-064b-400c-8505-0c1c6de02c2e"
         },
         {
           "type": "p",
-          "text": "Así, tuve que elegir otro oficio y aprendí a pilotear aviones. He volado un poco por todo el mundo y, en efecto, la geografía me ha servido mucho; al primer vistazo puedo distinguir perfectamente China de Arizona. Esto es muy útil, sobre todo si se pierde uno durante la noche. "
+          "text": "Así, tuve que elegir otro oficio y aprendí a pilotear aviones. He volado un poco por todo el mundo y, en efecto, la geografía me ha servido mucho; al primer vistazo puedo distinguir perfectamente China de Arizona. Esto es muy útil, sobre todo si se pierde uno durante la noche. ",
+          "id": "blk-668b9e63-bcb4-4b10-a114-f2a0dab066df"
         },
         {
           "type": "p",
-          "text": "A lo largo de mi vida he tenido multitud de contactos con multitud de gente seria. Viví mucho con personas mayores y las he conocido muy de cerca; pero esto no ha mejorado mi opinión sobre ellas."
+          "text": "A lo largo de mi vida he tenido multitud de contactos con multitud de gente seria. Viví mucho con personas mayores y las he conocido muy de cerca; pero esto no ha mejorado mi opinión sobre ellas.",
+          "id": "blk-ac301e5e-2c1a-44aa-a1f3-863844c7f553"
         },
         {
           "type": "p",
           "text": "Cuando me he encontrado con alguien que parecía lúcido, he ensayado la experiencia de mostrar mi dibujo número 1 que he conservado siempre. Quería saber si era verdaderamente un ser comprensivo pero siempre contestaban: \"Es un sombrero\". Me abstenía entonces de hablarles de la serpiente boa, de la selva virgen y de las estrellas. Poniéndome a su altura, les hablaba de su mundo: del bridge, del golf, de política y de corbatas. Y la persona mayor quedaba contentísima de conocer a un hombre tan razonable. ",
-          "html": "Cuando me he encontrado con alguien que parecía lúcido,\nhe ensayado la experiencia de mostrar mi dibujo número 1\nque he conservado siempre. Quería saber si era\nverdaderamente un ser comprensivo pero siempre\ncontestaban: \"Es un sombrero\". Me abstenía entonces de\nhablarles de la serpiente boa, de la selva virgen y de las\nestrellas. Poniéndome a su altura, les hablaba de su&nbsp;mundo: del bridge, del golf, de política y de corbatas. Y la\npersona mayor quedaba contentísima de conocer a un\nhombre tan razonable.&nbsp;"
+          "html": "Cuando me he encontrado con alguien que parecía lúcido,\nhe ensayado la experiencia de mostrar mi dibujo número 1\nque he conservado siempre. Quería saber si era\nverdaderamente un ser comprensivo pero siempre\ncontestaban: \"Es un sombrero\". Me abstenía entonces de\nhablarles de la serpiente boa, de la selva virgen y de las\nestrellas. Poniéndome a su altura, les hablaba de su&nbsp;mundo: del bridge, del golf, de política y de corbatas. Y la\npersona mayor quedaba contentísima de conocer a un\nhombre tan razonable.&nbsp;",
+          "id": "blk-0bc3847a-abeb-454f-a514-dc1815234130"
         }
       ],
       "number": 1,
@@ -202,168 +232,204 @@
       "body": [
         {
           "type": "chapter-title",
-          "text": "II"
+          "text": "II",
+          "id": "blk-edcfbb10-a3ff-4201-b81c-94baef9221bd"
         },
         {
           "type": "first-p",
           "text": "Viví así, solo, sin nadie con quien hablar verdaderamente, hasta que tuve una avería en el desierto del Sahara, hace seis años. Algo se había roto en mi motor. Y como no tenía conmigo ni mecánico ni pasajeros, me dispuse a realizar, solo, una reparación difícil. Era, para mí, cuestión de vida o muerte. Tenía agua apenas para ocho días.",
-          "html": "Viví así, solo, sin nadie con quien hablar verdaderamente, hasta que tuve una avería en el desierto del Sahara, hace seis años. Algo se había roto en mi motor. Y como no tenía conmigo ni mecánico ni pasajeros, me dispuse a realizar, solo, una reparación difícil. Era, para mí, cuestión de vida o muerte. Tenía agua apenas para ocho días."
+          "html": "Viví así, solo, sin nadie con quien hablar verdaderamente, hasta que tuve una avería en el desierto del Sahara, hace seis años. Algo se había roto en mi motor. Y como no tenía conmigo ni mecánico ni pasajeros, me dispuse a realizar, solo, una reparación difícil. Era, para mí, cuestión de vida o muerte. Tenía agua apenas para ocho días.",
+          "id": "blk-d7924803-c1fb-4412-8a21-9c3fb27cded3"
         },
         {
           "type": "p",
-          "text": "La primera noche dormí sobre la arena a mil millas de toda tierra habitada. Estaba más aislado que un náufrago sobre una balsa en medio del océano. Imagínense, pues, mi sorpresa cuando, al romper el día, me despertó una extraña vocecita que decía:"
+          "text": "La primera noche dormí sobre la arena a mil millas de toda tierra habitada. Estaba más aislado que un náufrago sobre una balsa en medio del océano. Imagínense, pues, mi sorpresa cuando, al romper el día, me despertó una extraña vocecita que decía:",
+          "id": "blk-ef3705af-2f76-4308-8bff-87788959e2b7"
         },
         {
           "type": "p",
           "text": "—¡Por favor..., dibújame un cordero!",
-          "html": "—¡Por favor..., dibújame un cordero!"
+          "html": "—¡Por favor..., dibújame un cordero!",
+          "id": "blk-bd7a082c-8203-41b4-9830-7e3de77c33d1"
         },
         {
           "type": "p",
           "text": "—¿Eh?",
-          "html": "—¿Eh?"
+          "html": "—¿Eh?",
+          "id": "blk-b79a4b0f-cc5f-4884-be24-c25a8da66081"
         },
         {
           "type": "p",
           "text": "—¡Píntame un cordero!",
-          "html": "—¡Píntame un cordero! "
+          "html": "—¡Píntame un cordero! ",
+          "id": "blk-5f143de2-7e3a-4c37-ab5c-cc3c5af448a6"
         },
         {
           "type": "p",
-          "text": "Me puse en pie de un brinco y frotándome los ojos miré a mí alrededor. Descubrí a un extraordinario muchachito que me observaba gravemente. Ahí tienen el mejor retrato que más tarde logré hacer de él, aunque reconozco que mi dibujo no es tan encantador como el original. La culpa no es mía, las personas mayores me desanimaron de mi carrera de pintor a la edad de seis años, cuando sólo había aprendido a dibujar boas cerradas y boas abiertas."
+          "text": "Me puse en pie de un brinco y frotándome los ojos miré a mí alrededor. Descubrí a un extraordinario muchachito que me observaba gravemente. Ahí tienen el mejor retrato que más tarde logré hacer de él, aunque reconozco que mi dibujo no es tan encantador como el original. La culpa no es mía, las personas mayores me desanimaron de mi carrera de pintor a la edad de seis años, cuando sólo había aprendido a dibujar boas cerradas y boas abiertas.",
+          "id": "blk-9b641faa-1cad-4f16-a2e3-4b87c8364db4"
         },
         {
           "type": "image",
           "src": "img-mq5tcal5-yoim",
           "width": 233,
-          "height": 240
+          "height": 240,
+          "id": "blk-de648afe-f977-4db8-83cf-6b7290480e11"
         },
         {
           "type": "p",
           "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
-          "html": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:"
+          "html": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
+          "id": "blk-c9c97768-52e6-44b6-bc51-23f040f8c0b0"
         },
         {
           "type": "p",
           "text": "—Pero… ¿qué haces tú aquí?",
-          "html": "—Pero… ¿qué haces tú aquí?"
+          "html": "—Pero… ¿qué haces tú aquí?",
+          "id": "blk-89432452-6378-40b6-b158-adadb935c660"
         },
         {
           "type": "p",
-          "text": "Y él repitió suave y lentamente, como algo muy importante:"
+          "text": "Y él repitió suave y lentamente, como algo muy importante:",
+          "id": "blk-8e4742c5-4c2f-4adc-afae-25c9b7a90d70"
         },
         {
           "type": "p",
           "text": "—¡Por favor… píntame un cordero!",
-          "html": "—¡Por favor… píntame un cordero!"
+          "html": "—¡Por favor… píntame un cordero!",
+          "id": "blk-ec918105-03e5-4b7f-a7b1-fccd06557671"
         },
         {
           "type": "p",
-          "text": "Cuando el misterio es tan impresionante, uno no se atreve a contravenir. Por absurdo que aquello pareciera, a mil millas de distancia de algún lugar habitado y en peligro de muerte, saqué del bolsillo una hoja de papel y una pluma fuente. Recordé que yo había estudiado geografía, historia, cálculo y gramática y le dije al muchachito (algo malhumorado) que no sabía dibujar. "
+          "text": "Cuando el misterio es tan impresionante, uno no se atreve a contravenir. Por absurdo que aquello pareciera, a mil millas de distancia de algún lugar habitado y en peligro de muerte, saqué del bolsillo una hoja de papel y una pluma fuente. Recordé que yo había estudiado geografía, historia, cálculo y gramática y le dije al muchachito (algo malhumorado) que no sabía dibujar. ",
+          "id": "blk-a4888a5f-19cc-4532-aa77-054279e0f8a4"
         },
         {
           "type": "p",
           "text": "—No importa, ¡Píntame un cordero!",
-          "html": "—No importa, ¡Píntame un cordero!"
+          "html": "—No importa, ¡Píntame un cordero!",
+          "id": "blk-6e7c577f-7ad9-42f4-b32c-68475a6c5997"
         },
         {
           "type": "p",
-          "text": "Como nunca había dibujado un cordero, repetí uno de los dos únicos dibujos que era capaz de realizar: el de la boa cerrada. Y quedé absorto al oírle decir:"
+          "text": "Como nunca había dibujado un cordero, repetí uno de los dos únicos dibujos que era capaz de realizar: el de la boa cerrada. Y quedé absorto al oírle decir:",
+          "id": "blk-b8e39643-f5b7-43b4-801b-d9eadab32750"
         },
         {
           "type": "p",
           "text": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!",
-          "html": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!"
+          "html": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!",
+          "id": "blk-6c53e230-f42a-40ff-a599-df8b7b097282"
         },
         {
           "type": "p",
-          "text": "Dibujé un cordero. Lo miró atentamente y dijo:"
+          "text": "Dibujé un cordero. Lo miró atentamente y dijo:",
+          "id": "blk-d1161c49-728f-40f1-a6d2-7d1e29da0f35"
         },
         {
           "type": "image",
           "src": "img-mq5tddf3-lypa",
           "width": 113,
           "height": 98,
-          "flipV": true
+          "flipV": true,
+          "id": "blk-62667a50-6ba1-4f95-a42a-d8ee1c5c1b96"
         },
         {
           "type": "p",
           "text": "—Éste está muy enfermo. Por favor haz otro.",
-          "html": "—Éste está muy enfermo. Por favor haz otro."
+          "html": "—Éste está muy enfermo. Por favor haz otro.",
+          "id": "blk-d67633c7-a257-4bbc-852f-5599bed2e900"
         },
         {
           "type": "p",
-          "text": "Volví a dibujar. "
+          "text": "Volví a dibujar. ",
+          "id": "blk-88ef9845-4cca-4731-b05b-bcfa3620173b"
         },
         {
           "type": "image",
           "src": "img-mq5tdp8y-lijx",
           "width": 126,
           "height": 119,
-          "flipV": true
+          "flipV": true,
+          "id": "blk-9a932333-c383-4d04-9375-d5ba88396377"
         },
         {
           "type": "p",
-          "text": "Mi amigo sonrió gentilmente, con indulgencia, y dijo:"
+          "text": "Mi amigo sonrió gentilmente, con indulgencia, y dijo:",
+          "id": "blk-6a1b31a8-2ad0-404d-bd1b-c6a61022d68e"
         },
         {
           "type": "p",
-          "text": "–¿Ves? Esto no es un cordero, es un carnero. Tiene cuernos…"
+          "text": "–¿Ves? Esto no es un cordero, es un carnero. Tiene cuernos…",
+          "id": "blk-b5ac62d1-ca36-4557-887b-16f86507e58a"
         },
         {
           "type": "p",
-          "text": "Realicé nuevamente otro dibujo y también fue rechazado como los anteriores."
+          "text": "Realicé nuevamente otro dibujo y también fue rechazado como los anteriores.",
+          "id": "blk-ff629700-ee2f-41d8-bb90-cd230a08b4d7"
         },
         {
           "type": "p",
-          "text": "–Es demasiado viejo. Quiero un cordero que viva mucho tiempo."
+          "text": "–Es demasiado viejo. Quiero un cordero que viva mucho tiempo.",
+          "id": "blk-b58a700d-cf3e-424e-8a8d-e2e8344445c9"
         },
         {
           "type": "p",
-          "text": "Ya impaciente y deseoso de comenzar a desmontar el motor, tracé rápidamente este dibujo, se lo enseñé, y dije:"
+          "text": "Ya impaciente y deseoso de comenzar a desmontar el motor, tracé rápidamente este dibujo, se lo enseñé, y dije:",
+          "id": "blk-088fc079-f8c5-49b4-af78-e5c3f9df8070"
         },
         {
           "type": "p",
-          "text": "—Esta es la caja. El cordero que quieres está adentro."
+          "text": "—Esta es la caja. El cordero que quieres está adentro.",
+          "id": "blk-789d2126-a0be-4e51-901d-fc3f9e6d4950"
         },
         {
           "type": "image",
           "src": "img-mq5te2zm-4b41",
           "width": 200,
           "height": 103,
-          "flipV": true
+          "flipV": true,
+          "id": "blk-5b7b3701-f428-4df2-a35d-45062cad4da7"
         },
         {
           "type": "p",
-          "text": "Me sorprendí al ver iluminado el rostro de mi joven juez:"
+          "text": "Me sorprendí al ver iluminado el rostro de mi joven juez:",
+          "id": "blk-11bd59e5-b8ab-440e-be25-69bad51a1368"
         },
         {
           "type": "p",
-          "text": "—¡Oh, es exactamente como yo lo quería! ¿Crees que se necesite mucha hierba para este cordero?"
+          "text": "—¡Oh, es exactamente como yo lo quería! ¿Crees que se necesite mucha hierba para este cordero?",
+          "id": "blk-293788f1-297c-4af0-933b-1b20d39d5a1e"
         },
         {
           "type": "p",
-          "text": "—¿Por qué?"
+          "text": "—¿Por qué?",
+          "id": "blk-f24e677b-1121-431f-ba59-a47d91f52baa"
         },
         {
           "type": "p",
-          "text": "—Porque en mi tierra todo es muy pequeño…"
+          "text": "—Porque en mi tierra todo es muy pequeño…",
+          "id": "blk-d3bd790a-7667-4cf4-b1d2-2c1b9770bc0f"
         },
         {
           "type": "p",
-          "text": "—Será suficiente. El corderito que te he dado también es pequeño."
+          "text": "—Será suficiente. El corderito que te he dado también es pequeño.",
+          "id": "blk-a44a92ea-65fd-4a56-8b2f-c109bae544cb"
         },
         {
           "type": "p",
-          "text": "Se inclinó hacia el dibujo y exclamó:"
+          "text": "Se inclinó hacia el dibujo y exclamó:",
+          "id": "blk-a7b83f04-950f-41b1-ab97-b7c00ddba3d5"
         },
         {
           "type": "p",
-          "text": "—¡Bueno, no tanto…! ¡Ah, se ha quedado dormido!"
+          "text": "—¡Bueno, no tanto…! ¡Ah, se ha quedado dormido!",
+          "id": "blk-8bbb1452-898a-4d0e-89bd-7881d2db123b"
         },
         {
           "type": "p",
-          "text": "Y así fue como conocí al principito. "
+          "text": "Y así fue como conocí al principito. ",
+          "id": "blk-d3fa9a1c-aa21-4118-a6a5-4cb8279264f3"
         }
       ],
       "number": 2,
@@ -380,127 +446,157 @@
       "body": [
         {
           "type": "chapter-title",
-          "text": "III"
+          "text": "III",
+          "id": "blk-6019e445-0887-4bb5-98b0-a26d0b79de4e"
         },
         {
           "type": "first-p",
-          "text": "Necesité tiempo para comprender de dónde venía. El principito, que siempre insistía con sus preguntas, no parecía oír las mías. Fueron frases al azar las que, poco a poco, me fueron revelando sus secretos. Así, cuando distinguió por vez primera mi avión (no dibujaré mi avión, por tratarse de algo demasiado complicado para mí) me preguntó:"
+          "text": "Necesité tiempo para comprender de dónde venía. El principito, que siempre insistía con sus preguntas, no parecía oír las mías. Fueron frases al azar las que, poco a poco, me fueron revelando sus secretos. Así, cuando distinguió por vez primera mi avión (no dibujaré mi avión, por tratarse de algo demasiado complicado para mí) me preguntó:",
+          "id": "blk-6cfb13b2-17ba-443a-837a-0b4704394e76"
         },
         {
           "type": "p",
-          "text": "–¿Qué cosa es esa?"
+          "text": "–¿Qué cosa es esa?",
+          "id": "blk-97fcb2d6-cc10-4d1f-b598-14b66191d9f5"
         },
         {
           "type": "p",
           "text": "–Esa no es una cosa. Es un avión, vuela. Es mi avión.",
-          "html": "–<i>Esa</i> no es una cosa. Es un avión, vuela. Es <i>mi</i> avión."
+          "html": "–<i>Esa</i> no es una cosa. Es un avión, vuela. Es <i>mi</i> avión.",
+          "id": "blk-0ca8e5a3-5823-4ae1-a1b1-4a33c19d3ba3"
         },
         {
           "type": "p",
           "text": "Me sentí orgulloso al decir que mi avión volaba. Él entonces gritó:",
-          "html": "Me sentí orgulloso al decir que mi avión volaba. Él&nbsp;entonces gritó:"
+          "html": "Me sentí orgulloso al decir que mi avión volaba. Él&nbsp;entonces gritó:",
+          "id": "blk-cf2a4b81-3abb-43d8-bfa2-8217a7d9cfd4"
         },
         {
           "type": "p",
-          "text": "–¡Cómo! ¿Has caído del cielo?"
+          "text": "–¡Cómo! ¿Has caído del cielo?",
+          "id": "blk-26b73ef5-72df-4229-ab92-49f1c848663c"
         },
         {
           "type": "p",
-          "text": "–Sí –le dije modestamente."
+          "text": "–Sí –le dije modestamente.",
+          "id": "blk-2a764acf-f4ad-4028-9324-25f8d5595eb9"
         },
         {
           "type": "p",
-          "text": "–¡Ah, es curioso!"
+          "text": "–¡Ah, es curioso!",
+          "id": "blk-6b3f31bb-2f42-40d1-a558-a4f057e4c49d"
         },
         {
           "type": "p",
           "text": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio.",
-          "html": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio."
+          "html": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio.",
+          "id": "blk-17364922-e9cf-4ac3-ad3c-2a2530659850"
         },
         {
           "type": "p",
-          "text": "Después añadió:"
+          "text": "Después añadió:",
+          "id": "blk-84bb440b-7116-4fdb-a6c4-2d5e2bf80b67"
         },
         {
           "type": "p",
-          "text": "–Entonces ¿tú también vienes del cielo? ¿De cuál planeta?"
+          "text": "–Entonces ¿tú también vienes del cielo? ¿De cuál planeta?",
+          "id": "blk-a57164cc-3245-45f1-b3f3-5eafc7b7e330"
         },
         {
           "type": "p",
-          "text": "Esa pequeña luz iluminó un poco el misterio y le pregunté:"
+          "text": "Esa pequeña luz iluminó un poco el misterio y le pregunté:",
+          "id": "blk-cb839154-86fe-47d3-8118-ef8b8b5e7220"
         },
         {
           "type": "p",
-          "text": "–¿Tú… vienes de otro planeta?"
+          "text": "–¿Tú… vienes de otro planeta?",
+          "id": "blk-e8d8e461-427c-4172-92cc-09610796be81"
         },
         {
           "type": "p",
-          "text": "No me respondió; solo movía lentamente la cabeza examinando detenidamente mi avión."
+          "text": "No me respondió; solo movía lentamente la cabeza examinando detenidamente mi avión.",
+          "id": "blk-137adcdf-3538-4277-87f7-2d27f76a0518"
         },
         {
           "type": "p",
-          "text": "–En esto no creo que puedas venir de muy lejos…"
+          "text": "–En esto no creo que puedas venir de muy lejos…",
+          "id": "blk-38f7259e-ed3a-4200-8465-ea6419bed2a6"
         },
         {
           "type": "p",
-          "text": "Y se hundió en un ensueño durante largo tiempo. Había sacado de su bolsillo a mi cordero y se abismó en la contemplación de su tesoro."
+          "text": "Y se hundió en un ensueño durante largo tiempo. Había sacado de su bolsillo a mi cordero y se abismó en la contemplación de su tesoro.",
+          "id": "blk-8e363af9-3c8d-412d-8694-4aa830c45709"
         },
         {
           "type": "p",
-          "text": "Imagínense cómo me intrigó eso de: otro planeta. Y me esforcé en saber algo más:"
+          "text": "Imagínense cómo me intrigó eso de: otro planeta. Y me esforcé en saber algo más:",
+          "id": "blk-d1e382b6-6f2f-4677-be3d-fb7aaa252855"
         },
         {
           "type": "p",
-          "text": "–¿De dónde vienes, muchachito? ¿Dónde está tu casa? ¿Dónde quieres llevarte mi cordero?"
+          "text": "–¿De dónde vienes, muchachito? ¿Dónde está tu casa? ¿Dónde quieres llevarte mi cordero?",
+          "id": "blk-600ba8f2-2ed7-4aa1-a733-9d94b6b55732"
         },
         {
           "type": "p",
-          "text": "Después de meditar silenciosamente me comentó:"
+          "text": "Después de meditar silenciosamente me comentó:",
+          "id": "blk-f64b287d-b030-4ca3-a877-c7d7b3096d62"
         },
         {
           "type": "p",
-          "text": "–Lo bueno de la caja que me has dado es que, por la noche, puede servirle de casa."
+          "text": "–Lo bueno de la caja que me has dado es que, por la noche, puede servirle de casa.",
+          "id": "blk-f1349ab3-b30a-4992-822b-33f13204616a"
         },
         {
           "type": "p",
-          "text": "–¡Sin duda! Y si eres bueno te daré también una cuerda y una estaca para atarlo durante el día."
+          "text": "–¡Sin duda! Y si eres bueno te daré también una cuerda y una estaca para atarlo durante el día.",
+          "id": "blk-7c42f8ef-7f19-4759-9dd9-c6bc2391924d"
         },
         {
           "type": "p",
-          "text": "–¿Atarlo? ¡Qué idea más rara!"
+          "text": "–¿Atarlo? ¡Qué idea más rara!",
+          "id": "blk-79222273-f3bc-4cca-ae1b-63959d382a09"
         },
         {
           "type": "p",
           "text": "–Si no lo atas, se irá por donde sea y puede perderse…",
-          "html": "–Si no lo atas, se irá por donde sea y puede perderse…"
+          "html": "–Si no lo atas, se irá por donde sea y puede perderse…",
+          "id": "blk-8fa2fa8e-b472-4de6-994e-bca1954b8399"
         },
         {
           "type": "p",
-          "text": "Mi amigo empezó a reír."
+          "text": "Mi amigo empezó a reír.",
+          "id": "blk-e974a7d1-36ac-445b-a407-3934f6ad0450"
         },
         {
           "type": "p",
-          "text": "–¿Y dónde quieres que vaya?"
+          "text": "–¿Y dónde quieres que vaya?",
+          "id": "blk-c59e6f20-797d-4f55-8d0b-55f730912941"
         },
         {
           "type": "p",
-          "text": "–No sé, a cualquier lado."
+          "text": "–No sé, a cualquier lado.",
+          "id": "blk-0792cad0-b5bb-4957-87cd-6143b33387b9"
         },
         {
           "type": "p",
-          "text": "Entonces el principito señaló con gravedad:"
+          "text": "Entonces el principito señaló con gravedad:",
+          "id": "blk-acd45ad9-e343-4daf-969c-4a96e11d86df"
         },
         {
           "type": "p",
-          "text": "–¡No importa, mi tierra es muy pequeña!"
+          "text": "–¡No importa, mi tierra es muy pequeña!",
+          "id": "blk-fed9110b-893b-4e58-95cd-6a0fcad164e1"
         },
         {
           "type": "p",
-          "text": "Y agregó, quizá con un poco de melancolía:"
+          "text": "Y agregó, quizá con un poco de melancolía:",
+          "id": "blk-c94fd278-c32e-48af-b4d8-05d5d7852bd4"
         },
         {
           "type": "p",
-          "text": "–A donde vaya no puede ser muy lejos. "
+          "text": "–A donde vaya no puede ser muy lejos. ",
+          "id": "blk-c2ca4deb-b4cb-48ef-bfbf-5d03b7bb970a"
         }
       ],
       "forceOddPage": true
@@ -516,91 +612,111 @@
       "body": [
         {
           "type": "chapter-title",
-          "text": "IV"
+          "text": "IV",
+          "id": "blk-d3efc925-ae3d-4d49-9401-52b488b110be"
         },
         {
           "type": "first-p",
-          "text": "De esta manera supe otra cosa importante: su planeta era apenas más grande que una casa."
+          "text": "De esta manera supe otra cosa importante: su planeta era apenas más grande que una casa.",
+          "id": "blk-383c102e-008b-41be-bf5a-a8f10abfad05"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-aebf2ed7-c4b9-46ee-b100-a8d62f3901e8"
         },
         {
           "type": "image",
           "src": "img-mq5wjq6x-oxqm",
           "width": 197,
-          "height": 196
+          "height": 196,
+          "id": "blk-eaf76cbd-e097-4e6e-afe4-1030c9f2bf2a"
         },
         {
           "type": "p",
-          "text": "Esto no me sorprendió mucho pues sabía muy bien que además de los grandes planetas como la Tierra, Júpiter, Marte, Venus, a los cuales se les ha puesto nombre, existen otros muchos, centenares de ellos, tan, tan pequeños, que a algunos es difícil distinguirlos aun con la ayuda de los telescopios. Cuando un astrónomo descubre uno de ellos, le da por nombre un número. Le llama, por ejemplo, \"Asteroide 3251\"."
+          "text": "Esto no me sorprendió mucho pues sabía muy bien que además de los grandes planetas como la Tierra, Júpiter, Marte, Venus, a los cuales se les ha puesto nombre, existen otros muchos, centenares de ellos, tan, tan pequeños, que a algunos es difícil distinguirlos aun con la ayuda de los telescopios. Cuando un astrónomo descubre uno de ellos, le da por nombre un número. Le llama, por ejemplo, \"Asteroide 3251\".",
+          "id": "blk-fa08aa13-42f1-4708-925b-1f651ee6da57"
         },
         {
           "type": "p",
-          "text": "Tengo suficientes razones para creer que el planeta del principito era el asteroide B-612 el cual, por medio del telescopio, sólo ha sido visto una vez, por un astrónomo turco en 1909."
+          "text": "Tengo suficientes razones para creer que el planeta del principito era el asteroide B-612 el cual, por medio del telescopio, sólo ha sido visto una vez, por un astrónomo turco en 1909.",
+          "id": "blk-ccf799d9-1bf7-4af2-b79c-3c34a196dc43"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-15ac8ad5-f276-4847-adc6-00395c416215"
         },
         {
           "type": "image",
           "src": "img-mq5wkghv-7xip",
           "width": 194,
-          "height": 143
+          "height": 143,
+          "id": "blk-55f7b68c-9685-4394-b8a9-f65743b38df5"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-5756afcb-438a-49b5-a0b8-f224d8a97a3a"
         },
         {
           "type": "image",
           "src": "img-mq5wks70-meee",
           "width": 147,
-          "height": 132
+          "height": 132,
+          "id": "blk-fff5f8b8-8e28-4438-ac56-ced98920b48f"
         },
         {
           "type": "p",
-          "text": "Este astrónomo, aunque demostró su descubrimiento en un Congreso Internacional de Astronomía, nadie le creyó por su extraña manera de vestir. ¡Las personas mayores son así! Felizmente para la reputación del asteroide B-612, un dictador turco obligó a su pueblo vestir a la usanza europea. Entonces, en 1920, ante otro congreso, el astrónomo volvió a dar la noticia de su descubrimiento y como lucía un traje muy elegante, todo el mundo aceptó su demostración."
+          "text": "Este astrónomo, aunque demostró su descubrimiento en un Congreso Internacional de Astronomía, nadie le creyó por su extraña manera de vestir. ¡Las personas mayores son así! Felizmente para la reputación del asteroide B-612, un dictador turco obligó a su pueblo vestir a la usanza europea. Entonces, en 1920, ante otro congreso, el astrónomo volvió a dar la noticia de su descubrimiento y como lucía un traje muy elegante, todo el mundo aceptó su demostración.",
+          "id": "blk-59c02593-85bf-4588-a800-dff32a2bae87"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-e073e416-fbcf-420e-8f0f-1161ce16ffe2"
         },
         {
           "type": "image",
           "src": "img-mq5wnrft-pwrp",
           "width": 297,
-          "height": 206
+          "height": 206,
+          "id": "blk-6b69fe45-93df-4c34-a48c-fd9c85660144"
         },
         {
           "type": "p",
-          "text": "Si les he contado estos detalles sobre el asteroide B-612 y hasta les he confiado su número, es por consideración a las personas mayores. A los mayores les gustan mucho las cifras. Cuando se les habla de un nuevo amigo, jamás preguntan cosas esenciales como: \"¿Qué tono tiene su voz? ¿Qué juegos prefiere? o ¿Si le gusta o no coleccionar mariposas?\" En cambio preguntan: \"¿Qué edad tiene? ¿Cuántos hermanos? ¿Cuánto pesa? ¿Cuánto gana su padre?\" Solamente con estos detalles creen conocerle. Si a una persona mayor le decimos: \"Hay una casa preciosa de ladrillos rosas, con geranios en las ventanas y palomas sobre el tejado\", no pueden imaginarse cómo es. Es preciso decir: \"Hay una casa que vale tantos millones de pesos\". Entonces exclaman entusiasmados: \"¡Oh, qué hermosa es!\""
+          "text": "Si les he contado estos detalles sobre el asteroide B-612 y hasta les he confiado su número, es por consideración a las personas mayores. A los mayores les gustan mucho las cifras. Cuando se les habla de un nuevo amigo, jamás preguntan cosas esenciales como: \"¿Qué tono tiene su voz? ¿Qué juegos prefiere? o ¿Si le gusta o no coleccionar mariposas?\" En cambio preguntan: \"¿Qué edad tiene? ¿Cuántos hermanos? ¿Cuánto pesa? ¿Cuánto gana su padre?\" Solamente con estos detalles creen conocerle. Si a una persona mayor le decimos: \"Hay una casa preciosa de ladrillos rosas, con geranios en las ventanas y palomas sobre el tejado\", no pueden imaginarse cómo es. Es preciso decir: \"Hay una casa que vale tantos millones de pesos\". Entonces exclaman entusiasmados: \"¡Oh, qué hermosa es!\"",
+          "id": "blk-b0d9db7e-85e0-41f4-9731-4fd79aaa0ff6"
         },
         {
           "type": "p",
-          "text": "Si les decimos: \"La prueba de que el principito ha existido es que reía, era encantador y quería un cordero”. No lo entienden ni lo creen, aunque “querer un cordero” sea una prueba irrebatible de existencia; las personas mayores se encogerán de hombros y nos dirán que nos comportamos como niños. Pero si les decimos: \"el planeta de donde venía el principito es el asteroide B-612\", quedarán totalmente convencidas y no dudarán más ¡ni modo!, hay que entender que son así. Los niños deben ser muy condescendientes con las personas mayores."
+          "text": "Si les decimos: \"La prueba de que el principito ha existido es que reía, era encantador y quería un cordero”. No lo entienden ni lo creen, aunque “querer un cordero” sea una prueba irrebatible de existencia; las personas mayores se encogerán de hombros y nos dirán que nos comportamos como niños. Pero si les decimos: \"el planeta de donde venía el principito es el asteroide B-612\", quedarán totalmente convencidas y no dudarán más ¡ni modo!, hay que entender que son así. Los niños deben ser muy condescendientes con las personas mayores.",
+          "id": "blk-ac69763c-b95a-411c-8fe0-5ab958c52cf2"
         },
         {
           "type": "p",
-          "text": "Claro que nosotros, como sabemos comprender la vida, nos burlamos tranquilamente de los números. A mí me habría gustado empezar esta historia a la manera de los cuentos de hadas. Me habría gustado decir:"
+          "text": "Claro que nosotros, como sabemos comprender la vida, nos burlamos tranquilamente de los números. A mí me habría gustado empezar esta historia a la manera de los cuentos de hadas. Me habría gustado decir:",
+          "id": "blk-2d7bba97-3e19-469a-8058-2a3c7f3170b1"
         },
         {
           "type": "p",
-          "text": "\"Érase una vez un principito que vivía en un planeta apenas más grande que él y que tenía necesidad de un amigo…\" Para aquellos que comprenden la vida, esto hubiera parecido más real. No me gustaría que mi libro fuese tomado a la ligera."
+          "text": "\"Érase una vez un principito que vivía en un planeta apenas más grande que él y que tenía necesidad de un amigo…\" Para aquellos que comprenden la vida, esto hubiera parecido más real. No me gustaría que mi libro fuese tomado a la ligera.",
+          "id": "blk-e1020184-7bf4-404d-970d-fb245e6fc210"
         },
         {
           "type": "p",
-          "text": "Siento tristeza al acordarme de mi amigo. Hace ya seis años que él se fue con su cordero y si intento describirlo aquí es sólo con el fin de recordarlo bien. Tener un amigo es un verdadero privilegio y si uno se olvida de ellos se corre el riesgo de volverse como las personas mayores que sólo se interesan por las cifras y los números. Para evitar esto, he comprado una caja de lápices de colores."
+          "text": "Siento tristeza al acordarme de mi amigo. Hace ya seis años que él se fue con su cordero y si intento describirlo aquí es sólo con el fin de recordarlo bien. Tener un amigo es un verdadero privilegio y si uno se olvida de ellos se corre el riesgo de volverse como las personas mayores que sólo se interesan por las cifras y los números. Para evitar esto, he comprado una caja de lápices de colores.",
+          "id": "blk-e3e0cc50-8cc7-450f-bf3a-0e2b431be24b"
         },
         {
           "type": "p",
-          "text": "¡Es muy duro, a mi edad, ponerse a dibujar, cuando en toda la vida no se ha hecho más que boas abiertas y boas cerradas a la edad de seis años! Trataré de hacer retratos lo más parecido que me sea posible, aunque no estoy muy seguro de lograrlo. Uno saldrá bien y otro quizá no tanto. En las proporciones me equivoco también un poco; aquí, el principito es demasiado alto y allá es muy pequeño. Dudo sobre los colores de su traje. Titubeo sobre algo y a veces sale bien pero no siempre. En fin, es posible que me equivoque sobre algunos detalles importantes pero habrá que perdonarme ya que mi amigo no daba explicaciones."
+          "text": "¡Es muy duro, a mi edad, ponerse a dibujar, cuando en toda la vida no se ha hecho más que boas abiertas y boas cerradas a la edad de seis años! Trataré de hacer retratos lo más parecido que me sea posible, aunque no estoy muy seguro de lograrlo. Uno saldrá bien y otro quizá no tanto. En las proporciones me equivoco también un poco; aquí, el principito es demasiado alto y allá es muy pequeño. Dudo sobre los colores de su traje. Titubeo sobre algo y a veces sale bien pero no siempre. En fin, es posible que me equivoque sobre algunos detalles importantes pero habrá que perdonarme ya que mi amigo no daba explicaciones.",
+          "id": "blk-38a30a23-68a2-4c77-bceb-54ab6fb58726"
         },
         {
           "type": "p",
-          "text": "Quizá me creía semejante a él y yo, desgraciadamente, no sé ver un cordero a través de una caja. Es posible que ya sea un poco como las personas mayores. Debo haber envejecido."
+          "text": "Quizá me creía semejante a él y yo, desgraciadamente, no sé ver un cordero a través de una caja. Es posible que ya sea un poco como las personas mayores. Debo haber envejecido.",
+          "id": "blk-a4cfac59-d6d2-4de7-9012-37de2da37708"
         }
       ],
       "forceOddPage": true
@@ -617,62 +733,75 @@
         {
           "type": "chapter-title",
           "text": "V",
-          "html": "V"
+          "html": "V",
+          "id": "blk-10975ecc-00ef-49c2-ab8d-f42eab8d99cf"
         },
         {
           "type": "p",
-          "text": "Cada día, lentamente y al azar de las reflexiones, aprendía algo nuevo sobre el planeta, sobre la partida y sobre el viaje del principito. Fue así como, al tercer día, conocí el drama de los baobabs."
+          "text": "Cada día, lentamente y al azar de las reflexiones, aprendía algo nuevo sobre el planeta, sobre la partida y sobre el viaje del principito. Fue así como, al tercer día, conocí el drama de los baobabs.",
+          "id": "blk-65ef53ad-49e5-458a-9491-55d9fbd625bc"
         },
         {
           "type": "p",
-          "text": "Fue también por el cordero y preocupado por una profunda duda, cuando el principito me preguntó:"
+          "text": "Fue también por el cordero y preocupado por una profunda duda, cuando el principito me preguntó:",
+          "id": "blk-44ce44a6-c1d3-456c-ad05-9223121c0b96"
         },
         {
           "type": "p",
           "text": "—¿Es verdad que los corderos se comen los arbustos?",
-          "html": "—¿Es verdad que los corderos se comen los arbustos?"
+          "html": "—¿Es verdad que los corderos se comen los arbustos?",
+          "id": "blk-13ea2bf7-2bfd-42a0-95c1-28849feefb64"
         },
         {
           "type": "p",
           "text": "—Sí, es cierto.",
-          "html": "—Sí, es cierto."
+          "html": "—Sí, es cierto.",
+          "id": "blk-d04cd266-3008-4d75-b861-d701d87f20b6"
         },
         {
           "type": "p",
           "text": "—¡Ah, qué contento estoy!",
-          "html": "—¡Ah, qué contento estoy!"
+          "html": "—¡Ah, qué contento estoy!",
+          "id": "blk-172e2261-31a6-4d7b-862f-b2dc8cf5a8b5"
         },
         {
           "type": "p",
-          "text": "No comprendí qué importancia tenía para él que los corderos se comieran los arbustos. Pero el principito añadió:"
+          "text": "No comprendí qué importancia tenía para él que los corderos se comieran los arbustos. Pero el principito añadió:",
+          "id": "blk-378808df-cffa-4229-9aa9-446777dd8f76"
         },
         {
           "type": "p",
           "text": "—Entonces se comen también los baobabs.",
-          "html": "—Entonces se comen también los baobabs."
+          "html": "—Entonces se comen también los baobabs.",
+          "id": "blk-4ac38cfb-2ad5-4143-baea-cc596173a5b6"
         },
         {
           "type": "p",
           "text": "Le hice comprender que los baobabs no son arbustos, sino árboles tan grandes como iglesias que incluso llevando todo un rebaño de elefantes, no lograría acabar con un solo baobab.",
-          "html": "Le hice comprender que los baobabs no son arbustos, sino&nbsp;árboles tan grandes como iglesias que incluso llevando todo un rebaño de elefantes, no lograría acabar con un solo baobab."
+          "html": "Le hice comprender que los baobabs no son arbustos, sino&nbsp;árboles tan grandes como iglesias que incluso llevando todo un rebaño de elefantes, no lograría acabar con un solo baobab.",
+          "id": "blk-5038c652-ce20-45a1-b6d6-511dae3d9fef"
         },
         {
           "type": "p",
-          "text": "Esto del rebaño de elefantes hizo reír mucho al principito."
+          "text": "Esto del rebaño de elefantes hizo reír mucho al principito.",
+          "id": "blk-04ec2cc4-591c-4a5f-b656-4493698288b3"
         },
         {
           "type": "p",
-          "text": "—Habría que ponerlos unos sobre otros…"
+          "text": "—Habría que ponerlos unos sobre otros…",
+          "id": "blk-8478e2cb-7eac-4d67-85d7-7622dd1f2a06"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-2e6625cb-84d3-4585-9080-8702d7ccb042"
         },
         {
           "type": "image",
           "src": "img-mq5wgcr9-jf9d",
           "width": 194,
-          "height": 193
+          "height": 193,
+          "id": "blk-532c5a32-ff11-48da-ae54-6fcdbb6307eb"
         },
         {
           "type": "p",
@@ -680,65 +809,78 @@
           "width": 194,
           "height": 193,
           "caption": "\n\n\n",
-          "text": "Y luego añadió juiciosamente:"
+          "text": "Y luego añadió juiciosamente:",
+          "id": "blk-f182a077-802b-4cab-8adb-f5197f68d1b0"
         },
         {
           "type": "p",
           "text": "—Los baobabs comienzan por ser muy pequeñitos.",
-          "html": "—Los baobabs comienzan por ser muy pequeñitos."
+          "html": "—Los baobabs comienzan por ser muy pequeñitos.",
+          "id": "blk-913be253-b160-4a38-bea7-ab64c694788e"
         },
         {
           "type": "p",
           "text": "—Es cierto. Pero… ¿por qué quieres que tus corderos se coman a los baobabs?",
-          "html": "—Es cierto. Pero… ¿por qué quieres que tus corderos se coman a los baobabs?"
+          "html": "—Es cierto. Pero… ¿por qué quieres que tus corderos se coman a los baobabs?",
+          "id": "blk-03ac21d5-0fb9-4c34-aa9d-59bb39b1ccae"
         },
         {
           "type": "p",
           "text": "Me contestó: «¡Vamos!» como si fuera algo evidente.",
-          "html": "Me contestó: «¡Vamos!» como si fuera algo evidente."
+          "html": "Me contestó: «¡Vamos!» como si fuera algo evidente.",
+          "id": "blk-ee18d469-3143-4bfa-a421-942f331bd054"
         },
         {
           "type": "p",
           "text": "Me fue necesario un gran esfuerzo para comprender el problema:",
-          "html": "Me fue necesario un gran esfuerzo para comprender el problema:"
+          "html": "Me fue necesario un gran esfuerzo para comprender el problema:",
+          "id": "blk-ad1fd25a-28cf-40c6-abe5-ead518e43749"
         },
         {
           "type": "p",
-          "text": "En el planeta del principito había, como en todos los planetas, hierbas buenas y hierbas malas y, por lo tanto, semillas de unas y otras. De las buenas semillas salían buenas hierbas y de las semillas malas, malas hierbas. Las semillas duermen en el secreto de la tierra durante un tiempo, hasta que, un buen día, una de ellas despierta en una encantadora ramita que mira hacia el sol. Si se trata de una ramita de rábano o de rosal, se puede dejar que crezca como quiera; en cambio, si fuera una mala hierba, es preciso arrancarla inmediatamente. El suelo del planeta del principito estaba infestado de semillas de baobabs que si no se arrancan acabando de surgir y en cuanto se les reconoce, pueden cubrir todo el planeta, perforarlo con sus raíces y, si el planeta es muy pequeño y los baobabs son muchos, lo hacen estallar."
+          "text": "En el planeta del principito había, como en todos los planetas, hierbas buenas y hierbas malas y, por lo tanto, semillas de unas y otras. De las buenas semillas salían buenas hierbas y de las semillas malas, malas hierbas. Las semillas duermen en el secreto de la tierra durante un tiempo, hasta que, un buen día, una de ellas despierta en una encantadora ramita que mira hacia el sol. Si se trata de una ramita de rábano o de rosal, se puede dejar que crezca como quiera; en cambio, si fuera una mala hierba, es preciso arrancarla inmediatamente. El suelo del planeta del principito estaba infestado de semillas de baobabs que si no se arrancan acabando de surgir y en cuanto se les reconoce, pueden cubrir todo el planeta, perforarlo con sus raíces y, si el planeta es muy pequeño y los baobabs son muchos, lo hacen estallar.",
+          "id": "blk-e866153d-e260-4f43-8507-7f3ba5a84e81"
         },
         {
           "type": "p",
-          "text": "«Es una cuestión de disciplina», me dijo más tarde el principito. «Después de que uno termina su baño matinal, hay también que limpiar la casa, es decir, acicalar cuidadosamente al planeta. Hay que arrancar los baobabs en cuanto se les distingue de los rosales pues se parecen mucho cuando son pequeñitos. Es fácil aunque fastidioso»."
+          "text": "«Es una cuestión de disciplina», me dijo más tarde el principito. «Después de que uno termina su baño matinal, hay también que limpiar la casa, es decir, acicalar cuidadosamente al planeta. Hay que arrancar los baobabs en cuanto se les distingue de los rosales pues se parecen mucho cuando son pequeñitos. Es fácil aunque fastidioso».",
+          "id": "blk-5889445c-39b6-4b76-b558-e514df658041"
         },
         {
           "type": "p",
-          "text": ""
+          "text": "",
+          "id": "blk-adb89a5a-ac13-4dcc-9ba5-54168c64260d"
         },
         {
           "type": "image",
           "src": "img-mq5wgque-52m3",
           "width": 180,
           "height": 148,
-          "flipV": true
+          "flipV": true,
+          "id": "blk-e93a9096-c430-4135-a771-129bb367ded5"
         },
         {
           "type": "p",
           "text": "El principito aconsejó que me propusiera a realizar un hermoso dibujo para que los niños de mi tierra comprendieran bien estas ideas. «Si alguna vez viajan —me decía— esto podrá servirles mucho. A veces no hay inconveniente en dejar para un poco más tarde el trabajo; pero tratándose de baobabs, el retraso es siempre fatal. Yo he conocido un planeta, habitado por un perezoso que descuidó tres arbustos…»",
-          "html": "El principito aconsejó que me propusiera a realizar un hermoso dibujo para que los niños de mi tierra&nbsp;comprendieran bien&nbsp;estas&nbsp;ideas. «Si alguna vez viajan —me decía— esto podrá servirles&nbsp;mucho. A veces no hay inconveniente en dejar para un&nbsp;poco más tarde el trabajo; pero tratándose de baobabs, el&nbsp;retraso es siempre fatal. Yo he conocido un planeta,&nbsp;habitado por un perezoso que descuidó tres arbustos…»"
+          "html": "El principito aconsejó que me propusiera a realizar un hermoso dibujo para que los niños de mi tierra&nbsp;comprendieran bien&nbsp;estas&nbsp;ideas. «Si alguna vez viajan —me decía— esto podrá servirles&nbsp;mucho. A veces no hay inconveniente en dejar para un&nbsp;poco más tarde el trabajo; pero tratándose de baobabs, el&nbsp;retraso es siempre fatal. Yo he conocido un planeta,&nbsp;habitado por un perezoso que descuidó tres arbustos…»",
+          "id": "blk-4144c06a-7a3c-4e13-b04e-0558e304ba11"
         },
         {
           "type": "p",
-          "text": "Siguiendo las indicaciones del principito, realicé el dibujo. No me gusta adoptar el papel de moralista pero como el peligro de los baobabs es tan desconocido y el riesgo que puede correr quien llegue a perderse en un asteroide es tan grande, no dudo en hacer una excepción y exclamar: «¡Niños, atención a los baobabs!» Y, sólo con el fin de advertir a mis amigos de los peligros a los que se exponen desde hace tiempo sin saberlo, es por lo que trabajé con ahínco en este dibujo. La lección que con él se puede dar, vale la pena."
+          "text": "Siguiendo las indicaciones del principito, realicé el dibujo. No me gusta adoptar el papel de moralista pero como el peligro de los baobabs es tan desconocido y el riesgo que puede correr quien llegue a perderse en un asteroide es tan grande, no dudo en hacer una excepción y exclamar: «¡Niños, atención a los baobabs!» Y, sólo con el fin de advertir a mis amigos de los peligros a los que se exponen desde hace tiempo sin saberlo, es por lo que trabajé con ahínco en este dibujo. La lección que con él se puede dar, vale la pena.",
+          "id": "blk-e4d18012-73d4-43c2-8212-67a06dade5e4"
         },
         {
           "type": "p",
-          "text": "Es muy posible que alguien se pregunte por qué no realicé otros dibujos tan admirables como el de los baobabs. La respuesta es muy sencilla: cuando dibujé los baobabs estaba animado por un sentimiento de urgencia."
+          "text": "Es muy posible que alguien se pregunte por qué no realicé otros dibujos tan admirables como el de los baobabs. La respuesta es muy sencilla: cuando dibujé los baobabs estaba animado por un sentimiento de urgencia.",
+          "id": "blk-bc23e75e-9fe5-4efa-8131-d30e04e94d0f"
         },
         {
           "type": "image",
           "src": "img-mq5web3r-e5g5",
           "width": 233,
-          "height": 273
+          "height": 273,
+          "id": "blk-a01af288-738d-480a-818f-51f75a86ccff"
         }
       ],
       "forceOddPage": true
@@ -755,71 +897,86 @@
         {
           "type": "chapter-title",
           "text": "VI",
-          "html": "VI"
+          "html": "VI",
+          "id": "blk-ec955dc3-f719-4a8d-8161-4141b43d8ad7"
         },
         {
           "type": "p",
-          "text": "¡Ah, mi pequeño amigo, cómo he ido comprendiendo lentamente tu vida melancólica! Durante mucho tiempo tu única distracción fue observar la dulzura de los atardeceres. Esto lo supe al cuarto día cuando me dijiste:"
+          "text": "¡Ah, mi pequeño amigo, cómo he ido comprendiendo lentamente tu vida melancólica! Durante mucho tiempo tu única distracción fue observar la dulzura de los atardeceres. Esto lo supe al cuarto día cuando me dijiste:",
+          "id": "blk-00a1787a-3624-460d-aa7a-8f8f0506326c"
         },
         {
           "type": "p",
           "text": "—Me gustan mucho las puestas de sol. Vamos a ver una.",
-          "html": "—Me gustan mucho las puestas de sol. Vamos a ver una."
+          "html": "—Me gustan mucho las puestas de sol. Vamos a ver una.",
+          "id": "blk-c6c5768d-4333-4cc7-8188-de4c6dfc05e5"
         },
         {
           "type": "p",
           "text": "—Hay que esperar…",
-          "html": "—Hay que esperar…"
+          "html": "—Hay que esperar…",
+          "id": "blk-9f1f6d3f-da97-4470-8b19-cdf88726b39a"
         },
         {
           "type": "p",
           "text": "—¿Esperar qué?",
-          "html": "—¿Esperar qué?"
+          "html": "—¿Esperar qué?",
+          "id": "blk-8848cf19-7fb9-40d5-a996-139e77bf43cf"
         },
         {
           "type": "p",
-          "text": "—Que el sol se ponga."
+          "text": "—Que el sol se ponga.",
+          "id": "blk-bd3fefda-dbe2-4cc0-bdbd-450c04534c46"
         },
         {
           "type": "p",
-          "text": "Primero te sorprendiste; después te reíste de ti mismo. Y dijiste:"
+          "text": "Primero te sorprendiste; después te reíste de ti mismo. Y dijiste:",
+          "id": "blk-a072d5fa-5951-4700-a90f-372a32a2114b"
         },
         {
           "type": "p",
-          "text": "—¡Siempre creo que estoy en mi tierra!"
+          "text": "—¡Siempre creo que estoy en mi tierra!",
+          "id": "blk-908230f8-ec4a-4754-8013-c32e55cc0339"
         },
         {
           "type": "image",
           "src": "img-mq5yhemf-k8bd",
           "width": 279,
-          "height": 152
+          "height": 152,
+          "id": "blk-47bbf178-e74e-4022-88c4-93b71f7fe681"
         },
         {
           "type": "p",
           "text": "Aquí, todos sabemos que cuando es mediodía en Estados Unidos, en Francia se está poniendo el sol. Sería necesario trasladarse a Francia en un minuto para verlo, pero desgraciadamente, Francia está lejos. En cambio, en tu pequeño planeta bastaba arrastrar la silla un poco para observar una maravillosa puesta de sol cada vez que lo deseabas…",
-          "html": "Aquí, todos sabemos que cuando es mediodía en Estados&nbsp;Unidos, en Francia se está poniendo el sol. Sería necesario&nbsp;trasladarse a Francia en un minuto para verlo, pero&nbsp;desgraciadamente, Francia está lejos. En cambio, en tu&nbsp;pequeño planeta bastaba arrastrar la silla un poco para&nbsp;observar una maravillosa puesta de sol cada vez que lo deseabas…"
+          "html": "Aquí, todos sabemos que cuando es mediodía en Estados&nbsp;Unidos, en Francia se está poniendo el sol. Sería necesario&nbsp;trasladarse a Francia en un minuto para verlo, pero&nbsp;desgraciadamente, Francia está lejos. En cambio, en tu&nbsp;pequeño planeta bastaba arrastrar la silla un poco para&nbsp;observar una maravillosa puesta de sol cada vez que lo deseabas…",
+          "id": "blk-df46730d-a2d6-473d-b51a-265f953ffc5b"
         },
         {
           "type": "p",
           "text": "—¡Un día vi ponerse el sol cuarenta y tres veces!",
-          "html": "—¡Un día vi ponerse el sol cuarenta y tres veces!"
+          "html": "—¡Un día vi ponerse el sol cuarenta y tres veces!",
+          "id": "blk-29bba971-eb7f-4e63-b879-44e9defa5beb"
         },
         {
           "type": "p",
-          "text": "Y, un poco más tarde, añadiste:"
+          "text": "Y, un poco más tarde, añadiste:",
+          "id": "blk-b145f547-9acc-409a-ad59-74d452ceb64b"
         },
         {
           "type": "p",
-          "text": "—¿Sabes? Cuando uno está demasiado triste es bueno ver las puestas de sol."
+          "text": "—¿Sabes? Cuando uno está demasiado triste es bueno ver las puestas de sol.",
+          "id": "blk-ee14cc70-db0f-4592-bba4-6844a971c7eb"
         },
         {
           "type": "p",
           "text": "—Ese día estabas muy triste ¿verdad?",
-          "html": "—Ese día estabas muy triste ¿verdad?"
+          "html": "—Ese día estabas muy triste ¿verdad?",
+          "id": "blk-60ef8441-e062-4d94-9ac8-167630d16a78"
         },
         {
           "type": "p",
-          "text": "Pero el principito no respondió."
+          "text": "Pero el principito no respondió.",
+          "id": "blk-8bf3fc7d-c417-4e8c-85c9-8747b3e9be3e"
         }
       ],
       "forceOddPage": true
@@ -847,5 +1004,938 @@
   "writingGoals": {
     "targetWords": 0,
     "deadline": ""
+  },
+  "characters": [],
+  "locations": [],
+  "review": {
+    "mode": "track",
+    "round": {
+      "id": "rev-8557d968-2407-454f-877b-b304e99bab0b",
+      "author": "—",
+      "role": "corrector",
+      "startedAt": "2026-11-05T19:44:53.404Z",
+      "baselineRevision": 0,
+      "schemaVersion": 2
+    },
+    "baseline": [
+      {
+        "id": "ch-front",
+        "kind": "front",
+        "label": "Frontmatter",
+        "title": "Páginas de cortesía",
+        "status": "ok",
+        "words": 40,
+        "forceOddPage": true,
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "El Principito",
+            "id": "blk-4438f68c-b0fb-476b-a9e6-2320de67205c"
+          },
+          {
+            "type": "page-break",
+            "id": "blk-ca8bd223-22da-4230-b0d9-0ce725b321e0"
+          },
+          {
+            "type": "chapter-title",
+            "text": "El Principito",
+            "id": "blk-091be72c-8232-4b2b-ace3-3bdb59572e30"
+          },
+          {
+            "type": "chapter-title",
+            "text": "Antoine de Saint-Exupéry",
+            "id": "blk-010eb8ce-a63b-4052-93c8-20cda5414504"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "html": "<br>",
+            "id": "blk-0bd3d76f-7e96-4cac-b3df-3276228ae4b4"
+          },
+          {
+            "type": "page-break",
+            "id": "blk-f1d8d3ac-8b6b-4877-9bff-d4e1826d2a75"
+          },
+          {
+            "type": "p",
+            "text": "A Léon Werth:",
+            "html": "A Léon Werth:",
+            "id": "blk-0aa86a61-2700-416d-9cdd-e903ab529f4e"
+          },
+          {
+            "type": "blockquote",
+            "text": "Pido perdón a los niños por haber dedicado este libro a una persona mayor. Tengo una seria excusa: esta persona mayor es el mejor amigo que tengo en el mundo.",
+            "id": "blk-84a75169-90d6-451f-adc9-e4f550094a17"
+          }
+        ],
+        "readMin": 1
+      },
+      {
+        "id": "ch-1",
+        "kind": "chapter",
+        "label": "I",
+        "title": "I",
+        "status": "ok",
+        "words": 422,
+        "forceOddPage": true,
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "I",
+            "id": "blk-e7f6bb5b-375a-470a-a2bd-9b4523b02a5c"
+          },
+          {
+            "type": "first-p",
+            "text": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+            "html": "Cuando yo tenía seis años vi en el libro sobre la selva virgen: Historias vividas, una grandiosa estampa. Representaba una serpiente boa comiéndose a una fiera. He aquí la copia del dibujo.",
+            "id": "blk-294baf89-e877-48bc-a2ac-bc67142d6066"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5sli4q-kps8",
+            "width": 222,
+            "height": 134,
+            "id": "blk-cf334995-d78e-49d7-905f-2a953e69e21d"
+          },
+          {
+            "type": "p",
+            "text": "En el libro se afirmaba: «La serpiente boa se traga su presa entera, sin masticarla. Luego ya no puede moverse y duerme durante los seis meses que dura su digestión».",
+            "id": "blk-7c9522df-18a1-440a-bb94-42586b72c83b"
+          },
+          {
+            "type": "p",
+            "text": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
+            "html": "Reflexioné mucho en ese momento sobre las aventuras de la jungla y a mi vez logré trazar con un lápiz de colores mi primer dibujo. Mi dibujo número 1 era de esta manera:",
+            "id": "blk-775046a7-fbed-41b4-b40e-7a931cf67a4c"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5sm22y-5vxp",
+            "width": 241,
+            "height": 80,
+            "rotation": 180,
+            "flipH": true,
+            "id": "blk-72b085cc-032f-43e8-b9f8-4db8d1b36f71"
+          },
+          {
+            "type": "p",
+            "text": "Enseñé mi obra de arte a las personas mayores y les pregunté si mi dibujo les daba miedo.",
+            "id": "blk-0d132e8f-75c4-483d-ba33-2db39503da32"
+          },
+          {
+            "type": "p",
+            "text": "—¿Por qué habría de asustar un sombrero? —me respondieron.",
+            "id": "blk-801de037-b00e-43ad-a1a3-164fc82e6ae1"
+          },
+          {
+            "type": "p",
+            "text": "Mi dibujo no representaba un sombrero. Representaba una serpiente boa que digiere un elefante. Dibujé entonces el interior de la serpiente boa a fin de que las personas mayores pudieran comprender. Siempre estas personas tienen necesidad de explicaciones. Mi dibujo número 2 era así:",
+            "id": "blk-0931ab25-acd8-4e9a-9c8d-ab0ed103ef90"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5taig6-ctlx",
+            "width": 242,
+            "height": 92,
+            "flipH": true,
+            "rotation": 180,
+            "id": "blk-1c2a2584-145f-49fc-8ea6-360ee27d5360"
+          },
+          {
+            "type": "p",
+            "text": "Las personas mayores me aconsejaron abandonar el dibujo de serpientes boas, ya fueran abiertas o cerradas, y poner más interés en la geografía, la historia, el cálculo y la gramática. De esta manera a la edad de seis años abandoné una magnífica carrera de pintor.",
+            "id": "blk-16453889-9cbd-4911-9881-cd18e6af436e"
+          },
+          {
+            "type": "p",
+            "text": "Había quedado desilusionado por el fracaso de mis dibujos número 1 y número 2.",
+            "id": "blk-7d4929ff-fe56-493a-9c3f-84a8dc671d4c"
+          },
+          {
+            "type": "p",
+            "text": "Las personas mayores son incapaces de comprender algo por sí solas y es muy fastidioso para los niños darles explicaciones una y otra vez.",
+            "id": "blk-effa5078-064b-400c-8505-0c1c6de02c2e"
+          },
+          {
+            "type": "p",
+            "text": "Así, tuve que elegir otro oficio y aprendí a pilotear aviones. He volado un poco por todo el mundo y, en efecto, la geografía me ha servido mucho; al primer vistazo puedo distinguir perfectamente China de Arizona. Esto es muy útil, sobre todo si se pierde uno durante la noche. ",
+            "id": "blk-668b9e63-bcb4-4b10-a114-f2a0dab066df"
+          },
+          {
+            "type": "p",
+            "text": "A lo largo de mi vida he tenido multitud de contactos con multitud de gente seria. Viví mucho con personas mayores y las he conocido muy de cerca; pero esto no ha mejorado mi opinión sobre ellas.",
+            "id": "blk-ac301e5e-2c1a-44aa-a1f3-863844c7f553"
+          },
+          {
+            "type": "p",
+            "text": "Cuando me he encontrado con alguien que parecía lúcido, he ensayado la experiencia de mostrar mi dibujo número 1 que he conservado siempre. Quería saber si era verdaderamente un ser comprensivo pero siempre contestaban: \"Es un sombrero\". Me abstenía entonces de hablarles de la serpiente boa, de la selva virgen y de las estrellas. Poniéndome a su altura, les hablaba de su mundo: del bridge, del golf, de política y de corbatas. Y la persona mayor quedaba contentísima de conocer a un hombre tan razonable. ",
+            "html": "Cuando me he encontrado con alguien que parecía lúcido,\nhe ensayado la experiencia de mostrar mi dibujo número 1\nque he conservado siempre. Quería saber si era\nverdaderamente un ser comprensivo pero siempre\ncontestaban: \"Es un sombrero\". Me abstenía entonces de\nhablarles de la serpiente boa, de la selva virgen y de las\nestrellas. Poniéndome a su altura, les hablaba de su&nbsp;mundo: del bridge, del golf, de política y de corbatas. Y la\npersona mayor quedaba contentísima de conocer a un\nhombre tan razonable.&nbsp;",
+            "id": "blk-0bc3847a-abeb-454f-a514-dc1815234130"
+          }
+        ],
+        "number": 1,
+        "readMin": 3
+      },
+      {
+        "id": "ch-2",
+        "kind": "chapter",
+        "label": "II",
+        "title": "II",
+        "status": "ok",
+        "words": 572,
+        "forceOddPage": true,
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "II",
+            "id": "blk-edcfbb10-a3ff-4201-b81c-94baef9221bd"
+          },
+          {
+            "type": "first-p",
+            "text": "Viví así, solo, sin nadie con quien hablar verdaderamente, hasta que tuve una avería en el desierto del Sahara, hace seis años. Algo se había roto en mi motor. Y como no tenía conmigo ni mecánico ni pasajeros, me dispuse a realizar, solo, una reparación difícil. Era, para mí, cuestión de vida o muerte. Tenía agua apenas para ocho días.",
+            "html": "Viví así, solo, sin nadie con quien hablar verdaderamente, hasta que tuve una avería en el desierto del Sahara, hace seis años. Algo se había roto en mi motor. Y como no tenía conmigo ni mecánico ni pasajeros, me dispuse a realizar, solo, una reparación difícil. Era, para mí, cuestión de vida o muerte. Tenía agua apenas para ocho días.",
+            "id": "blk-d7924803-c1fb-4412-8a21-9c3fb27cded3"
+          },
+          {
+            "type": "p",
+            "text": "La primera noche dormí sobre la arena a mil millas de toda tierra habitada. Estaba más aislado que un náufrago sobre una balsa en medio del océano. Imagínense, pues, mi sorpresa cuando, al romper el día, me despertó una extraña vocecita que decía:",
+            "id": "blk-ef3705af-2f76-4308-8bff-87788959e2b7"
+          },
+          {
+            "type": "p",
+            "text": "—¡Por favor..., dibújame un cordero!",
+            "html": "—¡Por favor..., dibújame un cordero!",
+            "id": "blk-bd7a082c-8203-41b4-9830-7e3de77c33d1"
+          },
+          {
+            "type": "p",
+            "text": "—¿Eh?",
+            "html": "—¿Eh?",
+            "id": "blk-b79a4b0f-cc5f-4884-be24-c25a8da66081"
+          },
+          {
+            "type": "p",
+            "text": "—¡Píntame un cordero!",
+            "html": "—¡Píntame un cordero! ",
+            "id": "blk-5f143de2-7e3a-4c37-ab5c-cc3c5af448a6"
+          },
+          {
+            "type": "p",
+            "text": "Me puse en pie de un brinco y frotándome los ojos miré a mí alrededor. Descubrí a un extraordinario muchachito que me observaba gravemente. Ahí tienen el mejor retrato que más tarde logré hacer de él, aunque reconozco que mi dibujo no es tan encantador como el original. La culpa no es mía, las personas mayores me desanimaron de mi carrera de pintor a la edad de seis años, cuando sólo había aprendido a dibujar boas cerradas y boas abiertas.",
+            "id": "blk-9b641faa-1cad-4f16-a2e3-4b87c8364db4"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5tcal5-yoim",
+            "width": 233,
+            "height": 240,
+            "id": "blk-de648afe-f977-4db8-83cf-6b7290480e11"
+          },
+          {
+            "type": "p",
+            "text": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
+            "html": "Miré, fascinado, aquella aparición. No hay que olvidar que me encontraba a unas mil millas de distancia del lugar habitado más próximo y el muchachito no parecía ni perdido, ni muerto de cansancio, de hambre, de sed o de miedo. No tenía la apariencia de un niño perdido en el desierto a mil millas de distancia del lugar habitado más próximo. Cuando logré, por fin, poder hablar, pregunté:",
+            "id": "blk-c9c97768-52e6-44b6-bc51-23f040f8c0b0"
+          },
+          {
+            "type": "p",
+            "text": "—Pero… ¿qué haces tú aquí?",
+            "html": "—Pero… ¿qué haces tú aquí?",
+            "id": "blk-89432452-6378-40b6-b158-adadb935c660"
+          },
+          {
+            "type": "p",
+            "text": "Y él repitió suave y lentamente, como algo muy importante:",
+            "id": "blk-8e4742c5-4c2f-4adc-afae-25c9b7a90d70"
+          },
+          {
+            "type": "p",
+            "text": "—¡Por favor… píntame un cordero!",
+            "html": "—¡Por favor… píntame un cordero!",
+            "id": "blk-ec918105-03e5-4b7f-a7b1-fccd06557671"
+          },
+          {
+            "type": "p",
+            "text": "Cuando el misterio es tan impresionante, uno no se atreve a contravenir. Por absurdo que aquello pareciera, a mil millas de distancia de algún lugar habitado y en peligro de muerte, saqué del bolsillo una hoja de papel y una pluma fuente. Recordé que yo había estudiado geografía, historia, cálculo y gramática y le dije al muchachito (algo malhumorado) que no sabía dibujar. ",
+            "id": "blk-a4888a5f-19cc-4532-aa77-054279e0f8a4"
+          },
+          {
+            "type": "p",
+            "text": "—No importa, ¡Píntame un cordero!",
+            "html": "—No importa, ¡Píntame un cordero!",
+            "id": "blk-6e7c577f-7ad9-42f4-b32c-68475a6c5997"
+          },
+          {
+            "type": "p",
+            "text": "Como nunca había dibujado un cordero, repetí uno de los dos únicos dibujos que era capaz de realizar: el de la boa cerrada. Y quedé absorto al oírle decir:",
+            "id": "blk-b8e39643-f5b7-43b4-801b-d9eadab32750"
+          },
+          {
+            "type": "p",
+            "text": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!",
+            "html": "—¡No, no! No quiero un elefante dentro de una serpiente. La serpiente es muy peligrosa y el elefante ocupa mucho sitio. En mi tierra todo es muy pequeñito. Necesito un cordero. ¡Por favor, píntame un cordero!",
+            "id": "blk-6c53e230-f42a-40ff-a599-df8b7b097282"
+          },
+          {
+            "type": "p",
+            "text": "Dibujé un cordero. Lo miró atentamente y dijo:",
+            "id": "blk-d1161c49-728f-40f1-a6d2-7d1e29da0f35"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5tddf3-lypa",
+            "width": 113,
+            "height": 98,
+            "flipV": true,
+            "id": "blk-62667a50-6ba1-4f95-a42a-d8ee1c5c1b96"
+          },
+          {
+            "type": "p",
+            "text": "—Éste está muy enfermo. Por favor haz otro.",
+            "html": "—Éste está muy enfermo. Por favor haz otro.",
+            "id": "blk-d67633c7-a257-4bbc-852f-5599bed2e900"
+          },
+          {
+            "type": "p",
+            "text": "Volví a dibujar. ",
+            "id": "blk-88ef9845-4cca-4731-b05b-bcfa3620173b"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5tdp8y-lijx",
+            "width": 126,
+            "height": 119,
+            "flipV": true,
+            "id": "blk-9a932333-c383-4d04-9375-d5ba88396377"
+          },
+          {
+            "type": "p",
+            "text": "Mi amigo sonrió gentilmente, con indulgencia, y dijo:",
+            "id": "blk-6a1b31a8-2ad0-404d-bd1b-c6a61022d68e"
+          },
+          {
+            "type": "p",
+            "text": "–¿Ves? Esto no es un cordero, es un carnero. Tiene cuernos…",
+            "id": "blk-b5ac62d1-ca36-4557-887b-16f86507e58a"
+          },
+          {
+            "type": "p",
+            "text": "Realicé nuevamente otro dibujo y también fue rechazado como los anteriores.",
+            "id": "blk-ff629700-ee2f-41d8-bb90-cd230a08b4d7"
+          },
+          {
+            "type": "p",
+            "text": "–Es demasiado viejo. Quiero un cordero que viva mucho tiempo.",
+            "id": "blk-b58a700d-cf3e-424e-8a8d-e2e8344445c9"
+          },
+          {
+            "type": "p",
+            "text": "Ya impaciente y deseoso de comenzar a desmontar el motor, tracé rápidamente este dibujo, se lo enseñé, y dije:",
+            "id": "blk-088fc079-f8c5-49b4-af78-e5c3f9df8070"
+          },
+          {
+            "type": "p",
+            "text": "—Esta es la caja. El cordero que quieres está adentro.",
+            "id": "blk-789d2126-a0be-4e51-901d-fc3f9e6d4950"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5te2zm-4b41",
+            "width": 200,
+            "height": 103,
+            "flipV": true,
+            "id": "blk-5b7b3701-f428-4df2-a35d-45062cad4da7"
+          },
+          {
+            "type": "p",
+            "text": "Me sorprendí al ver iluminado el rostro de mi joven juez:",
+            "id": "blk-11bd59e5-b8ab-440e-be25-69bad51a1368"
+          },
+          {
+            "type": "p",
+            "text": "—¡Oh, es exactamente como yo lo quería! ¿Crees que se necesite mucha hierba para este cordero?",
+            "id": "blk-293788f1-297c-4af0-933b-1b20d39d5a1e"
+          },
+          {
+            "type": "p",
+            "text": "—¿Por qué?",
+            "id": "blk-f24e677b-1121-431f-ba59-a47d91f52baa"
+          },
+          {
+            "type": "p",
+            "text": "—Porque en mi tierra todo es muy pequeño…",
+            "id": "blk-d3bd790a-7667-4cf4-b1d2-2c1b9770bc0f"
+          },
+          {
+            "type": "p",
+            "text": "—Será suficiente. El corderito que te he dado también es pequeño.",
+            "id": "blk-a44a92ea-65fd-4a56-8b2f-c109bae544cb"
+          },
+          {
+            "type": "p",
+            "text": "Se inclinó hacia el dibujo y exclamó:",
+            "id": "blk-a7b83f04-950f-41b1-ab97-b7c00ddba3d5"
+          },
+          {
+            "type": "p",
+            "text": "—¡Bueno, no tanto…! ¡Ah, se ha quedado dormido!",
+            "id": "blk-8bbb1452-898a-4d0e-89bd-7881d2db123b"
+          },
+          {
+            "type": "p",
+            "text": "Y así fue como conocí al principito. ",
+            "id": "blk-d3fa9a1c-aa21-4118-a6a5-4cb8279264f3"
+          }
+        ],
+        "number": 2,
+        "readMin": 3
+      },
+      {
+        "id": "ch-mp2156a9",
+        "kind": "chapter",
+        "title": "III",
+        "words": 324,
+        "readMin": 2,
+        "number": 3,
+        "status": "ok",
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "III",
+            "id": "blk-6019e445-0887-4bb5-98b0-a26d0b79de4e"
+          },
+          {
+            "type": "first-p",
+            "text": "Necesité tiempo para comprender de dónde venía. El principito, que siempre insistía con sus preguntas, no parecía oír las mías. Fueron frases al azar las que, poco a poco, me fueron revelando sus secretos. Así, cuando distinguió por vez primera mi avión (no dibujaré mi avión, por tratarse de algo demasiado complicado para mí) me preguntó:",
+            "id": "blk-6cfb13b2-17ba-443a-837a-0b4704394e76"
+          },
+          {
+            "type": "p",
+            "text": "–¿Qué cosa es esa?",
+            "id": "blk-97fcb2d6-cc10-4d1f-b598-14b66191d9f5"
+          },
+          {
+            "type": "p",
+            "text": "–Esa no es una cosa. Es un avión, vuela. Es mi avión.",
+            "html": "–<i>Esa</i> no es una cosa. Es un avión, vuela. Es <i>mi</i> avión.",
+            "id": "blk-0ca8e5a3-5823-4ae1-a1b1-4a33c19d3ba3"
+          },
+          {
+            "type": "p",
+            "text": "Me sentí orgulloso al decir que mi avión volaba. Él entonces gritó:",
+            "html": "Me sentí orgulloso al decir que mi avión volaba. Él&nbsp;entonces gritó:",
+            "id": "blk-cf2a4b81-3abb-43d8-bfa2-8217a7d9cfd4"
+          },
+          {
+            "type": "p",
+            "text": "–¡Cómo! ¿Has caído del cielo?",
+            "id": "blk-26b73ef5-72df-4229-ab92-49f1c848663c"
+          },
+          {
+            "type": "p",
+            "text": "–Sí –le dije modestamente.",
+            "id": "blk-2a764acf-f4ad-4028-9324-25f8d5595eb9"
+          },
+          {
+            "type": "p",
+            "text": "–¡Ah, es curioso!",
+            "id": "blk-6b3f31bb-2f42-40d1-a558-a4f057e4c49d"
+          },
+          {
+            "type": "p",
+            "text": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio.",
+            "html": "Y lanzó una graciosa carcajada que de momento me irritó pues me gusta que mis desgracias se tomen en serio.",
+            "id": "blk-17364922-e9cf-4ac3-ad3c-2a2530659850"
+          },
+          {
+            "type": "p",
+            "text": "Después añadió:",
+            "id": "blk-84bb440b-7116-4fdb-a6c4-2d5e2bf80b67"
+          },
+          {
+            "type": "p",
+            "text": "–Entonces ¿tú también vienes del cielo? ¿De cuál planeta?",
+            "id": "blk-a57164cc-3245-45f1-b3f3-5eafc7b7e330"
+          },
+          {
+            "type": "p",
+            "text": "Esa pequeña luz iluminó un poco el misterio y le pregunté:",
+            "id": "blk-cb839154-86fe-47d3-8118-ef8b8b5e7220"
+          },
+          {
+            "type": "p",
+            "text": "–¿Tú… vienes de otro planeta?",
+            "id": "blk-e8d8e461-427c-4172-92cc-09610796be81"
+          },
+          {
+            "type": "p",
+            "text": "No me respondió; solo movía lentamente la cabeza examinando detenidamente mi avión.",
+            "id": "blk-137adcdf-3538-4277-87f7-2d27f76a0518"
+          },
+          {
+            "type": "p",
+            "text": "–En esto no creo que puedas venir de muy lejos…",
+            "id": "blk-38f7259e-ed3a-4200-8465-ea6419bed2a6"
+          },
+          {
+            "type": "p",
+            "text": "Y se hundió en un ensueño durante largo tiempo. Había sacado de su bolsillo a mi cordero y se abismó en la contemplación de su tesoro.",
+            "id": "blk-8e363af9-3c8d-412d-8694-4aa830c45709"
+          },
+          {
+            "type": "p",
+            "text": "Imagínense cómo me intrigó eso de: otro planeta. Y me esforcé en saber algo más:",
+            "id": "blk-d1e382b6-6f2f-4677-be3d-fb7aaa252855"
+          },
+          {
+            "type": "p",
+            "text": "–¿De dónde vienes, muchachito? ¿Dónde está tu casa? ¿Dónde quieres llevarte mi cordero?",
+            "id": "blk-600ba8f2-2ed7-4aa1-a733-9d94b6b55732"
+          },
+          {
+            "type": "p",
+            "text": "Después de meditar silenciosamente me comentó:",
+            "id": "blk-f64b287d-b030-4ca3-a877-c7d7b3096d62"
+          },
+          {
+            "type": "p",
+            "text": "–Lo bueno de la caja que me has dado es que, por la noche, puede servirle de casa.",
+            "id": "blk-f1349ab3-b30a-4992-822b-33f13204616a"
+          },
+          {
+            "type": "p",
+            "text": "–¡Sin duda! Y si eres bueno te daré también una cuerda y una estaca para atarlo durante el día.",
+            "id": "blk-7c42f8ef-7f19-4759-9dd9-c6bc2391924d"
+          },
+          {
+            "type": "p",
+            "text": "–¿Atarlo? ¡Qué idea más rara!",
+            "id": "blk-79222273-f3bc-4cca-ae1b-63959d382a09"
+          },
+          {
+            "type": "p",
+            "text": "–Si no lo atas, se irá por donde sea y puede perderse…",
+            "html": "–Si no lo atas, se irá por donde sea y puede perderse…",
+            "id": "blk-8fa2fa8e-b472-4de6-994e-bca1954b8399"
+          },
+          {
+            "type": "p",
+            "text": "Mi amigo empezó a reír.",
+            "id": "blk-e974a7d1-36ac-445b-a407-3934f6ad0450"
+          },
+          {
+            "type": "p",
+            "text": "–¿Y dónde quieres que vaya?",
+            "id": "blk-c59e6f20-797d-4f55-8d0b-55f730912941"
+          },
+          {
+            "type": "p",
+            "text": "–No sé, a cualquier lado.",
+            "id": "blk-0792cad0-b5bb-4957-87cd-6143b33387b9"
+          },
+          {
+            "type": "p",
+            "text": "Entonces el principito señaló con gravedad:",
+            "id": "blk-acd45ad9-e343-4daf-969c-4a96e11d86df"
+          },
+          {
+            "type": "p",
+            "text": "–¡No importa, mi tierra es muy pequeña!",
+            "id": "blk-fed9110b-893b-4e58-95cd-6a0fcad164e1"
+          },
+          {
+            "type": "p",
+            "text": "Y agregó, quizá con un poco de melancolía:",
+            "id": "blk-c94fd278-c32e-48af-b4d8-05d5d7852bd4"
+          },
+          {
+            "type": "p",
+            "text": "–A donde vaya no puede ser muy lejos. ",
+            "id": "blk-c2ca4deb-b4cb-48ef-bfbf-5d03b7bb970a"
+          }
+        ],
+        "forceOddPage": true
+      },
+      {
+        "id": "ch-mp21ix4k",
+        "kind": "chapter",
+        "title": "IV",
+        "words": 716,
+        "readMin": 4,
+        "number": 4,
+        "status": "ok",
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "IV",
+            "id": "blk-d3efc925-ae3d-4d49-9401-52b488b110be"
+          },
+          {
+            "type": "first-p",
+            "text": "De esta manera supe otra cosa importante: su planeta era apenas más grande que una casa.",
+            "id": "blk-383c102e-008b-41be-bf5a-a8f10abfad05"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-aebf2ed7-c4b9-46ee-b100-a8d62f3901e8"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wjq6x-oxqm",
+            "width": 197,
+            "height": 196,
+            "id": "blk-eaf76cbd-e097-4e6e-afe4-1030c9f2bf2a"
+          },
+          {
+            "type": "p",
+            "text": "Esto no me sorprendió mucho pues sabía muy bien que además de los grandes planetas como la Tierra, Júpiter, Marte, Venus, a los cuales se les ha puesto nombre, existen otros muchos, centenares de ellos, tan, tan pequeños, que a algunos es difícil distinguirlos aun con la ayuda de los telescopios. Cuando un astrónomo descubre uno de ellos, le da por nombre un número. Le llama, por ejemplo, \"Asteroide 3251\".",
+            "id": "blk-fa08aa13-42f1-4708-925b-1f651ee6da57"
+          },
+          {
+            "type": "p",
+            "text": "Tengo suficientes razones para creer que el planeta del principito era el asteroide B-612 el cual, por medio del telescopio, sólo ha sido visto una vez, por un astrónomo turco en 1909.",
+            "id": "blk-ccf799d9-1bf7-4af2-b79c-3c34a196dc43"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-15ac8ad5-f276-4847-adc6-00395c416215"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wkghv-7xip",
+            "width": 194,
+            "height": 143,
+            "id": "blk-55f7b68c-9685-4394-b8a9-f65743b38df5"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-5756afcb-438a-49b5-a0b8-f224d8a97a3a"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wks70-meee",
+            "width": 147,
+            "height": 132,
+            "id": "blk-fff5f8b8-8e28-4438-ac56-ced98920b48f"
+          },
+          {
+            "type": "p",
+            "text": "Este astrónomo, aunque demostró su descubrimiento en un Congreso Internacional de Astronomía, nadie le creyó por su extraña manera de vestir. ¡Las personas mayores son así! Felizmente para la reputación del asteroide B-612, un dictador turco obligó a su pueblo vestir a la usanza europea. Entonces, en 1920, ante otro congreso, el astrónomo volvió a dar la noticia de su descubrimiento y como lucía un traje muy elegante, todo el mundo aceptó su demostración.",
+            "id": "blk-59c02593-85bf-4588-a800-dff32a2bae87"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-e073e416-fbcf-420e-8f0f-1161ce16ffe2"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wnrft-pwrp",
+            "width": 297,
+            "height": 206,
+            "id": "blk-6b69fe45-93df-4c34-a48c-fd9c85660144"
+          },
+          {
+            "type": "p",
+            "text": "Si les he contado estos detalles sobre el asteroide B-612 y hasta les he confiado su número, es por consideración a las personas mayores. A los mayores les gustan mucho las cifras. Cuando se les habla de un nuevo amigo, jamás preguntan cosas esenciales como: \"¿Qué tono tiene su voz? ¿Qué juegos prefiere? o ¿Si le gusta o no coleccionar mariposas?\" En cambio preguntan: \"¿Qué edad tiene? ¿Cuántos hermanos? ¿Cuánto pesa? ¿Cuánto gana su padre?\" Solamente con estos detalles creen conocerle. Si a una persona mayor le decimos: \"Hay una casa preciosa de ladrillos rosas, con geranios en las ventanas y palomas sobre el tejado\", no pueden imaginarse cómo es. Es preciso decir: \"Hay una casa que vale tantos millones de pesos\". Entonces exclaman entusiasmados: \"¡Oh, qué hermosa es!\"",
+            "id": "blk-b0d9db7e-85e0-41f4-9731-4fd79aaa0ff6"
+          },
+          {
+            "type": "p",
+            "text": "Si les decimos: \"La prueba de que el principito ha existido es que reía, era encantador y quería un cordero”. No lo entienden ni lo creen, aunque “querer un cordero” sea una prueba irrebatible de existencia; las personas mayores se encogerán de hombros y nos dirán que nos comportamos como niños. Pero si les decimos: \"el planeta de donde venía el principito es el asteroide B-612\", quedarán totalmente convencidas y no dudarán más ¡ni modo!, hay que entender que son así. Los niños deben ser muy condescendientes con las personas mayores.",
+            "id": "blk-ac69763c-b95a-411c-8fe0-5ab958c52cf2"
+          },
+          {
+            "type": "p",
+            "text": "Claro que nosotros, como sabemos comprender la vida, nos burlamos tranquilamente de los números. A mí me habría gustado empezar esta historia a la manera de los cuentos de hadas. Me habría gustado decir:",
+            "id": "blk-2d7bba97-3e19-469a-8058-2a3c7f3170b1"
+          },
+          {
+            "type": "p",
+            "text": "\"Érase una vez un principito que vivía en un planeta apenas más grande que él y que tenía necesidad de un amigo…\" Para aquellos que comprenden la vida, esto hubiera parecido más real. No me gustaría que mi libro fuese tomado a la ligera.",
+            "id": "blk-e1020184-7bf4-404d-970d-fb245e6fc210"
+          },
+          {
+            "type": "p",
+            "text": "Siento tristeza al acordarme de mi amigo. Hace ya seis años que él se fue con su cordero y si intento describirlo aquí es sólo con el fin de recordarlo bien. Tener un amigo es un verdadero privilegio y si uno se olvida de ellos se corre el riesgo de volverse como las personas mayores que sólo se interesan por las cifras y los números. Para evitar esto, he comprado una caja de lápices de colores.",
+            "id": "blk-e3e0cc50-8cc7-450f-bf3a-0e2b431be24b"
+          },
+          {
+            "type": "p",
+            "text": "¡Es muy duro, a mi edad, ponerse a dibujar, cuando en toda la vida no se ha hecho más que boas abiertas y boas cerradas a la edad de seis años! Trataré de hacer retratos lo más parecido que me sea posible, aunque no estoy muy seguro de lograrlo. Uno saldrá bien y otro quizá no tanto. En las proporciones me equivoco también un poco; aquí, el principito es demasiado alto y allá es muy pequeño. Dudo sobre los colores de su traje. Titubeo sobre algo y a veces sale bien pero no siempre. En fin, es posible que me equivoque sobre algunos detalles importantes pero habrá que perdonarme ya que mi amigo no daba explicaciones.",
+            "id": "blk-38a30a23-68a2-4c77-bceb-54ab6fb58726"
+          },
+          {
+            "type": "p",
+            "text": "Quizá me creía semejante a él y yo, desgraciadamente, no sé ver un cordero a través de una caja. Es posible que ya sea un poco como las personas mayores. Debo haber envejecido.",
+            "id": "blk-a4cfac59-d6d2-4de7-9012-37de2da37708"
+          }
+        ],
+        "forceOddPage": true
+      },
+      {
+        "id": "ch-mq5ti7ki-bdgh",
+        "kind": "chapter",
+        "title": "V",
+        "words": 588,
+        "readMin": 3,
+        "number": 5,
+        "status": "ok",
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "V",
+            "html": "V",
+            "id": "blk-10975ecc-00ef-49c2-ab8d-f42eab8d99cf"
+          },
+          {
+            "type": "p",
+            "text": "Cada día, lentamente y al azar de las reflexiones, aprendía algo nuevo sobre el planeta, sobre la partida y sobre el viaje del principito. Fue así como, al tercer día, conocí el drama de los baobabs.",
+            "id": "blk-65ef53ad-49e5-458a-9491-55d9fbd625bc"
+          },
+          {
+            "type": "p",
+            "text": "Fue también por el cordero y preocupado por una profunda duda, cuando el principito me preguntó:",
+            "id": "blk-44ce44a6-c1d3-456c-ad05-9223121c0b96"
+          },
+          {
+            "type": "p",
+            "text": "—¿Es verdad que los corderos se comen los arbustos?",
+            "html": "—¿Es verdad que los corderos se comen los arbustos?",
+            "id": "blk-13ea2bf7-2bfd-42a0-95c1-28849feefb64"
+          },
+          {
+            "type": "p",
+            "text": "—Sí, es cierto.",
+            "html": "—Sí, es cierto.",
+            "id": "blk-d04cd266-3008-4d75-b861-d701d87f20b6"
+          },
+          {
+            "type": "p",
+            "text": "—¡Ah, qué contento estoy!",
+            "html": "—¡Ah, qué contento estoy!",
+            "id": "blk-172e2261-31a6-4d7b-862f-b2dc8cf5a8b5"
+          },
+          {
+            "type": "p",
+            "text": "No comprendí qué importancia tenía para él que los corderos se comieran los arbustos. Pero el principito añadió:",
+            "id": "blk-378808df-cffa-4229-9aa9-446777dd8f76"
+          },
+          {
+            "type": "p",
+            "text": "—Entonces se comen también los baobabs.",
+            "html": "—Entonces se comen también los baobabs.",
+            "id": "blk-4ac38cfb-2ad5-4143-baea-cc596173a5b6"
+          },
+          {
+            "type": "p",
+            "text": "Le hice comprender que los baobabs no son arbustos, sino árboles tan grandes como iglesias que incluso llevando todo un rebaño de elefantes, no lograría acabar con un solo baobab.",
+            "html": "Le hice comprender que los baobabs no son arbustos, sino&nbsp;árboles tan grandes como iglesias que incluso llevando todo un rebaño de elefantes, no lograría acabar con un solo baobab.",
+            "id": "blk-5038c652-ce20-45a1-b6d6-511dae3d9fef"
+          },
+          {
+            "type": "p",
+            "text": "Esto del rebaño de elefantes hizo reír mucho al principito.",
+            "id": "blk-04ec2cc4-591c-4a5f-b656-4493698288b3"
+          },
+          {
+            "type": "p",
+            "text": "—Habría que ponerlos unos sobre otros…",
+            "id": "blk-8478e2cb-7eac-4d67-85d7-7622dd1f2a06"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-2e6625cb-84d3-4585-9080-8702d7ccb042"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wgcr9-jf9d",
+            "width": 194,
+            "height": 193,
+            "id": "blk-532c5a32-ff11-48da-ae54-6fcdbb6307eb"
+          },
+          {
+            "type": "p",
+            "src": "img-mq5w6dd8-qnkd",
+            "width": 194,
+            "height": 193,
+            "caption": "\n\n\n",
+            "text": "Y luego añadió juiciosamente:",
+            "id": "blk-f182a077-802b-4cab-8adb-f5197f68d1b0"
+          },
+          {
+            "type": "p",
+            "text": "—Los baobabs comienzan por ser muy pequeñitos.",
+            "html": "—Los baobabs comienzan por ser muy pequeñitos.",
+            "id": "blk-913be253-b160-4a38-bea7-ab64c694788e"
+          },
+          {
+            "type": "p",
+            "text": "—Es cierto. Pero… ¿por qué quieres que tus corderos se coman a los baobabs?",
+            "html": "—Es cierto. Pero… ¿por qué quieres que tus corderos se coman a los baobabs?",
+            "id": "blk-03ac21d5-0fb9-4c34-aa9d-59bb39b1ccae"
+          },
+          {
+            "type": "p",
+            "text": "Me contestó: «¡Vamos!» como si fuera algo evidente.",
+            "html": "Me contestó: «¡Vamos!» como si fuera algo evidente.",
+            "id": "blk-ee18d469-3143-4bfa-a421-942f331bd054"
+          },
+          {
+            "type": "p",
+            "text": "Me fue necesario un gran esfuerzo para comprender el problema:",
+            "html": "Me fue necesario un gran esfuerzo para comprender el problema:",
+            "id": "blk-ad1fd25a-28cf-40c6-abe5-ead518e43749"
+          },
+          {
+            "type": "p",
+            "text": "En el planeta del principito había, como en todos los planetas, hierbas buenas y hierbas malas y, por lo tanto, semillas de unas y otras. De las buenas semillas salían buenas hierbas y de las semillas malas, malas hierbas. Las semillas duermen en el secreto de la tierra durante un tiempo, hasta que, un buen día, una de ellas despierta en una encantadora ramita que mira hacia el sol. Si se trata de una ramita de rábano o de rosal, se puede dejar que crezca como quiera; en cambio, si fuera una mala hierba, es preciso arrancarla inmediatamente. El suelo del planeta del principito estaba infestado de semillas de baobabs que si no se arrancan acabando de surgir y en cuanto se les reconoce, pueden cubrir todo el planeta, perforarlo con sus raíces y, si el planeta es muy pequeño y los baobabs son muchos, lo hacen estallar.",
+            "id": "blk-e866153d-e260-4f43-8507-7f3ba5a84e81"
+          },
+          {
+            "type": "p",
+            "text": "«Es una cuestión de disciplina», me dijo más tarde el principito. «Después de que uno termina su baño matinal, hay también que limpiar la casa, es decir, acicalar cuidadosamente al planeta. Hay que arrancar los baobabs en cuanto se les distingue de los rosales pues se parecen mucho cuando son pequeñitos. Es fácil aunque fastidioso».",
+            "id": "blk-5889445c-39b6-4b76-b558-e514df658041"
+          },
+          {
+            "type": "p",
+            "text": "",
+            "id": "blk-adb89a5a-ac13-4dcc-9ba5-54168c64260d"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5wgque-52m3",
+            "width": 180,
+            "height": 148,
+            "flipV": true,
+            "id": "blk-e93a9096-c430-4135-a771-129bb367ded5"
+          },
+          {
+            "type": "p",
+            "text": "El principito aconsejó que me propusiera a realizar un hermoso dibujo para que los niños de mi tierra comprendieran bien estas ideas. «Si alguna vez viajan —me decía— esto podrá servirles mucho. A veces no hay inconveniente en dejar para un poco más tarde el trabajo; pero tratándose de baobabs, el retraso es siempre fatal. Yo he conocido un planeta, habitado por un perezoso que descuidó tres arbustos…»",
+            "html": "El principito aconsejó que me propusiera a realizar un hermoso dibujo para que los niños de mi tierra&nbsp;comprendieran bien&nbsp;estas&nbsp;ideas. «Si alguna vez viajan —me decía— esto podrá servirles&nbsp;mucho. A veces no hay inconveniente en dejar para un&nbsp;poco más tarde el trabajo; pero tratándose de baobabs, el&nbsp;retraso es siempre fatal. Yo he conocido un planeta,&nbsp;habitado por un perezoso que descuidó tres arbustos…»",
+            "id": "blk-4144c06a-7a3c-4e13-b04e-0558e304ba11"
+          },
+          {
+            "type": "p",
+            "text": "Siguiendo las indicaciones del principito, realicé el dibujo. No me gusta adoptar el papel de moralista pero como el peligro de los baobabs es tan desconocido y el riesgo que puede correr quien llegue a perderse en un asteroide es tan grande, no dudo en hacer una excepción y exclamar: «¡Niños, atención a los baobabs!» Y, sólo con el fin de advertir a mis amigos de los peligros a los que se exponen desde hace tiempo sin saberlo, es por lo que trabajé con ahínco en este dibujo. La lección que con él se puede dar, vale la pena.",
+            "id": "blk-e4d18012-73d4-43c2-8212-67a06dade5e4"
+          },
+          {
+            "type": "p",
+            "text": "Es muy posible que alguien se pregunte por qué no realicé otros dibujos tan admirables como el de los baobabs. La respuesta es muy sencilla: cuando dibujé los baobabs estaba animado por un sentimiento de urgencia.",
+            "id": "blk-bc23e75e-9fe5-4efa-8131-d30e04e94d0f"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5web3r-e5g5",
+            "width": 233,
+            "height": 273,
+            "id": "blk-a01af288-738d-480a-818f-51f75a86ccff"
+          }
+        ],
+        "forceOddPage": true
+      },
+      {
+        "id": "ch-mq5xtnnr-qx25",
+        "kind": "chapter",
+        "title": "VI",
+        "words": 170,
+        "readMin": 1,
+        "number": 6,
+        "status": "ok",
+        "body": [
+          {
+            "type": "chapter-title",
+            "text": "VI",
+            "html": "VI",
+            "id": "blk-ec955dc3-f719-4a8d-8161-4141b43d8ad7"
+          },
+          {
+            "type": "p",
+            "text": "¡Ah, mi pequeño amigo, cómo he ido comprendiendo lentamente tu vida melancólica! Durante mucho tiempo tu única distracción fue observar la dulzura de los atardeceres. Esto lo supe al cuarto día cuando me dijiste:",
+            "id": "blk-00a1787a-3624-460d-aa7a-8f8f0506326c"
+          },
+          {
+            "type": "p",
+            "text": "—Me gustan mucho las puestas de sol. Vamos a ver una.",
+            "html": "—Me gustan mucho las puestas de sol. Vamos a ver una.",
+            "id": "blk-c6c5768d-4333-4cc7-8188-de4c6dfc05e5"
+          },
+          {
+            "type": "p",
+            "text": "—Hay que esperar…",
+            "html": "—Hay que esperar…",
+            "id": "blk-9f1f6d3f-da97-4470-8b19-cdf88726b39a"
+          },
+          {
+            "type": "p",
+            "text": "—¿Esperar qué?",
+            "html": "—¿Esperar qué?",
+            "id": "blk-8848cf19-7fb9-40d5-a996-139e77bf43cf"
+          },
+          {
+            "type": "p",
+            "text": "—Que el sol se ponga.",
+            "id": "blk-bd3fefda-dbe2-4cc0-bdbd-450c04534c46"
+          },
+          {
+            "type": "p",
+            "text": "Primero te sorprendiste; después te reíste de ti mismo. Y dijiste:",
+            "id": "blk-a072d5fa-5951-4700-a90f-372a32a2114b"
+          },
+          {
+            "type": "p",
+            "text": "—¡Siempre creo que estoy en mi tierra!",
+            "id": "blk-908230f8-ec4a-4754-8013-c32e55cc0339"
+          },
+          {
+            "type": "image",
+            "src": "img-mq5yhemf-k8bd",
+            "width": 279,
+            "height": 152,
+            "id": "blk-47bbf178-e74e-4022-88c4-93b71f7fe681"
+          },
+          {
+            "type": "p",
+            "text": "Aquí, todos sabemos que cuando es mediodía en Estados Unidos, en Francia se está poniendo el sol. Sería necesario trasladarse a Francia en un minuto para verlo, pero desgraciadamente, Francia está lejos. En cambio, en tu pequeño planeta bastaba arrastrar la silla un poco para observar una maravillosa puesta de sol cada vez que lo deseabas…",
+            "html": "Aquí, todos sabemos que cuando es mediodía en Estados&nbsp;Unidos, en Francia se está poniendo el sol. Sería necesario&nbsp;trasladarse a Francia en un minuto para verlo, pero&nbsp;desgraciadamente, Francia está lejos. En cambio, en tu&nbsp;pequeño planeta bastaba arrastrar la silla un poco para&nbsp;observar una maravillosa puesta de sol cada vez que lo deseabas…",
+            "id": "blk-df46730d-a2d6-473d-b51a-265f953ffc5b"
+          },
+          {
+            "type": "p",
+            "text": "—¡Un día vi ponerse el sol cuarenta y tres veces!",
+            "html": "—¡Un día vi ponerse el sol cuarenta y tres veces!",
+            "id": "blk-29bba971-eb7f-4e63-b879-44e9defa5beb"
+          },
+          {
+            "type": "p",
+            "text": "Y, un poco más tarde, añadiste:",
+            "id": "blk-b145f547-9acc-409a-ad59-74d452ceb64b"
+          },
+          {
+            "type": "p",
+            "text": "—¿Sabes? Cuando uno está demasiado triste es bueno ver las puestas de sol.",
+            "id": "blk-ee14cc70-db0f-4592-bba4-6844a971c7eb"
+          },
+          {
+            "type": "p",
+            "text": "—Ese día estabas muy triste ¿verdad?",
+            "html": "—Ese día estabas muy triste ¿verdad?",
+            "id": "blk-60ef8441-e062-4d94-9ac8-167630d16a78"
+          },
+          {
+            "type": "p",
+            "text": "Pero el principito no respondió.",
+            "id": "blk-8bf3fc7d-c417-4e8c-85c9-8747b3e9be3e"
+          }
+        ],
+        "forceOddPage": true
+      }
+    ]
   }
 }
