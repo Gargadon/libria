@@ -1,0 +1,32 @@
+{
+  "linux-x86_64": {
+    "url": "https://files.pythonhosted.org/packages/fc/ca/83398cfcd557360a3d7b2d732aee1c5f6999f68618d1645f38d53e14c9ff/vosk-0.3.45-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.whl",
+    "sha256": "25e025093c4399d7278f543568ed8cc5460ac3a4bf48c23673ace1e25d26619f",
+    "library": "vosk/libvosk.so",
+    "version": "0.3.45"
+  },
+  "linux-aarch64": {
+    "url": "https://files.pythonhosted.org/packages/a4/23/3130a69fa0bf4f5566a52e415c18cd854bf561547bb6505666a6eb1bb625/vosk-0.3.45-py3-none-manylinux2014_aarch64.whl",
+    "sha256": "54efb47dd890e544e9e20f0316413acec7f8680d04ec095c6140ab4e70262704",
+    "library": "vosk/libvosk.so",
+    "version": "0.3.45"
+  },
+  "linux-arm": {
+    "url": "https://files.pythonhosted.org/packages/32/6d/728d89a4fe8d0573193eb84761b6a55e25690bac91e5bbf30308c7f80051/vosk-0.3.45-py3-none-linux_armv7l.whl",
+    "sha256": "4221f83287eefe5abbe54fc6f1da5774e9e3ffcbbdca1705a466b341093b072e",
+    "library": "vosk/libvosk.so",
+    "version": "0.3.45"
+  },
+  "windows-x86_64": {
+    "url": "https://files.pythonhosted.org/packages/c0/4c/deb0861f7da9696f8a255f1731bb73e9412cca29c4b3888a3fcb2a930a59/vosk-0.3.45-py3-none-win_amd64.whl",
+    "sha256": "6994ddc68556c7e5730c3b6f6bad13320e3519b13ce3ed2aa25a86724e7c10ac",
+    "library": "vosk/libvosk.dll",
+    "version": "0.3.45"
+  },
+  "macos": {
+    "url": "https://files.pythonhosted.org/packages/1b/35/89bc8f422b33dcd0797375c66775e2a2ab9685ecd4a10667fd37ba7348c0/vosk-0.3.42-py3-none-macosx_10_6_universal2.whl",
+    "sha256": "631b9ff6515945f92078c546a60deab2eeb4f63489a24526cc90e3164e415ff7",
+    "library": "vosk/libvosk.dyld",
+    "version": "0.3.42"
+  }
+}

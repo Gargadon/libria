@@ -1,0 +1,38 @@
+{
+  "en": {
+    "name": "vosk-model-small-en-us-0.15",
+    "sha256": "30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498",
+    "size": 41205931,
+    "license": "Apache-2.0"
+  },
+  "fr": {
+    "name": "vosk-model-small-fr-0.22",
+    "sha256": "cabf6180e177eb9b3a9a9d43a437bd5e549f3a7d09525e5d69a3fed787be12ad",
+    "size": 42233323,
+    "license": "Apache-2.0"
+  },
+  "it": {
+    "name": "vosk-model-small-it-0.22",
+    "sha256": "9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267",
+    "size": 49665141,
+    "license": "Apache-2.0"
+  },
+  "de": {
+    "name": "vosk-model-small-de-0.15",
+    "sha256": "b7e53c90b1f0a38456f4cd62b366ecd58803cd97cd42b06438e2c131713d5e43",
+    "size": 46499967,
+    "license": "Apache-2.0"
+  },
+  "pt": {
+    "name": "vosk-model-small-pt-0.3",
+    "sha256": "6e1ce909032e1afa7a88e68a3d628ecafff302bdf195befab308826c395e93b7",
+    "size": 32453112,
+    "license": "Apache-2.0"
+  },
+  "es": {
+    "name": "vosk-model-small-es-0.42",
+    "sha256": "09b239888f633ef2f0b4e09736e3d9936acfd810bc65d53fad45261762c6511f",
+    "size": 39817833,
+    "license": "Apache-2.0"
+  }
+}

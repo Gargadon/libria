@@ -65,3 +65,6 @@ Kite_Wars_Comet_A_R.*
 
 # Website
 libria-website/
+
+# Optional Vosk helper local build output
+/src-tauri/vosk-host/target

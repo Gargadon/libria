@@ -1,3 +1,4 @@
+import { prepareVosk } from './prepare-vosk.mjs';
 // Run on the target platform: packages a PDF-only runtime, never an Electron runtime.
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -9,6 +10,7 @@ import { runtimeModuleFilter } from './runtime-prebuilds.mjs';
 import { pdfBrowserFilter } from './pdf-browser-files.mjs';
 
 syncVersion();
+await prepareVosk();
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const destination = path.join(root, 'build/tauri-resources');

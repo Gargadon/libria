@@ -99,4 +99,36 @@ describe('reemplazar texto escribiendo', () => {
     expect(body[1].text).toBe('Hola ');
     expect(body[2].text).toBe(' cruel');
   });
+
+  it('keeps the following paragraph visible after cutting a paragraph and pressing Backspace', async () => {
+    paragraph.blur();
+    window.getSelection()!.removeAllRanges();
+    store.updateChapterBlock(chapterId, 1, 'Primer párrafo.');
+    store.insertBlock(chapterId, 1, 'p', 'Segundo párrafo.');
+    store.insertBlock(chapterId, 2, 'p', 'Tercer párrafo.');
+    await fixture.whenStable();
+    const cutParagraph = fixture.nativeElement.querySelectorAll('.bk-p')[1] as HTMLElement;
+    Object.defineProperty(cutParagraph, 'innerText', {
+      configurable: true, get: () => cutParagraph.textContent,
+    });
+    cutParagraph.focus();
+    const range = document.createRange();
+    range.selectNodeContents(cutParagraph);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    // Apply the browser's native cut, leaving its input update pending.
+    range.deleteContents();
+    range.collapse(true);
+    cutParagraph.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteByCut' }));
+    cutParagraph.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true, key: 'Backspace', cancelable: true,
+    }));
+    await fixture.whenStable();
+
+    expect(store.activeChapter()!.body.slice(1).map(block => block.text))
+      .toEqual(['Primer párrafo.', 'Tercer párrafo.']);
+    expect(Array.from(fixture.nativeElement.querySelectorAll('.bk-p'),
+      (element: any) => element.textContent)).toEqual(['Primer párrafo.', 'Tercer párrafo.']);
+  });
+
 });

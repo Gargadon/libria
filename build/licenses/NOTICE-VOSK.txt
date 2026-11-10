@@ -1,0 +1,15 @@
+Vosk Speech Recognition Toolkit — Copyright 2020–2023 Alpha Cephei Inc.
+https://github.com/alphacep/vosk-api
+Native runtime: Vosk 0.3.45 (macOS: 0.3.42), prepared at build time from the upstream PyPI release (or supplied by the Linux distribution).
+Python is not required; Libria loads only the native library from the verified wheel.
+
+Small language models downloaded at build time and bundled from https://alphacephei.com/vosk/models:
+English: vosk-model-small-en-us-0.15
+French: vosk-model-small-fr-0.22
+Italian: vosk-model-small-it-0.22
+German: vosk-model-small-de-0.15
+Portuguese: vosk-model-small-pt-0.3
+Spanish: vosk-model-small-es-0.42
+All selected models are listed by Alpha Cephei as Apache-2.0.
+Their original README files are retained in each model directory.
+See LICENSE-VOSK.txt for the Apache-2.0 license text.

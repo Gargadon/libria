@@ -1,4 +1,4 @@
-import { isTauri, invoke } from '@tauri-apps/api/core';
+import { isTauri, invoke, Channel } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -20,6 +20,12 @@ export async function initializeDesktop(): Promise<void> {
   let closing = false;
   const drive = <T>(method: string, args: unknown[] = []) => invoke<T>('drive', { method, args });
   const api: DesktopAPI = {
+    dictationStart: (id, lang, callback) => {
+      const events = new Channel<DictationEvent>();
+      events.onmessage = callback;
+      return invoke('speech_start', { id, lang, events });
+    },
+    dictationStop: (id, abort) => invoke('speech_stop', { id, abort }),
     driveStatus: () => drive('status'),
     driveConnect: () => drive('connect'),
     driveDisconnect: () => drive('disconnect'),

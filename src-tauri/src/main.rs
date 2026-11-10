@@ -4,6 +4,7 @@ mod drive;
 mod files;
 mod fonts;
 mod pdf;
+mod speech;
 mod updates;
 
 use serde_json::{json, Value};
@@ -184,7 +185,23 @@ fn dictionary(
 }
 
 fn main() {
+    let arguments: Vec<_> = std::env::args_os().collect();
+    if arguments
+        .get(1)
+        .is_some_and(|arg| arg == "--verify-dictation-resources")
+    {
+        let result = arguments
+            .get(2)
+            .ok_or_else(|| "resources".to_string())
+            .and_then(|root| speech::verify_resources(std::path::Path::new(root)));
+        if let Err(error) = result {
+            eprintln!("Vosk: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
     tauri::Builder::default()
+        .manage(speech::Speech::default())
         .manage(PendingPath(Mutex::new(document_argument(
             std::env::args().skip(1),
         ))))
@@ -202,7 +219,8 @@ fn main() {
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
             app.manage(drive::Drive::new(app.handle())?);
-            let builder = tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?;
+            let builder =
+                tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?;
             // WebView2 needs its HTML5 handler for internal chapter reordering.
             // Linux/macOS use native file drops; Windows keeps DOM file drops.
             #[cfg(windows)]
@@ -235,7 +253,8 @@ fn main() {
                     (|| -> windows_core::Result<()> {
                         let settings = webview.controller().CoreWebView2()?.Settings()?;
                         settings.SetAreDefaultContextMenusEnabled(false)?;
-                        settings.cast::<ICoreWebView2Settings3>()?
+                        settings
+                            .cast::<ICoreWebView2Settings3>()?
                             .SetAreBrowserAcceleratorKeysEnabled(false)?;
                         Ok(())
                     })()
@@ -249,6 +268,8 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            speech::speech_start,
+            speech::speech_stop,
             pending_path,
             open_dialog,
             save_dialog,
@@ -266,6 +287,9 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("No se pudo iniciar Libria")
         .run(|app, event| {
+            if matches!(event, tauri::RunEvent::Exit) {
+                app.state::<speech::Speech>().shutdown();
+            }
             #[cfg(target_os = "macos")]
             if let tauri::RunEvent::Opened { urls } = &event {
                 for url in urls {

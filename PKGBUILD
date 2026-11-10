@@ -1,46 +1,38 @@
 # Maintainer: David Kantun <dkantun@gmail.com>
 
 pkgname=libria
-pkgver=1.5.2
+pkgver=2.3.0
 pkgrel=1
-pkgdesc="Aplicación para la creación y maquetación profesional de libros — editor y maquetador de libros con vista previa en tiempo real, exportación a EPUB/DOCX/PDF y corrección ortográfica"
+pkgdesc="Creación y maquetación de libros con dictado local sin conexión"
 arch=('x86_64')
 url="https://github.com/Gargadon/libria"
-license=('MIT')
-depends=('electron>=32' 'ghostscript')
-makedepends=('nodejs>=20' 'npm' 'python')
+license=('AGPL-3.0-only')
+depends=('webkit2gtk-4.1' 'libappindicator-gtk3' 'alsa-lib' 'dbus' 'ghostscript' 'chromium' 'vosk-api')
+makedepends=('bun' 'nodejs' 'npm' 'rust' 'pkgconf')
 provides=("${pkgname}")
 source=("${url}/archive/v${pkgver}.tar.gz")
 sha256sums=('SKIP')
 
-
 prepare() {
   cd "${srcdir}/libria-${pkgver}"
-  npm install
+  bun install --frozen-lockfile
 }
 
 build() {
   cd "${srcdir}/libria-${pkgver}"
-  npx ng build
+  bun run build
+  # Download the six models at build time; Vosk and Chromium come from Arch.
+  LIBRIA_VOSK_SYSTEM_ENGINE=1 node scripts/prepare-tauri.mjs --system-browser
+  cargo build --locked --release --features custom-protocol --manifest-path src-tauri/Cargo.toml
+  src-tauri/target/release/libria --verify-dictation-resources build/tauri-resources/vosk
 }
 
 package() {
   cd "${srcdir}/libria-${pkgver}"
 
-  # Aplicación
-  local _dest="${pkgdir}/opt/libria"
-  install -dm755 "${_dest}"
-  cp -r dist/libria/browser "${_dest}/browser"
-  cp main.js preload.js package.json "${_dest}/"
-  cp -r build/licenses "${_dest}/licenses"
-
-  # Script de lanzamiento
-  install -dm755 "${pkgdir}/usr/bin"
-  cat > "${pkgdir}/usr/bin/libria" << 'SCRIPT'
-#!/bin/bash
-exec /usr/bin/electron /opt/libria/main.js "$@"
-SCRIPT
-  chmod 755 "${pkgdir}/usr/bin/libria"
+  install -Dm755 src-tauri/target/release/libria "${pkgdir}/usr/bin/libria"
+  install -dm755 "${pkgdir}/usr/lib/libria/runtime"
+  cp -a build/tauri-resources/. "${pkgdir}/usr/lib/libria/runtime/"
 
   # Desktop entry
   install -dm755 "${pkgdir}/usr/share/applications"
@@ -75,5 +67,5 @@ MIME
 
   # Licencias
   install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/libria/LICENSE"
-  install -Dm644 build/licenses/AGPL-3.0.txt "${pkgdir}/usr/share/licenses/libria/AGPL-3.0.txt"
+  cp -a build/licenses/. "${pkgdir}/usr/share/licenses/libria/"
 }

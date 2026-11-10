@@ -1,3 +1,4 @@
+import { DictationService } from './dictation.service';
 import {
   contenteditableOf,
   getEditableBlock,
@@ -46,7 +47,7 @@ import {
 
 @Component({
   selector: 'app-editor',
-  providers: [EditorTableService, EditorImageService, EditorFootnoteService, EditorNotesState],
+  providers: [DictationService, EditorTableService, EditorImageService, EditorFootnoteService, EditorNotesState],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
@@ -64,6 +65,76 @@ import {
   templateUrl: './editor.component.html',
 })
 export class EditorComponent implements OnDestroy {
+  readonly dictation = inject(DictationService);
+  private readonly _dictationContext = effect(() => {
+    this.store.activeChapterId();
+    this.store.documentLang();
+    this.dictation.abort();
+  });
+
+  @HostListener('document:pointerdown', ['$event'])
+  @HostListener('document:keydown', ['$event'])
+  @HostListener('document:beforeinput', ['$event'])
+  interruptDictation(event: Event) {
+    if (!(event.target instanceof Element) || event.target.closest('[data-dictation-control]')) return;
+    this.dictation.abort();
+  }
+
+  @HostListener('document:visibilitychange')
+  hideDictation() {
+    if (document.hidden) this.dictation.abort();
+  }
+
+  toggleDictation() {
+    if (this.dictation.state() !== 'idle') { this.dictation.stop(); return; }
+    if (!this.dictation.supported) {
+      this.dictation.message.set('dictation.unsupported');
+      return;
+    }
+    this._flushPendingInput();
+    const chapterId = this.store.activeChapterId();
+    const selection = window.getSelection();
+    const selected = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const editable = selected ? contenteditableOf(selected.startContainer) : null;
+    if (!selected || !editable?.matches('[data-libria-spelling]') ||
+        !editable.closest('.ed__doc') || contenteditableOf(selected.endContainer) !== editable) {
+      this.dictation.message.set('dictation.choosePosition');
+      return;
+    }
+    const range = selected.cloneRange();
+    this.dictation.start(this.store.documentLang(), text => {
+      if (this.store.activeChapterId() !== chapterId || !editable.isConnected ||
+          !editable.contains(range.startContainer) || !editable.contains(range.endContainer)) {
+        this.dictation.abort();
+        return;
+      }
+      const container = editable.closest('.ed__block-container');
+      const index = Array.from(document.querySelectorAll('.ed__block-container')).indexOf(container!);
+      if (index < 0) { this.dictation.abort(); return; }
+      this._flushPendingInput();
+      this.store.saveSnapshot();
+      const prefix = document.createRange();
+      prefix.selectNodeContents(editable);
+      prefix.setEnd(range.startContainer, range.startOffset);
+      const suffix = document.createRange();
+      suffix.selectNodeContents(editable);
+      suffix.setStart(range.endContainer, range.endOffset);
+      const before = prefix.toString();
+      const after = suffix.toString();
+      const leading = before && !/\s$/.test(before) && !/^[,.;:!?]/.test(text) ? ' ' : '';
+      const trailing = after && !/^[\s,.;:!?]/.test(after) ? ' ' : '';
+      range.deleteContents();
+      const node = document.createTextNode(leading + text + trailing);
+      range.insertNode(node);
+      range.setStart(node, node.length - trailing.length);
+      range.collapse(true);
+      editable.focus();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      this.store.updateChapterBlock(chapterId!, index, editable.innerText.replace(/\n$/, ''), editable.innerHTML);
+    });
+  }
+
   applySpellingCorrection(item: SpellingCorrection) {
     this._flushPendingInput();
     const chapter = this.store.activeChapter();
@@ -696,6 +767,7 @@ export class EditorComponent implements OnDestroy {
       restoreEditorSelectionSurface();
       this._savedCaretOffset = this._getCaretOffset(el);
       el?.blur();
+      window.getSelection()?.removeAllRanges();
       if (event.key.toLowerCase() === 'y' || event.shiftKey) {
         this.store.redo();
       } else {
@@ -884,6 +956,10 @@ export class EditorComponent implements OnDestroy {
           const curText = chapter?.body[blockIndex]?.text ?? '';
           const mergedText = prevText + curText;
 
+          // This element is reused for the following block after the merge.
+          // Release its editing ownership so the directive can render that block.
+          el.blur();
+          sel.removeAllRanges();
           // SYNC DOM MUTATION to prevent ghosting or rapid double-backspace cascade
           el.textContent = '';
 
