@@ -161,8 +161,11 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           find release -type f -print0 | sort -z | xargs -0 sha256sum | sed 's|  .*/|  |' > SHA256SUMS
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG — Rice Edition" --notes-from-tag
+          RELEASE_TITLE="$(node -p "process.env.RELEASE_TAG + ' — ' + require('./package.json').edition + ' Edition'")"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --title "$RELEASE_TITLE"
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TITLE" --notes-from-tag
           fi
           find release -type f -exec gh release upload "$RELEASE_TAG" {} --clobber \;
           gh release upload "$RELEASE_TAG" SHA256SUMS --clobber
