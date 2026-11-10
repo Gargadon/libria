@@ -1,0 +1,13 @@
+[package]
+name = "libria-vosk-host"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+
+[dependencies]
+libloading = "0.8"
+serde_json = "1"
+
+[profile.release]
+lto = true
+strip = true

@@ -75,7 +75,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev ghostscript
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev libasound2-dev ghostscript
       - name: Install Ghostscript (macOS)
         if: startsWith(github.ref, 'refs/tags/') && runner.os == 'macOS'
         run: brew install ghostscript
@@ -96,6 +96,21 @@ jobs:
       - name: Check Angular production build
         if: "!startsWith(github.ref, 'refs/tags/')"
         run: bun run build
+      - uses: actions/cache@v4
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          path: tmp/vosk-downloads
+          key: vosk-archives-${{ hashFiles('src-tauri/src/speech/models.json') }}-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('src-tauri/src/speech/releases.json') }}
+          restore-keys: |
+            vosk-archives-${{ hashFiles('src-tauri/src/speech/models.json') }}-
+          enableCrossOsArchive: true
+      - name: Prepare x64 Vosk helper target (Windows ARM64)
+        if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'windows-arm64'
+        run: rustup target add x86_64-pc-windows-msvc
+      - name: Download and bundle all six offline dictation models
+        if: startsWith(github.ref, 'refs/tags/')
+        timeout-minutes: 20
+        run: bun run vosk:prepare
       - name: Build Tauri installers
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -111,6 +126,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         timeout-minutes: 5
         run: node scripts/smoke-pdf-runtime.mjs
+      - name: Verify offline dictation engine and all six models
+        if: startsWith(github.ref, 'refs/tags/')
+        timeout-minutes: 5
+        run: bun run vosk:verify
       - name: Stage installer artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: node scripts/stage-installers.mjs ${{ matrix.platform }}

@@ -1,4 +1,12 @@
+interface DictationEvent {
+  type: 'loading' | 'listening' | 'partial' | 'final' | 'error' | 'ended';
+  text?: string;
+  code?: string;
+}
+
 interface DesktopAPI {
+  dictationStart(id: string, lang: string, callback: (event: DictationEvent) => void): Promise<void>;
+  dictationStop(id: string, abort: boolean): Promise<void>;
   driveStatus(): Promise<DriveStatus>;
   driveConnect(): Promise<DriveStatus>;
   driveDisconnect(): Promise<{ revoked: boolean }>;

@@ -1,6 +1,6 @@
 [![Release](https://github.com/Gargadon/libria/actions/workflows/release.yml/badge.svg)](https://github.com/Gargadon/libria/actions/workflows/release.yml)
 
-# Libria 2.2.0 — Dostoievski Edition
+# Libria 2.3.0 — Borges Edition
 
 ![Libria Banner](libria-banner.webp)
 
@@ -42,6 +42,15 @@ Un panel de control con parámetros ajustables para ver cómo quedará tu libro 
 - **Corrección durante la escritura:** Subrayado de errores y sugerencias mediante clic derecho, con opciones para ignorar palabras o añadirlas al diccionario personal. El subrayado requiere compatibilidad del WebView con CSS Highlights.
 - **Revisión del capítulo:** Panel accesible con `F7` para recorrer errores, ver su contexto y aplicar sugerencias conservando el formato enriquecido.
 - **Diccionario personal:** Panel lateral con búsqueda, paginación, alta y eliminación de palabras. Se guarda en el almacenamiento nativo de escritorio o en LocalStorage en la versión web.
+
+### Dictado por voz sin conexión
+
+- **Vosk nativo:** El botón rojo del editor inicia el dictado local en escritorio, sin depender de SpeechRecognition del WebView.
+- **Seis idiomas:** Modelos pequeños de español, inglés, francés, italiano, alemán y portugués. Se elige el idioma del libro, independientemente del idioma de la interfaz.
+- **Recursos offline incluidos:** El empaquetado descarga y verifica los seis modelos y prepara el motor de respaldo. El dictado funciona desde el primer inicio sin Internet. En Arch y Fedora/Red Hat se prefiere Vosk de la distribución; el paquete puede omitir la biblioteca privada y conservar todos los modelos.
+- **Edición normal:** Las frases confirmadas se insertan en el cursor y se pueden deshacer. Al detener se procesa la última frase; al cambiar de capítulo o empezar a editar se descarta lo pendiente y se libera el micrófono.
+
+Detalles de instalación, modelos, dependencias y pruebas en [docs/dictation.md](docs/dictation.md).
 
 ### Notas al Pie
 

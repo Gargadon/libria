@@ -5339,3 +5339,20 @@ body.print-digital {
   0%, 70% { opacity: 1; }
   100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
 }
+
+.ed__record .material-symbols-outlined {
+  color: #c43636;
+  font-variation-settings: 'FILL' 1;
+}
+.ed__record:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ed__dictation-status {
+  padding: 8px 16px;
+  border-top: 1px solid var(--rule-soft);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 12px;
+  max-height: 96px;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.ed__dictation-preview { display: block; margin-top: 4px; }

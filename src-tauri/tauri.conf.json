@@ -4,7 +4,7 @@
   "version": "../package.json",
   "identifier": "com.libria.app",
   "build": {
-    "beforeDevCommand": "node node_modules/@angular/cli/bin/ng.js serve --port 4300",
+    "beforeDevCommand": "node scripts/prepare-vosk.mjs && node node_modules/@angular/cli/bin/ng.js serve --port 4300",
     "devUrl": "http://localhost:4300",
     "beforeBuildCommand": "bun run build && bun run tauri:prepare",
     "frontendDist": "../dist/libria/browser"
@@ -35,6 +35,7 @@
     "resources": { "../build/tauri-resources/": "runtime/" },
     "fileAssociations": [{ "ext": ["libria"], "name": "Documento Libria", "mimeType": "application/x-libria", "role": "Editor" }],
     "linux": { "deb": { "depends": ["ghostscript"] } },
+    "macOS": { "infoPlist": "Info.plist", "entitlements": "Entitlements.plist" },
     "windows": { "nsis": { "installMode": "both", "displayLanguageSelector": true, "languages": ["Spanish", "English"] } }
   }
 }

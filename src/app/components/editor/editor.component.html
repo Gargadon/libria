@@ -53,6 +53,15 @@
         <span class="ed__current">{{ chapter.title }}</span>
       </div>
       <div class="ed__tools">
+        <button type="button" class="ed__t ed__record" data-dictation-control
+          [class.ed__t--on]="dictation.state() !== 'idle'"
+          [attr.aria-pressed]="dictation.state() !== 'idle'"
+          [attr.aria-label]="(dictation.state() === 'idle' ? 'dictation.start' : 'dictation.stop') | translate"
+          [attr.title]="(dictation.supported ? (dictation.state() === 'idle' ? (dictation.local ? 'dictation.startHintLocal' : 'dictation.startHint') : 'dictation.stop') : 'dictation.unsupported') | translate"
+          (mousedown)="$event.preventDefault()" (click)="toggleDictation()">
+          <span class="material-symbols-outlined" aria-hidden="true">{{ dictation.state() === 'idle' ? 'fiber_manual_record' : 'stop' }}</span>
+        </button>
+        <span class="ed__tsep"></span>
         <button
           class="ed__t"
           [attr.title]="('editor.italic' | translate) + ' (' + shortcutModifier + '+I)'"
@@ -705,6 +714,12 @@
       </div>
     }
 
+    @if (dictation.message() || dictation.state() !== 'idle') {
+      <div class="ed__dictation-status" role="status">
+        <span>{{ (dictation.message() || ('dictation.' + dictation.state())) | translate }}</span>
+        @if (dictation.interim()) { <span class="ed__dictation-preview">{{ dictation.interim() }}</span> }
+      </div>
+    }
     <div class="ed__statbar">
       <span style="color: var(--terra); font-weight: 500">{{ statusLabel() }}</span>
       <span class="ed__dot2"></span>

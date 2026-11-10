@@ -1,6 +1,6 @@
 [package]
 name = "libria"
-version = "2.2.0"
+version = "2.3.0"
 description = "Creación y maquetación de libros"
 authors = ["David Kantun"]
 license = "AGPL-3.0-only"
@@ -34,6 +34,9 @@ regex = "1"
 url = "2"
 semver = "1"
 fontdb = "0.24"
+
+cpal = "0.16"
+libloading = "0.8"
 
 [profile.release]
 lto = true

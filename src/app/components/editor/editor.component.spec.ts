@@ -53,6 +53,23 @@ describe('pending paragraph edits', () => {
     return { editor, chapter, store, element, input, backspace };
   }
 
+  it('releases the live selection before undo so the dictated block can render its snapshot', () => {
+    const f = fixture();
+    const element = document.querySelector('p')!;
+    element.contentEditable = 'true';
+    element.textContent = 'Frase dictada';
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    window.getSelection()!.addRange(range);
+    const undo = vi.fn(() => expect(window.getSelection()!.rangeCount).toBe(0));
+    Object.assign(f.store, { undo });
+    Object.assign(f.editor, { _focusAfterHistory: vi.fn() });
+    f.editor.onKeyDown('chapter', 1, new KeyboardEvent('keydown', {
+      key: 'z', ctrlKey: true, cancelable: true,
+    }), element);
+    expect(undo).toHaveBeenCalledOnce();
+  });
+
   it('does not resurrect deleted text when Backspace reaches the previous paragraph before 200 ms', () => {
     const f = fixture();
     f.input('Texto');
