@@ -2,7 +2,7 @@
 
 pkgname=libria
 pkgver=2.3.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Creación y maquetación de libros con dictado local sin conexión"
 arch=('x86_64')
 url="https://github.com/Gargadon/libria"
@@ -31,8 +31,9 @@ package() {
   cd "${srcdir}/libria-${pkgver}"
 
   install -Dm755 src-tauri/target/release/libria "${pkgdir}/usr/bin/libria"
-  install -dm755 "${pkgdir}/usr/lib/libria/runtime"
-  cp -a build/tauri-resources/. "${pkgdir}/usr/lib/libria/runtime/"
+  install -dm755 "${pkgdir}/usr/lib/Libria/runtime"
+  cp -a build/tauri-resources/. "${pkgdir}/usr/lib/Libria/runtime/"
+  chmod -R u=rwX,go=rX "${pkgdir}/usr/lib/Libria/runtime"
 
   # Desktop entry
   install -dm755 "${pkgdir}/usr/share/applications"
