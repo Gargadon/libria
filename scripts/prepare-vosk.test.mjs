@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -39,6 +39,12 @@ test('bundles all six models and the native engine, reusing verified build downl
   const f = await fixture(t);
   await prepareVosk(f.options);
   assert.equal(f.calls.length, 7);
+  if (process.platform !== 'win32') {
+    assert.equal((await stat(f.options.destination)).mode & 0o777, 0o755);
+    const model = path.join(f.options.destination, 'models', models.es.name);
+    assert.equal((await stat(model)).mode & 0o777, 0o755);
+    assert.equal((await stat(path.join(model, 'am/final.mdl'))).mode & 0o777, 0o644);
+  }
   const manifest = JSON.parse(await readFile(path.join(f.options.destination, 'manifest.json')));
   assert.deepEqual(Object.keys(manifest.models).sort(), ['de', 'en', 'es', 'fr', 'it', 'pt']);
   assert.ok(existsSync(path.join(f.options.destination, 'models', models.pt.name, 'final.mdl')));

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream, existsSync, readFileSync } from 'node:fs';
-import { copyFile, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
@@ -59,6 +59,16 @@ export function modelReady(directory) {
   return (existsSync(path.join(directory, 'am/final.mdl')) || existsSync(path.join(directory, 'final.mdl'))) &&
     (existsSync(path.join(directory, 'conf/mfcc.conf')) || existsSync(path.join(directory, 'mfcc.conf')));
 }
+async function setRuntimePermissions(directory) {
+  // mkdtemp creates a private 0700 directory. Installed resources belong to root
+  // and must remain readable/traversable by the application's normal user.
+  await chmod(directory, 0o755);
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) await setRuntimePermissions(file);
+    else await chmod(file, entry.name.endsWith('.exe') ? 0o755 : 0o644);
+  }
+}
 async function buildWindowsHost(destination) {
   const manifest = path.join(root, 'src-tauri/vosk-host/Cargo.toml');
   const targetDir = path.join(root, 'src-tauri/target/vosk-host');
@@ -107,6 +117,7 @@ export async function prepareVosk({
       engine: systemEngine ? null : engineRelease(platform, arch, releaseCatalog),
       host: platform === 'win32' && arch === 'arm64' ? 'host/libria-vosk-host.exe' : null,
     }, null, 2) + '\n');
+    await setRuntimePermissions(staging);
     await rm(destination, { recursive: true, force: true });
     await rename(staging, destination);
     console.log(`Dictado preparado sin conexión: ${Object.keys(modelCatalog).join(', ')}`);

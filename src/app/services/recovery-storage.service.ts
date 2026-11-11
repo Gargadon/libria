@@ -16,7 +16,8 @@ export class RecoveryStorageService {
   private async open(): Promise<IDBDatabase> {
     this.database ??= new Promise((resolve, reject) => {
       if (typeof indexedDB === 'undefined') { reject(new Error('IndexedDB unavailable')); return; }
-      const request = indexedDB.open('libria-recovery', 1);
+      // Accept histories opened by earlier local builds without downgrading or deleting them.
+      const request = indexedDB.open('libria-recovery');
       request.onupgradeneeded = () => request.result.createObjectStore('versions', { keyPath: 'id' });
       request.onsuccess = () => {
         request.result.onversionchange = () => { request.result.close(); this.database = undefined; };

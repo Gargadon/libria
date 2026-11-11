@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, Injector, afterNextRender } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
@@ -16,6 +16,10 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [CommonModule, BlockViewComponent, TranslateModule],
   providers: [PaperPreviewService],
   styles: `
+    .device-measure { position: absolute; inset: 0; visibility: hidden; pointer-events: none; contain: layout paint; }
+    .device-measure .kp-flow { transform: none; }
+    .device-slider { transition: none; }
+
     .pv__paper-loading {
       position: absolute;
       inset: 0;
@@ -114,7 +118,7 @@ import { TranslateModule } from '@ngx-translate/core';
         </div>
       </div>
 
-      <div class="pv__stage" #pvStage [style.align-items]="'center'">
+      <div class="pv__stage" [attr.aria-busy]="paperLoading() || devicePaginationPending()" #pvStage [style.align-items]="'center'">
         <button class="pv__nav-btn pv__nav-btn--left" (click)="prevPage()">‹</button>
         <button class="pv__nav-btn pv__nav-btn--right" (click)="nextPage()">›</button>
 
@@ -125,7 +129,7 @@ import { TranslateModule } from '@ngx-translate/core';
                  (change)="goToPage($any($event.target).value)"
                  (keydown.enter)="goToPage($any($event.target).value)"
                  aria-label="Número de página">
-          <span>/ {{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</span>
+          <span>/ {{ devicePaginationPending() ? '≈' : '' }}{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</span>
         </div>
 
         <!-- DEVICE VIEWS (Kindle, iPhone, Papel Tab) -->
@@ -211,7 +215,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
       <div class="pv__foot">
         <div class="pv__metric">
-          <div class="pv__mN">{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</div>
+          <div class="pv__mN">{{ devicePaginationPending() ? '≈' : '' }}{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</div>
           <div class="pv__mL">páginas</div>
         </div>
         <div class="pv__metric">
@@ -224,24 +228,30 @@ import { TranslateModule } from '@ngx-translate/core';
       <ng-template #paginatedTpl>
         <div [class]="mode() === 'print' ? 'pv-page-inner' : (mode() + '__page')">
           <div class="kp-wrapper" style="flex: 1; min-height: 0; position: relative;">
-            <div class="kp-slider" [style.--page-index]="globalPage()">
+            <div class="kp-slider device-slider" [style.--page-index]="devicePage()">
               <div class="kp-flow" #kpFlow>
-                @for (c of chapters(); track c.id; let idx = $index) {
-                  @if (mode() === 'print' && shouldInsertBlankPage(idx)) {
-                    <div class="kp kp--blank" style="break-before: column;"></div>
-                  }
-                  <div class="kp" [class]="'kp--' + c.kind" [attr.data-chapter]="c.id"
-                       style="break-before: column;">
-                    <ng-container *ngTemplateOutlet="contentTpl; context: { 
-                      $implicit: c, 
-                      showNotes: false,
-                      fsOverride: ptToPx((mode() === 'kindle' || mode() === 'iphone') ? (store.tweaks.fontSize() + deviceFontSizeOffset()) : store.tweaks.fontSize())
-                    }"></ng-container>
-                  </div>
+                @for (c of visibleDeviceChapters(); track c.id) {
+                  <ng-container *ngTemplateOutlet="deviceChapterTpl; context: { $implicit: c }"></ng-container>
                 }
               </div>
             </div>
+            @if (measuringChapter(); as chapter) {
+              <div class="device-measure" aria-hidden="true" inert>
+                <div class="kp-flow" #deviceMeasureFlow>
+                  <ng-container *ngTemplateOutlet="deviceChapterTpl; context: { $implicit: chapter }"></ng-container>
+                </div>
+              </div>
+            }
           </div>
+        </div>
+      </ng-template>
+
+      <ng-template #deviceChapterTpl let-chapter>
+        <div class="kp" [class]="'kp--' + chapter.kind" [attr.data-chapter]="chapter.id">
+          <ng-container *ngTemplateOutlet="contentTpl; context: {
+            $implicit: chapter, showNotes: false,
+            fsOverride: ptToPx(store.tweaks.fontSize() + deviceFontSizeOffset())
+          }"></ng-container>
         </div>
       </ng-template>
 
@@ -340,6 +350,32 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   private _chaptersDebounce: any = null;
   readonly chapters = signal<Chapter[]>([]);
 
+  private readonly injector = inject(Injector);
+  readonly deviceChapterId = signal('');
+  readonly devicePage = signal(0);
+  readonly measuringChapter = signal<Chapter | null>(null);
+  readonly visibleDeviceChapters = computed(() => {
+    const chapter = this.chapters().find(c => c.id === this.deviceChapterId());
+    return chapter ? [chapter] : [];
+  });
+  @ViewChild('deviceMeasureFlow') deviceMeasureFlow?: ElementRef<HTMLElement>;
+  private deviceCache = new Map<string, { chapter: Chapter; pages: number; blocks: Record<number, number> }>();
+  private deviceSignature = '';
+  private readonly deviceFontsLoaded = () => {
+    if (!this.deviceDestroyed) { this.deviceSignature = ''; this.scheduleMeasure(); }
+  };
+  private deviceGeneration = 0;
+  private deviceTask?: ReturnType<typeof setTimeout>;
+  private deviceRender?: ReturnType<typeof afterNextRender>;
+  private deviceFrame?: number;
+  private deviceDestroyed = false;
+  private pendingDevicePage?: { id: string; page: number; position: ReturnType<EditorPositionService['position']> };
+  private deviceViewport = '';
+  private deviceAssets?: Record<string, string>;
+  private followDeviceEditor = true;
+  readonly devicePaginationPending = computed(() => this.mode() !== 'print'
+    && Object.keys(this.realChapterPages()).length < this.chapters().length);
+
   @ViewChild('kpFlow', { static: false }) kpFlowEl?: ElementRef<HTMLElement>;
   @ViewChild('pvStage', { static: false }) pvStageEl?: ElementRef<HTMLElement>;
   @ViewChild('printIframe', { static: false }) printIframeEl?: ElementRef<HTMLIFrameElement>;
@@ -377,7 +413,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const pages = realPages !== undefined ? realPages : this.estimateChapterPages(ch);
       let blank = false;
 
-      if (ch.forceOddPage && currentP % 2 === 0) {
+      if (mode === 'print' && ch.forceOddPage && currentP % 2 === 0) {
         blank = true;
         currentP++;
       }
@@ -436,8 +472,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       const position = this.editorPosition.position();
       const mode = this.mode();
       const renderedChapters = this.chapters();
-      this.realPageOffsets();
-      this.printPageOffsets();
+      if (mode === 'print') this.printPageOffsets();
       untracked(() => {
         // Wait until the debounced preview content exists. Otherwise the
         // first run happens against an empty flow and leaves the preview on
@@ -472,6 +507,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.store.tweaks();
       this.pageSize();
       this.mode();
+      this.deviceFontSizeOffset();
+      this.assetService.assets();
       untracked(() => {
         this.scheduleMeasure();
       });
@@ -556,9 +593,17 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.pvStageEl) {
       this.resizeObserver.observe(this.pvStageEl.nativeElement);
     }
+    document.fonts?.addEventListener('loadingdone', this.deviceFontsLoaded);
+    void document.fonts?.ready.then(this.deviceFontsLoaded);
   }
 
   ngOnDestroy() {
+    this.deviceDestroyed = true;
+    document.fonts?.removeEventListener('loadingdone', this.deviceFontsLoaded);
+    this.deviceGeneration++;
+    clearTimeout(this.deviceTask);
+    this.deviceRender?.destroy();
+    if (this.deviceFrame !== undefined) cancelAnimationFrame(this.deviceFrame);
     if (this.resizeObserver) this.resizeObserver.disconnect();
     clearTimeout(this.measureTimeout);
     clearTimeout(this.printHtmlTimeout);
@@ -610,64 +655,96 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   scheduleMeasure() {
     clearTimeout(this.measureTimeout);
-    this.measureTimeout = setTimeout(() => {
-      if (!this.kpFlowEl) {
-        const el = document.querySelector('.kp-flow') as HTMLElement;
-        if (el) {
-          this.kpFlowEl = new ElementRef(el);
-          this.resizeObserver?.observe(el);
-        }
-      }
-      this.measureDOM();
-      // Second pass to ensure everything settled
-      setTimeout(() => this.measureDOM(), 300);
-    }, 150);
+    this.measureTimeout = setTimeout(() => this.measureDOM(), 150);
   }
 
-
+  /** Measure one isolated chapter per render turn; never lay out the whole novel. */
   measureDOM() {
-    if (!this.kpFlowEl) return;
-    const flow = this.kpFlowEl.nativeElement;
-    const style = getComputedStyle(flow);
-    const gap = parseFloat(style.columnGap) || 0;
-    const cw = flow.clientWidth + gap;
-    if (cw <= 0) return;
-
-    const allKps = Array.from(flow.querySelectorAll('.kp')) as HTMLElement[];
-    const chapterOffsets: Record<string, number> = {};
-    const chapterPages: Record<string, number> = {};
-
-    for (let i = 0; i < allKps.length; i++) {
-      const el = allKps[i];
-      const id = el.getAttribute('data-chapter');
-      if (id) {
-        const left = el.offsetLeft - flow.offsetLeft;
-        const currentOffset = Math.round(left / cw);
-        chapterOffsets[id] = currentOffset;
-
-        // Determine pages occupied by this chapter by looking at the next element (chapter or blank)
-        const nextEl = allKps[i + 1];
-        let nextOffset: number;
-        if (nextEl) {
-          nextOffset = Math.round((nextEl.offsetLeft - flow.offsetLeft) / cw);
-        } else {
-          nextOffset = Math.round(flow.scrollWidth / cw);
-        }
-
-        chapterPages[id] = Math.max(1, nextOffset - currentOffset);
-      }
+    if (this.deviceDestroyed || this.mode() === 'print') return;
+    const flow = this.kpFlowEl?.nativeElement;
+    if (!flow || flow.clientWidth <= 0 || flow.clientHeight <= 0) return;
+    const viewport = `${flow.clientWidth}:${flow.clientHeight}`;
+    const signature = JSON.stringify([this.mode(), viewport, this.store.tweaks(),
+      this.store.bookFontFamily(), this.store.titleFontFamily(), this.deviceFontSizeOffset()]);
+    if (signature !== this.deviceSignature || this.deviceAssets !== this.assetService.assets()) {
+      this.deviceSignature = signature;
+      this.deviceAssets = this.assetService.assets();
+      this.deviceCache.clear();
     }
-
-    const prevOffsets = this.realPageOffsets();
-    const offsetsChanged =
-      Object.keys(chapterOffsets).length !== Object.keys(prevOffsets).length ||
-      Object.keys(chapterOffsets).some(k => chapterOffsets[k] !== prevOffsets[k]);
-    if (offsetsChanged) {
-      this.realPageOffsets.set(chapterOffsets);
-      this.realChapterPages.set(chapterPages);
+    this.deviceViewport = viewport;
+    const chapters = this.chapters();
+    for (const [id, entry] of this.deviceCache) {
+      if (chapters.find(chapter => chapter.id === id) !== entry.chapter) this.deviceCache.delete(id);
     }
-    this.measuredTotalPages.set(Math.max(1, Math.ceil(flow.scrollWidth / cw)));
-    this.navigateToChapter(this.store.activeChapterId());
+    this.publishDeviceLayout();
+    this.measureNextDeviceChapter();
+  }
+
+  private measureNextDeviceChapter() {
+    clearTimeout(this.deviceTask);
+    this.deviceRender?.destroy();
+    if (this.deviceFrame !== undefined) cancelAnimationFrame(this.deviceFrame);
+    const generation = ++this.deviceGeneration;
+    if (this.deviceDestroyed || this.mode() === 'print') { this.measuringChapter.set(null); return; }
+    const chapters = this.chapters();
+    const chapter = chapters.find(c => c.id === this.deviceChapterId() && !this.deviceCache.has(c.id))
+      ?? chapters.find(c => !this.deviceCache.has(c.id));
+    if (!chapter) { this.measuringChapter.set(null); return; }
+    // Yield between chapters so input and painting can run, including on low-end machines.
+    this.deviceTask = setTimeout(() => {
+      this.measuringChapter.set(chapter);
+      this.deviceRender = afterNextRender(() => {
+        this.deviceFrame = requestAnimationFrame(() => {
+          void this.finishDeviceMeasurement(chapter, generation);
+        });
+      }, { injector: this.injector });
+    }, 50);
+  }
+
+  private async finishDeviceMeasurement(chapter: Chapter, generation: number) {
+    const flow = this.deviceMeasureFlow?.nativeElement;
+    if (!flow) return;
+    await Promise.all(Array.from(flow.querySelectorAll('img')).map(image => image.decode().catch(() => {})));
+    if (this.deviceDestroyed || generation !== this.deviceGeneration || this.mode() === 'print') return;
+    const visible = this.kpFlowEl?.nativeElement;
+    if (!visible || `${visible.clientWidth}:${visible.clientHeight}` !== this.deviceViewport) {
+      this.scheduleMeasure(); return;
+    }
+    const width = flow.clientWidth + (parseFloat(getComputedStyle(flow).columnGap) || 0);
+    if (width <= 0) return;
+    const left = flow.getBoundingClientRect().left;
+    const blocks: Record<number, number> = {};
+    // Read all geometry before publishing any signal that could change layout.
+    for (const block of flow.querySelectorAll<HTMLElement>('[data-preview-block]')) {
+      const rect = block.getClientRects()[0];
+      if (rect) blocks[Number(block.dataset['previewBlock'])] = Math.max(0, Math.floor((rect.left - left + .5) / width));
+    }
+    const pages = Math.max(1, Math.ceil((flow.scrollWidth + (parseFloat(getComputedStyle(flow).columnGap) || 0)) / width));
+    this.deviceCache.set(chapter.id, { chapter, pages, blocks });
+    const position = this.editorPosition.position();
+    if (this.followDeviceEditor && chapter.id === this.deviceChapterId() && position?.chapterId === chapter.id) {
+      this.devicePage.set(blocks[position.blockIndex] ?? 0);
+    }
+    this.publishDeviceLayout();
+    this.measureNextDeviceChapter();
+  }
+
+  private publishDeviceLayout() {
+    const offsets: Record<string, number> = {}, counts: Record<string, number> = {};
+    let total = 0;
+    for (const chapter of this.chapters()) {
+      offsets[chapter.id] = total;
+      const cached = this.deviceCache.get(chapter.id);
+      const pages = cached?.pages ?? this.estimateChapterPages(chapter);
+      if (cached) counts[chapter.id] = pages;
+      total += pages;
+    }
+    this.realPageOffsets.set(offsets);
+    this.realChapterPages.set(counts);
+    this.measuredTotalPages.set(Math.max(1, total));
+    const count = this.deviceCache.get(this.deviceChapterId())?.pages;
+    if (count) this.devicePage.update(page => Math.min(page, count - 1));
+    this.globalPage.set((offsets[this.deviceChapterId()] ?? 0) + this.devicePage());
   }
 
   navigateToChapter(chapterId: string): void {
@@ -682,28 +759,17 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.setPrintPage(target);
       return;
     }
-    const flow = this.kpFlowEl?.nativeElement;
-    const chapter = Array.from(flow?.querySelectorAll<HTMLElement>('[data-chapter]') ?? [])
-      .find(el => el.dataset['chapter'] === chapterId);
-    const block = chapter?.querySelector<HTMLElement>(`[data-preview-block="${blockIndex}"]`);
-    if (flow && block) {
-      const width = flow.clientWidth + (parseFloat(getComputedStyle(flow).columnGap) || 0);
-      if (width > 0) {
-        this.globalPage.set(Math.max(0, Math.floor((block.getBoundingClientRect().left - flow.getBoundingClientRect().left) / width)));
-        return;
-      }
-    }
-    const offsetMap = isPrint ? this.printPageOffsets() : this.realPageOffsets();
-    const offset = offsetMap[chapterId];
-    let target: number;
-    if (offset !== undefined) {
-      target = offset;
-    } else {
-      const startPage = this.bookLayout().chapters[chapterId]?.startPage ?? 1;
-      target = startPage - 1;
-    }
-    this.globalPage.set(Math.max(0, target));
-    if (isPrint) this.setPrintPage(target);
+    // Debounced document updates must not undo a page chosen in the preview.
+    // A new editor focus/position explicitly resumes following the cursor.
+    const pending = this.pendingDevicePage?.id === chapterId && this.pendingDevicePage.position === position
+      ? this.pendingDevicePage : undefined;
+    if (!pending) this.pendingDevicePage = undefined;
+    this.followDeviceEditor = !pending;
+    this.deviceChapterId.set(chapterId);
+    this.devicePage.set(pending?.id === chapterId ? pending.page
+      : this.deviceCache.get(chapterId)?.blocks[blockIndex] ?? 0);
+    this.publishDeviceLayout();
+    this.scheduleMeasure();
   }
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }
@@ -809,36 +875,19 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   }
 
   private syncActiveChapter() {
-    const p = this.globalPage();
+    this.followDeviceEditor = false;
+    const target = this.globalPage();
     const offsets = this.realPageOffsets();
-    const chapters = this.store.chapters();
-
-    let activeId = '';
-    let maxStartCol = -1;
-
-    // 1. Try real offsets first
-    for (const [id, startCol] of Object.entries(offsets)) {
-      if (startCol <= p && startCol > maxStartCol) {
-        maxStartCol = startCol;
-        activeId = id;
-      }
+    const chapter = [...this.chapters()].reverse().find(chapter => (offsets[chapter.id] ?? Infinity) <= target);
+    if (!chapter) return;
+    const page = Math.max(0, target - offsets[chapter.id]);
+    this.deviceChapterId.set(chapter.id);
+    this.devicePage.set(page);
+    this.pendingDevicePage = { id: chapter.id, page, position: this.editorPosition.position() };
+    if (this.store.activeChapterId() !== chapter.id) {
+      untracked(() => this.store.setActiveChapter(chapter.id));
     }
-
-    // 2. Fallback to layout estimation if no real offset matches
-    if (!activeId) {
-      const layout = this.bookLayout().chapters;
-      for (const id in layout) {
-        const start = layout[id].startPage - 1;
-        if (start <= p && start > maxStartCol) {
-          maxStartCol = start;
-          activeId = id;
-        }
-      }
-    }
-
-    if (activeId && this.store.activeChapterId() !== activeId) {
-      untracked(() => this.store.setActiveChapter(activeId));
-    }
+    this.scheduleMeasure();
   }
 
   ptToPx(pt: number): number { return pt * 96 / 72; }
