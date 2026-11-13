@@ -2,7 +2,17 @@
 
 Angular conserva el editor, el estado, el formato `.libria`, la previsualización y las exportaciones EPUB/DOCX/ODT. `src/desktop.ts` instala `window.desktopAPI` antes de arrancar Angular. En el navegador no lo instala y se mantienen las alternativas web.
 
-El backend Rust en `src-tauri` gestiona ventanas, archivos, diálogos, asociación de documentos, instancia única, diccionario personal y Google Drive. Los tokens de Drive se guardan en el almacén de credenciales del sistema mediante `keyring`; no llegan al frontend. La interfaz usa el menú integrado de Libria y sus atajos, también en Windows y macOS. La consulta de actualizaciones compara la versión con la última release estable de GitHub. El aviso siempre ofrece Descargar, también si recibe una notificación antigua sin URL. Abre en el navegador el instalador publicado para el sistema y la arquitectura actuales (EXE en Windows, DMG en macOS o AppImage en Linux); si no existe, abre la página de versiones para elegir otra descarga. Los fallos al abrir el enlace se muestran y permiten reintentar. La instalación es manual; no sustituye la aplicación ni la reinicia automáticamente.
+El backend Rust en `src-tauri` gestiona ventanas, archivos, diálogos, asociación de documentos, instancia única, diccionario personal y Google Drive. Los tokens de Drive se guardan en el almacén de credenciales del sistema mediante `keyring`; no llegan al frontend. La interfaz usa el menú integrado de Libria y sus atajos, también en Windows y macOS.
+
+## Actualizaciones de escritorio
+
+Las compilaciones de producción consultan al iniciar la última release estable de GitHub. Si no hay novedades o falla la conexión, la comprobación automática no interrumpe al usuario. «Acerca de… → Buscar actualizaciones» permite comprobarlo manualmente y muestra el resultado.
+
+En Windows, «Descargar» baja el EXE de la arquitectura actual (x64 o ARM64) a un directorio temporal de la caché. Rust vuelve a consultar la release; la interfaz nunca proporciona una URL ni una ruta ejecutable. Solo se acepta el nombre exacto del instalador de esa versión en `Gargadon/libria`, mediante HTTPS. Se comprueban el tamaño y el SHA-256 proporcionado por la API de GitHub; si falta el digest, se utiliza el archivo `SHA256SUMS` de la misma release que ya genera el workflow. Si no hay hash o no coincide, no se ejecuta el archivo. Esta validación confía en GitHub y en la cuenta que publica la release; no es una firma independiente del editor.
+
+La descarga no cierra Libria. «Instalar y reiniciar» guarda primero los cambios pendientes; cancelar o fallar el guardado impide iniciar el instalador. Se verifica otra vez el archivo antes de ejecutarlo. El instalador NSIS recibe `/P /UPDATE /R` y la carpeta del ejecutable actual como último argumento `/D=`, además de `/CurrentUser` o `/AllUsers` según el registro de esa instalación. Windows puede solicitar elevación. Libria solo se cierra si Windows acepta iniciar el instalador; NSIS conserva los datos de la aplicación y vuelve a abrirla al terminar. Posponer el aviso conserva la descarga accesible desde «Acerca de…» mientras Libria siga abierta.
+
+La instalación integrada requiere una instalación NSIS registrada y una compilación de producción. En macOS y Linux se conserva el enlace al DMG o AppImage correspondiente. Si no hay un instalador compatible, se abre la página de versiones. La versión 2.3.2 necesita instalarse manualmente una vez para incorporar el actualizador; desde ella se podrán instalar las siguientes versiones con este flujo.
 
 ## Desarrollo
 

@@ -11,6 +11,19 @@ type NewRecognizer = unsafe extern "C" fn(*mut c_void, f32) -> *mut c_void;
 type Accept = unsafe extern "C" fn(*mut c_void, *const i16, c_int) -> c_int;
 type ResultFn = unsafe extern "C" fn(*mut c_void) -> *const c_char;
 
+fn model_c_path(model_path: &Path) -> Result<CString, String> {
+    let path = model_path.to_str().ok_or("model")?;
+    // Vosk appends forward-slash filenames internally. Windows verbatim paths
+    // (as returned by resource_dir/current_exe) reject those mixed separators.
+    #[cfg(windows)]
+    let path = if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{unc}")
+    } else {
+        path.strip_prefix(r"\\?\").unwrap_or(path).to_owned()
+    };
+    CString::new(path.as_bytes()).map_err(|_| "model".into())
+}
+
 /// Probe the ABI before selecting a system package over the pinned fallback.
 #[cfg(target_os = "linux")]
 pub fn compatible_library(path: &Path) -> bool {
@@ -49,7 +62,7 @@ pub struct Engine {
 }
 impl Engine {
     pub fn new(library_path: &Path, model_path: &Path, sample_rate: u32) -> Result<Self, String> {
-        let path = CString::new(model_path.to_string_lossy().as_bytes()).map_err(|_| "model")?;
+        let path = model_c_path(model_path)?;
         // SAFETY: only a SHA-256 verified, pinned library is loaded, with the documented Vosk ABI.
         unsafe {
             #[cfg(windows)]
@@ -148,6 +161,31 @@ impl Drop for Engine {
         unsafe {
             (self.free_recognizer)(self.recognizer);
             (self.free_model)(self.model);
+        }
+    }
+}
+
+#[cfg(all(test, windows))]
+mod path_tests {
+    use super::*;
+
+    #[test]
+    fn model_paths_support_installed_and_unc_resources() {
+        for (input, expected) in [
+            (
+                r"\\?\C:\Program Files\Libria\runtime\vosk\models\es",
+                r"C:\Program Files\Libria\runtime\vosk\models\es",
+            ),
+            (
+                r"\\?\UNC\server\share\models\es",
+                r"\\server\share\models\es",
+            ),
+            (r"C:\Users\José\models\es", r"C:\Users\José\models\es"),
+        ] {
+            assert_eq!(
+                model_c_path(Path::new(input)).unwrap().to_str().unwrap(),
+                expected
+            );
         }
     }
 }

@@ -19,6 +19,7 @@ import { ReviewService } from './services/review.service';
 import { ReviewModalComponent } from './components/modals/review-modal.component';
 import { GoogleDriveService } from './services/google-drive.service';
 import { SpellcheckPanelComponent } from './components/spellcheck-panel/spellcheck-panel.component';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -74,8 +75,66 @@ export class App {
   onContextMenu(event: MouseEvent) {
     event.preventDefault();
   }
-  updateVersion = signal<{ version: string; url?: string } | null>(null);
+  updateVersion = signal<DesktopUpdate | null>(null);
+  updatePhase = signal<'available' | 'downloading' | 'ready' | 'installing'>('available');
+  updateProgress = signal(0);
+  checkingUpdates = signal(false);
+  updateDismissed = signal(false);
+  updateError = signal('');
   checkResult = signal('');
+
+  checkUpdates() {
+    if (!window.desktopAPI || this.checkingUpdates()) return;
+    this.checkResult.set('');
+    this.updateError.set('');
+    this.updateDismissed.set(false);
+    this.checkingUpdates.set(true);
+    window.desktopAPI.checkForUpdates();
+  }
+
+  async applyUpdate() {
+    const update = this.updateVersion();
+    const api = window.desktopAPI;
+    if (!update || this.updatePhase() === 'downloading' || this.updatePhase() === 'installing') return;
+    if (!update.canInstall || !api?.downloadUpdate || !api?.installUpdate) {
+      await this.openUpdate(update.url);
+      return;
+    }
+    this.updateError.set('');
+    if (this.updatePhase() !== 'ready') {
+      this.updatePhase.set('downloading');
+      this.updateProgress.set(0);
+      try {
+        await api.downloadUpdate(update.version, ({ downloaded, total }) => {
+          this.ngZone.run(() => this.updateProgress.set(total > 0 ? Math.min(100, Math.floor(downloaded * 100 / total)) : 0));
+        });
+        this.updatePhase.set('ready');
+      } catch (error) {
+        this.updatePhase.set('available');
+        this.updateError.set(`No se pudo descargar la actualización. ${String(error)}`);
+      }
+      return;
+    }
+    if (this.store.isSaving()) {
+      this.updateError.set('Espera a que termine el guardado antes de instalar.');
+      return;
+    }
+    this.updatePhase.set('installing');
+    try {
+      if (this.store.isDirty()) {
+        const saved = await this.fileService.saveLibriaFile(false, false);
+        if (!saved || this.store.isDirty()) {
+          this.updatePhase.set('ready');
+          this.updateError.set('La actualización está lista. Guarda los cambios para instalar y reiniciar.');
+          return;
+        }
+      }
+      await api.installUpdate();
+    } catch (error) {
+      this.updatePhase.set('ready');
+      this.updateError.set(`No se pudo iniciar la instalación. ${String(error)}`);
+    }
+  }
 
   async openUpdate(url?: string) {
     const destination = url?.trim() || 'https://github.com/Gargadon/libria/releases/latest';
@@ -139,8 +198,15 @@ export class App {
 
     const api = (window as any).desktopAPI;
     if (api?.onUpdateAvailable) {
-      api.onUpdateAvailable((update: { version: string; url?: string }) => {
+      api.onUpdateAvailable((update: DesktopUpdate) => {
         this.ngZone.run(() => {
+          this.checkingUpdates.set(false);
+          this.checkResult.set('');
+          this.updateDismissed.set(false);
+          if (this.updateVersion()?.version !== update.version) {
+            this.updatePhase.set('available');
+            this.updateError.set('');
+          }
           this.updateVersion.set(typeof update === 'string' ? { version: update } : update);
         });
       });
@@ -148,16 +214,17 @@ export class App {
     if (api?.onUpdateCheckResult) {
       api.onUpdateCheckResult((result: string) => {
         this.ngZone.run(() => {
+          this.checkingUpdates.set(false);
           const messages: Record<string, string> = {
             uptodate: 'Ya tienes la versión más reciente.',
             error: 'Error al buscar actualizaciones.',
             timeout: 'La solicitud tardó demasiado. Verifica tu conexión.',
           };
           this.checkResult.set(messages[result] || '');
-          setTimeout(() => this.checkResult.set(''), 4000);
         });
       });
     }
+    if (environment.production) api?.checkForUpdates?.(true);
     if (api?.onMenuAction) {
       api.onMenuAction((action: string) => {
         this.ngZone.run(() => {

@@ -5285,7 +5285,14 @@ body.print-digital {
   font-size: 13px;
   color: var(--ink);
   z-index: 9000;
+  max-width: calc(100vw - 32px);
+  width: max-content;
+  flex-wrap: wrap;
 }
+
+.update-banner__error { margin: 8px 0 0; max-width: 60ch; overflow-wrap: anywhere; }
+.update-banner__action:disabled { opacity: .6; cursor: default; }
+.update-banner button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 .update-banner__close {
   background: none;

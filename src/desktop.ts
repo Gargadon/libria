@@ -14,8 +14,10 @@ export async function initializeDesktop(): Promise<void> {
   const fileListeners = new Set<(path: string) => void>();
   let earlyFile: string | null = null;
   const dropListeners = new Set<(paths: string[]) => void>();
-  const updateListeners = new Set<(update: { version: string; url?: string }) => void>();
+  const updateListeners = new Set<(update: DesktopUpdate) => void>();
   const updateResultListeners = new Set<(result: string) => void>();
+  let checkingUpdates = false;
+  let reportUpdateResult = false;
   const desktopWindow = getCurrentWindow();
   let closing = false;
   const drive = <T>(method: string, args: unknown[] = []) => invoke<T>('drive', { method, args });
@@ -75,12 +77,23 @@ export async function initializeDesktop(): Promise<void> {
     getCustomDictionary: () => invoke('dictionary', { action: 'list', word: null }),
     addWordToDictionary: (word) => invoke('dictionary', { action: 'add', word }),
     removeWordFromDictionary: (word) => invoke('dictionary', { action: 'remove', word }),
-    checkForUpdates: () => {
-      void invoke<{ version: string; url: string } | null>('check_updates').then((update) => {
+    checkForUpdates: (silent = false) => {
+      reportUpdateResult ||= !silent;
+      if (checkingUpdates) return;
+      checkingUpdates = true;
+      void invoke<DesktopUpdate | null>('check_updates').then((update) => {
         if (update) updateListeners.forEach(callback => callback(update));
-        else updateResultListeners.forEach(callback => callback('uptodate'));
-      }).catch(() => updateResultListeners.forEach(callback => callback('error')));
+        else if (reportUpdateResult) updateResultListeners.forEach(callback => callback('uptodate'));
+      }).catch(() => {
+        if (reportUpdateResult) updateResultListeners.forEach(callback => callback('error'));
+      }).finally(() => { checkingUpdates = false; reportUpdateResult = false; });
     },
+    downloadUpdate: (version, callback) => {
+      const progress = new Channel<UpdateProgress>();
+      progress.onmessage = callback;
+      return invoke('download_update', { version, progress });
+    },
+    installUpdate: () => invoke('install_update'),
     openExternal: openUrl,
   };
   await desktopWindow.onCloseRequested((event) => {

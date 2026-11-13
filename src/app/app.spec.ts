@@ -5,6 +5,7 @@ import { Observable, of } from 'rxjs';
 import { App } from './app';
 import es from '../../public/i18n/es.json';
 import en from '../../public/i18n/en.json';
+import { environment } from '../environments/environment';
 
 const translations: Record<string, Record<string, string>> = { es, en };
 
@@ -62,6 +63,108 @@ describe('App', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.check-result')?.textContent).toContain('No se pudo abrir la descarga');
     expect(fixture.nativeElement.querySelector('.update-banner__action')).not.toBeNull();
+  });
+
+  it('checks at startup silently in production', () => {
+    const checkForUpdates = vi.fn();
+    window.desktopAPI = { checkForUpdates } as unknown as DesktopAPI;
+    const production = environment.production;
+    environment.production = true;
+    try { TestBed.createComponent(App); } finally { environment.production = production; }
+    expect(checkForUpdates).toHaveBeenCalledWith(true);
+  });
+
+  it('downloads once, reports progress, and waits for a separate installation action', async () => {
+    let complete!: () => void;
+    const downloadUpdate = vi.fn((_version, progress) => {
+      progress({ downloaded: 50, total: 100 });
+      return new Promise<void>(resolve => { complete = resolve; });
+    });
+    const installUpdate = vi.fn().mockResolvedValue(undefined);
+    window.desktopAPI = { downloadUpdate, installUpdate } as unknown as DesktopAPI;
+    const app = TestBed.createComponent(App).componentInstance;
+    app.updateVersion.set({ version: '2.3.3', canInstall: true });
+    const pending = app.applyUpdate();
+    await app.applyUpdate();
+    expect(app.updateProgress()).toBe(50);
+    expect(downloadUpdate).toHaveBeenCalledTimes(1);
+    expect(installUpdate).not.toHaveBeenCalled();
+    complete();
+    await pending;
+    expect(app.updatePhase()).toBe('ready');
+    await app.applyUpdate();
+    expect(installUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains the downloaded update if saving is cancelled or new changes remain', async () => {
+    const installUpdate = vi.fn();
+    window.desktopAPI = { downloadUpdate: vi.fn(), installUpdate } as unknown as DesktopAPI;
+    const app = TestBed.createComponent(App).componentInstance;
+    app.updateVersion.set({ version: '2.3.3', canInstall: true });
+    app.updatePhase.set('ready');
+    vi.spyOn(app.store, 'isDirty').mockReturnValue(true);
+    const save = vi.spyOn(app.fileService, 'saveLibriaFile').mockResolvedValue(false);
+    await app.applyUpdate();
+    expect(installUpdate).not.toHaveBeenCalled();
+    expect(app.updatePhase()).toBe('ready');
+    save.mockResolvedValue(true);
+    await app.applyUpdate();
+    expect(installUpdate).not.toHaveBeenCalled();
+    expect(app.updateError()).toContain('Guarda los cambios');
+  });
+
+  it('saves pending work before launching the installer', async () => {
+    const installUpdate = vi.fn().mockResolvedValue(undefined);
+    window.desktopAPI = { downloadUpdate: vi.fn(), installUpdate } as unknown as DesktopAPI;
+    const app = TestBed.createComponent(App).componentInstance;
+    app.updateVersion.set({ version: '2.3.3', canInstall: true });
+    app.updatePhase.set('ready');
+    const dirty = vi.spyOn(app.store, 'isDirty').mockReturnValue(true);
+    vi.spyOn(app.fileService, 'saveLibriaFile').mockImplementation(async () => {
+      expect(installUpdate).not.toHaveBeenCalled();
+      dirty.mockReturnValue(false);
+      return true;
+    });
+    await app.applyUpdate();
+    expect(installUpdate).toHaveBeenCalledOnce();
+  });
+
+  it('allows retry after a failed download or a declined installer launch', async () => {
+    const downloadUpdate = vi.fn().mockRejectedValue('Sin conexión');
+    const installUpdate = vi.fn().mockRejectedValue('Permiso cancelado');
+    window.desktopAPI = { downloadUpdate, installUpdate } as unknown as DesktopAPI;
+    const app = TestBed.createComponent(App).componentInstance;
+    app.updateVersion.set({ version: '2.3.3', canInstall: true });
+    await app.applyUpdate();
+    expect(app.updatePhase()).toBe('available');
+    expect(app.updateError()).toContain('Sin conexión');
+    downloadUpdate.mockResolvedValue(undefined);
+    await app.applyUpdate();
+    await app.applyUpdate();
+    expect(app.updatePhase()).toBe('ready');
+    expect(app.updateError()).toContain('Permiso cancelado');
+  });
+
+  it('keeps the downloaded update accessible from About after postponing it', async () => {
+    const checkForUpdates = vi.fn();
+    const downloadUpdate = vi.fn().mockResolvedValue(undefined);
+    const installUpdate = vi.fn();
+    window.desktopAPI = { checkForUpdates, downloadUpdate, installUpdate, setSpellCheckerLanguage: vi.fn().mockResolvedValue(undefined) } as unknown as DesktopAPI;
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    app.updateVersion.set({ version: '2.3.3', canInstall: true });
+    await app.applyUpdate();
+    app.updateDismissed.set(true);
+    app.showAbout.set(true);
+    fixture.detectChanges();
+    const modal = fixture.nativeElement.querySelector('app-about-modal');
+    expect(modal.textContent).toContain('Instalar y reiniciar');
+    expect(fixture.nativeElement.querySelector('.update-banner')).toBeNull();
+    const check = Array.from(modal.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+      .find(button => button.textContent?.includes('Buscar actualizaciones'))!;
+    check.click();
+    expect(checkForUpdates).toHaveBeenCalledOnce();
+    expect(app.updatePhase()).toBe('ready');
   });
 
   it('opens a native file drop from the welcome screen and retains its path', async () => {

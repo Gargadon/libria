@@ -1,4 +1,4 @@
-import { Component, output, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, output, inject, ChangeDetectionStrategy } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CommonModule } from '@angular/common';
 import { environment } from '../../../environments/environment';
@@ -12,7 +12,7 @@ import packageJson from '../../../../package.json';
   imports: [CommonModule, TranslateModule],
   template: `
     <div class="about-backdrop" (click)="close.emit()">
-      <div class="about" (click)="$event.stopPropagation()">
+      <div class="about" role="dialog" aria-modal="true" aria-label="Acerca de Libria" (click)="$event.stopPropagation()">
 
         <div class="about__spine"></div>
 
@@ -53,10 +53,27 @@ import packageJson from '../../../../package.json';
 
           <p class="about__copy">{{ 'about.copyright' | translate }}</p>
 
+          <div class="about__update" role="status" aria-live="polite">
+            @if (update(); as available) {
+              @switch (phase()) {
+                @case ('downloading') { <p>Descargando Libria {{ available.version }}: {{ progress() }} %</p> }
+                @case ('ready') { <p>Libria {{ available.version }} está lista. Se guardarán los cambios antes de reiniciar.</p> }
+                @case ('installing') { <p>Preparando la instalación…</p> }
+                @default { <p>Libria {{ available.version }} está disponible.</p> }
+              }
+            }
+            @if (status()) { <p>{{ status() }}</p> }
+          </div>
+
           <div class="about__actions">
-            <button class="about__btn about__btn--secondary" (click)="checkUpdates()">
-              {{ 'about.checkForUpdates' | translate }}
+            <button class="about__btn about__btn--secondary" [disabled]="checking() || phase() === 'downloading' || phase() === 'installing'" (click)="checkRequested.emit()">
+              {{ checking() ? 'Buscando…' : ('about.checkForUpdates' | translate) }}
             </button>
+            @if (update()) {
+              <button class="about__btn" [disabled]="phase() === 'downloading' || phase() === 'installing'" (click)="updateRequested.emit()">
+                {{ phase() === 'ready' ? 'Instalar y reiniciar' : phase() === 'downloading' ? 'Descargando…' : phase() === 'installing' ? 'Instalando…' : 'Descargar' }}
+              </button>
+            }
             <button class="about__btn" (click)="close.emit()">
               {{ 'about.close' | translate }}
             </button>
@@ -67,6 +84,10 @@ import packageJson from '../../../../package.json';
     </div>
   `,
   styles: [`
+    .about__update { color: var(--ink); font-size: 13px; max-width: 100%; overflow-wrap: anywhere; }
+    .about__update p { margin: 0 0 12px; }
+    .about__btn:disabled { opacity: .6; cursor: default; }
+    .about__btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
     .about-backdrop {
       position: fixed;
       inset: 0;
@@ -76,6 +97,8 @@ import packageJson from '../../../../package.json';
       place-items: center;
       z-index: 9000;
       animation: fadeIn .18s ease;
+      overflow-y: auto;
+      padding: 20px;
     }
 
     @keyframes fadeIn {
@@ -85,7 +108,8 @@ import packageJson from '../../../../package.json';
 
     .about {
       display: flex;
-      width: 380px;
+      width: min(440px, 100%);
+      max-height: calc(100dvh - 40px);
       border-radius: 16px;
       overflow: hidden;
       box-shadow:
@@ -108,6 +132,8 @@ import packageJson from '../../../../package.json';
 
     .about__body {
       flex: 1;
+      min-width: 0;
+      overflow-y: auto;
       background: var(--paper);
       padding: 36px 32px 28px;
       display: flex;
@@ -206,6 +232,7 @@ import packageJson from '../../../../package.json';
       gap: 12px;
       width: 100%;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     .about__btn {
@@ -219,7 +246,7 @@ import packageJson from '../../../../package.json';
       border: none;
       cursor: pointer;
       transition: background .15s;
-      flex: 1;
+      flex: 1 0 auto;
     }
 
     .about__btn:hover {
@@ -240,6 +267,13 @@ import packageJson from '../../../../package.json';
 export class AboutModalComponent {
   readonly license = packageJson.license;
   close = output<void>();
+  checkRequested = output<void>();
+  updateRequested = output<void>();
+  update = input<DesktopUpdate | null>(null);
+  phase = input('available');
+  progress = input(0);
+  status = input('');
+  checking = input(false);
   readonly translate = inject(TranslateService);
   
   readonly platform = (() => {
@@ -251,10 +285,4 @@ export class AboutModalComponent {
   readonly environment = environment;
   readonly editionName = `${environment.edition} Edition`;
 
-  checkUpdates() {
-    const api = (window as any).desktopAPI;
-    if (api?.checkForUpdates) {
-      api.checkForUpdates();
-    }
-  }
 }

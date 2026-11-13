@@ -560,7 +560,7 @@
   "dictation.noSpeech": "No se detectó voz. Inicia el dictado para volver a intentarlo.",
   "dictation.language": "El servicio no admite el idioma de este libro.",
   "dictation.failed": "No se pudo iniciar o continuar el dictado. Vuelve a intentarlo.",
-  "dictation.startHintLocal": "Iniciar dictado local, sin conexión.",
+  "dictation.startHintLocal": "Dictado",
   "dictation.loading": "Cargando el modelo de dictado…",
   "dictation.platform": "El dictado local no está disponible para esta plataforma.",
   "dictation.busy": "El dictado anterior está terminando. Vuelve a intentarlo en unos segundos.",

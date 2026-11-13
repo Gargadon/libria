@@ -4,6 +4,9 @@ interface DictationEvent {
   code?: string;
 }
 
+interface DesktopUpdate { version: string; url?: string; canInstall?: boolean; }
+interface UpdateProgress { downloaded: number; total: number; }
+
 interface DesktopAPI {
   dictationStart(id: string, lang: string, callback: (event: DictationEvent) => void): Promise<void>;
   dictationStop(id: string, abort: boolean): Promise<void>;
@@ -37,7 +40,7 @@ interface DesktopAPI {
   onFileOpen(callback: (filePath: string) => void): void;
   onFilesDropped?(callback: (paths: string[]) => void): void;
   getPendingPath(): Promise<string | null>;
-  onUpdateAvailable(callback: (update: { version: string; url?: string }) => void): void;
+  onUpdateAvailable(callback: (update: DesktopUpdate) => void): void;
   onUpdateCheckResult(callback: (result: string) => void): void;
   setLanguage(lang: string): void;
 
@@ -51,8 +54,10 @@ interface DesktopAPI {
   addWordToDictionary(word: string): Promise<boolean>;
   removeWordFromDictionary(word: string): Promise<boolean>;
 
-  // Update checks and manual installer download
-  checkForUpdates(): void;
+  // Startup checks are silent when there is no new version or no network.
+  checkForUpdates(silent?: boolean): void;
+  downloadUpdate(version: string, progress: (value: UpdateProgress) => void): Promise<void>;
+  installUpdate(): Promise<void>;
   openExternal(url: string): Promise<void>;
 }
 
