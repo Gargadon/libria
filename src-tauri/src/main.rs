@@ -202,6 +202,7 @@ fn main() {
     }
     tauri::Builder::default()
         .manage(speech::Speech::default())
+        .manage(updates::Updates::default())
         .manage(PendingPath(Mutex::new(document_argument(
             std::env::args().skip(1),
         ))))
@@ -218,6 +219,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
         .setup(|app| {
+            updates::cleanup_downloads(app.handle());
             app.manage(drive::Drive::new(app.handle())?);
             let builder =
                 tauri::WebviewWindowBuilder::from_config(app, &app.config().app.windows[0])?;
@@ -278,6 +280,8 @@ fn main() {
             save_export,
             dictionary,
             updates::check_updates,
+            updates::download_update,
+            updates::install_update,
             pdf::fonts_css,
             fonts::system_fonts,
             fonts::font_variants,

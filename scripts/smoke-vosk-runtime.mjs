@@ -15,7 +15,9 @@ for (const [language, model] of Object.entries(models)) {
 }
 if (!manifest.systemEngine && !existsSync(path.join(runtime, 'engine', manifest.engine.library))) throw new Error('Falta el motor Vosk empaquetado');
 if (manifest.host && !existsSync(path.join(runtime, manifest.host))) throw new Error('Falta el auxiliar Vosk x64');
-const result = spawnSync(binary, ['--verify-dictation-resources', runtime], { stdio: 'inherit', windowsHide: true, timeout: 180_000 });
+// Match the verbatim resource paths returned by Tauri in installed Windows builds.
+const resourcePath = process.platform === 'win32' ? path.toNamespacedPath(runtime) : runtime;
+const result = spawnSync(binary, ['--verify-dictation-resources', resourcePath], { stdio: 'inherit', windowsHide: true, timeout: 180_000 });
 if (result.error) throw result.error;
 if (result.status !== 0) throw new Error('No se pudieron cargar el motor y los seis modelos empaquetados');
 console.log('Dictado offline verificado: recursos locales completos, sin ventanas ni captura del micrófono.');
