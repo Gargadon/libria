@@ -1,4 +1,15 @@
 {
+  "sidebar.hideBlankPageNumbers": "Nascondi numeri sulle pagine vuote (conteggiate)",
+  "sidebar.pageNumberingStart": "Inizia numerazione da",
+  "sidebar.numberFromDocument": "Prima pagina del documento",
+  "sidebar.numberFromBody": "Primo elemento del corpo",
+
+  "editor.tocOptions": "Opzioni del sommario",
+  "editor.toc.includeFrontMatter": "Includi pagine preliminari",
+  "editor.toc.includeBackMatter": "Includi pagine finali",
+  "editor.toc.showChapterNumbers": "Mostra numeri dei capitoli",
+  "editor.toc.showPageNumbers": "Mostra numeri di pagina",
+
   "app.title": "Libria — Editor",
   "app.aboutTrigger": "Informazioni",
   "app.closePanel": "Chiudi pannello",

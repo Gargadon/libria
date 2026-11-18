@@ -6,7 +6,7 @@ import { blockToHtml, chapterFootnotesHtml } from '../../utils/block-html';
 import { pageSizeCss, sceneBreakGlyph } from '../../utils/block-maps';
 
 import { align, escapeHtml } from './export-utils';
-import type { Chapter } from '../../models/book.models';
+import { Chapter, tocEntries } from '../../models/book.models';
 
 export interface PrintChapterContext {
   allChapters: Chapter[];
@@ -29,6 +29,14 @@ export class PrintHtmlService {
     chapterContext?: PrintChapterContext,
   ): string {
     const pageSize = pageSizeCss(book.paperSize || '5x8');
+    const allChapters = chapterContext?.allChapters ?? chapters;
+    const bodyIndex = allChapters.findIndex((c: Chapter) => c.kind === 'chapter');
+    const fromBody = t.pageNumberingStart === 'body' && bodyIndex >= 0;
+    const bodyStart = fromBody ? pageMap?.[allChapters[bodyIndex].id] : 1;
+    const folio = (id: string) => {
+      const physical = pageMap?.[id];
+      return physical != null && bodyStart != null && physical >= bodyStart ? physical - bodyStart + 1 : undefined;
+    };
     const screenPreview = !!fontsHref && !pagedPreview;
 
     // Fonts are injected by the main process from public/fonts.css (local WOFF2).
@@ -114,7 +122,7 @@ html::-webkit-scrollbar { display: none; }
           marginBoxesCss += `
 @page {
   @bottom-center {
-    content: counter(page);
+    content: counter(${fromBody ? 'libria-folio' : 'page'});
     ${headerFooterStyle}
   }
 }
@@ -123,13 +131,13 @@ html::-webkit-scrollbar { display: none; }
           marginBoxesCss += `
 @page :left {
   @bottom-left {
-    content: counter(page);
+    content: counter(${fromBody ? 'libria-folio' : 'page'});
     ${headerFooterStyle}
   }
 }
 @page :right {
   @bottom-right {
-    content: counter(page);
+    content: counter(${fromBody ? 'libria-folio' : 'page'});
     ${headerFooterStyle}
   }
 }
@@ -138,19 +146,33 @@ html::-webkit-scrollbar { display: none; }
           marginBoxesCss += `
 @page :left {
   @top-left {
-    content: counter(page);
+    content: counter(${fromBody ? 'libria-folio' : 'page'});
     ${headerFooterStyle}
   }
 }
 @page :right {
   @top-right {
-    content: counter(page);
+    content: counter(${fromBody ? 'libria-folio' : 'page'});
     ${headerFooterStyle}
   }
 }
           `;
         }
       }
+    }
+
+    // An isolated empty document is also used to render cached recto spacer pages.
+    // Suppress only the number boxes; counters and running headers stay intact.
+    if (t.hideBlankPageNumbers) {
+      const boxes = t.pageNumberPosition === 'top-edges'
+        ? ['top-left', 'top-right']
+        : t.pageNumberPosition === 'bottom-edges'
+          ? ['bottom-left', 'bottom-right'] : ['bottom-center'];
+      marginBoxesCss += `
+@page${chapters.length ? ' :blank' : ''} {
+${boxes.map(box => `  @${box} { content: none !important; }`).join('\n')}
+}
+`;
     }
 
     const css = `
@@ -171,6 +193,17 @@ html::-webkit-scrollbar { display: none; }
 }
 
 ${marginBoxesCss}
+${fromBody ? `
+@page { counter-increment: page libria-folio; }
+@page libria-front {
+  counter-increment: page;
+  @top-left { content: none !important; }
+  @top-right { content: none !important; }
+  @bottom-left { content: none !important; }
+  @bottom-center { content: none !important; }
+  @bottom-right { content: none !important; }
+}
+` : ''}
 
 body {
   font-family: ${bodyFontFamily};
@@ -451,7 +484,7 @@ ${
   margin: 0;
 }
 .kp-toc-li {
-  display: flex;
+  display: ${screenPreview ? 'flex' : 'block'};
   align-items: baseline;
   gap: 4px;
   padding: 3px 0;
@@ -459,13 +492,17 @@ ${
 }
 .kp-toc-link {
   color: inherit;
-  display: flex;
+  display: ${screenPreview ? 'flex' : 'block'};
   align-items: baseline;
   width: 100%;
+  gap: 0.45em;
+  text-align: left;
+  text-indent: 0;
   text-decoration: none;
 }
+.kp-toc-link--no-pages::after { display: none; }
 .kp-toc-link::after {
-  content: ${screenPreview ? "''" : chapterContext ? "leader('.') attr(data-libria-page)" : "leader('.') target-counter(attr(href), page)"};
+  content: ${screenPreview ? "none" : chapterContext ? "leader('.') attr(data-libria-page)" : `leader('.') target-counter(attr(href), ${fromBody ? 'libria-folio' : 'page'})`};
   flex: 1;
   margin-left: 0.45em;
   text-align: right;
@@ -480,7 +517,10 @@ ${
   padding-left: 8px;
 }
 .kp-toc-name {
+  display: ${screenPreview ? 'block' : 'inline'};
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .kp-toc-num {
   min-width: 18px;
@@ -507,18 +547,18 @@ ${
 
         let body: string;
         if (ch.templateId === 'toc') {
-          const tocItems = (chapterContext?.allChapters ?? chapters)
-            .filter((c: any) => c.templateId !== 'toc')
+          const tocItems = tocEntries(chapterContext?.allChapters ?? chapters, ch.tocOptions)
             .map((c: any) => {
-              const page = pageMap?.[c.id];
+              const page = fromBody ? folio(c.id) : pageMap?.[c.id];
+              const unnumbered = fromBody && allChapters.findIndex((entry: Chapter) => entry.id === c.id) < bodyIndex;
               const pgCell =
-                screenPreview && page != null ? `<span class="kp-toc-pg">${page}</span>` : '';
+                screenPreview && ch.tocOptions?.showPageNumbers !== false && page != null ? `<span class="kp-toc-pg">${page}</span>` : '';
               const num =
-                c.kind === 'chapter' && c.number != null
+                ch.tocOptions?.showChapterNumbers !== false && c.kind === 'chapter' && c.number != null
                   ? `<span class="kp-toc-num">${c.number}.</span> `
                   : '';
               const resolvedPage = chapterContext ? ` data-libria-page="${page ?? 1}" data-libria-chapter-target="${escapeHtml(c.id)}"` : '';
-              return `<li class="kp-toc-li kp-toc-li--${c.kind}"><a class="kp-toc-link" href="#${printIds.get(c.id)}"${resolvedPage}><span class="kp-toc-name">${num}${escapeHtml(c.title)}</span>${pgCell}</a></li>`;
+              return `<li class="kp-toc-li kp-toc-li--${c.kind}"><a class="kp-toc-link${ch.tocOptions?.showPageNumbers === false || unnumbered ? ' kp-toc-link--no-pages' : ''}" href="#${printIds.get(c.id)}"${resolvedPage}><span class="kp-toc-name">${num}${escapeHtml(c.title)}</span>${pgCell}</a></li>`;
             })
             .join('\n');
           body = `<h2 class="kp-toc-heading" style="font-family:${titleFontFamily}">${escapeHtml(ch.title)}</h2>\n<ol class="kp-toc-list">${tocItems}</ol>`;
@@ -535,7 +575,7 @@ ${
         }
 
         const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);
-        return `<div id="${printIds.get(ch.id)}" class="${cls}" data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
+        return `<div id="${printIds.get(ch.id)}" class="${cls}"${fromBody ? ` style="page: ${(chapterContext?.chapterIndex ?? idx) < bodyIndex ? 'libria-front' : 'libria-body'}"` : ''} data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
       })
       .join('\n\n');
 

@@ -4601,6 +4601,9 @@ body.print-digital {
 }
 
 .print-generator {
+  // Visibility alone still lays out the entire manuscript in WebKit.
+  // The print media rule below restores this copy for browser printing.
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -5356,3 +5359,20 @@ body.print-digital {
   flex-shrink: 0;
 }
 .ed__dictation-preview { display: block; margin-top: 4px; }
+
+.ed__toc-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0 0 24px;
+  padding: 16px;
+  border: 1px solid var(--rule);
+  font: 14px/1.5 var(--ui);
+  text-align: left;
+  legend { padding: 0 6px; }
+  label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  input { accent-color: var(--ink); }
+}
+.kp-toc-li { text-align: left; text-indent: 0; }
+.kp-toc-title { min-width: 0; overflow-wrap: anywhere; }
+.kp-toc-pg { margin-left: auto; flex-shrink: 0; text-align: right; font-variant-numeric: tabular-nums; }

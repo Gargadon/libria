@@ -1,8 +1,8 @@
 # Maintainer: David Kantun <dkantun@gmail.com>
 
 pkgname=libria
-pkgver=2.3.0
-pkgrel=2
+pkgver=2.3.2
+pkgrel=1
 pkgdesc="Creación y maquetación de libros con dictado local sin conexión"
 arch=('x86_64')
 url="https://github.com/Gargadon/libria"

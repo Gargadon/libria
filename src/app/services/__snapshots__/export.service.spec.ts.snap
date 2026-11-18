@@ -300,6 +300,7 @@ exports[`export format regression > keeps the print composition used by preview 
 }
           
 
+
 body {
   font-family: 'Lora', serif;
   font-size: 12pt;
@@ -575,7 +576,7 @@ body {
   margin: 0;
 }
 .kp-toc-li {
-  display: flex;
+  display: block;
   align-items: baseline;
   gap: 4px;
   padding: 3px 0;
@@ -583,11 +584,15 @@ body {
 }
 .kp-toc-link {
   color: inherit;
-  display: flex;
+  display: block;
   align-items: baseline;
   width: 100%;
+  gap: 0.45em;
+  text-align: left;
+  text-indent: 0;
   text-decoration: none;
 }
+.kp-toc-link--no-pages::after { display: none; }
 .kp-toc-link::after {
   content: leader('.') target-counter(attr(href), page);
   flex: 1;
@@ -604,7 +609,10 @@ body {
   padding-left: 8px;
 }
 .kp-toc-name {
+  display: inline;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .kp-toc-num {
   min-width: 18px;

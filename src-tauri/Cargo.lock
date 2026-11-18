@@ -2231,7 +2231,7 @@ dependencies = [
 
 [[package]]
 name = "libria"
-version = "2.3.1"
+version = "2.3.2"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",

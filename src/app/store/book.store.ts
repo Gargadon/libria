@@ -85,6 +85,8 @@ const initialState: BookState = {
     marginInner: 25,
     marginOuter: 15,
     showPageNumbers: true,
+    hideBlankPageNumbers: false,
+    pageNumberingStart: 'document',
     showHeader: true,
     hideFirstPageHeaderFooter: true,
     headerText: '',
@@ -788,7 +790,7 @@ export const BookStore = signalStore(
         return { chapters, isDirty: true };
       });
     },
-    updateChapterMeta(chapterId: string, meta: Partial<Pick<Chapter, 'title' | 'number' | 'forceOddPage' | 'status'>>) {
+    updateChapterMeta(chapterId: string, meta: Partial<Pick<Chapter, 'title' | 'number' | 'forceOddPage' | 'status' | 'tocOptions'>>) {
       patchState(store, (state) => ({
         chapters: state.chapters.map(c => 
           c.id === chapterId ? { ...c, ...meta } : c

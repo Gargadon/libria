@@ -1,4 +1,15 @@
 {
+  "sidebar.hideBlankPageNumbers": "Masquer les numéros des pages blanches (comptées)",
+  "sidebar.pageNumberingStart": "Commencer la numérotation à",
+  "sidebar.numberFromDocument": "Première page du document",
+  "sidebar.numberFromBody": "Premier élément du corps",
+
+  "editor.tocOptions": "Options de la table des matières",
+  "editor.toc.includeFrontMatter": "Inclure les pages liminaires",
+  "editor.toc.includeBackMatter": "Inclure les pages finales",
+  "editor.toc.showChapterNumbers": "Afficher les numéros de chapitre",
+  "editor.toc.showPageNumbers": "Afficher les numéros de page",
+
   "app.title": "Libria — Éditeur",
   "app.aboutTrigger": "À propos",
   "app.closePanel": "Fermer le panneau",

@@ -39,6 +39,19 @@ export function sortFootnotesByPosition(footnotes: Footnote[] | undefined, body:
 
 export type ChapterTemplateId = 'title-page' | 'credits' | 'dedication' | 'acknowledgments' | 'toc';
 
+export interface TocOptions {
+  includeFrontMatter?: boolean;
+  includeBackMatter?: boolean;
+  showChapterNumbers?: boolean;
+  showPageNumbers?: boolean;
+}
+
+export function tocEntries(chapters: Chapter[], options?: TocOptions): Chapter[] {
+  return chapters.filter(c => c.templateId !== 'toc'
+    && (c.kind !== 'front' || options?.includeFrontMatter !== false)
+    && (c.kind !== 'back' || options?.includeBackMatter !== false));
+}
+
 export interface Chapter {
   id: string;
   kind: ChapterKind;
@@ -51,6 +64,7 @@ export interface Chapter {
   body: Block[];
   footnotes?: Footnote[];
   templateId?: ChapterTemplateId;
+  tocOptions?: TocOptions;
 }
 
 export interface Book {
@@ -86,6 +100,8 @@ export interface Tweaks {
   marginInner: number;
   marginOuter: number;
   showPageNumbers: boolean;
+  hideBlankPageNumbers: boolean;
+  pageNumberingStart: 'document' | 'body';
   showHeader: boolean;
   hideFirstPageHeaderFooter: boolean;
   headerText: string;

@@ -79,6 +79,42 @@ describe('reemplazar texto escribiendo', () => {
     expect(paragraph.textContent).toBe('Hola bello cruel y más');
   });
 
+  it.each([true, false])('replaces the previous chapter DOM when switching with focus=%s', focused => {
+    const original = store.activeChapter()!;
+    const destination = { ...original, id: 'destination', title: 'Destino', body: original.body.map((b, i) => ({
+      ...b, id: `destination-${i}`, text: i === 1 ? 'Párrafo del destino' : b.text, html: undefined,
+    })) };
+    store.setChapters([...store.chapters(), destination]);
+    if (!focused) paragraph.blur();
+    select(paragraph, 5, 5);
+    store.setActiveChapter(destination.id);
+    fixture.detectChanges();
+    const target = fixture.nativeElement.querySelector('.bk-p') as HTMLElement;
+    expect(target.textContent).toBe('Párrafo del destino');
+    expect(store.activeChapter()!.body[1].text).toBe('Párrafo del destino');
+    expect(store.chapters().find(c => c.id === original.id)!.body[1].text).toBe('Hola mundo cruel');
+    expect(target).not.toBe(paragraph);
+  });
+
+  it('keeps pending input in its original chapter when switching and immediately typing', async () => {
+    const original = store.activeChapter()!;
+    const destination = { ...original, id: 'destination', title: 'Destino', body: original.body.map((b, i) => ({
+      ...b, id: `destination-${i}`, text: i === 1 ? 'Párrafo del destino' : b.text, html: undefined,
+    })) };
+    store.setChapters([...store.chapters(), destination]);
+    paragraph.textContent = 'Edición del origen';
+    paragraph.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    store.setActiveChapter(destination.id);
+    fixture.detectChanges();
+    const target = fixture.nativeElement.querySelector('.bk-p') as HTMLElement;
+    Object.defineProperty(target, 'innerText', { configurable: true, get: () => target.textContent });
+    target.textContent = 'Edición del destino';
+    target.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 250));
+    expect(store.chapters().find(c => c.id === original.id)!.body[1].text).toBe('Edición del origen');
+    expect(store.activeChapter()!.body[1].text).toBe('Edición del destino');
+  });
+
   it('acepta una comilla escrita sobre una selección', () => {
     const execCommand = vi.fn(() => true);
     (document as any).execCommand = execCommand;

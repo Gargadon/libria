@@ -15,8 +15,6 @@ export class ContenteditableDirective implements OnInit, OnChanges {
   @Input('appContenteditable') model?: string;
   @Input() contenteditableHtml?: string;
 
-  private currentText = '';
-
   constructor(private elRef: ElementRef<HTMLElement>) {}
 
   ngOnInit(): void {
@@ -43,7 +41,6 @@ export class ContenteditableDirective implements OnInit, OnChanges {
     // por delante del modelo (el guardado va con retardo) y reescribirlo perdería el
     // texto recién escrito, incluido el reemplazo de una selección.
     if (el === document.activeElement || (this.selectionInside(el) && this.domText(el) !== (this.model ?? ''))) {
-      this.currentText = this.domText(el);
       return;
     }
     const html = this.contenteditableHtml ?? '';
@@ -59,7 +56,6 @@ export class ContenteditableDirective implements OnInit, OnChanges {
         el.textContent = text;
       }
     }
-    this.currentText = this.domText(el);
   }
 
   private domText(el: HTMLElement): string {

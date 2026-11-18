@@ -1,4 +1,15 @@
 {
+  "sidebar.hideBlankPageNumbers": "Hide numbers on blank pages (still counted)",
+  "sidebar.pageNumberingStart": "Start page numbering at",
+  "sidebar.numberFromDocument": "First sheet of the document",
+  "sidebar.numberFromBody": "First body element",
+
+  "editor.tocOptions": "Table of contents options",
+  "editor.toc.includeFrontMatter": "Include front matter",
+  "editor.toc.includeBackMatter": "Include back matter",
+  "editor.toc.showChapterNumbers": "Show chapter numbers",
+  "editor.toc.showPageNumbers": "Show page numbers",
+
   "app.title": "Libria — Editor",
   "app.aboutTrigger": "About",
   "app.closePanel": "Close panel",

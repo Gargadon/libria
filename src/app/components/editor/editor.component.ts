@@ -24,6 +24,7 @@ import {
   signal,
   HostListener,
   effect,
+  untracked,
   ChangeDetectionStrategy,
   OnDestroy,
 } from '@angular/core';
@@ -35,7 +36,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ContenteditableDirective } from './contenteditable.directive';
 import { TableContentDirective } from './table-content.directive';
 import { EditorPositionService } from '../../services/editor-position.service';
-import { Block, sortFootnotesByPosition } from '../../models/book.models';
+import { Block, TocOptions, tocEntries, sortFootnotesByPosition } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { NotesChatModalComponent } from '../notes/notes-chat-modal.component';
@@ -70,6 +71,21 @@ export class EditorComponent implements OnDestroy {
     this.store.activeChapterId();
     this.store.documentLang();
     this.dictation.abort();
+  });
+
+  private readonly _chapterEditingContext = effect(() => {
+    this.store.activeChapterId();
+    untracked(() => {
+      // Pending input captures its original chapter; commit it before another
+      // paragraph can replace the shared debounce slot after navigation.
+      this._flushPendingInput();
+      clearTimeout(this._inputTimeout);
+      this._inputTimeout = null;
+      this.lastFocusedIndex = -1;
+      this.focusedBlockIndex.set(-1);
+      this._savedSelection = null;
+      this.selectionToolbar.set(null);
+    });
   });
 
   @HostListener('document:pointerdown', ['$event'])
@@ -196,8 +212,15 @@ export class EditorComponent implements OnDestroy {
   }
 
   readonly tocChapters = computed(() =>
-    this.store.chapters().filter((c) => c.templateId !== 'toc'),
+    tocEntries(this.store.chapters(), this.store.activeChapter()?.tocOptions),
   );
+
+  setTocOption(key: keyof TocOptions, value: boolean): void {
+    const chapter = this.store.activeChapter();
+    if (chapter) this.store.updateChapterMeta(chapter.id, {
+      tocOptions: { ...chapter.tocOptions, [key]: value },
+    });
+  }
 
   readonly currentLang = computed(() => {
     const lang = this.store.personalConfig().language;

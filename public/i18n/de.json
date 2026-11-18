@@ -1,4 +1,15 @@
 {
+  "sidebar.hideBlankPageNumbers": "Seitenzahlen auf Leerseiten ausblenden (mitzählen)",
+  "sidebar.pageNumberingStart": "Seitennummerierung beginnen bei",
+  "sidebar.numberFromDocument": "Erste Dokumentseite",
+  "sidebar.numberFromBody": "Erstes Element des Hauptteils",
+
+  "editor.tocOptions": "Optionen für das Inhaltsverzeichnis",
+  "editor.toc.includeFrontMatter": "Vorspann einbeziehen",
+  "editor.toc.includeBackMatter": "Nachspann einbeziehen",
+  "editor.toc.showChapterNumbers": "Kapitelnummern anzeigen",
+  "editor.toc.showPageNumbers": "Seitenzahlen anzeigen",
+
   "app.title": "Libria — Editor",
   "app.aboutTrigger": "Über",
   "app.closePanel": "Panel schließen",

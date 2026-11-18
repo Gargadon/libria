@@ -314,6 +314,18 @@ export class PaperPreviewService {
     copy.querySelectorAll('[data-vivliostyle-page-counter]').forEach((counter) => {
       counter.textContent = String(index + 1);
     });
+    if (this.latestInput?.tweaks.pageNumberingStart === 'body') {
+      const first = this.latestInput.chapters.find(c => c.kind === 'chapter');
+      const start = first ? this.layout()?.chapters[first.id]?.startPage : undefined;
+      if (start != null) {
+        const position = this.latestInput.tweaks.pageNumberPosition;
+        const side = copy.getAttribute('data-vivliostyle-page-side') === 'left' ? 'left' : 'right';
+        const box = position === 'bottom-center' ? 'bottom-center'
+          : `${position === 'top-edges' ? 'top' : 'bottom'}-${side}`;
+        const margin = copy.querySelector(`[data-vivliostyle-page-margin-box="${box}"]`);
+        if (margin?.textContent?.trim()) margin.textContent = index + 1 >= start ? String(index + 2 - start) : '';
+      }
+    }
     display.replaceChildren(copy);
     this.displayed = page;
     if (this.latestInput?.book.lang) display.lang = this.latestInput.book.lang;

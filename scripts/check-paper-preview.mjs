@@ -77,7 +77,7 @@ const server = http.createServer((req, res) => {
       ng.getComponent(document.querySelector('app-root')).store.createNewProject(),
     );
     await page.waitForSelector('app-preview');
-    await page.evaluate((desktopFonts) => {
+    await page.evaluate(({ desktopFonts, numberingStart, hideBlankPageNumbers }) => {
       const app = ng.getComponent(document.querySelector('app-root'));
       const preview = ng.getComponent(document.querySelector('app-preview'));
       const words =
@@ -140,6 +140,8 @@ const server = http.createServer((req, res) => {
             hyphenation: false,
             showHeader: true,
             showPageNumbers: true,
+            pageNumberingStart: numberingStart,
+            hideBlankPageNumbers,
             hideFirstPageHeaderFooter: true,
           },
           chapters,
@@ -149,7 +151,7 @@ const server = http.createServer((req, res) => {
       );
       if (desktopFonts) preview.paperPreview.fontsPromise = Promise.resolve(desktopFonts);
       app.store.setNav('layout');
-    }, desktopFonts);
+    }, { desktopFonts, numberingStart: process.env.LIBRIA_NUMBER_FROM_BODY ? 'body' : 'document', hideBlankPageNumbers: !!process.env.LIBRIA_HIDE_BLANK_NUMBERS });
     await page.waitForFunction(
       () => {
         const p = ng.getComponent(document.querySelector('app-preview'));
@@ -177,6 +179,12 @@ const server = http.createServer((req, res) => {
         };
       }),
     );
+    assert.equal(await page.$eval('.print-generator', el => getComputedStyle(el).display), 'none',
+      'The full-book print copy must not participate in screen layout');
+    await page.emulateMediaType('print');
+    assert.equal(await page.$eval('.print-generator', el => getComputedStyle(el).display), 'block',
+      'The full-book print copy must remain available for browser printing');
+    await page.emulateMediaType('screen');
     await page.screenshot({ path: path.join(output, 'initial.png') });
     fs.writeFileSync(
       path.join(output, 'initial.html'),
@@ -249,6 +257,12 @@ const server = http.createServer((req, res) => {
         copy
           .querySelectorAll('[data-vivliostyle-page-counter]')
           .forEach((e) => (e.textContent = String(i + 1)));
+        if (s.latestInput.tweaks.pageNumberingStart === 'body') {
+          const first = s.latestInput.chapters.find(c => c.kind === 'chapter');
+          const start = s.layout().chapters[first.id].startPage;
+          const margin = copy.querySelector('[data-vivliostyle-page-margin-box="bottom-center"]');
+          if (margin?.textContent?.trim()) margin.textContent = i + 1 >= start ? String(i + 2 - start) : '';
+        }
         return extract(copy);
       });
       const diffs = [];
@@ -275,6 +289,36 @@ const server = http.createServer((req, res) => {
       }),
     );
     assert.deepEqual(comparison.diffs, [], 'Incremental pages must match whole-book pagination');
+    if (process.env.LIBRIA_HIDE_BLANK_NUMBERS) {
+      const blank = await page.evaluate(() => {
+        const p = ng.getComponent(document.querySelector('app-preview'));
+        const layout = p.paperPreview.layout();
+        const chapter = Object.values(layout.chapters).find(c => c.hasBlankBefore);
+        const blankIndex = chapter.startPage - 2;
+        p.paperPreview.showPage(blankIndex);
+        const doc = p.printIframeEl.nativeElement.contentDocument;
+        const number = doc.querySelector('#paper-display [data-vivliostyle-page-margin-box="bottom-center"]')?.textContent.trim() ?? '';
+        p.paperPreview.showPage(blankIndex + 1);
+        const following = doc.querySelector('#paper-display [data-vivliostyle-page-margin-box="bottom-center"]')?.textContent.trim();
+        const start = p.store.tweaks.pageNumberingStart() === 'body' ? layout.chapters.one.startPage : 1;
+        return { number, following, expected: String(chapter.startPage - start + 1) };
+      });
+      assert.equal(blank.number, '');
+      assert.equal(blank.following, blank.expected, 'Blank sheets must still count');
+    }
+    if (process.env.LIBRIA_NUMBER_FROM_BODY) {
+      const folios = await page.evaluate(() => {
+        const p = ng.getComponent(document.querySelector('app-preview'));
+        const start = p.paperPreview.layout().chapters.one.startPage;
+        p.paperPreview.showPage(start - 1);
+        const read = () => p.printIframeEl.nativeElement.contentDocument
+          .querySelector('#paper-display [data-vivliostyle-page-margin-box="bottom-center"]')?.textContent.trim() ?? '';
+        const first = read();
+        p.paperPreview.showPage(0);
+        return { first, preliminary: read() };
+      });
+      assert.deepEqual(folios, { first: '1', preliminary: '' });
+    }
 
     await page.evaluate(() => {
       const p = ng.getComponent(document.querySelector('app-preview'));
@@ -336,6 +380,7 @@ const server = http.createServer((req, res) => {
       };
     });
     console.log('TOC', toc);
+    await page.screenshot({ path: path.join(output, 'contents.png') });
     await page.evaluate(() => {
       const p = ng.getComponent(document.querySelector('app-preview'));
       const links =

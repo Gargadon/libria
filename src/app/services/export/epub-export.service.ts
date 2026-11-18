@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../../store/book.store';
-import { sortFootnotesByPosition } from '../../models/book.models';
+import { tocEntries, sortFootnotesByPosition } from '../../models/book.models';
 
 import { AssetService } from '../asset.service';
 
@@ -193,11 +193,10 @@ ${dropCapStyles}`,
         const contentParts: string[] = [];
 
         if (c.templateId === 'toc') {
-          const tocBody = chapters
-            .filter((ch) => ch.templateId !== 'toc')
+          const tocBody = tocEntries(chapters, c.tocOptions)
             .map((ch) => {
               const num =
-                ch.kind === 'chapter' && ch.number != null
+                c.tocOptions?.showChapterNumbers !== false && ch.kind === 'chapter' && ch.number != null
                   ? `<span class="kp-toc-num">${ch.number}.</span> `
                   : '';
               return `<li class="kp-toc-item kp-toc-item--${ch.kind}"><a href="${ch.id}.xhtml">${num}${escapeHtml(ch.title)}</a></li>`;

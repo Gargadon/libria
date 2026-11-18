@@ -209,6 +209,17 @@
           [class.ed__doc--small-caps]="store.tweaks.firstParagraphSmallCaps()"
         >
           @if (chapter.templateId === 'toc') {
+            <fieldset class="ed__toc-options">
+              <legend>{{ 'editor.tocOptions' | translate }}</legend>
+              <label><input type="checkbox" [ngModel]="chapter.tocOptions?.includeFrontMatter !== false"
+                (ngModelChange)="setTocOption('includeFrontMatter', $event)"> {{ 'editor.toc.includeFrontMatter' | translate }}</label>
+              <label><input type="checkbox" [ngModel]="chapter.tocOptions?.includeBackMatter !== false"
+                (ngModelChange)="setTocOption('includeBackMatter', $event)"> {{ 'editor.toc.includeBackMatter' | translate }}</label>
+              <label><input type="checkbox" [ngModel]="chapter.tocOptions?.showChapterNumbers !== false"
+                (ngModelChange)="setTocOption('showChapterNumbers', $event)"> {{ 'editor.toc.showChapterNumbers' | translate }}</label>
+              <label><input type="checkbox" [ngModel]="chapter.tocOptions?.showPageNumbers !== false"
+                (ngModelChange)="setTocOption('showPageNumbers', $event)"> {{ 'editor.toc.showPageNumbers' | translate }}</label>
+            </fieldset>
             <div class="ed__toc-preview">
               <div class="ed__toc-label">{{ 'editor.tocPreviewLabel' | translate }}</div>
               @for (c of tocChapters(); track c.id) {
@@ -217,7 +228,7 @@
                   [class.ed__toc-entry--front]="c.kind === 'front'"
                   [class.ed__toc-entry--back]="c.kind === 'back'"
                 >
-                  @if (c.kind === 'chapter' && c.number != null) {
+                  @if (chapter.tocOptions?.showChapterNumbers !== false && c.kind === 'chapter' && c.number != null) {
                     <span class="ed__toc-num">{{ c.number }}</span>
                   }
                   <span class="ed__toc-title">{{ c.title }}</span>
@@ -225,7 +236,7 @@
               }
             </div>
           } @else {
-            @for (b of chapter.body; track $index) {
+            @for (b of chapter.body; track b.id ?? b) {
               <div
                 class="ed__block-container"
                 [attr.data-selection-region]="isTitleBlock(b.type) ? 'title' : 'content'"

@@ -2,7 +2,7 @@ import { Component, inject, computed, signal, effect, untracked, ElementRef, Vie
 import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 import { CommonModule } from '@angular/common';
-import { Chapter, sortFootnotesByPosition } from '../../models/book.models';
+import { Chapter, tocEntries, sortFootnotesByPosition } from '../../models/book.models';
 import { PrintHtmlService } from '../../services/export/print-html.service';
 import { BlockViewComponent } from '../block-view/block-view.component';
 import { PaperPreviewService, PaperLayout } from '../../services/preview/paper-preview.service';
@@ -64,7 +64,7 @@ import { TranslateModule } from '@ngx-translate/core';
             [style.padding-right.mm]="isChapterEven(idx) ? store.tweaks.marginInner() : store.tweaks.marginOuter()">
             
             @let showHdr = store.tweaks.showHeader();
-            @let showPN = store.tweaks.showPageNumbers();
+            @let showPN = store.tweaks.showPageNumbers() && chapterFolio(chapter.id) != null;
             @let pnp = store.tweaks.pageNumberPosition();
             @let isEven = isChapterEven(idx);
             @if (showHdr || (showPN && pnp === 'top-edges')) {
@@ -72,13 +72,13 @@ import { TranslateModule } from '@ngx-translate/core';
                 [class.print__header--edge-even]="showPN && pnp === 'top-edges' && isEven"
                 [class.print__header--edge-odd]="showPN && pnp === 'top-edges' && !isEven">
                 @if (showPN && pnp === 'top-edges') {
-                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                  <span class="print__hdr-pagenum">{{ chapterFolio(chapter.id) }}</span>
                 }
                 @if (showHdr) {
                   <span class="print__hdr-text">{{ store.tweaks.headerText() || store.book()?.title }}</span>
                 }
                 @if (showPN && pnp === 'top-edges' && !isEven) {
-                  <span class="print__hdr-pagenum">{{ chapterStartPage(idx) }}</span>
+                  <span class="print__hdr-pagenum">{{ chapterFolio(chapter.id) }}</span>
                 }
               </div>
             }
@@ -89,7 +89,7 @@ import { TranslateModule } from '@ngx-translate/core';
               <div class="print__footer"
                 [class.print__footer--edge-even]="pnp === 'bottom-edges' && isEven"
                 [class.print__footer--edge-odd]="pnp === 'bottom-edges' && !isEven">
-                <span>Pág. {{ chapterStartPage(idx) }}</span>
+                <span>Pág. {{ chapterFolio(chapter.id) }}</span>
               </div>
             }
           </div>
@@ -275,18 +275,18 @@ import { TranslateModule } from '@ngx-translate/core';
             <div class="kp-toc-wrap">
               <h2 class="kp-toc-heading" [style.font-family]="store.titleFontFamily()">{{ chapter.title }}</h2>
               <ol class="kp-toc-list">
-                @for (c of tocChapters(); track c.id) {
+                @for (c of tocChapters(chapter); track c.id) {
                   <li class="kp-toc-li"
                       [class.kp-toc-li--front]="c.kind === 'front'"
                       [class.kp-toc-li--back]="c.kind === 'back'"
                       [class.kp-toc-li--link]="mode() !== 'print'"
                       (click)="navigateToChapter(c.id)">
-                    @if (c.kind === 'chapter' && c.number != null) {
+                    @if (chapter.tocOptions?.showChapterNumbers !== false && c.kind === 'chapter' && c.number != null) {
                       <span class="kp-toc-num">{{ c.number }}.</span>
                     }
                     <span class="kp-toc-title">{{ c.title }}</span>
-                    @if (mode() === 'print') {
-                      <span class="kp-toc-pg">{{ bookLayout().chapters[c.id]?.startPage }}</span>
+                    @if (mode() === 'print' && chapter.tocOptions?.showPageNumbers !== false) {
+                      <span class="kp-toc-pg">{{ chapterFolio(c.id) }}</span>
                     }
                   </li>
                 }
@@ -391,9 +391,9 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   // Chapter start pages measured from the print iframe DOM (0-indexed column = page - 1)
   printPageOffsets = signal<Record<string, number>>({});
 
-  readonly tocChapters = computed(() =>
-    this.chapters().filter(c => c.templateId !== 'toc')
-  );
+  tocChapters(chapter: Chapter): Chapter[] {
+    return tocEntries(this.chapters(), chapter.tocOptions);
+  }
 
   readonly bookLayout = computed(() => {
     const chapters = this.store.chapters();
@@ -823,6 +823,16 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     }
 
     return this.bookLayout().chapters[ch.id]?.startPage % 2 === 0;
+  }
+
+  chapterFolio(id: string): number | null {
+    const layout = this.bookLayout().chapters;
+    const page = layout[id]?.startPage;
+    if (page == null) return null;
+    if (this.store.tweaks.pageNumberingStart() !== 'body') return page;
+    const first = this.chapters().find(c => c.kind === 'chapter');
+    const start = first ? layout[first.id]?.startPage : undefined;
+    return start == null ? page : page < start ? null : page - start + 1;
   }
 
   chapterStartPage(chapterIdx: number): number {

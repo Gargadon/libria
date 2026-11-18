@@ -168,6 +168,33 @@
   </div>
 
   <div class="sb__row">
+    <div class="sb__label" id="hide-blank-page-numbers-label">{{ 'sidebar.hideBlankPageNumbers' | translate }}</div>
+    <div class="sb__radio" role="group" aria-labelledby="hide-blank-page-numbers-label">
+      <button class="sb__opt"
+        [class.sb__opt--on]="store.tweaks.hideBlankPageNumbers()"
+        [attr.aria-pressed]="store.tweaks.hideBlankPageNumbers()"
+        (click)="store.updateTweak('hideBlankPageNumbers', true)">
+        {{ 'sidebar.yes' | translate }}
+      </button>
+      <button class="sb__opt"
+        [class.sb__opt--on]="!store.tweaks.hideBlankPageNumbers()"
+        [attr.aria-pressed]="!store.tweaks.hideBlankPageNumbers()"
+        (click)="store.updateTweak('hideBlankPageNumbers', false)">
+        {{ 'sidebar.no' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="sb__row sb__row--col">
+    <label class="sb__label" for="page-numbering-start">{{ 'sidebar.pageNumberingStart' | translate }}</label>
+    <select id="page-numbering-start" class="sb__select" [ngModel]="store.tweaks.pageNumberingStart()"
+      (ngModelChange)="store.updateTweak('pageNumberingStart', $event)">
+      <option value="document">{{ 'sidebar.numberFromDocument' | translate }}</option>
+      <option value="body">{{ 'sidebar.numberFromBody' | translate }}</option>
+    </select>
+  </div>
+
+  <div class="sb__row">
     <div class="sb__label">{{ 'sidebar.pageNumPos' | translate }}</div>
     <select
       class="sb__select"
