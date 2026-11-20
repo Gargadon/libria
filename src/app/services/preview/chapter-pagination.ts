@@ -67,7 +67,7 @@ export class ChapterPagination<T> {
         check();
         const blank = !!source.forceOddPage && next % 2 === 0;
         if (blank) next++;
-        const html = source.html(starts());
+        const html = source.html(source.isContents ? starts() : {});
         if (source.isContents) contentsSources.set(source.id, html);
         let entry = this.cache.get(source.id);
         if (!entry || entry.html !== html) {

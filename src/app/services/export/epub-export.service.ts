@@ -302,7 +302,7 @@ ${dropCapStyles}`,
         } // end if templateId !== 'toc'
         const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
         if (sortedFns.length) {
-          contentParts.push(`<div class="kp-fnpanel"><hr class="kp-fnpanel-rule">`);
+          contentParts.push(`<div class="kp-fnpanel"><hr class="kp-fnpanel-rule"/>`);
           sortedFns.forEach((fn: any, fi: number) => {
             const fnText = escapeHtml(fn.content || '');
             contentParts.push(

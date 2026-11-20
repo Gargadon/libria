@@ -125,14 +125,16 @@ describe('export format regression', () => {
       odt: () => service.exportOdt(),
     }[format]();
     expect(saved.filename).toBe(`Libro de prueba.${format}`);
-    const zip = await JSZip.loadAsync(saved.bytes);
+    const zip = await JSZip.loadAsync(saved.bytes, { checkCRC32: true });
     const contents: Record<string, string> = {};
     for (const path of Object.keys(zip.files).sort()) {
       if (!zip.files[path].dir && /\.(?:xml|xhtml|opf|css)$/.test(path)) {
-        contents[path] = (await zip.file(path)!.async('string')).replace(
-          /rId[a-zA-Z0-9_-]+/g,
-          'rId-STABLE',
-        );
+        const content = await zip.file(path)!.async('string');
+        if (!path.endsWith('.css')) {
+          const xml = new DOMParser().parseFromString(content, 'application/xml');
+          expect(xml.querySelector('parsererror')?.textContent, path).toBeUndefined();
+        }
+        contents[path] = content.replace(/rId[a-zA-Z0-9_-]+/g, 'rId-STABLE');
       }
     }
     expect(contents).toMatchSnapshot();

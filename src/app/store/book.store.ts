@@ -150,10 +150,16 @@ function untitledLabel(lang: string): string {
   return map[lang] || 'Sin título';
 }
 
+const blockWordCounts = new WeakMap<object, { text: string | undefined; count: number }>();
+
 function calculateWords(body: { text?: string }[]): number {
   return body.reduce((sum, b) => {
+    const cached = blockWordCounts.get(b);
+    if (cached && cached.text === b.text) return sum + cached.count;
     const text = (b.text || '').trim();
-    return sum + (text ? text.split(/\s+/).length : 0);
+    const count = text ? text.split(/\s+/).length : 0;
+    blockWordCounts.set(b, { text: b.text, count });
+    return sum + count;
   }, 0);
 }
 
@@ -798,18 +804,24 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    updateChapterBlock(chapterId: string, blockIndex: number, text: string, html?: string) {
+    updateChapterBlock(chapterId: string, blockIndex: number, text: string, html?: string, replacement?: {
+      endIndex: number;
+      paragraphs: { text: string; html?: string }[];
+    }) {
       patchState(store, (state) => ({
         chapters: state.chapters.map((c) => {
           if (c.id !== chapterId) return c;
           
           const editedBlock = c.body[blockIndex];
           const isTitleBlock = editedBlock.type === 'h1' || editedBlock.type === 'chapter-title';
-          const newBody = c.body.map((b, i) =>
-            i === blockIndex ? { ...b, text, html } : b
-          );
+          const prefix = c.body.slice(0, blockIndex);
+          prefix.push({ ...editedBlock, text, html });
+          const following = replacement?.paragraphs.map((paragraph): Block => ({
+            id: createId('blk'), type: 'p', text: paragraph.text, ...(paragraph.html ? { html: paragraph.html } : {}),
+          })) ?? [];
+          const newBody = prefix.concat(following, c.body.slice((replacement?.endIndex ?? blockIndex) + 1));
           const words = calculateWords(newBody);
-          
+
           return {
             ...c,
             title: isTitleBlock ? (text || untitledLabel(store.personalConfig().language)) : c.title,

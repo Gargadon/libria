@@ -25,10 +25,17 @@ export class SpellCheckService {
         return engine;
       })();
       this.dictionaries.set(lang, dictionary);
-      void dictionary.catch(() => this.dictionaries.delete(lang));
+      void dictionary.catch(() => {
+        if (this.dictionaries.get(lang) === dictionary) this.dictionaries.delete(lang);
+      });
     }
     return dictionary;
   }
+  clearCache(): void {
+    this.dictionaries.clear();
+    this.revision.update(value => value + 1);
+  }
+
   private get api() {
     return (window as Window & typeof globalThis).desktopAPI;
   }
@@ -75,8 +82,7 @@ export class SpellCheckService {
       } catch { success = false; }
     }
     if (success) {
-      this.dictionaries.clear();
-      this.revision.update(value => value + 1);
+      this.clearCache();
     }
     return success;
   }

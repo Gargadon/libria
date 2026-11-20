@@ -43,7 +43,10 @@ export class EditorSpellingComponent {
   private readonly destroy = inject(DestroyRef);
   private readonly engine = signal<NSpell | null>(null);
   private readonly ignored = signal(new Set<string>());
-  private items: SpellingRange[] = [];
+  private ranges = new WeakMap<HTMLElement, SpellingRange[]>();
+  private observer?: MutationObserver;
+  private checkedEngine: NSpell | null = null;
+  private checkedIgnored?: Set<string>;
   private timer?: ReturnType<typeof setTimeout>;
   private request = 0;
   private destroyed = false;
@@ -78,7 +81,10 @@ export class EditorSpellingComponent {
     });
     afterNextRender(() => {
       const root = this.root;
-      const observer = new MutationObserver(() => this.schedule());
+      const observer = this.observer = new MutationObserver(records => {
+        this.invalidate(records);
+        this.schedule();
+      });
       observer.observe(root, { childList: true, subtree: true, characterData: true });
       root.addEventListener('contextmenu', this.contextMenu);
       root.addEventListener('input', this.onInput);
@@ -112,40 +118,85 @@ export class EditorSpellingComponent {
   private readonly keyboard = (event: KeyboardEvent) => {
     if (event.key === 'Escape' || !this.element.nativeElement.contains(event.target as Node)) this.dismiss();
   };
-  private readonly onInput = () => { this.dismiss(); this.schedule(); };
+  private readonly onInput = (event: Event) => {
+    this.invalidateTarget(event.target);
+    this.dismiss();
+    this.schedule();
+  };
+
+  private invalidateTarget(target: EventTarget | null) {
+    const element = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
+    const editable = element?.closest<HTMLElement>('[data-libria-spelling]');
+    if (editable) this.ranges.delete(editable);
+  }
+
+  private invalidate(records: MutationRecord[]) {
+    for (const record of records) {
+      this.invalidateTarget(record.target);
+      // A detached subtree can later be reinserted with edits made off-DOM.
+      for (const node of record.addedNodes) {
+        if (node instanceof HTMLElement) {
+          this.ranges.delete(node);
+          node.querySelectorAll<HTMLElement>('[data-libria-spelling]').forEach(element => this.ranges.delete(element));
+        }
+      }
+    }
+  }
 
   private schedule() {
     clearTimeout(this.timer);
     this.timer = setTimeout(() => this.refresh(), 250);
   }
 
-  refresh() {
+  private prepare() {
+    this.invalidate(this.observer?.takeRecords() ?? []);
     const engine = this.engine();
-    this.items = [];
-    if (engine && this.store.tweaks.spellcheck()) {
-      const ignored = this.ignored();
-      const cache = new Map<string, boolean>();
-      const correct = (word: string) => {
-        if (!cache.has(word)) cache.set(word, ignored.has(word) || engine.correct(word));
-        return cache.get(word)!;
+    const ignored = this.ignored();
+    if (engine !== this.checkedEngine || ignored !== this.checkedIgnored) {
+      this.ranges = new WeakMap();
+      this.checkedEngine = engine;
+      this.checkedIgnored = ignored;
+    }
+    return engine && this.store.tweaks.spellcheck()
+      ? (word: string) => ignored.has(word) || engine.correct(word)
+      : null;
+  }
+
+  private rangesFor(element: HTMLElement, correct: (word: string) => boolean) {
+    let ranges = this.ranges.get(element);
+    if (!ranges) {
+      ranges = spellingRanges(element, correct);
+      this.ranges.set(element, ranges);
+    }
+    return ranges;
+  }
+
+  refresh() {
+    const correct = this.prepare();
+    if (typeof Highlight === 'undefined' || !globalThis.CSS?.highlights) return;
+    const highlight = new Highlight();
+    if (correct) {
+      const results = new Map<string, boolean>();
+      const check = (word: string) => {
+        if (!results.has(word)) results.set(word, correct(word));
+        return results.get(word)!;
       };
       for (const element of this.root.querySelectorAll<HTMLElement>('[data-libria-spelling]')) {
-        this.items.push(...spellingRanges(element, correct));
+        for (const item of this.rangesFor(element, check)) highlight.add(item.range);
       }
     }
-    if (typeof Highlight !== 'undefined' && globalThis.CSS?.highlights) {
-      CSS.highlights.set('libria-spelling', new Highlight(...this.items.map(item => item.range)));
-    }
+    CSS.highlights.set('libria-spelling', highlight);
   }
 
   readonly contextMenu = (event: MouseEvent) => {
     event.preventDefault();
     this.dismiss();
     if (!this.store.tweaks.spellcheck()) return;
-    this.refresh();
+    const correct = this.prepare();
+    this.schedule();
     const target = event.target instanceof Element ? event.target.closest('[data-libria-spelling]') : null;
-    if (!target) return;
-    const item = spellingAtPoint(this.items.filter(item => item.element === target), event.clientX, event.clientY);
+    if (!target || !correct) return;
+    const item = spellingAtPoint(this.rangesFor(target as HTMLElement, correct), event.clientX, event.clientY);
     if (!item) return;
     this.menu.set({ item, x: Math.max(8, Math.min(event.clientX, window.innerWidth - 256)),
       y: Math.max(8, Math.min(event.clientY, window.innerHeight - 410)) });
@@ -170,6 +221,7 @@ export class EditorSpellingComponent {
     if (!word) return;
     try {
       if (!await this.spelling.addWord(word)) throw new Error('Dictionary write failed');
+      this.ranges = new WeakMap();
       this.refresh();
     } catch { this.error.set(true); }
   }

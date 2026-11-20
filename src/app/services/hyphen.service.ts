@@ -53,6 +53,10 @@ export class HyphenService {
     }
   }
 
+  clearCache(): void {
+    this.cache.clear();
+  }
+
   hyphenateHtml(htmlOrText: string): string {
     if (!htmlOrText) return '';
 
