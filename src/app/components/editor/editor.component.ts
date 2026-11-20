@@ -414,24 +414,16 @@ export class EditorComponent implements OnDestroy {
     const lastLine = lines[lines.length - 1];
     const middleLines = lines.slice(1, lines.length - 1);
 
-    // 1. Update current block with textBefore + firstLine
     const updatedFirstText = textBefore + firstLine;
-    this.store.updateChapterBlock(chapterId, blockIndex, updatedFirstText);
+    const following = [...middleLines, lastLine + textAfter];
+    this.store.updateChapterBlock(chapterId, blockIndex, updatedFirstText, undefined, {
+      endIndex: blockIndex,
+      paragraphs: following.map(text => ({ text })),
+    });
     el.textContent = updatedFirstText;
 
     this._suppressInput = true;
-    let currentIdx = blockIndex;
-
-    // 2. Insert middle lines as new 'p' blocks
-    for (const line of middleLines) {
-      this.store.insertBlock(chapterId, currentIdx, 'p', line);
-      currentIdx++;
-    }
-
-    // 3. Insert last line + textAfter as the final new block
-    const finalLastText = lastLine + textAfter;
-    this.store.insertBlock(chapterId, currentIdx, 'p', finalLastText);
-    currentIdx++;
+    const currentIdx = blockIndex + following.length;
 
     setTimeout(() => {
       this._suppressInput = false;
@@ -710,22 +702,10 @@ export class EditorComponent implements OnDestroy {
     this._flushPendingInput();
     this.store.saveSnapshot();
     restoreEditorSelectionSurface();
-    for (let index = last; index > first; index--) this.store.deleteBlock(chapter.id, index);
-    this.store.updateChapterBlock(
-      chapter.id,
-      first,
-      parts[0].textContent ?? '',
-      parts[0].innerHTML,
-    );
-    for (let index = 1; index < parts.length; index++) {
-      this.store.insertBlock(
-        chapter.id,
-        first + index - 1,
-        'p',
-        parts[index].textContent ?? '',
-        parts[index].innerHTML,
-      );
-    }
+    this.store.updateChapterBlock(chapter.id, first, parts[0].textContent ?? '', parts[0].innerHTML, {
+      endIndex: last,
+      paragraphs: parts.slice(1).map(part => ({ text: part.textContent ?? '', html: part.innerHTML })),
+    });
     start.innerHTML = parts[0].innerHTML;
     start.focus();
     this._placeCursorAt(start, offset + lines[0].length);

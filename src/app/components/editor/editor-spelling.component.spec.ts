@@ -51,21 +51,25 @@ describe('editor spelling', () => {
 
   it('offers dictionary suggestions on right click and supports ignoring and adding words', async () => {
     const { fixture, component, spelling, highlights } = await setup();
-    const range = [...highlights.get('libria-spelling')!][0];
+    const [range, otherRange] = highlights.get('libria-spelling')!;
     const element = fixture.nativeElement.querySelector('p') as HTMLElement;
-    // Keep geometry deterministic while the context handler refreshes live ranges.
-    vi.spyOn(component, 'refresh').mockImplementation(() => {});
     range.getClientRects = () => [{ left: 10, right: 50, top: 10, bottom: 30 }] as unknown as DOMRectList;
     const event = new MouseEvent('contextmenu', { clientX: 20, clientY: 20, cancelable: true });
-    Object.defineProperty(event, 'target', { value: element });
+    Object.defineProperty(event, 'target', { value: element, configurable: true });
     component.contextMenu(event);
     expect(event.defaultPrevented).toBe(true);
     expect(component.suggestions()).toContain('hola');
-    component.ignore();
-    expect(component.menu()).toBeNull();
-    component.contextMenu(event);
     await component.addWord();
     expect(spelling.addWord).toHaveBeenCalledWith('holaa');
+    expect(component.menu()).toBeNull();
+    expect([...highlights.get('libria-spelling')!].map(item => item.toString())).toEqual(['otrooo']);
+    const [remaining] = highlights.get('libria-spelling')!;
+    remaining.getClientRects = range.getClientRects;
+    Object.defineProperty(event, 'target', { value: otherRange.startContainer.parentElement });
+    component.contextMenu(event);
+    component.ignore();
+    component.refresh();
+    expect(highlights.get('libria-spelling')!.size).toBe(0);
     expect(component.menu()).toBeNull();
     fixture.destroy();
     expect(highlights.has('libria-spelling')).toBe(false);

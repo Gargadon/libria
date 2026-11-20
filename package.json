@@ -1,6 +1,6 @@
 {
   "name": "libria",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "edition": "Borges",
   "description": "Aplicación para la creación y maquetación de libros",
   "author": {

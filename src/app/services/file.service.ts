@@ -200,7 +200,7 @@ export class FileService {
     return !!(window as any).__libriaFileHandle;
   }
 
-  private buildDoc(): LibriaDocument {
+  buildDoc(assets = this.assetService.getAll()): LibriaDocument {
     const { mode: _mode, ...rest } = this.store.tweaks();
     return {
       libriaVersion: environment.version,
@@ -215,7 +215,7 @@ export class FileService {
       },
       chapters: this.store.chapters(),
       notes: this.store.notes(),
-      assets: this.assetService.getAll(),
+      assets,
       writingGoals: this.store.writingGoals(),
       characters: this.store.characters(),
       locations: this.store.locations(),

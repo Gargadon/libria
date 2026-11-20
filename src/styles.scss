@@ -3991,6 +3991,13 @@ button.tb__dropdown-item {
   widows: 1;
 }
 
+/* Let a long opening paragraph start under the title in the device preview. */
+.kp-flow .kp-first {
+  break-inside: auto;
+  orphans: 3;
+  widows: 2;
+}
+
 /* Navigation Buttons */
 .pv__nav-btn {
   position: absolute;

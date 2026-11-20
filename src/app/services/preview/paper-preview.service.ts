@@ -29,6 +29,9 @@ export interface PaperLayout {
 @Injectable()
 export class PaperPreviewService {
   private readonly html = inject(PrintHtmlService);
+  private htmlInput?: PaperPreviewInput;
+  private htmlContext?: string;
+  private chapterHtml = new WeakMap<Chapter, { index: number; html: string }>();
   private readonly cache = new ChapterPagination<HTMLElement>();
   readonly layout = signal<PaperLayout | null>(null);
   readonly busy = signal(false);
@@ -152,6 +155,15 @@ export class PaperPreviewService {
   private async compose(input: PaperPreviewInput, current: () => boolean): Promise<PaperLayout> {
     const { book, chapters, tweaks, bodyFont, titleFont, assets } = input;
     const fontsHref = new URL('fonts.css', document.baseURI).href;
+    const bodyIndex = chapters.findIndex(chapter => chapter.kind === 'chapter');
+    const context = JSON.stringify([bodyIndex, fontsHref, this.fontsStylesheetUrl]);
+    const previous = this.htmlInput;
+    if (previous?.book !== book || previous.tweaks !== tweaks || previous.assets !== assets ||
+        previous.bodyFont !== bodyFont || previous.titleFont !== titleFont || this.htmlContext !== context) {
+      this.chapterHtml = new WeakMap();
+    }
+    this.htmlInput = input;
+    this.htmlContext = context;
     const makeHtml = (
       selected: Chapter[],
       t = tweaks,
@@ -168,7 +180,7 @@ export class PaperPreviewService {
         assets,
         starts,
         true,
-        index === undefined ? undefined : { allChapters: chapters, chapterIndex: index },
+        index === undefined ? undefined : { allChapters: chapters, chapterIndex: index, bodyIndex },
       );
       // Desktop CSS embeds binary fonts. Share it once instead of retaining
       // a multi-megabyte copy inside every chapter's cache key.
@@ -190,13 +202,19 @@ export class PaperPreviewService {
           id: chapter.id,
           forceOddPage: index > 0 && chapter.forceOddPage,
           isContents: chapter.templateId === 'toc',
-          html: (starts) =>
-            makeHtml(
+          html: (starts) => {
+            const cacheable = chapter.templateId !== 'toc' && !tweaks.hyphenation;
+            const cached = cacheable ? this.chapterHtml.get(chapter) : undefined;
+            if (cached?.index === index) return cached.html;
+            const html = makeHtml(
               [chapter],
               index === 0 ? tweaks : { ...tweaks, hideFirstPageHeaderFooter: false },
               starts,
               index,
-            ),
+            );
+            if (cacheable) this.chapterHtml.set(chapter, { index, html });
+            return html;
+          },
         })),
         (html, parity) => this.render(html, parity),
         current,
@@ -346,10 +364,17 @@ export class PaperPreviewService {
     this.pending = undefined;
   }
 
-  destroy(): void {
-    this.detach();
+  clearCache(): void {
+    this.suspend();
     this.cache.clear();
+    this.htmlInput = undefined;
+    this.chapterHtml = new WeakMap();
     this.blank = undefined;
+  }
+
+  destroy(): void {
+    this.clearCache();
+    this.detach();
     this.layout.set(null);
     if (this.fontsStylesheetUrl) URL.revokeObjectURL(this.fontsStylesheetUrl);
     this.fontsStylesheetUrl = '';

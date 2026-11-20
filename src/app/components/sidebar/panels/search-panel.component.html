@@ -14,7 +14,7 @@
       [ngModel]="store.searchQuery()"
       (ngModelChange)="store.search($event)"
       (keydown.enter)="store.search($any($event.target).value)"
-      autofocus
+      data-search-input
     />
   </div>
   <div class="sb__row sb__row--col">

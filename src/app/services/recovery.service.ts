@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { FileService } from './file.service';
-import { RecoveryStorageService, RecoveryVersion } from './recovery-storage.service';
+import { RecoveryStorageService, RecoveryVersion, RecoveryMetadata } from './recovery-storage.service';
 import { AssetService } from './asset.service';
 
 @Injectable({ providedIn: 'root' })
@@ -10,13 +10,14 @@ export class RecoveryService {
   private readonly files = inject(FileService);
   private readonly storage = inject(RecoveryStorageService);
   private readonly assets = inject(AssetService);
-  readonly versions = signal<RecoveryVersion[]>([]);
+  readonly versions = signal<RecoveryMetadata[]>([]);
   readonly error = signal(false);
   readonly visible = signal(false);
   readonly busy = signal(false);
   private session = -1;
   private projectId = '';
-  private pending?: RecoveryVersion;
+  private pending?: Omit<RecoveryVersion, 'content'> & { document: ReturnType<FileService['buildDoc']> };
+  private lastProjectId = '';
   private lastContent = '';
   private checkpointId = '';
   private checkpointStarted = 0;
@@ -30,23 +31,21 @@ export class RecoveryService {
       const session = this.store.documentSession();
       const book = this.store.book();
       // Track document and asset changes, including manuscripts that have never been saved.
-      const content = book ? this.files.documentContent() : '';
+      const document = book ? this.files.buildDoc(this.assets.assets()) : undefined;
       untracked(() => {
         if (session !== this.session) {
           void this.flush();
           this.session = session;
           this.projectId = crypto.randomUUID();
-          this.lastContent = '';
           this.checkpointStarted = 0;
         }
-        if (!book || content === this.lastContent) return;
-        this.lastContent = content;
+        if (!book || !document) return;
         if (!this.checkpointStarted || Date.now() - this.checkpointStarted >= 120_000) {
           this.checkpointId = crypto.randomUUID();
           this.checkpointStarted = Date.now();
         }
         this.pending = { id: this.checkpointId, projectId: this.projectId, title: book.title,
-          savedAt: new Date().toISOString(), content };
+          savedAt: new Date().toISOString(), document };
         // Bounded interval: continuous typing cannot indefinitely postpone recovery.
         if (!this.timer) this.timer = setTimeout(() => { void this.flush(); }, 5000);
       });
@@ -74,7 +73,12 @@ export class RecoveryService {
     if (!version) return this.queue;
     this.queue = this.queue.then(async () => {
       try {
-        await this.storage.put(version);
+        const { document, ...metadata } = version;
+        const content = JSON.stringify(document);
+        if (metadata.projectId === this.lastProjectId && content === this.lastContent) return;
+        await this.storage.put({ ...metadata, content }, document.chapters.map(({ id, title }) => ({ id, title })));
+        this.lastProjectId = metadata.projectId;
+        this.lastContent = content;
         this.writeFailed = false;
         await this.refresh();
       } catch {
@@ -90,18 +94,19 @@ export class RecoveryService {
     await this.flush(); await this.refresh(); this.visible.set(true);
   }
 
-  async restore(version: RecoveryVersion, chapterId = ''): Promise<void> {
+  async restore(version: RecoveryMetadata, chapterId = ''): Promise<void> {
     if (this.busy()) return;
     this.busy.set(true);
     try {
       // Back up current work before replacing it. Never overwrite its original file.
       const current = this.files.documentContent();
+      const content = await this.storage.read(version.id);
       await this.flush();
       if (this.files.documentContent() !== current) return;
       if (this.error() && this.store.book()) return;
-      this.files.validateExternalDocument(version.content);
+      this.files.validateExternalDocument(content);
       if (chapterId && this.store.book()) {
-        const document = JSON.parse(version.content);
+        const document = JSON.parse(content);
         const chapter = document.chapters.find((ch: { id: string }) => ch.id === chapterId);
         if (!chapter) throw new Error('Chapter not found');
         // Import as a new chapter; the existing chapter and its notes remain intact.
@@ -120,7 +125,7 @@ export class RecoveryService {
           .map((note: object) => ({ ...note, id: 'note-' + crypto.randomUUID(), chapterId: restored.id }));
         this.store.addChapters([restored], notes);
       } else {
-        this.files.openExternalDocument(version.content);
+        this.files.openExternalDocument(content);
         this.store.markAsDirty();
       }
       this.visible.set(false);
@@ -128,7 +133,7 @@ export class RecoveryService {
     finally { this.busy.set(false); }
   }
 
-  chapters(version: RecoveryVersion): { id: string; title: string }[] {
-    try { return JSON.parse(version.content).chapters; } catch { return []; }
+  chapters(version: RecoveryMetadata): { id: string; title: string }[] {
+    return version.chapters;
   }
 }

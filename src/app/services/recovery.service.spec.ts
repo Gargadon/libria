@@ -3,17 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BookStore } from '../store/book.store';
 import { FileService } from './file.service';
 import { RecoveryService } from './recovery.service';
-import { RecoveryStorageService, RecoveryVersion } from './recovery-storage.service';
+import { RecoveryStorageService, RecoveryVersion, RecoveryMetadata } from './recovery-storage.service';
 import { AssetService } from './asset.service';
 
 describe('persistent manuscript recovery', () => {
   let records: RecoveryVersion[];
-  let storage: { list: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> };
+  let storage: { list: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn>; read: ReturnType<typeof vi.fn> };
+  function metadata({ content, ...header }: RecoveryVersion): RecoveryMetadata {
+    const chapters = JSON.parse(content).chapters.map(({ id, title }: { id: string; title: string }) => ({ id, title }));
+    return { ...header, chapters, size: content.length * 2 };
+  }
   beforeEach(() => {
     vi.useFakeTimers();
     records = [];
     storage = {
-      list: vi.fn(async () => [...records]),
+      list: vi.fn(async () => records.map(metadata)),
+      read: vi.fn(async (id: string) => records.find(version => version.id === id)?.content),
       put: vi.fn(async (version: RecoveryVersion) => { records = [version, ...records.filter(v => v.id !== version.id)]; }),
     };
     TestBed.configureTestingModule({ providers: [{ provide: RecoveryStorageService, useValue: storage }] });
@@ -36,7 +41,7 @@ describe('persistent manuscript recovery', () => {
     expect(records).toHaveLength(1);
     expect(JSON.parse(records[0].content).assets.picture).toContain('base64');
     expect(files.currentPath).toBeNull();
-    const version = records[0];
+    const version = metadata(records[0]);
     store.updateChapterBlock(store.chapters()[0].id, 1, 'Trabajo nuevo');
     TestBed.tick();
     await service.restore(version);
@@ -67,7 +72,7 @@ describe('persistent manuscript recovery', () => {
     const store = TestBed.inject(BookStore);
     store.createNewProject(); TestBed.tick();
     await service.flush();
-    const version = records[0];
+    const version = metadata(records[0]);
     storage.put.mockRejectedValue(new Error('Quota exceeded'));
     store.updateChapterBlock(store.chapters()[0].id, 1, 'Conservar'); TestBed.tick();
     await service.restore(version);
@@ -84,7 +89,7 @@ describe('persistent manuscript recovery', () => {
     store.addChapters([{ id: 'illustrated', title: 'Ilustrado', kind: 'chapter', words: 0, body: [{ type: 'image', src: 'picture' }] }]);
     store.addNote('illustrated', 0, 'editor', 'Revisor', 'Revisar imagen');
     TestBed.tick(); await service.flush();
-    const version = records[0];
+    const version = metadata(records[0]);
     assets.set('picture', 'new-image'); TestBed.tick();
     await service.restore(version, 'illustrated');
     expect(store.chapters()).toHaveLength(3);

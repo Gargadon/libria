@@ -1,3 +1,4 @@
+import { AppCacheService } from '../../services/app-cache.service';
 import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, Injector, afterNextRender } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
@@ -466,6 +467,8 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   decreaseFontSize() { this.deviceFontSizeOffset.update(v => v - 1); }
   resetFontSize() { this.deviceFontSizeOffset.set(0); }
 
+  private readonly appCache = inject(AppCacheService);
+
   constructor() {
     effect(() => {
       const id = this.store.activeChapterId();
@@ -514,6 +517,15 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       });
     });
 
+    effect(() => {
+      if (!this.appCache.revision()) return;
+      untracked(() => {
+        this.deviceCache.clear();
+        this.paperPreview.clearCache();
+        this.scheduleMeasure();
+      });
+    });
+
     // Auto-zoom effect
     effect(() => {
       const m = this.mode();
@@ -535,6 +547,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     });
 
     effect(() => {
+      this.appCache.revision();
       const mode = this.mode();
       if (mode !== 'print') {
         untracked(() => {

@@ -11,6 +11,7 @@ import { Chapter, tocEntries } from '../../models/book.models';
 export interface PrintChapterContext {
   allChapters: Chapter[];
   chapterIndex: number;
+  bodyIndex?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +31,7 @@ export class PrintHtmlService {
   ): string {
     const pageSize = pageSizeCss(book.paperSize || '5x8');
     const allChapters = chapterContext?.allChapters ?? chapters;
-    const bodyIndex = allChapters.findIndex((c: Chapter) => c.kind === 'chapter');
+    const bodyIndex = chapterContext?.bodyIndex ?? allChapters.findIndex((c: Chapter) => c.kind === 'chapter');
     const fromBody = t.pageNumberingStart === 'body' && bodyIndex >= 0;
     const bodyStart = fromBody ? pageMap?.[allChapters[bodyIndex].id] : 1;
     const folio = (id: string) => {
@@ -539,7 +540,7 @@ ${
 `;
 
     const printIds = new Map(
-      (chapterContext?.allChapters ?? chapters).map((ch: any, idx: number) => [ch.id, `libria-chapter-${idx + 1}`]),
+      (chapters.some(ch => ch.templateId === 'toc') ? allChapters : []).map((ch: any, idx: number) => [ch.id, `libria-chapter-${idx + 1}`]),
     );
     const chaptersHtml = chapters
       .map((ch: any, idx: number) => {
@@ -575,7 +576,7 @@ ${
         }
 
         const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);
-        return `<div id="${printIds.get(ch.id)}" class="${cls}"${fromBody ? ` style="page: ${(chapterContext?.chapterIndex ?? idx) < bodyIndex ? 'libria-front' : 'libria-body'}"` : ''} data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
+        return `<div id="libria-chapter-${(chapterContext?.chapterIndex ?? idx) + 1}" class="${cls}"${fromBody ? ` style="page: ${(chapterContext?.chapterIndex ?? idx) < bodyIndex ? 'libria-front' : 'libria-body'}"` : ''} data-id="${ch.id}">\n${body}\n${fnHtml}</div>`;
       })
       .join('\n\n');
 

@@ -111,12 +111,15 @@ describe('pending paragraph edits', () => {
     const elements = document.querySelectorAll<HTMLElement>('p');
     const store = {
       activeChapter: () => chapter, saveSnapshot: vi.fn(),
-      updateChapterBlock: vi.fn((_id: string, index: number, text: string, html?: string) => {
+      updateChapterBlock: vi.fn((_id: string, index: number, text: string, html?: string, replacement?: {
+        endIndex: number;
+        paragraphs: { text: string }[];
+      }) => {
         Object.assign(chapter.body[index], { text, html });
-      }),
-      deleteBlock: vi.fn((_id: string, index: number) => { chapter.body.splice(index, 1); }),
-      insertBlock: vi.fn((_id: string, index: number, type: string, text: string) => {
-        chapter.body.splice(index + 1, 0, { type, text });
+        if (replacement) {
+          chapter.body.splice(index + 1, replacement.endIndex - index,
+            ...replacement.paragraphs.map(paragraph => ({ type: 'p', ...paragraph })));
+        }
       }),
     };
     const editor = Object.assign(Object.create(EditorComponent.prototype), {

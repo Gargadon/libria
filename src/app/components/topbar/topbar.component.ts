@@ -1,7 +1,7 @@
-import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy, output, NgZone } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy, output, NgZone, Injector, afterNextRender } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 import { sceneBreakGlyph } from '../../utils/block-maps';
@@ -107,7 +107,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
               </div>
               @if (store.book() && activeIntegratedMenu() === 'view') {
                 <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" (click)="store.search(''); store.setNav('search'); closeIntegrated()">
+                  <button class="tb__dropdown-item" (click)="openSearch(); closeIntegrated()">
                     {{ 'electron.menu.viewSearch' | translate }}
                   </button>
                 </div>
@@ -186,7 +186,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
                 <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.view' | translate }}</div>
                 <button class="tb__compact-item" 
                         [disabled]="!store.book()"
-                        (click)="store.book() && store.search(''); store.book() && store.setNav('search'); closeIntegratedHamburger()">
+                        (click)="openSearch(); closeIntegratedHamburger()">
                   <span class="material-symbols-outlined">search</span> {{ 'electron.menu.viewSearch' | translate }}
                 </button>
 
@@ -375,7 +375,7 @@ import { GoogleDriveService } from '../../services/google-drive.service';
             }
           </div>
 
-          <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="store.search(''); store.setNav('search')">
+          <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="openSearch()">
             <span class="material-symbols-outlined">search</span>
           </button>
           <button class="tb__icon" [attr.title]="'topbar.preview' | translate" (click)="store.togglePreview()" [class.tb__icon--on]="store.ui.previewOpen()">
@@ -518,6 +518,29 @@ export class TopbarComponent {
     }
   }
 
+  private readonly document = inject(DOCUMENT);
+  private readonly injector = inject(Injector);
+
+  @HostListener('document:keydown', ['$event'])
+  onSearchShortcut(event: KeyboardEvent) {
+    if (event.defaultPrevented || event.altKey || event.shiftKey ||
+        !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'f' ||
+        !this.store.book()) return;
+    event.preventDefault();
+    this.openSearch();
+  }
+
+  openSearch() {
+    if (!this.store.book()) return;
+    this.store.setNav('search');
+    const focus = () => {
+      this.document.querySelector<HTMLInputElement>('app-sidebar-search [data-search-input]')?.focus();
+    };
+    const input = this.document.querySelector<HTMLInputElement>('app-sidebar-search [data-search-input]');
+    if (input?.getClientRects().length) input.focus();
+    else afterNextRender(focus, { injector: this.injector });
+  }
+
   private readonly ngZone = inject(NgZone);
 
   constructor() {
@@ -533,7 +556,7 @@ export class TopbarComponent {
             case 'close': this.closeDoc(); break;
             case 'undo': if (this.canUndo()) this.store.undo(); break;
             case 'redo': if (this.canRedo()) this.store.redo(); break;
-            case 'search': if (this.store.book()) { this.store.search(''); this.store.setNav('search'); } break;
+            case 'search': this.openSearch(); break;
           }
         });
       });

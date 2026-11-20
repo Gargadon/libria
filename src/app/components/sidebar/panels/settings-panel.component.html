@@ -3,16 +3,6 @@
   <div class="sb__author">{{ 'sidebar.settingsDesc' | translate }}</div>
 </div>
 <div class="sb__content sb__content--padding">
-  @if (panel.drive.available) {
-    <div class="sb__section">Google Drive</div>
-    <div class="sb__drive-settings">
-      <p class="sb__drive-description">{{ 'drive.settingsDescription' | translate }}</p>
-      <button class="sb__btn-primary sb__drive-button" (click)="panel.drive.show()">
-        <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
-        {{ 'drive.settingsButton' | translate }}
-      </button>
-    </div>
-  }
   <div class="sb__section">{{ 'sidebar.appLang' | translate }}</div>
   <div class="sb__row">
     <select
@@ -119,6 +109,26 @@
       >
         {{ 'sidebar.disabled' | translate }}
       </button>
+    </div>
+  </div>
+  @if (panel.drive.available) {
+    <div class="sb__section">Google Drive</div>
+    <div class="sb__drive-settings">
+      <p class="sb__drive-description">{{ 'drive.settingsDescription' | translate }}</p>
+      <button class="sb__btn-primary sb__drive-button" (click)="panel.drive.show()">
+        <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+        {{ 'drive.settingsButton' | translate }}
+      </button>
+    </div>
+  }
+  <div class="sb__section">{{ 'sidebar.cacheSection' | translate }}</div>
+  <div class="sb__drive-settings">
+    <button type="button" class="sb__btn-primary sb__drive-button" [disabled]="panel.clearingCache()"
+      (click)="panel.clearCache()">
+      {{ (panel.clearingCache() ? 'sidebar.clearingCache' : 'sidebar.clearCache') | translate }}
+    </button>
+    <div class="sb__help" role="status">
+      @if (panel.cacheMessage(); as message) { {{ message | translate }} }
     </div>
   </div>
 </div>

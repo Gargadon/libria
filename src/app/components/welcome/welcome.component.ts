@@ -265,7 +265,7 @@ export class WelcomeComponent {
   readonly version = environment.version;
   readonly edition = environment.edition;
 
-  readonly recentProjects = signal<RecentProject[]>(this.recentService.getAll());
+  readonly recentProjects = signal<RecentProject[]>(this.recentService.getAll().slice(0, 3));
   constructor() { void this.drive.refreshOffline(); }
 
   openRecent(p: RecentProject): void {

@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, Injectable } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, Injectable, signal } from '@angular/core';
 import { BookStore } from '../../../store/book.store';
 
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -6,10 +6,29 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 
 
+import { AppCacheService } from '../../../services/app-cache.service';
 import { GoogleDriveService } from '../../../services/google-drive.service';
 
 @Injectable()
 export class SidebarSettingsState {
+  private readonly cache = inject(AppCacheService);
+  readonly clearingCache = signal(false);
+  readonly cacheMessage = signal('');
+
+  async clearCache(): Promise<void> {
+    if (this.clearingCache()) return;
+    this.clearingCache.set(true);
+    this.cacheMessage.set('');
+    try {
+      await this.cache.clear();
+      this.cacheMessage.set('sidebar.cacheCleared');
+    } catch {
+      this.cacheMessage.set('sidebar.cacheError');
+    } finally {
+      this.clearingCache.set(false);
+    }
+  }
+
   readonly drive = inject(GoogleDriveService);
 
   readonly store = inject(BookStore);
