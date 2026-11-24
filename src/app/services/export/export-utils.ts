@@ -1,4 +1,4 @@
-import { Block, Chapter } from '../../models/book.models';
+import { Chapter } from '../../models/book.models';
 export function resolveChapters(
   all: Chapter[],
   prefs: { exportMode: 'all' | 'selection'; selectedChapterIds: string[] },
@@ -7,21 +7,6 @@ export function resolveChapters(
     return all.filter((c) => prefs.selectedChapterIds.includes(c.id));
   }
   return all;
-}
-
-export function imageStyle(b: Block): string {
-  const parts = ['max-width:100%;display:block;margin:0 auto'];
-  if (b.width && b.height) {
-    parts.push(`width:${b.width}px;height:${b.height}px`);
-  } else {
-    parts.push('height:auto');
-  }
-  const xf: string[] = [];
-  if (b.rotation && b.rotation !== 0) xf.push(`rotate(${b.rotation}deg)`);
-  if (b.flipH) xf.push('scaleX(-1)');
-  if (b.flipV) xf.push('scaleY(-1)');
-  if (xf.length) parts.push(`transform:${xf.join(' ')}`);
-  return parts.join(';');
 }
 
 export function tableHtml(html: string): string {

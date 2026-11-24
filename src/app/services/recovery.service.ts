@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, effect, inject, signal, untracked } from '@angu
 import { BookStore } from '../store/book.store';
 import { FileService } from './file.service';
 import { RecoveryStorageService, RecoveryVersion, RecoveryMetadata } from './recovery-storage.service';
+import { resolveChapterHeadingImage } from '../utils/chapter-heading-image';
 import { AssetService } from './asset.service';
 
 @Injectable({ providedIn: 'root' })
@@ -119,6 +120,14 @@ export class RecoveryService {
             this.assets.set(key, document.assets[block.src]);
             block.src = key;
           }
+        }
+        const illustration = resolveChapterHeadingImage(document.metadata, chapter, document.assets ?? {});
+        if (illustration) {
+          const assetId = 'heading-' + crypto.randomUUID();
+          this.assets.set(assetId, illustration.src);
+          restored.headingImage = { assetId, width: illustration.width, height: illustration.height };
+        } else if (chapter.kind === 'chapter') {
+          restored.headingImage = null;
         }
         this.store.saveSnapshot();
         const notes = (document.notes || []).filter((note: { chapterId: string }) => note.chapterId === chapterId)

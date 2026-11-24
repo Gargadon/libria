@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../../store/book.store';
+import { resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
 import { sortFootnotesByPosition } from '../../models/book.models';
 
 import { AssetService } from '../asset.service';
@@ -108,7 +109,12 @@ export class DocxExportService {
           });
         }
 
-        for (const b of ch.body) {
+        const illustration = resolveChapterHeadingImage(book, ch, assets);
+        const blocks = illustration ? [
+          { type: 'image', src: illustration.assetId, width: illustration.width, height: illustration.height },
+          ...ch.body,
+        ] : ch.body;
+        for (const b of blocks) {
           switch (b.type) {
             case 'halftitle':
               children.push(

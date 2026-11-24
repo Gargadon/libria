@@ -1,0 +1,90 @@
+.app--modern {
+  --paper: #fcfdff;
+  --paper-2: #edf2f8;
+  --paper-3: #dfe8f3;
+  --ink: #162338;
+  --ink-2: #2b3e58;
+  --ink-soft: #425672;
+  --ink-mute: #526784;
+  --rule: #cdd9e7;
+  --rule-soft: #dce5ef;
+  --terra: #234fa5;
+  --terra-2: #1a3d83;
+  --accent: #285ab8;
+  --modern-action: #285ab8;
+  --modern-action-hover: #204892;
+  --modern-on-action: #fff;
+  --modern-selection: #dbe7ff;
+  --modern-on-selection: #183e82;
+  --modern-focus: #285ab8;
+  --ui: "Inter", system-ui, sans-serif;
+  --ui-display: var(--ui);
+  font-family: var(--ui);
+  color: var(--ink);
+}
+
+.app--modern.app--dark {
+  --paper: #161f2e;
+  --paper-2: #101826;
+  --paper-3: #26364c;
+  --ink: #eef4ff;
+  --ink-2: #d6e2f4;
+  --ink-soft: #b4c4dc;
+  --ink-mute: #9aaccc;
+  --rule: #364860;
+  --rule-soft: #2a3a51;
+  --terra: #9ab9ff;
+  --terra-2: #b8ceff;
+  --accent: #9ab9ff;
+  --modern-action: #9ab9ff;
+  --modern-action-hover: #bacfff;
+  --modern-on-action: #101f3b;
+  --modern-selection: #283e62;
+  --modern-on-selection: #dfebff;
+  --modern-focus: #a4c0ff;
+}
+
+.app--modern {
+  .app .welcome__btn.welcome__btn--primary {
+    background: var(--modern-action);
+    color: var(--modern-on-action);
+    border-color: var(--modern-action);
+  }
+
+  .app .welcome__btn.welcome__btn--primary:hover {
+    background: var(--modern-action-hover);
+    color: var(--modern-on-action);
+  }
+
+  :is(.scp__btn--primary, .scp__sug:hover) {
+    color: var(--modern-on-action);
+  }
+
+  :is(.tb__menu-trigger[aria-expanded='true'], .tb__menu-action--on, .tb__icon--on, .sbi--on) {
+    background: var(--modern-selection);
+    color: var(--modern-on-selection);
+  }
+
+  :is(.tb__chipT, .sb__title, .settings h2, .outline h1) {
+    font-weight: 650;
+    letter-spacing: -0.025em;
+  }
+
+  :is(input, select, textarea) {
+    font-family: var(--ui);
+  }
+
+  :is(button, input, select, textarea, summary, a):focus-visible {
+    outline: 2px solid var(--modern-focus);
+    outline-offset: 2px;
+  }
+
+  :is(input, textarea, [contenteditable])::selection {
+    background: var(--modern-selection);
+    color: var(--modern-on-selection);
+  }
+
+  :is(input[type='checkbox'], input[type='range'], progress) {
+    accent-color: var(--modern-action);
+  }
+}

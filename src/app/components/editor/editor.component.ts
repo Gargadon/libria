@@ -1,3 +1,4 @@
+import { resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
 import { DictationService } from './dictation.service';
 import {
   contenteditableOf,
@@ -179,6 +180,10 @@ export class EditorComponent implements OnDestroy {
     (!window.desktopAPI && /Mac|iPhone|iPad/.test(navigator.platform))) ? 'Cmd' : 'Ctrl';
   readonly fileService = inject(FileService);
   readonly assetService = inject(AssetService);
+  readonly headingImage = computed(() => {
+    const chapter = this.store.activeChapter();
+    return chapter && resolveChapterHeadingImage(this.store.book(), chapter, this.assetService.assets());
+  });
   readonly translate = inject(TranslateService);
 
   private readonly _focusBlockWatch = effect(() => {
@@ -245,6 +250,12 @@ export class EditorComponent implements OnDestroy {
     };
     return this.translate.instant(map[s!] || '');
   });
+
+  toggleReviewed(chapterId: string): void {
+    this._flushPendingInput();
+    this.store.saveSnapshot();
+    this.store.updateChapterMeta(chapterId, { status: this.status() === 'ok' ? 'draft' : 'ok' });
+  }
 
   // --- Note Dialog ---
 
@@ -478,6 +489,42 @@ export class EditorComponent implements OnDestroy {
     }
   }
 
+  selectInlineImage(event: MouseEvent) {
+    restoreEditorSelectionSurface();
+    window.getSelection()?.removeAllRanges();
+    this._savedSelection = null;
+    this.selectionToolbar.set(null);
+    (event.currentTarget as HTMLButtonElement).focus({ preventScroll: true });
+  }
+
+  onImageKeyDown(chapterId: string, index: number, event: KeyboardEvent) {
+    if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+    const chapter = this.store.activeChapter();
+    const block = chapter?.body[index];
+    if (chapter?.id !== chapterId || block?.type !== 'image') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    this._flushPendingInput();
+    this.store.saveSnapshot();
+    if (chapter.body.length === 1) {
+      this.store.replaceBlock(chapterId, index, { id: block.id, type: 'p', text: '' });
+    } else {
+      this.store.deleteBlock(chapterId, index);
+    }
+
+    const next = this._nextEditableIndex(index - 1);
+    const targetIndex = next >= 0 ? next : this._prevEditableIndex(index);
+    setTimeout(() => {
+      if (this.store.activeChapterId() !== chapterId) return;
+      const target = this._getEditableBlock(targetIndex);
+      if (target) {
+        target.focus({ preventScroll: true });
+        this._placeCursorAt(target, next >= 0 ? 0 : Infinity);
+      }
+    }, 16);
+  }
+
   @HostListener('document:mousedown', ['$event'])
   onEditorMouseDown(event: MouseEvent) {
     const target = event.target as HTMLElement;
@@ -487,6 +534,23 @@ export class EditorComponent implements OnDestroy {
     if (event.button !== 0 || event.detail > 1) return;
     const editor = target.closest('.ed__doc');
     if (!editor || target.closest('button, input, textarea, select')) return;
+    const end = editor.querySelector('.ed__end');
+    const lastBlock = end?.previousElementSibling;
+    if (end && lastBlock?.matches('.ed__block-container') &&
+        (end.contains(target) ||
+          (target === editor && event.clientY >= lastBlock.getBoundingClientRect().bottom &&
+            event.clientY <= end.getBoundingClientRect().bottom))) {
+      const lastParagraph = lastBlock.querySelector<HTMLElement>('.bk-p[contenteditable="true"], .bk-first[contenteditable="true"]');
+      if (lastParagraph) {
+        event.preventDefault();
+        lastParagraph.focus({ preventScroll: true });
+        this._placeCursorAt(lastParagraph, Infinity);
+        this._savedSelection = null;
+        this.selectionToolbar.set(null);
+        return;
+      }
+    }
+
     const range = document.caretRangeFromPoint(event.clientX, event.clientY);
     if (!range) return;
     const editable = contenteditableOf(range.startContainer);
@@ -887,8 +951,24 @@ export class EditorComponent implements OnDestroy {
         if (isNative) return; // browser handles list/table natively
         event.preventDefault();
         const sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return;
+        if (!sel?.rangeCount) return;
+        const caret = sel.getRangeAt(0);
+        if (!el.contains(caret.startContainer) || !el.contains(caret.endContainer)) return;
         this.store.saveSnapshot();
+
+        // WebKit may normalize a caret at the end to the last text node.
+        const remainingText = caret.cloneRange();
+        remainingText.setEnd(el, el.childNodes.length);
+        if (sel.isCollapsed && remainingText.toString() === '') {
+          this.store.insertBlock(chapterId, blockIndex, 'p');
+          setTimeout(() => {
+            if (this.store.activeChapterId() !== chapterId || document.activeElement !== el) return;
+            const next = this._getEditableBlock(blockIndex + 1);
+            next?.focus();
+            if (next) this._placeCursorAt(next, 0);
+          }, 16);
+          break;
+        }
 
         // Escribir un salto sobre una selección la sustituye, como cualquier tecla.
         if (!sel.isCollapsed) {

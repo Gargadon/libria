@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+}
+
+.outline {
+  max-width: 1150px;
+  margin: auto;
+  padding: clamp(16px, 4vw, 44px);
+}
+
+.outline__header, .outline__card-header, .outline__actions, .outline__metadata {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.outline__header, .outline__card-header {
+  justify-content: space-between;
+}
+
+.outline__header {
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  font: 600 clamp(24px, 4vw, 36px) var(--ui-display, var(--display));
+}
+
+h2 {
+  margin: 24px 0 10px;
+  font-size: 14px;
+}
+
+.outline__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.outline__card {
+  min-width: 0;
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+
+.outline__title {
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  padding: 2px 0;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font: 600 17px var(--ui-display, var(--display));
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.outline__actions {
+  flex-shrink: 0;
+}
+
+.outline__actions .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.outline__actions button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.outline__metadata {
+  margin: 7px 0 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.outline__card label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+textarea {
+  resize: vertical;
+  font-family: inherit;
+}

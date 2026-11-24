@@ -20,6 +20,84 @@ describe('rendered editor drag selection', () => {
       Object.defineProperty(Range.prototype, 'getBoundingClientRect', rectDescriptor);
     else Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
   });
+  it.each(['Delete', 'Backspace'])('deletes a focused image with %s and can undo it', async (key) => {
+    TestBed.configureTestingModule({
+      imports: [
+        EditorComponent,
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useValue: { getTranslation: () => of({}) } },
+        }),
+      ],
+    });
+    const store = TestBed.inject(BookStore);
+    store.createNewProject();
+    const chapterId = store.activeChapterId();
+    const fixture = TestBed.createComponent(EditorComponent);
+    await fixture.whenStable();
+    fixture.componentInstance.assetService.set('img-test', 'data:image/png;base64,iVBORw0KGgo=');
+    store.updateChapterBlock(chapterId, 1, 'Texto');
+    store.insertImageBlock(chapterId, 0, 'img-test', 120, 60);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const caption = root.querySelector<HTMLElement>('.bk-image__cap')!;
+    const captionKey = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    caption.dispatchEvent(captionKey);
+    expect(captionKey.defaultPrevented).toBe(false);
+
+    const image = root.querySelector<HTMLButtonElement>('.bk-image__select')!;
+    image.click();
+    expect(document.activeElement).toBe(image);
+    const imageKey = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    image.dispatchEvent(imageKey);
+    expect(imageKey.defaultPrevented).toBe(true);
+    fixture.detectChanges();
+    expect(root.querySelector('.bk-image')).toBeNull();
+    expect(store.activeChapter()?.body[1].text).toBe('Texto');
+    await vi.waitFor(() => expect(document.activeElement).toBe(root.querySelector('.bk-p')));
+
+    store.undo();
+    expect(store.activeChapter()?.body[1].src).toBe('img-test');
+  });
+
+  it('starts a new paragraph when Enter follows a click at the end of the fragment', async () => {
+    TestBed.configureTestingModule({
+      imports: [
+        EditorComponent,
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useValue: { getTranslation: () => of({}) } },
+        }),
+      ],
+    });
+    const store = TestBed.inject(BookStore);
+    store.createNewProject();
+    const chapterId = store.activeChapterId();
+    store.updateChapterBlock(chapterId, 1, 'Último párrafo', '<strong>Último</strong> párrafo');
+    const fixture = TestBed.createComponent(EditorComponent);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const paragraph = root.querySelector<HTMLElement>('.bk-p')!;
+    const end = root.querySelector('.ed__end')!;
+
+    const mouseDown = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+    end.dispatchEvent(mouseDown);
+    expect(mouseDown.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(paragraph);
+    const caret = window.getSelection()!.getRangeAt(0);
+    expect(caret.collapsed).toBe(true);
+    expect(paragraph.contains(caret.startContainer)).toBe(true);
+
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    paragraph.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(true);
+    expect(store.activeChapter()?.body.slice(1)).toMatchObject([
+      { type: 'p', text: 'Último párrafo', html: '<strong>Último</strong> párrafo' },
+      { type: 'p', text: '' },
+    ]);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(document.activeElement).toBe(root.querySelectorAll('.bk-p')[1]));
+  });
+
   it.each([undefined, '<strong>Cuando</strong> yo tenía seis años'])(
     'renders the drop cap on the paragraph editing host before focus (html: %s)',
     async (html) => {

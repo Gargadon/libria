@@ -3,12 +3,14 @@ import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { environment } from '../../../environments/environment';
-import { sceneBreakGlyph } from '../../utils/block-maps';
 import { PomodoroService } from '../../services/pomodoro.service';
 import { RecoveryService } from '../../services/recovery.service';
 import { ReviewService } from '../../services/review.service';
 import { GoogleDriveService } from '../../services/google-drive.service';
+import { ImportService } from '../../services/import.service';
+import { ChapterKind, ChapterTemplateId } from '../../models/book.models';
+
+type TopbarMenu = 'file' | 'edit' | 'view' | 'tools' | 'help';
 
 @Component({
   selector: 'app-topbar',
@@ -17,392 +19,291 @@ import { GoogleDriveService } from '../../services/google-drive.service';
   imports: [CommonModule, TranslateModule],
   template: `
     <header class="tb">
-      <div class="tb__left">
-        <div class="tb__logo">
-          <img src="libria.svg" alt="Libria" class="app-logo">
-        </div>
-        <div class="tb__brand">
+      <div class="tb__leading">
+        <div class="tb__identity">
+          <div class="tb__logo">
+            <img src="libria.svg" alt="" class="app-logo">
+          </div>
           <div class="tb__brandN">Libria</div>
-          <div class="tb__brandV">{{ editionLabel }}</div>
         </div>
-        <button class="tb__icon" [attr.title]="'recovery.title' | translate" [attr.aria-label]="'recovery.title' | translate" (click)="recovery.show()"><span class="material-symbols-outlined" aria-hidden="true">history</span></button>
-        <button class="tb__icon" [attr.title]="'review.title' | translate" [attr.aria-label]="'review.title' | translate" [disabled]="!store.book()" (click)="review.show()"><span class="material-symbols-outlined" aria-hidden="true">{{ review.count() ? 'pending_actions' : 'rate_review' }}</span></button>
-        @if (drive.available) {
-          <button class="tb__icon" [attr.title]="(fileService.driveLink() ? 'drive.state.' + fileService.syncState() : 'drive.open') | translate" (click)="drive.show()">
-            <span class="material-symbols-outlined">{{ fileService.syncState() === 'conflict' ? 'warning' : fileService.syncState() === 'working' ? 'sync' : fileService.syncState() === 'pending' ? 'cloud_off' : fileService.driveLink() ? 'cloud_done' : 'cloud' }}</span>
-          </button>
-        }
-
-        @if (showWebMenu) {
-          <span class="tb__sep"></span>
-          <!-- Full Horizontal Menu Bar (Visible on >= 1360px) -->
-          <div class="tb__sysmenu tb__sysmenu--full" (click)="$event.stopPropagation()">
-            <!-- Archivo -->
-            <div style="position: relative;">
-              <div class="tb__sysmenu-item" (click)="toggleIntegrated('file', $event)">
-                {{ 'electron.menu.file' | translate }}
-              </div>
-              @if (activeIntegratedMenu() === 'file') {
-                <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" (click)="newDoc(); closeIntegrated()">
-                    {{ 'electron.menu.fileNew' | translate }}
-                  </button>
-                  <button class="tb__dropdown-item" (click)="openDoc(); closeIntegrated()">
-                    {{ 'electron.menu.fileOpen' | translate }}
-                  </button>
-                  <button class="tb__dropdown-item" 
-                       [disabled]="!store.book()"
-                       (click)="store.book() && saveDoc(); store.book() && closeIntegrated()">
-                    {{ 'electron.menu.fileSave' | translate }}
-                  </button>
-                  <button class="tb__dropdown-item" 
-                       [disabled]="!store.book()"
-                       (click)="store.book() && saveDocAs(); store.book() && closeIntegrated()">
-                    {{ 'electron.menu.fileSaveAs' | translate }}
-                  </button>
-                  <div class="tb__dropdown-sep"></div>
-                  @if (drive.available) {
-                    <button class="tb__dropdown-item" [disabled]="!store.book() || drive.busy()" (click)="drive.saveToDrive(); closeIntegrated()">{{ 'drive.saveToDrive' | translate }}</button>
+        <nav class="tb__menu-bar" [attr.aria-label]="'topbar.mainMenu' | translate">
+          @for (menu of menus; track menu.id) {
+            <div class="tb__menu" (focusout)="onMenuBlur(menu.id, $event)">
+              <button type="button" class="tb__menu-trigger" #trigger
+                [attr.aria-expanded]="openMenu() === menu.id"
+                [attr.aria-controls]="openMenu() === menu.id ? 'menu-' + menu.id : null"
+                (click)="toggleMenu(menu.id, $event)"
+                (keydown)="onMenuTriggerKeydown(menu.id, $event)">
+                {{ menu.label | translate }}
+              </button>
+              @if (openMenu() === menu.id) {
+                <div class="tb__dropdown" [id]="'menu-' + menu.id"
+                  (click)="completeMenu(trigger)" (keydown)="onMenuKeydown($event, trigger)"
+                  (scroll)="positionAddOptions()">
+                  @switch (menu.id) {
+                    @case ('file') {
+                      <button type="button" class="tb__menu-action" (click)="newDoc()">
+                        <span class="material-symbols-outlined" aria-hidden="true">note_add</span>
+                        <span>{{ 'topbar.new' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" (click)="openDoc()">
+                        <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
+                        <span>{{ 'topbar.open' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" [disabled]="importService.importing()"
+                        (click)="importInput.click()">
+                        <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                        <span>{{ 'sidebar.importFile' | translate }}</span>
+                      </button>
+                      @if (drive.available) {
+                        <button type="button" class="tb__menu-action" (click)="drive.show()">
+                          <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+                          <span>{{ 'drive.open' | translate }}</span>
+                        </button>
+                      }
+                      <hr />
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="saveDoc()">
+                        <span class="material-symbols-outlined" aria-hidden="true">save</span>
+                        <span>{{ 'topbar.save' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="saveDocAs()">
+                        <span class="material-symbols-outlined" aria-hidden="true">save_as</span>
+                        <span>{{ 'topbar.saveAs' | translate }}</span>
+                      </button>
+                      @if (drive.available) {
+                        <button type="button" class="tb__menu-action" [disabled]="!store.book() || drive.busy()"
+                          (click)="drive.saveToDrive()">
+                          <span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span>
+                          <span>{{ 'drive.saveToDrive' | translate }}</span>
+                        </button>
+                      }
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="store.setNav('export')">
+                        <span class="material-symbols-outlined" aria-hidden="true">publish</span>
+                        <span>{{ 'topbar.export' | translate }}</span>
+                      </button>
+                      <hr />
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="closeDoc()">
+                        <span class="material-symbols-outlined" aria-hidden="true">close_fullscreen</span>
+                        <span>{{ 'topbar.closeDoc' | translate }}</span>
+                      </button>
+                      @if (isDesktop) {
+                        <button type="button" class="tb__menu-action" (click)="quitApp()">
+                          <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+                          <span>{{ 'electron.menu.fileQuit' | translate }}</span>
+                        </button>
+                      }
+                    }
+                    @case ('edit') {
+                      <button type="button" class="tb__menu-action" [disabled]="!canUndo()" (click)="store.undo()">
+                        <span class="material-symbols-outlined" aria-hidden="true">undo</span>
+                        <span>{{ 'electron.menu.editUndo' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" [disabled]="!canRedo()" (click)="store.redo()">
+                        <span class="material-symbols-outlined" aria-hidden="true">redo</span>
+                        <span>{{ 'electron.menu.editRedo' | translate }}</span>
+                      </button>
+                      <hr />
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="openSearch()">
+                        <span class="material-symbols-outlined" aria-hidden="true">search</span>
+                        <span>{{ 'electron.menu.viewSearch' | translate }}</span>
+                      </button>
+                      <hr />
+                      <button type="button" class="tb__menu-action" (click)="trigger.focus(); settingsRequested.emit()">
+                        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+                        <span>{{ 'topbar.settings' | translate }}</span>
+                      </button>
+                    }
+                    @case ('view') {
+                      <ng-container *ngTemplateOutlet="panels; context: { items: viewPanels }"></ng-container>
+                      <hr />
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()"
+                        [class.tb__menu-action--on]="store.ui.previewOpen()" [attr.aria-pressed]="store.ui.previewOpen()"
+                        (click)="store.togglePreview()">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+                        <span>{{ 'topbar.preview' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()"
+                        (click)="store.toggleZenMode()">
+                        <span class="material-symbols-outlined" aria-hidden="true">fullscreen</span>
+                        <span>{{ 'topbar.zenMode' | translate }}</span>
+                      </button>
+                    }
+                    @case ('tools') {
+                      <button id="menu-add-trigger" type="button" class="tb__menu-action tb__add-toggle" [disabled]="!store.book()"
+                        [attr.aria-expanded]="showAddOptions()"
+                        [attr.aria-controls]="showAddOptions() ? 'menu-add-element' : null"
+                        (click)="$event.stopPropagation(); setAddOptions(!showAddOptions())"
+                        (keydown.arrowright)="openAddOptionsWithKeyboard($event)">
+                        <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                        <span>{{ 'sidebar.addElement' | translate }}</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">{{ addOptionsPosition()?.opensLeft ? 'chevron_left' : 'chevron_right' }}</span>
+                      </button>
+                      @if (showAddOptions()) {
+                        <div id="menu-add-element" class="tb__submenu" [style.left.px]="addOptionsPosition()?.left"
+                          [style.top.px]="addOptionsPosition()?.top"
+                          [style.opacity]="addOptionsPosition() ? 1 : 0">
+                          @for (item of chapterOptions; track item.kind) {
+                            <button type="button" class="tb__menu-action" (click)="addElement(item.kind)">
+                              <span class="material-symbols-outlined" aria-hidden="true">{{ item.icon }}</span>
+                              <span>{{ item.label | translate }}</span>
+                            </button>
+                          }
+                          <div class="tb__menu-section-label">{{ 'sidebar.preliminares' | translate }}</div>
+                          @for (template of chapterTemplates; track template.id) {
+                            <button type="button" class="tb__menu-action" (click)="addElement('front', template.id)">
+                              <span class="material-symbols-outlined" aria-hidden="true">{{ template.icon }}</span>
+                              <span>{{ template.label | translate }}</span>
+                            </button>
+                          }
+                        </div>
+                      }
+                      <hr />
+                      <ng-container *ngTemplateOutlet="panels; context: { items: toolPanels }"></ng-container>
+                      <hr />
+                      <button type="button" class="tb__menu-action" (click)="recovery.show()">
+                        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+                        <span>{{ 'recovery.title' | translate }}</span>
+                      </button>
+                      <button type="button" class="tb__menu-action" [disabled]="!store.book()" (click)="review.show()">
+                        <span class="material-symbols-outlined" aria-hidden="true">rate_review</span>
+                        <span>{{ 'review.title' | translate }}</span>
+                      </button>
+                    }
+                    @case ('help') {
+                      <button type="button" class="tb__menu-action" (click)="aboutRequested.emit()">
+                        <span class="material-symbols-outlined" aria-hidden="true">info</span>
+                        <span>{{ 'electron.menu.helpAbout' | translate }}</span>
+                      </button>
+                    }
                   }
-                  <button class="tb__dropdown-item" 
-                       [disabled]="!store.book()"
-                       (click)="store.book() && closeDoc(); store.book() && closeIntegrated()">
-                    {{ 'topbar.closeDoc' | translate }}
-                  </button>
-                  @if (isDesktop) {
-                    <div class="tb__dropdown-sep"></div>
-                    <button class="tb__dropdown-item" (click)="quitApp(); closeIntegrated()">
-                      {{ 'electron.menu.fileQuit' | translate }}
-                    </button>
-                  }
                 </div>
               }
             </div>
-
-            <!-- Editar -->
-            <div style="position: relative;">
-              <div class="tb__sysmenu-item" 
-                   [class.tb__sysmenu-item--disabled]="!store.book()"
-                   (click)="store.book() && toggleIntegrated('edit', $event)">
-                {{ 'electron.menu.edit' | translate }}
-              </div>
-              @if (store.book() && activeIntegratedMenu() === 'edit') {
-                <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" [disabled]="!canUndo()" (click)="store.undo(); closeIntegrated()">
-                    {{ 'electron.menu.editUndo' | translate }}
-                  </button>
-                  <button class="tb__dropdown-item" [disabled]="!canRedo()" (click)="store.redo(); closeIntegrated()">
-                    {{ 'electron.menu.editRedo' | translate }}
-                  </button>
-                </div>
-              }
-            </div>
-
-            <!-- Ver -->
-            <div style="position: relative;">
-              <div class="tb__sysmenu-item" 
-                   [class.tb__sysmenu-item--disabled]="!store.book()"
-                   (click)="store.book() && toggleIntegrated('view', $event)">
-                {{ 'electron.menu.view' | translate }}
-              </div>
-              @if (store.book() && activeIntegratedMenu() === 'view') {
-                <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" (click)="openSearch(); closeIntegrated()">
-                    {{ 'electron.menu.viewSearch' | translate }}
-                  </button>
-                </div>
-              }
-            </div>
-
-            <!-- Ayuda -->
-            <div style="position: relative;">
-              <div class="tb__sysmenu-item" (click)="toggleIntegrated('help', $event)">
-                {{ 'electron.menu.help' | translate }}
-              </div>
-              @if (activeIntegratedMenu() === 'help') {
-                <div class="tb__dropdown">
-                  <button class="tb__dropdown-item" (click)="openAbout(); closeIntegrated()">
-                    {{ 'electron.menu.helpAbout' | translate }}
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Hamburger Button (Visible on < 1360px) -->
-          <div class="tb__compact-menu tb__sysmenu--compact" (click)="$event.stopPropagation()">
-            <button class="tb__action" [attr.title]="'electron.menu.file' | translate" (click)="toggleIntegratedHamburger($event)">
-              <span class="material-symbols-outlined">menu</span>
-            </button>
-            @if (openIntegratedHamburger()) {
-              <div class="tb__compact-dropdown" style="left: 0; right: auto; min-width: 240px; max-height: 80vh; overflow-y: auto;">
-                <div class="tb__dropdown-header">{{ 'electron.menu.file' | translate }}</div>
-                <button class="tb__compact-item" (click)="newDoc(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">note_add</span> {{ 'electron.menu.fileNew' | translate }}
-                </button>
-                <button class="tb__compact-item" (click)="openDoc(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">folder_open</span> {{ 'electron.menu.fileOpen' | translate }}
-                </button>
-                <button class="tb__compact-item" 
-                        [disabled]="!store.book()"
-                        (click)="store.book() && saveDoc(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">save</span> {{ 'electron.menu.fileSave' | translate }}
-                </button>
-                <button class="tb__compact-item" 
-                        [disabled]="!store.book()"
-                        (click)="store.book() && saveDocAs(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">save_as</span> {{ 'electron.menu.fileSaveAs' | translate }}
-                </button>
-                <button class="tb__compact-item" 
-                        [disabled]="!store.book()"
-                        (click)="store.book() && closeDoc(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
-                </button>
-                @if (isDesktop) {
-                  <button class="tb__compact-item" [disabled]="!store.book() || drive.busy()" (click)="drive.saveToDrive(); closeIntegratedHamburger()">
-                    <span class="material-symbols-outlined">cloud_upload</span> {{ 'drive.saveToDrive' | translate }}
-                  </button>
-                  <button class="tb__compact-item" (click)="quitApp(); closeIntegratedHamburger()">
-                    <span class="material-symbols-outlined">logout</span> {{ 'electron.menu.fileQuit' | translate }}
-                  </button>
-                }
-
-                <div class="tb__dropdown-sep"></div>
-
-                <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.edit' | translate }}</div>
-                <button class="tb__compact-item" 
-                        [disabled]="!canUndo()"
-                        (click)="store.book() && store.undo(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">undo</span> {{ 'electron.menu.editUndo' | translate }}
-                </button>
-                <button class="tb__compact-item" 
-                        [disabled]="!canRedo()"
-                        (click)="store.book() && store.redo(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">redo</span> {{ 'electron.menu.editRedo' | translate }}
-                </button>
-
-                <div class="tb__dropdown-sep"></div>
-
-                <div class="tb__dropdown-header" [class.tb__dropdown-header--disabled]="!store.book()">{{ 'electron.menu.view' | translate }}</div>
-                <button class="tb__compact-item" 
-                        [disabled]="!store.book()"
-                        (click)="openSearch(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">search</span> {{ 'electron.menu.viewSearch' | translate }}
-                </button>
-
-                <div class="tb__dropdown-sep"></div>
-
-                <div class="tb__dropdown-header">{{ 'electron.menu.help' | translate }}</div>
-                <button class="tb__compact-item" (click)="openAbout(); closeIntegratedHamburger()">
-                  <span class="material-symbols-outlined">info</span> {{ 'electron.menu.helpAbout' | translate }}
-                </button>
-              </div>
-            }
-          </div>
-        }
-
-        @if (store.book(); as book) {
-          <div class="tb__bookchip">
-            <span class="tb__chipBody">
-              <span class="tb__chipT">{{ book.title }}</span>
-              <span class="tb__chipMeta">{{ displayAuthors() }}</span>
-            </span>
-          </div>
-        }
+          }
+        </nav>
       </div>
 
-      <!-- NAV FULL (≥1360px) -->
-      @if (store.book()) {
-        <nav class="tb__nav tb__nav--full">
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'manuscript'"
-            (click)="store.setNav('manuscript')">{{ 'topbar.manuscript' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'styles'"
-            (click)="store.setNav('styles')">{{ 'topbar.styles' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'layout'"
-            (click)="store.setNav('layout')">{{ 'topbar.layout' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'metadata'"
-            (click)="store.setNav('metadata')">{{ 'topbar.properties' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'attachments'"
-            (click)="store.setNav('attachments')">{{ 'topbar.attachments' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'productivity'"
-            (click)="store.setNav('productivity')">{{ 'topbar.productivity' | translate }}</button>
-          <button class="tb__nav__b"
-            [class.tb__nav__b--on]="store.ui.activeNav() === 'worldbuilding'"
-            (click)="store.setNav('worldbuilding')">{{ 'topbar.worldbuilding' | translate }}</button>
-        </nav>
-      }
+      <div class="tb__bookchip">
+        @if (store.book(); as book) {
+          <span class="tb__chipT" [attr.title]="book.title">{{ book.title }}</span>
+          <span class="tb__chipMeta">{{ displayAuthors() }}</span>
+        }
+      </div>
 
       <div class="tb__right">
         @if (store.book()) {
-
-          <!-- FILE ACTIONS FULL (≥1360px) -->
-          <div class="tb__actions tb__actions--full tb__actions--file-full">
-            <button class="tb__action" [attr.title]="'topbar.new' | translate" (click)="newDoc()"><span class="material-symbols-outlined">note_add</span></button>
-            <button class="tb__action" [attr.title]="'topbar.open' | translate" (click)="openDoc()"><span class="material-symbols-outlined">folder_open</span></button>
-            <button class="tb__action" [attr.title]="'topbar.save' | translate" (click)="saveDoc()"><span class="material-symbols-outlined">save</span></button>
-            <button class="tb__action" [attr.title]="'topbar.saveAs' | translate" (click)="saveDocAs()"><span class="material-symbols-outlined">save_as</span></button>
-            <button class="tb__action" [attr.title]="'topbar.closeDoc' | translate" (click)="closeDoc()"><span class="material-symbols-outlined">close_fullscreen</span></button>
-          </div>
-          <span class="tb__sep tb__sep--full"></span>
-
-          <!-- UNDO/REDO FULL (≥1360px) -->
-          <div class="tb__actions tb__actions--full">
-            <button class="tb__action" [disabled]="!canUndo()" [attr.title]="'topbar.undo' | translate" (click)="store.undo()"><span class="material-symbols-outlined">undo</span></button>
-            <button class="tb__action" [disabled]="!canRedo()" [attr.title]="'topbar.redo' | translate" (click)="store.redo()"><span class="material-symbols-outlined">redo</span></button>
-          </div>
-          <span class="tb__sep tb__sep--full"></span>
-
-          <!-- NAV COMPACT (<1360px) -->
-          <div class="tb__compact-menu tb__compact-menu--nav">
-            <button class="tb__action" [attr.title]="'topbar.view' | translate" (click)="toggleMenu('nav', $event)">
-              <span class="material-symbols-outlined">menu_book</span>
+          <button type="button" class="tb__icon tb__save" [attr.title]="'topbar.save' | translate"
+            [attr.aria-label]="'topbar.save' | translate" (click)="saveDoc()">
+            <span class="material-symbols-outlined" aria-hidden="true">save</span>
+          </button>
+          @if (drive.available && fileService.driveLink()) {
+            @let driveLabel = ('drive.state.' + fileService.syncState()) | translate;
+            <button type="button" class="tb__icon tb__drive" [attr.title]="driveLabel"
+              [attr.aria-label]="driveLabel" (click)="drive.show()">
+              <span class="material-symbols-outlined" aria-hidden="true">{{ fileService.syncState() === 'conflict' ? 'warning' : fileService.syncState() === 'working' ? 'sync' : fileService.syncState() === 'pending' ? 'cloud_off' : 'cloud_done' }}</span>
             </button>
-            @if (openMenu() === 'nav') {
-              <div class="tb__compact-dropdown">
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'manuscript'" (click)="store.setNav('manuscript'); closeMenus()">{{ 'topbar.manuscript' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'styles'" (click)="store.setNav('styles'); closeMenus()">{{ 'topbar.styles' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'layout'" (click)="store.setNav('layout'); closeMenus()">{{ 'topbar.layout' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'metadata'" (click)="store.setNav('metadata'); closeMenus()">{{ 'topbar.properties' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'attachments'" (click)="store.setNav('attachments'); closeMenus()">{{ 'topbar.attachments' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'dictionary'" (click)="store.setNav('dictionary'); closeMenus()">{{ 'sidebar.dictionary' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'productivity'" (click)="store.setNav('productivity'); closeMenus()">{{ 'topbar.productivity' | translate }}</button>
-                <button class="tb__compact-item" [class.tb__compact-item--on]="store.ui.activeNav() === 'worldbuilding'" (click)="store.setNav('worldbuilding'); closeMenus()">{{ 'topbar.worldbuilding' | translate }}</button>
+          }
+          <button type="button" class="tb__icon tb__preview" [attr.title]="'topbar.preview' | translate"
+            [attr.aria-label]="'topbar.preview' | translate" [attr.aria-pressed]="store.ui.previewOpen()"
+            [class.tb__icon--on]="store.ui.previewOpen()" (click)="store.togglePreview()">
+            <span class="material-symbols-outlined" aria-hidden="true">{{ store.ui.previewOpen() ? 'visibility' : 'visibility_off' }}</span>
+          </button>
+        <div class="tb__pomodoro-widget" (click)="$event.stopPropagation()" (keydown.escape)="dismissMenu($event, timerButton)">
+          <button #timerButton type="button" class="tb__pomodoro-btn"
+                  [class.tb__pomodoro-btn--active]="pomo.isActive()"
+                  [class.tb__pomodoro-btn--focus]="pomo.mode() === 'focus'"
+                  [class.tb__pomodoro-btn--break]="pomo.mode() !== 'focus'"
+                  [attr.title]="'Pomodoro'"
+                  [attr.aria-expanded]="openMenu() === 'pomodoro'"
+                  (click)="toggleMenu('pomodoro', $event)">
+            <span class="material-symbols-outlined" style="font-size: 18px;" [style.color]="pomo.isActive() ? 'var(--accent)' : 'inherit'">{{ pomo.isActive() ? 'timer' : 'timer_off' }}</span>
+            <span class="tb__pomodoro-time" style="font-size: 12px; font-weight: bold; font-family: var(--ui); font-variant-numeric: tabular-nums;">{{ pomo.getFormattedTime() }}</span>
+          </button>
+          @if (openMenu() === 'pomodoro') {
+            <div class="tb__popover tb__pomodoro-dropdown" style="right: 0; left: auto; min-width: 220px; padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--rule); background: var(--paper); color: var(--ink);">
+              <div class="tb__pomo-title" style="margin-bottom: 8px; display: flex; justify-content: center;">
+                @if (pomo.mode() === 'focus') {
+                  <span class="tb__pomo-badge tb__pomo-badge--focus" style="background: var(--accent); color: var(--paper); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.focusing' | translate }}</span>
+                } @else if (pomo.mode() === 'short-break') {
+                  <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.shortBreak' | translate }}</span>
+                } @else {
+                  <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.longBreak' | translate }}</span>
+                }
               </div>
-            }
-          </div>
 
-          <!-- FILE COMPACT (<1360px) -->
-          <div class="tb__compact-menu tb__compact-menu--file">
-            <button class="tb__action" [attr.title]="'topbar.file' | translate" (click)="toggleMenu('file', $event)">
-              <span class="material-symbols-outlined">folder_open</span>
-            </button>
-            @if (openMenu() === 'file') {
-              <div class="tb__compact-dropdown">
-                <button class="tb__compact-item" (click)="newDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">note_add</span> {{ 'topbar.new' | translate }}
-                </button>
-                <button class="tb__compact-item" (click)="openDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">folder_open</span> {{ 'topbar.open' | translate }}
-                </button>
-                <button class="tb__compact-item" (click)="saveDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">save</span> {{ 'topbar.save' | translate }}
-                </button>
-                <button class="tb__compact-item" (click)="saveDocAs(); closeMenus()">
-                  <span class="material-symbols-outlined">save_as</span> {{ 'topbar.saveAs' | translate }}
-                </button>
-                <button class="tb__compact-item" (click)="closeDoc(); closeMenus()">
-                  <span class="material-symbols-outlined">close_fullscreen</span> {{ 'topbar.closeDoc' | translate }}
-                </button>
-              </div>
-            }
-          </div>
+              <div class="tb__pomo-timer-display" style="font-size: 32px; font-weight: bold; text-align: center; margin: 12px 0; font-family: var(--ui); font-variant-numeric: tabular-nums; letter-spacing: 1px;">{{ pomo.getFormattedTime() }}</div>
 
-          <!-- UNDO/REDO COMPACT (<1360px) -->
-          <div class="tb__compact-menu tb__compact-menu--edit">
-            <button class="tb__action" [attr.title]="'topbar.edit' | translate" (click)="toggleMenu('edit', $event)">
-              <span class="material-symbols-outlined">history</span>
-            </button>
-            @if (openMenu() === 'edit') {
-              <div class="tb__compact-dropdown">
-                <button class="tb__compact-item" [disabled]="!canUndo()" (click)="store.undo(); closeMenus()">
-                  <span class="material-symbols-outlined">undo</span> {{ 'topbar.undo' | translate }}
-                </button>
-                <button class="tb__compact-item" [disabled]="!canRedo()" (click)="store.redo(); closeMenus()">
-                  <span class="material-symbols-outlined">redo</span> {{ 'topbar.redo' | translate }}
-                </button>
-              </div>
-            }
-          </div>
-
-          <!-- POMODORO TIMER WIDGET -->
-          <div class="tb__pomodoro-widget" (click)="$event.stopPropagation()">
-            <button class="tb__pomodoro-btn" 
-                    [class.tb__pomodoro-btn--active]="pomo.isActive()"
-                    [class.tb__pomodoro-btn--focus]="pomo.mode() === 'focus'"
-                    [class.tb__pomodoro-btn--break]="pomo.mode() !== 'focus'"
-                    [attr.title]="'Pomodoro'" 
-                    (click)="toggleMenu('pomodoro', $event)">
-              <span class="material-symbols-outlined" style="font-size: 18px;" [style.color]="pomo.isActive() ? 'var(--accent)' : 'inherit'">{{ pomo.isActive() ? 'timer' : 'timer_off' }}</span>
-              <span class="tb__pomodoro-time" style="font-size: 12px; font-weight: bold; font-family: var(--ui); font-variant-numeric: tabular-nums;">{{ pomo.getFormattedTime() }}</span>
-            </button>
-            @if (openMenu() === 'pomodoro') {
-              <div class="tb__compact-dropdown tb__pomodoro-dropdown" style="right: 0; left: auto; min-width: 220px; padding: 12px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid var(--rule); background: var(--paper); color: var(--ink);">
-                <div class="tb__pomo-title" style="margin-bottom: 8px; display: flex; justify-content: center;">
-                  @if (pomo.mode() === 'focus') {
-                    <span class="tb__pomo-badge tb__pomo-badge--focus" style="background: var(--accent); color: var(--paper); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.focusing' | translate }}</span>
-                  } @else if (pomo.mode() === 'short-break') {
-                    <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.shortBreak' | translate }}</span>
-                  } @else {
-                    <span class="tb__pomo-badge tb__pomo-badge--break" style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase;">{{ 'pomodoro.longBreak' | translate }}</span>
-                  }
-                </div>
-
-                <div class="tb__pomo-timer-display" style="font-size: 32px; font-weight: bold; text-align: center; margin: 12px 0; font-family: var(--ui); font-variant-numeric: tabular-nums; letter-spacing: 1px;">{{ pomo.getFormattedTime() }}</div>
-
-                <div class="tb__pomo-controls" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-                  @if (!pomo.isActive()) {
-                    <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;" (click)="pomo.start()">
-                      <span class="material-symbols-outlined" style="font-size: 18px;">play_arrow</span> {{ 'pomodoro.start' | translate }}
-                    </button>
-                  } @else {
-                    <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ef4444; border-color: #ef4444;" (click)="pomo.pause()">
-                      <span class="material-symbols-outlined" style="font-size: 18px;">pause</span> {{ 'pomodoro.pause' | translate }}
-                    </button>
-                  }
-                  <button class="tb__pomo-btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px; background: none; border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; color: var(--ink); font-family: inherit; font-size: 12px;" (click)="pomo.reset()">
-                    <span class="material-symbols-outlined" style="font-size: 16px;">restart_alt</span> {{ 'pomodoro.reset' | translate }}
+              <div class="tb__pomo-controls" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                @if (!pomo.isActive()) {
+                  <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px;" (click)="pomo.start()">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">play_arrow</span> {{ 'pomodoro.start' | translate }}
                   </button>
-                </div>
-
-                <div class="tb__dropdown-sep" style="margin: 8px 0; height: 1px; background: var(--rule);"></div>
-
-                <div class="tb__pomo-mode-select" style="display: flex; gap: 4px; margin-bottom: 12px;">
-                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'focus' ? 'var(--accent)' : 'none'" [style.color]="pomo.mode() === 'focus' ? 'var(--paper)' : 'var(--ink)'" (click)="pomo.setMode('focus')">{{ 'pomodoro.modeFocus' | translate }}</button>
-                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'short-break' ? '#10b981' : 'none'" [style.color]="pomo.mode() === 'short-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('short-break')">{{ 'pomodoro.modeShort' | translate }}</button>
-                  <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'long-break' ? '#3b82f6' : 'none'" [style.color]="pomo.mode() === 'long-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('long-break')">{{ 'pomodoro.modeLong' | translate }}</button>
-                </div>
-
-                <div class="tb__pomo-stats" style="font-size: 10px; text-align: center; color: var(--ink-mute);">
-                  {{ 'pomodoro.completedSessions' | translate }}: <strong>{{ pomo.focusCount() }}</strong>
-                </div>
+                } @else {
+                  <button class="sb__btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; background: #ef4444; border-color: #ef4444;" (click)="pomo.pause()">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">pause</span> {{ 'pomodoro.pause' | translate }}
+                  </button>
+                }
+                <button class="tb__pomo-btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 6px; background: none; border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; color: var(--ink); font-family: inherit; font-size: 12px;" (click)="pomo.reset()">
+                  <span class="material-symbols-outlined" style="font-size: 16px;">restart_alt</span> {{ 'pomodoro.reset' | translate }}
+                </button>
               </div>
-            }
-          </div>
 
-          <button class="tb__icon" [attr.title]="'topbar.search' | translate" (click)="openSearch()">
-            <span class="material-symbols-outlined">search</span>
-          </button>
-          <button class="tb__icon" [attr.title]="'topbar.preview' | translate" (click)="store.togglePreview()" [class.tb__icon--on]="store.ui.previewOpen()">
-            <span class="material-symbols-outlined">{{ store.ui.previewOpen() ? 'visibility' : 'visibility_off' }}</span>
-          </button>
-          <button class="tb__icon" [attr.title]="'topbar.zenMode' | translate" (click)="store.toggleZenMode()" [class.tb__icon--on]="store.ui.zenMode()">
-            <span class="material-symbols-outlined">{{ store.ui.zenMode() ? 'fullscreen_exit' : 'fullscreen' }}</span>
-          </button>
-          <button class="tb__icon" [attr.title]="'sidebar.dictionary' | translate" [attr.aria-label]="'sidebar.dictionary' | translate"
-            [class.tb__icon--on]="store.ui.activeNav() === 'dictionary'" (click)="store.setNav('dictionary')">
-            <span class="material-symbols-outlined">dictionary</span>
-          </button>
-          <button class="tb__icon" [attr.title]="'topbar.settings' | translate" (click)="store.setNav('settings')">
-            <span class="material-symbols-outlined">settings</span>
-          </button>
-          <button class="tb__cta" (click)="store.setNav('export')">{{ 'topbar.export' | translate }}</button>
-        }
+              <div class="tb__dropdown-sep" style="margin: 8px 0; height: 1px; background: var(--rule);"></div>
 
-        <div class="tb__avatar tb__avatar--hideable">
-          @if (store.personalConfig().avatar; as avatar) {
-            <img [src]="avatar" alt="Avatar">
-          } @else {
-            M
+              <div class="tb__pomo-mode-select" style="display: flex; gap: 4px; margin-bottom: 12px;">
+                <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'focus' ? 'var(--accent)' : 'none'" [style.color]="pomo.mode() === 'focus' ? 'var(--paper)' : 'var(--ink)'" (click)="pomo.setMode('focus')">{{ 'pomodoro.modeFocus' | translate }}</button>
+                <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'short-break' ? '#10b981' : 'none'" [style.color]="pomo.mode() === 'short-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('short-break')">{{ 'pomodoro.modeShort' | translate }}</button>
+                <button class="tb__pomo-mode-btn" style="flex: 1; padding: 4px; font-size: 10px; border-radius: 4px; border: 1px solid var(--rule); cursor: pointer;" [style.background]="pomo.mode() === 'long-break' ? '#3b82f6' : 'none'" [style.color]="pomo.mode() === 'long-break' ? 'white' : 'var(--ink)'" (click)="pomo.setMode('long-break')">{{ 'pomodoro.modeLong' | translate }}</button>
+              </div>
+
+              <div class="tb__pomo-stats" style="font-size: 10px; text-align: center; color: var(--ink-mute);">
+                {{ 'pomodoro.completedSessions' | translate }}: <strong>{{ pomo.focusCount() }}</strong>
+              </div>
+            </div>
           }
         </div>
+
+        } @else {
+          <button type="button" class="tb__icon" [attr.title]="'topbar.settings' | translate"
+            [attr.aria-label]="'topbar.settings' | translate" aria-haspopup="dialog"
+            (mousedown)="$event.preventDefault()" (click)="settingsRequested.emit()">
+            <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+          </button>
+        }
       </div>
     </header>
+
+    <input #importInput type="file" accept=".docx,.txt" hidden (change)="onImportFile(importInput)" />
+    @if (importService.importing() || importService.warnings().length) {
+      <div class="tb__import-report" role="status">
+        @if (importService.importing()) {
+          {{ 'importReport.importing' | translate }}
+        } @else {
+          <div class="tb__import-heading">
+            <strong>{{ 'importReport.title' | translate }}</strong>
+            <button type="button" class="exit-modal__btn" (click)="importService.warnings.set([])">
+              {{ 'recovery.close' | translate }}
+            </button>
+          </div>
+          <ul>
+            @for (warning of importService.warnings(); track $index) {
+              <li>{{ warning }}</li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <ng-template #panels let-items="items">
+      @for (panel of items; track panel.id) {
+        <button type="button" class="tb__menu-action" [disabled]="!store.book()"
+          [class.tb__menu-action--on]="store.ui.sidebarOpen() && store.ui.activeNav() === panel.id"
+          (click)="store.setNav(panel.id)">
+          <span class="material-symbols-outlined" aria-hidden="true">{{ panel.icon }}</span>
+          <span>{{ panel.label | translate }}</span>
+        </button>
+      }
+    </ng-template>
 
     @if (showSaveLocation()) {
       <div class="exit-modal-backdrop">
@@ -439,10 +340,8 @@ export class TopbarComponent {
   readonly drive = inject(GoogleDriveService);
   readonly fileService = inject(FileService);
   readonly translate = inject(TranslateService);
-  readonly environment = environment;
   readonly canUndo = computed(() => !!this.store.book() && this.store.past().length > 0);
   readonly canRedo = computed(() => !!this.store.book() && this.store.future().length > 0);
-  readonly editionLabel = `${environment.version} · ${environment.edition} Edition`;
 
   readonly displayAuthors = computed(() => {
     const book = this.store.book();
@@ -458,9 +357,7 @@ export class TopbarComponent {
 
   @HostListener('document:click')
   onDocumentClick() {
-    this.closeMenus();
-    this.closeIntegrated();
-    this.closeIntegratedHamburger();
+    this.closeMenu();
   }
 
   newDoc() {
@@ -576,47 +473,179 @@ export class TopbarComponent {
     }
   }
 
-  docProps() {
-    this.store.setNav('metadata');
-  }
-
-  // --- POMODORO TIMER SERVICE ---
   readonly pomo = inject(PomodoroService);
 
-  // --- COMPACT MENUS ---
-  openMenu = signal<'nav' | 'file' | 'edit' | 'pomodoro' | null>(null);
+  readonly menus = [
+    { id: 'file', label: 'topbar.file' },
+    { id: 'edit', label: 'topbar.edit' },
+    { id: 'view', label: 'electron.menu.view' },
+    { id: 'tools', label: 'topbar.tools' },
+    { id: 'help', label: 'electron.menu.help' },
+  ] as const;
 
-  toggleMenu(menu: 'nav' | 'file' | 'edit' | 'pomodoro', event: MouseEvent) {
+  readonly viewPanels = [
+    { id: 'manuscript', label: 'topbar.manuscript', icon: 'menu_book' },
+    { id: 'outline', label: 'planning.outline', icon: 'view_kanban' },
+    { id: 'styles', label: 'topbar.styles', icon: 'text_fields' },
+    { id: 'layout', label: 'topbar.layout', icon: 'space_dashboard' },
+    { id: 'metadata', label: 'topbar.properties', icon: 'info' },
+    { id: 'attachments', label: 'topbar.attachments', icon: 'attach_file' },
+  ] as const;
+
+  readonly toolPanels = [
+    { id: 'worldbuilding', label: 'topbar.worldbuilding', icon: 'badge' },
+    { id: 'dictionary', label: 'sidebar.dictionary', icon: 'dictionary' },
+    { id: 'productivity', label: 'topbar.productivity', icon: 'bar_chart' },
+  ] as const;
+
+  readonly chapterOptions = [
+    { kind: 'chapter', label: 'sidebar.addChapter', icon: 'note_add' },
+    { kind: 'back', label: 'sidebar.addBack', icon: 'post_add' },
+  ] as const;
+
+  readonly chapterTemplates = [
+    { id: 'title-page', label: 'sidebar.templateTitlePage', icon: 'title' },
+    { id: 'credits', label: 'sidebar.templateCredits', icon: 'copyright' },
+    { id: 'dedication', label: 'sidebar.templateDedication', icon: 'favorite' },
+    { id: 'acknowledgments', label: 'sidebar.templateAcknowledgments', icon: 'volunteer_activism' },
+    { id: 'toc', label: 'sidebar.templateToc', icon: 'toc' },
+    { id: undefined, label: 'sidebar.addFrontBlank', icon: 'draft' },
+  ] as const;
+
+  readonly importService = inject(ImportService);
+  readonly showAddOptions = signal(false);
+
+  readonly addOptionsPosition = signal<{ left: number; top: number; opensLeft: boolean } | null>(null);
+
+  setAddOptions(open: boolean, focusFirst = false) {
+    this.showAddOptions.set(open);
+    if (!open) {
+      this.addOptionsPosition.set(null);
+      return;
+    }
+    afterNextRender(() => {
+      this.positionAddOptions();
+      if (focusFirst) {
+        this.document.querySelector<HTMLButtonElement>('#menu-add-element button')?.focus({ preventScroll: true });
+      }
+    }, { injector: this.injector });
+  }
+
+  @HostListener('window:resize')
+  positionAddOptions() {
+    const submenu = this.document.getElementById('menu-add-element');
+    const parent = this.document.getElementById('menu-tools');
+    const trigger = this.document.getElementById('menu-add-trigger');
+    if (!this.showAddOptions() || !submenu || !parent || !trigger) return;
+
+    const { clientWidth, clientHeight } = this.document.documentElement;
+    const menuBounds = parent.getBoundingClientRect();
+    const buttonBounds = trigger.getBoundingClientRect();
+    const { width, height } = submenu.getBoundingClientRect();
+    const margin = 8;
+    const right = menuBounds.right + 4;
+    const left = menuBounds.left - width - 4;
+    const fitsRight = right + width <= clientWidth - margin;
+    const fitsLeft = left >= margin;
+    const opensLeft = !fitsRight && (fitsLeft || menuBounds.left > clientWidth - menuBounds.right);
+    const x = opensLeft ? left : right;
+    const y = fitsLeft || fitsRight ? buttonBounds.top : buttonBounds.bottom + 4;
+    this.addOptionsPosition.set({
+      left: Math.max(margin, Math.min(x, clientWidth - width - margin)),
+      top: Math.max(margin, Math.min(y, clientHeight - height - margin)),
+      opensLeft,
+    });
+  }
+
+  openAddOptionsWithKeyboard(event: Event) {
+    event.preventDefault();
+    this.setAddOptions(true, true);
+  }
+
+  addElement(kind: ChapterKind, template?: ChapterTemplateId) {
+    if (template) this.store.addChapterFromTemplate(template);
+    else this.store.addChapter(kind);
+    this.store.setNav('manuscript');
+  }
+
+  onImportFile(input: HTMLInputElement) {
+    const file = input.files?.[0];
+    input.value = '';
+    if (file) void this.importService.importFile(file);
+  }
+
+  readonly openMenu = signal<TopbarMenu | 'pomodoro' | null>(null);
+  readonly aboutRequested = output<void>();
+  readonly settingsRequested = output<void>();
+  readonly isDesktop = !!window.desktopAPI;
+
+  toggleMenu(menu: TopbarMenu | 'pomodoro', event: MouseEvent) {
     event.stopPropagation();
+    this.setAddOptions(false);
     this.openMenu.update(current => current === menu ? null : menu);
   }
 
-  closeMenus() {
+  closeMenu() {
     this.openMenu.set(null);
+    this.setAddOptions(false);
   }
 
-  // --- INTEGRATED FALLBACK MENU ---
-  aboutRequested = output<void>();
-  readonly isDesktop = !!(window as any).desktopAPI;
-  readonly showWebMenu = (() => {
-    const api = (window as any).desktopAPI;
-    if (!api) return true;
-    return !!api.useIntegratedMenu;
-  })();
+  completeMenu(trigger: HTMLButtonElement) {
+    this.closeMenu();
+    if (trigger.parentElement?.contains(this.document.activeElement)) trigger.focus();
+  }
 
-  activeIntegratedMenu = signal<'file' | 'edit' | 'view' | 'help' | null>(null);
+  onMenuBlur(menu: TopbarMenu, event: FocusEvent) {
+    const container = event.currentTarget as HTMLElement;
+    if (this.openMenu() === menu && event.relatedTarget instanceof Node && !container.contains(event.relatedTarget)) {
+      this.closeMenu();
+    }
+  }
 
-  toggleIntegrated(menu: 'file' | 'edit' | 'view' | 'help', event: MouseEvent) {
+  onMenuTriggerKeydown(menu: TopbarMenu, event: KeyboardEvent) {
+    if (event.key === 'Escape' && this.openMenu() === menu) {
+      this.dismissMenu(event);
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.openMenu.set(menu);
+      afterNextRender(() => {
+        const buttons = this.document.querySelectorAll<HTMLButtonElement>(`#menu-${menu} button:enabled`);
+        (event.key === 'ArrowDown' ? buttons[0] : buttons[buttons.length - 1])?.focus();
+      }, { injector: this.injector });
+    }
+  }
+
+  onMenuKeydown(event: KeyboardEvent, trigger: HTMLButtonElement) {
+    const submenu = (event.target as HTMLElement).closest('.tb__submenu');
+    if ((event.key === 'Escape' && this.showAddOptions()) || (event.key === 'ArrowLeft' && submenu)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.setAddOptions(false);
+      this.document.getElementById('menu-add-trigger')?.focus();
+      return;
+    }
+    if (event.key === 'Escape') {
+      this.dismissMenu(event, trigger);
+      return;
+    }
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const container = submenu ?? event.currentTarget as HTMLElement;
+    const actions = Array.from(container.querySelectorAll<HTMLButtonElement>('button:enabled'))
+      .filter(button => button.closest('.tb__submenu') === submenu);
+    if (!actions.length) return;
+    event.preventDefault();
+    const current = actions.indexOf(event.target as HTMLButtonElement);
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? actions.length - 1
+      : (current + step + actions.length) % actions.length;
+    actions[next].focus();
+  }
+
+  dismissMenu(event: Event, trigger?: HTMLButtonElement) {
+    event.preventDefault();
     event.stopPropagation();
-    this.activeIntegratedMenu.update(current => current === menu ? null : menu);
-  }
-
-  closeIntegrated() {
-    this.activeIntegratedMenu.set(null);
-  }
-
-  openAbout() {
-    this.aboutRequested.emit();
+    this.closeMenu();
+    trigger?.focus();
   }
 
   quitApp() {
@@ -629,18 +658,6 @@ export class TopbarComponent {
         api.confirmClose();
       }
     }
-  }
-
-  // --- INTEGRATED COMPACT HAMBURGER MENU ---
-  openIntegratedHamburger = signal(false);
-
-  toggleIntegratedHamburger(event: MouseEvent) {
-    event.stopPropagation();
-    this.openIntegratedHamburger.update(current => !current);
-  }
-
-  closeIntegratedHamburger() {
-    this.openIntegratedHamburger.set(false);
   }
 
   // --- DATA LOSS GUARD LOGIC ---

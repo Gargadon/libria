@@ -191,7 +191,7 @@ import { NoteRole, NoteStatus } from '../../models/book.models';
     }
 
     .ncm__title {
-      font-family: var(--display);
+      font-family: var(--ui-display, var(--display));
       font-size: 15px;
       color: var(--ink);
       line-height: 1.1;

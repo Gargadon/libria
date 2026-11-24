@@ -1,6 +1,7 @@
 import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../../store/book.store';
 import { AssetService } from '../../../services/asset.service';
+import { inlineImageSize } from '../../../utils/image-sizing';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -20,12 +21,24 @@ export class SidebarAttachmentsPanelComponent {
       .map(([key, data]) => ({ key, data }));
   });
 
-  insertAttachment(assetKey: string) {
-    const chapter = this.store.activeChapter();
+  async insertAttachment(assetKey: string) {
+    const chapterId = this.store.activeChapterId();
+    const source = this.assetService.get(assetKey);
+    if (!chapterId || !source) return;
+    const session = this.store.documentSession();
+    const image = new Image();
+    image.src = source;
+    try {
+      await image.decode();
+    } catch {
+      return;
+    }
+    if (session !== this.store.documentSession() || this.assetService.get(assetKey) !== source) return;
+    const chapter = this.store.chapters().find(chapter => chapter.id === chapterId);
     if (!chapter) return;
-    const index = chapter.body.length - 1;
+    const { width, height } = inlineImageSize(image.naturalWidth, image.naturalHeight);
     this.store.saveSnapshot();
-    this.store.insertImageBlock(chapter.id, index, assetKey);
+    this.store.insertImageBlock(chapterId, chapter.body.length - 1, assetKey, width, height);
   }
 
   deleteAttachment(assetKey: string) {

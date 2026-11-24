@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { HyphenService } from '../hyphen.service';
 
+import { chapterHeadingImageCss, resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
 import { blockToHtml, chapterFootnotesHtml } from '../../utils/block-html';
 import { pageSizeCss, sceneBreakGlyph } from '../../utils/block-maps';
 
@@ -573,6 +574,11 @@ ${
               }).replace(/^(\s*<[a-z][a-z0-9-]*)/i, `$1 data-libria-block="${chapterContext?.chapterIndex ?? idx}:${blockIndex}"`),
             )
             .join('\n');
+        }
+
+        const illustration = resolveChapterHeadingImage(book, ch, assets);
+        if (illustration) {
+          body = `<img class="chapter-heading-image" src="${escapeHtml(illustration.src)}" width="${illustration.width}" height="${illustration.height}" style="${chapterHeadingImageCss}" alt="">\n${body}`;
         }
 
         const fnHtml = ch.templateId === 'toc' ? '' : chapterFootnotesHtml(ch.footnotes, ch.body);

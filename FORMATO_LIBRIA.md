@@ -1,6 +1,6 @@
 # Especificación del Formato `.libria` (Esquema 2)
 
-El formato `.libria` es un estándar basado en JSON diseñado para el almacenamiento persistente de manuscritos en la aplicación Libria. Permite agrupar en un único archivo el contenido textual (organizado en bloques y capítulos), la estructura jerárquica del libro, los metadatos bibliográficos, los comentarios editoriales enriquecidos, los objetivos de escritura y los ajustes finos de maquetación tipográfica.
+Un archivo `.libria` contiene un objeto JSON en UTF-8. Reúne los capítulos y bloques del manuscrito, sus metadatos, las preferencias de maquetación, las fichas, las notas y los recursos incrustados. Libria 2.4.0 guarda con el **esquema 2**. Las incorporaciones de esta versión son campos opcionales.
 
 ---
 
@@ -9,7 +9,7 @@ El formato `.libria` es un estándar basado en JSON diseñado para el almacenami
 Un documento `.libria` es un objeto JSON raíz con las siguientes propiedades:
 
 ### 1. `libriaVersion` (string)
-Indica la versión de Libria con la que se generó el archivo. Ej: `"2.1.1"`. Este valor identifica la versión de la aplicación que guardó el documento; no es un número de revisión independiente del JSON Schema.
+Identifica la versión de la aplicación que guardó el archivo, por ejemplo `"2.4.0"`.
 
 ### 1b. `schemaVersion` (number, opcional)
 Versión del **esquema del formato**, independiente de la versión de la aplicación. Los documentos anteriores a la identidad de bloques no lo declaran y se tratan como versión `1`; la versión actual es `2`. Una versión de Libria rechaza los documentos con un `schemaVersion` mayor que el que admite, para no degradar datos que no comprende.
@@ -21,7 +21,7 @@ Sello de la última edición del documento, escrito por el guardado:
 - `modifiedAt` (string): fecha ISO 8601 del último guardado.
 - `modifiedBy` (string): nombre visible del autor del último guardado.
 
-No cambian al leer el documento: solo al guardarlo. Esto mantiene estable la comparación de contenido entre guardados.
+La lectura conserva estos campos. Pueden faltar en archivos antiguos. Un proyecto recién creado parte de la revisión `0` y puede tener fechas y nombre de modificación vacíos antes de su primer guardado.
 
 ### 2. `metadata` (object)
 Información bibliográfica básica de la obra. Basado en la interfaz `Book`.
@@ -34,13 +34,14 @@ Información bibliográfica básica de la obra. Basado en la interfaz `Book`.
 - `publisher` (string, opcional): Editorial.
 - `year` (number, opcional): Año de publicación.
 - `isbn` (string, opcional): ISBN o identificador similar.
+- `headingImage` (object, opcional): Ilustración predeterminada de apertura de los capítulos. Contiene `assetId` (clave de imagen PNG o JPEG en `assets`) y dimensiones de presentación `width` y `height` en píxeles.
 - `paperSize` (string): Formato de página (`"5x8"`, `"6x9"`, `"A5"`, `"A4"`, `"A6"`, `"Letter"`).
 - `lang` (string, opcional): Código del idioma del documento (ej: `"es-MX"`).
 
 ### 3. `preferences` (object)
 Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweaks`).
 
-> La preferencia visual `mode` (`"light"` o `"dark"`) pertenece a la configuración personal de la aplicación y se excluye al guardar un documento `.libria`.
+El color de la interfaz (`mode`), su estilo visual, el idioma de la aplicación, el perfil de usuario y el ancho de la vista previa se guardan como preferencias personales. El vínculo con Google Drive y las copias automáticas de recuperación también viven fuera del archivo. La posición de la barra lateral y la activación del corrector se serializan en `preferences`, pero la configuración personal tiene prioridad al abrir el libro si define esos valores.
 
 - **Generales**:
   - `sidebar` (string): Orientación de la barra lateral (`"left"` o `"right"`).
@@ -49,11 +50,11 @@ Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweak
 - **Tipografía y Fuente**:
   - `bookFont` (string): Identificador de la fuente para el cuerpo del texto (`"spectral"`, `"lora"`, `"eb-garamond"`, `"crimson-pro"`, `"inter"`, `"montserrat"`).
   - `customBookFont` (string, opcional): Nombre de una fuente personalizada del sistema.
-  - `fontSize` (number): Tamaño de la fuente base del libro en px.
+  - `fontSize` (number): Tamaño de la fuente base en puntos tipográficos (pt).
   - `lineHeight` (number): Interlineado del texto (ej: `1.5`).
-  - `paragraphSpacing` (number): Espaciado adicional entre párrafos en px.
+  - `paragraphSpacing` (number): Espaciado adicional entre párrafos en puntos tipográficos (pt).
   - `indentFirstLine` (boolean): Indica si se debe aplicar sangría a la primera línea de los párrafos.
-  - `indentSize` (number): Tamaño de la sangría en pulgadas (ej: `0.5`).
+  - `indentSize` (number): Tamaño de la sangría en centímetros, por ejemplo `0.5`.
   - `justifyText` (boolean): Justificación completa del texto del manuscrito.
 - **Márgenes de Página (en mm)**:
   - `marginTop` (number)
@@ -64,11 +65,13 @@ Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweak
   - `showHeader` (boolean): Activa la cabecera en las páginas del libro.
   - `headerText` (string): Texto estático a mostrar en el encabezado.
   - `showPageNumbers` (boolean): Activa la numeración de páginas.
+  - `hideBlankPageNumbers` (boolean): Oculta el número visible de las páginas en blanco, que siguen contando.
+  - `pageNumberingStart` (string): `"document"` numera desde el inicio del documento y `"body"` empieza en el primer capítulo del cuerpo.
   - `pageNumberPosition` (string): Ubicación de la numeración (`"bottom-center"`, `"bottom-edges"`, `"top-edges"`).
 - **Estilo de Títulos de Capítulos**:
   - `titleFont` (string): Tipografía de los títulos (`"spectral"`, etc.).
   - `customTitleFont` (string, opcional): Fuente personalizada de títulos instalada en el sistema.
-  - `titleFontSize` (number): Tamaño de fuente de los títulos principales.
+  - `titleFontSize` (number): Tamaño de fuente de los títulos principales en puntos tipográficos (pt).
   - `titleAlignment` (string): Alineación del título (`"left"`, `"center"`, `"right"`).
   - `titleBold` (boolean): Aplica negrita al título.
   - `titleItalic` (boolean): Aplica cursiva al título.
@@ -86,7 +89,7 @@ Configuración detallada de diseño, tipografía y maquetación (interfaz `Tweak
   - `smartOpeningSigns` (boolean): Ajuste automático de signos de apertura de interrogación y exclamación.
 
 ### 4. `session` (object)
-Guarda datos de sesión de la última edición.
+Guarda datos de sesión de la última edición. La aplicación admite que el objeto falte en archivos antiguos.
 - `lastActiveChapterId` (string): ID del último capítulo seleccionado en el editor.
 
 ### 4b. `review` (object, opcional)
@@ -94,7 +97,7 @@ Control de cambios editorial. Las marcas **no** se guardan: se derivan comparand
 
 - `mode` (string): `"off"` o `"track"`.
 - `round` (object, opcional): ronda abierta. Contiene `id`, `author`, `role` (`"author"`, `"editor"`, `"corrector"`, `"publisher"`), `startedAt` (ISO 8601), `baselineRevision` (revisión del documento al abrirla) y `schemaVersion`.
-- `baseline` (array, opcional): copia del estado aceptado de los capítulos al iniciar la ronda, con los mismos identificadores de bloque que `chapters`. Aceptar un cambio rebasa este estado; rechazarlo restaura el bloque en `chapters`.
+- `baseline` (array, opcional): copia del estado aceptado de los capítulos al iniciar la ronda, con los mismos identificadores de bloque que `chapters`. Aceptar un cambio actualiza ese estado. Rechazarlo restaura el bloque correspondiente en `chapters`.
 
 Mientras hay una ronda abierta, `chapters` contiene el texto propuesto (lo que se muestra y se edita) y `baseline` el aceptado. `words` y `readMin` describen siempre el texto de `chapters`. Una versión anterior de Libria lee este objeto pero lo descarta al guardar, así que conviene cerrar la ronda antes de volver a una versión antigua.
 
@@ -111,7 +114,7 @@ Lista ordenada de objetos `Chapter`. Cada capítulo se compone de:
 - `forceOddPage` (boolean, opcional): Fuerza al capítulo a iniciar en página impar (maquetación impresa).
 - `templateId` (string, opcional): Identificador de plantilla si es un capítulo especial de maquetación (`"title-page"`, `"credits"`, `"dedication"`, `"acknowledgments"`, `"toc"`).
 - `body` (array): Lista de **bloques** (`Block`) que contienen el texto y recursos del capítulo:
-  - `id` (string, opcional): Identificador estable del bloque. Es el ancla de comentarios, notas de revisión y control de cambios: sobrevive a la inserción o eliminación de otros bloques, algo que un índice posicional no garantiza. Los documentos que no lo traen lo reciben al cargarse y se persiste en el siguiente guardado. Debe ser único dentro del capítulo.
+  - `id` (string, opcional): Identificador estable del bloque. El control de cambios usa este identificador para reconocer el bloque aunque cambie de posición. Los comentarios y las notas al pie almacenan índices posicionales. Los documentos que no lo traen lo reciben al cargarse y se persiste en el siguiente guardado. Debe ser único dentro del capítulo.
   - `type` (string): Tipo de bloque. Ejemplos:
     - `"halftitle"`: Portadilla.
     - `"title"` / `"subtitle"` / `"author"` / `"publisher"`: Datos de portada.
@@ -135,15 +138,19 @@ Lista ordenada de objetos `Chapter`. Cada capítulo se compone de:
   - `drop` (string, opcional): Inicial reservada para dropcaps.
   - **Metadatos de Imagen (solo para bloques `"image"`)**:
     - `src` (string): Clave de referencia del recurso en el diccionario `assets`.
-    - `width` / `height` (number, opcional): Dimensiones de renderizado.
+    - `width` / `height` (number, opcional): Dimensiones de presentación en píxeles, independientes de la resolución del recurso. El editor, la vista previa y las salidas HTML de PDF y EPUB limitan el ancho al espacio disponible y calculan la altura a partir de la proporción de la imagen.
     - `caption` (string, opcional): Pie de foto o leyenda.
     - `rotation` (number, opcional): Rotación en grados (`0`, `90`, `180`, `270`).
     - `flipH` / `flipV` (boolean, opcional): Volteo horizontal y vertical.
   - **Metadatos de Cita (para bloques `"epigraph"`)**:
     - `attribution` (string, opcional): Autor/fuente de la cita de epígrafe.
+- `tocOptions` (object, opcional): Opciones de un elemento con `templateId: "toc"`. Sus campos booleanos son `includeFrontMatter`, `includeBackMatter`, `showChapterNumbers` y `showPageNumbers`. Cada opción está activada por defecto y se desactiva con `false`. El índice excluye sus propios elementos de tipo `toc`.
+- `headingImage` (object o null, opcional): Solo se aplica a elementos del cuerpo (`kind: "chapter"`) que no sean un índice. Si falta el campo, se usa la imagen de `metadata.headingImage`. Un objeto selecciona una imagen propia y `null` oculta la ilustración.
+- `synopsis` (string, opcional): Sinopsis que muestra el esquema del manuscrito.
+- `writingNotes` (string, opcional): Notas privadas del capítulo. Ambos campos de planificación se guardan en el archivo `.libria` y quedan fuera de las exportaciones del libro.
 - `footnotes` (array, opcional): Notas al pie del capítulo. Cada nota contiene:
   - `id` (string): Identificador único de la nota.
-  - `blockIndex` (number): Índice del bloque de texto donde está insertada la referencia.
+  - `blockIndex` (number): Índice del bloque, empezando en cero. La referencia dentro de `body[blockIndex].html` lleva el mismo `id` en un elemento `<sup data-fn="…">`.
   - `content` (string): Texto descriptivo de la nota al pie.
 
 ### 6. `notes` (array)
@@ -151,7 +158,7 @@ Comentarios de revisión y notas al margen del libro.
 
 - `id` (string): Identificador único de la nota editorial.
 - `chapterId` (string): ID del capítulo de referencia.
-- `blockIndex` (number): Índice del bloque donde se ubica la nota.
+- `blockIndex` (number): Índice del bloque donde se ubica la nota, empezando en cero.
 - `role` (string): Rol del autor (`"author"`, `"editor"`, `"corrector"`, `"publisher"`).
 - `authorName` (string): Nombre visible del autor del comentario.
 - `content` (string): Texto del comentario.
@@ -165,14 +172,20 @@ Comentarios de revisión y notas al margen del libro.
   - `date` (string)
 
 ### 7. `assets` (object)
-Diccionario de recursos de medios del proyecto. Las claves son identificadores únicos y los valores son cadenas binarias codificadas en Base64 con su prefijo MIME.
-- `"cover"` (string): Imagen de portada del libro (ej: `data:image/jpeg;base64,...`).
-- `"img-XXXX"` (string): Imágenes locales referenciadas en bloques del manuscrito.
+Diccionario de recursos incrustados. Cada clave identifica una URL de datos con MIME y contenido en Base64, por ejemplo `data:image/jpeg;base64,…`.
+
+- `cover` identifica la imagen de portada.
+- Las claves `img-…` identifican imágenes insertadas en el editor. Un bloque de imagen las referencia mediante `src`.
+- Las claves `heading-…` identifican ilustraciones de apertura en PNG o JPEG. `headingImage.assetId` apunta al recurso y `width` y `height` indican sus dimensiones de presentación. El renderizador admite enteros de 1 a 360 px para cada dimensión. Si falta el recurso, se omite la ilustración.
+
+Un mismo recurso de encabezado puede presentarse en varios capítulos sin duplicar sus datos en el JSON.
 
 ### 8. `writingGoals` (object, opcional)
 Configuración de objetivos de redacción del libro.
-- `targetWords` (number): Número total de palabras objetivo.
-- `deadline` (string): Fecha límite en formato ISO (`YYYY-MM-DD`).
+- `targetWords` (number): Meta total de palabras. `0` desactiva la meta.
+- `deadline` (string): Fecha límite local en formato `YYYY-MM-DD`. La cadena vacía indica que no hay plazo.
+- `dailyTargetWords` (integer, opcional): Meta diaria. El valor `0` desactiva la meta.
+- `dailyProgress` (object, opcional): Cambio neto en el recuento de palabras por fecha local `YYYY-MM-DD`. Los valores son enteros seguros de JavaScript y pueden ser negativos si los recortes superan el texto añadido. Abrir un libro establece el recuento de partida sin sumarlo al historial.
 
 ### 9. `characters` (array, opcional)
 Fichas de personajes asociadas al manuscrito. Cada objeto contiene:
@@ -180,6 +193,7 @@ Fichas de personajes asociadas al manuscrito. Cada objeto contiene:
 - `id` (string): Identificador único de la ficha.
 - `name` (string): Nombre del personaje.
 - `content` (string): Contenido libre de la ficha.
+- `chapterIds` (array de strings, opcional): Identificadores de capítulos vinculados. La vista muestra los vínculos que apuntan a capítulos presentes en el manuscrito.
 
 ### 10. `locations` (array, opcional)
 Fichas de lugares asociadas al manuscrito. Cada objeto contiene:
@@ -187,6 +201,7 @@ Fichas de lugares asociadas al manuscrito. Cada objeto contiene:
 - `id` (string): Identificador único de la ficha.
 - `name` (string): Nombre del lugar.
 - `content` (string): Contenido libre de la ficha.
+- `chapterIds` (array de strings, opcional): Identificadores de capítulos vinculados. La vista muestra los vínculos que apuntan a capítulos presentes en el manuscrito.
 
 ---
 
@@ -197,9 +212,15 @@ Antes de validar, Libria normaliza documentos creados por versiones anteriores:
 - crea arreglos vacíos para `chapters`, `notes`, `characters` y `locations` cuando faltan;
 - crea objetos vacíos para `session` y `assets` cuando faltan;
 - deriva `metadata.authors` desde `metadata.author`, inicializa `metadata.editors` y usa `"es-MX"` como idioma predeterminado;
-- migra las preferencias antiguas `emDash`/`enDash`, `ellipsis` y `openingSigns` a `smartDashes`, `smartEllipsis` y `smartOpeningSigns`, respectivamente.
+- migra las preferencias antiguas `emDash`/`enDash`, `ellipsis` y `openingSigns` a `smartDashes`, `smartEllipsis` y `smartOpeningSigns`, respectivamente, cuando no está definida la preferencia nueva;
+- asigna identificadores a los bloques heredados, también dentro de `review.baseline`;
+- aplica `true` a `firstParagraphSmallCaps` y `hideFirstPageHeaderFooter` cuando faltan.
 
-La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, más de 10 000 capítulos, más de 100 000 bloques por capítulo, bloques sin `type`, valores no textuales en `text`/`html` y recursos individuales mayores de 100 MiB. El HTML enriquecido se sanea al renderizar y exportar; se admiten las etiquetas `b`, `i`, `u`, `strong`, `em`, `span`, `sub`, `sup`, `br`, `p`, `table`, `thead`, `tbody`, `tr`, `td`, `th`, `ul`, `ol`, `li`, `blockquote`, `cite`, `ins` y `del`, con los atributos `class` y `style`. Las etiquetas `ins` y `del` solo aparecen en contenido generado por la vista de revisión y por las exportaciones con marcas; nunca se guardan en los bloques del manuscrito.
+El cargador comprueba la estructura tras esa migración. Entre sus límites están **10 000 capítulos**, **100 000 bloques por capítulo**, **200 caracteres por identificador de bloque** y **104 857 600 caracteres por valor en `assets`**, incluido el prefijo de la URL de datos. Rechaza identificadores de capítulo repetidos y de bloque repetidos dentro de un capítulo, tipos de papel desconocidos y valores no textuales en `text` y `html`.
+
+Los consumidores deben tratar `html` como contenido no confiable. Los exportadores sanean el HTML enriquecido y admiten, entre otras etiquetas, `a`, `s`, `b`, `i`, `u`, `strong`, `em`, `sup`, `br`, párrafos, listas y tablas. Cuando Libria genera marcas editoriales con `ins` y `del`, las deriva de `review.baseline` y de los capítulos actuales.
+
+El esquema de abajo describe los campos del formato para integraciones. La validación de apertura usa el migrador y el validador de Libria. Algunas reglas, como la unicidad de los identificadores, se comprueban en el código. La compatibilidad permite abrir manuscritos anteriores desde 2.4.0. Si se vuelve a guardar desde una versión anterior, algunos campos nuevos pueden perderse.
 
 ---
 
@@ -209,6 +230,17 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Libria Document Schema v2",
+  "definitions": {
+    "headingImage": {
+      "type": "object",
+      "required": ["assetId", "width", "height"],
+      "properties": {
+        "assetId": { "type": "string", "pattern": "^heading-[a-zA-Z0-9-]+$" },
+        "width": { "type": "integer", "minimum": 1, "maximum": 360 },
+        "height": { "type": "integer", "minimum": 1, "maximum": 360 }
+      }
+    }
+  },
   "type": "object",
   "required": ["libriaVersion", "metadata", "preferences", "chapters"],
   "properties": {
@@ -229,6 +261,7 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
         "publisher": { "type": "string" },
         "year": { "type": "integer" },
         "isbn": { "type": "string" },
+        "headingImage": { "$ref": "#/definitions/headingImage" },
         "paperSize": { "enum": ["5x8", "6x9", "A5", "A4", "A6", "Letter"] },
         "lang": { "type": "string" }
       }
@@ -252,6 +285,8 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
         "marginInner": { "type": "number" },
         "marginOuter": { "type": "number" },
         "showPageNumbers": { "type": "boolean" },
+        "hideBlankPageNumbers": { "type": "boolean" },
+        "pageNumberingStart": { "enum": ["document", "body"] },
         "showHeader": { "type": "boolean" },
         "headerText": { "type": "string" },
         "sceneBreakType": { "enum": ["asterisks", "asterisks3", "dots", "flourish", "none"] },
@@ -296,6 +331,15 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
           "status": { "type": "string" },
           "forceOddPage": { "type": "boolean" },
           "templateId": { "enum": ["title-page", "credits", "dedication", "acknowledgments", "toc"] },
+          "tocOptions": {
+            "type": "object",
+            "properties": {
+              "includeFrontMatter": { "type": "boolean", "default": true },
+              "includeBackMatter": { "type": "boolean", "default": true },
+              "showChapterNumbers": { "type": "boolean", "default": true },
+              "showPageNumbers": { "type": "boolean", "default": true }
+            }
+          },
           "body": {
             "type": "array",
             "maxItems": 100000,
@@ -319,6 +363,9 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
               }
             }
           },
+          "headingImage": { "anyOf": [{ "$ref": "#/definitions/headingImage" }, { "type": "null" }] },
+          "synopsis": { "type": "string" },
+          "writingNotes": { "type": "string" },
           "footnotes": {
             "type": "array",
             "items": {
@@ -374,14 +421,30 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
       "type": "object",
       "properties": {
         "targetWords": { "type": "integer" },
-        "deadline": { "type": "string" }
+        "deadline": { "type": "string" },
+        "dailyTargetWords": { "type": "integer", "minimum": 0 },
+        "dailyProgress": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+          "additionalProperties": { "type": "integer" }
+        }
       }
     },
     "review": {
       "type": ["object", "null"],
       "properties": {
         "mode": { "enum": ["off", "track"] },
-        "round": { "type": ["object", "null"] },
+        "round": {
+          "type": ["object", "null"],
+          "properties": {
+            "id": { "type": "string" },
+            "author": { "type": "string" },
+            "role": { "enum": ["author", "editor", "corrector", "publisher"] },
+            "startedAt": { "type": "string" },
+            "baselineRevision": { "type": "integer", "minimum": 0 },
+            "schemaVersion": { "type": "integer", "minimum": 1 }
+          }
+        },
         "baseline": { "type": ["array", "null"], "items": { "type": "object" } }
       }
     },
@@ -393,7 +456,8 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
-          "content": { "type": "string" }
+          "content": { "type": "string" },
+          "chapterIds": { "type": "array", "items": { "type": "string" } }
         }
       }
     },
@@ -405,7 +469,8 @@ La carga rechaza tamaños de papel no compatibles, IDs de capítulo repetidos, m
         "properties": {
           "id": { "type": "string" },
           "name": { "type": "string" },
-          "content": { "type": "string" }
+          "content": { "type": "string" },
+          "chapterIds": { "type": "array", "items": { "type": "string" } }
         }
       }
     }

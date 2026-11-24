@@ -13,7 +13,6 @@ import type JSZip from 'jszip';
 import { ExportFileService } from './export-file.service';
 import {
   resolveChapters,
-  imageStyle,
   tableHtml,
   dataUrlToBlob,
   escapeHtml,
@@ -21,6 +20,8 @@ import {
   imageExt,
   xhtmlSafe,
 } from './export-utils';
+import { chapterHeadingImageCss, resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
+import { imageStyle } from '../../utils/image-sizing';
 import { EpubFontService } from './epub-font.service';
 
 @Injectable({ providedIn: 'root' })
@@ -107,11 +108,14 @@ export class EpubExportService {
       const spine = spineParts.join('');
 
       const imageKeys = new Set<string>();
-      chapters.forEach((c) =>
+      const illustrations = new Map(chapters.map(chapter => [chapter.id, resolveChapterHeadingImage(book, chapter, assets)]));
+      chapters.forEach((c) => {
+        const illustration = illustrations.get(c.id);
+        if (illustration) imageKeys.add(illustration.assetId);
         c.body.forEach((b) => {
           if (b.type === 'image' && b.src && assets[b.src]) imageKeys.add(b.src);
-        }),
-      );
+        });
+      });
       const imageManifestParts: string[] = [];
       imageKeys.forEach((key) => {
         const ext = imageExt(assets[key]);
@@ -191,6 +195,11 @@ ${dropCapStyles}`,
       chapters.forEach((c, i) => {
         navLinkParts.push(`<li><a href="chapters/${c.id}.xhtml">${escapeHtml(c.title)}</a></li>`);
         const contentParts: string[] = [];
+        const illustration = illustrations.get(c.id);
+        if (illustration) {
+          const ext = imageExt(illustration.src);
+          contentParts.push(`<img class="chapter-heading-image" src="../images/img-${illustration.assetId}.${ext}" width="${illustration.width}" height="${illustration.height}" style="${chapterHeadingImageCss}" alt=""/>`);
+        }
 
         if (c.templateId === 'toc') {
           const tocBody = tocEntries(chapters, c.tocOptions)

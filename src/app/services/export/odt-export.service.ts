@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { BookStore } from '../../store/book.store';
+import { resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
 import { sortFootnotesByPosition } from '../../models/book.models';
 
 import { AssetService } from '../asset.service';
@@ -42,6 +43,18 @@ export class OdtExportService {
       // 1. mimetype (MUST be first and uncompressed)
       zip.file('mimetype', 'application/vnd.oasis.opendocument.text', { compression: 'STORE' });
 
+      const illustrationPaths = new Map<string, string>();
+      const illustrations = new Map(chapters.map(chapter => [chapter.id, resolveChapterHeadingImage(book, chapter, assets)]));
+      const imageManifest: string[] = [];
+      for (const illustration of illustrations.values()) {
+        if (!illustration || illustrationPaths.has(illustration.assetId)) continue;
+        const mime = illustration.src.startsWith('data:image/png;') ? 'image/png' : 'image/jpeg';
+        const path = `Pictures/${illustration.assetId}.${mime === 'image/png' ? 'png' : 'jpg'}`;
+        zip.file(path, illustration.src.split(',', 2)[1], { base64: true });
+        illustrationPaths.set(illustration.assetId, path);
+        imageManifest.push(`  <manifest:file-entry manifest:full-path="${path}" manifest:media-type="${mime}"/>\n`);
+      }
+
       // 2. META-INF/manifest.xml (ODT standard manifest)
       zip.file(
         'META-INF/manifest.xml',
@@ -51,7 +64,7 @@ export class OdtExportService {
   <manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
   <manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
   <manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/>
-</manifest:manifest>`,
+${imageManifest.join('')}</manifest:manifest>`,
       );
 
       const esc = (s: string) => escapeHtml(s);
@@ -188,6 +201,14 @@ export class OdtExportService {
           contentParts.push(`<text:p text:style-name="Page_Break"/>`);
         }
 
+        const illustration = illustrations.get(c.id);
+        if (illustration) {
+          const path = illustrationPaths.get(illustration.assetId);
+          const width = (illustration.width / 96).toFixed(4);
+          const height = (illustration.height / 96).toFixed(4);
+          contentParts.push(`<text:p text:style-name="Chapter_Illustration"><draw:frame text:anchor-type="as-char" svg:width="${width}in" svg:height="${height}in"><draw:image xlink:href="${path}" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p>`);
+        }
+
         const sortedFns = sortFootnotesByPosition(c.footnotes, c.body);
         const fnMap: Record<string, { num: number; content: string }> = {};
         sortedFns.forEach((fn, idx) => {
@@ -277,14 +298,14 @@ export class OdtExportService {
     xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
     xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
     xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
-    xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
+    xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"${illustrationPaths.size ? '\n    xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"' : ''}
     xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
     xmlns:xlink="http://www.w3.org/1999/xlink"
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     office:version="1.2">
   <office:scripts/>
   <office:font-face-decls/>
-  <office:automatic-styles>
+  <office:automatic-styles>${illustrationPaths.size ? '\n    <style:style style:name="Chapter_Illustration" style:family="paragraph"><style:paragraph-properties fo:text-align="center" fo:keep-with-next="always"/></style:style>' : ''}
     <style:style style:name="Bold" style:family="text">
       <style:text-properties fo:font-weight="bold"/>
     </style:style>

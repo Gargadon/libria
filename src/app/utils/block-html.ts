@@ -1,6 +1,7 @@
 import { Block, Footnote, Chapter, Tweaks, sortFootnotesByPosition } from '../models/book.models';
-import { sceneBreakGlyph, escapeHtml, imageTransform } from './block-maps';
+import { sceneBreakGlyph, escapeHtml } from './block-maps';
 import DOMPurify from 'dompurify';
+import { imageStyle } from './image-sizing';
 
 export interface RenderBlockOptions {
   tweaks: Tweaks;
@@ -104,26 +105,6 @@ function imageBlockHtml(b: Block, assets: Record<string, string>): string {
     ? `<figcaption style="text-align:center;font-size:0.85em;margin-top:0.5em;color:#555">${escapeHtml(b.caption)}</figcaption>`
     : '';
   return `<figure class="kp-image"><img src="${imgSrc}" style="${style}" alt="">${cap}</figure>`;
-}
-
-function imageStyle(b: Block): string {
-  const parts = ['max-width:100%;display:block;margin:0 auto'];
-  const width = finiteDimension(b.width);
-  const height = finiteDimension(b.height);
-  if (width !== null && height !== null) {
-    parts.push(`width:${width}px;height:${height}px`);
-  } else {
-    parts.push('height:auto');
-  }
-  const xf = imageTransform(b.rotation, b.flipH, b.flipV);
-  if (xf) parts.push(`transform:${xf}`);
-  return parts.join(';');
-}
-
-function finiteDimension(value: number | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 10000
-    ? value
-    : null;
 }
 
 function safeImageSource(value: string): string {

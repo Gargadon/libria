@@ -3,6 +3,37 @@
   <div class="sb__author">{{ 'sidebar.goalsTitle' | translate }}</div>
 </div>
 <div class="sb__content sb__content--padding">
+  <div class="sb__section">{{ 'planning.dailyHistory' | translate }}</div>
+  <label class="sb__row sb__row--col">
+    <span class="sb__label">{{ 'planning.dailyGoal' | translate }}</span>
+    <input type="number" class="sb__input" min="0" step="1"
+      [ngModel]="store.writingGoals().dailyTargetWords ?? 0" (ngModelChange)="setDailyGoal($event)" />
+  </label>
+  @if (store.writingGoals().dailyTargetWords; as goal) {
+    <div class="sb__row sb__row--col">
+      <label class="sb__label" for="daily-progress">
+        {{ 'planning.todayProgress' | translate: {
+          words: wordsToday().toLocaleString(store.personalConfig().language),
+          goal: goal.toLocaleString(store.personalConfig().language)
+        } }}
+      </label>
+      <progress id="daily-progress" [max]="goal" [value]="wordsToday() > 0 ? wordsToday() : 0"></progress>
+    </div>
+  }
+  <p class="sb__help">{{ 'planning.dailyHistoryHint' | translate }}</p>
+  @if (dailyProgress().length) {
+    <ul class="sb__writing-history" [attr.aria-label]="'planning.dailyHistory' | translate">
+      @for (entry of dailyProgress(); track entry.date) {
+        <li>
+          <time [attr.datetime]="entry.date">{{ localDateLabel(entry.date) }}</time>
+          <span>{{ entry.words > 0 ? '+' : '' }}{{ entry.words.toLocaleString(store.personalConfig().language) }}</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="sb__help">{{ 'planning.emptyDailyHistory' | translate }}</p>
+  }
+
   <!-- 1. PACING CHART -->
   <div class="sb__section">{{ 'sidebar.pacingChart' | translate }}</div>
   <div class="sb__help" style="margin-bottom: 12px">

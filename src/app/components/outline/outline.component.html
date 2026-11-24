@@ -1,0 +1,47 @@
+<section class="outline" aria-labelledby="outline-title">
+  <header class="outline__header">
+    <h1 id="outline-title">{{ 'planning.outline' | translate }}</h1>
+    <button class="exit-modal__btn" (click)="store.setNav('manuscript')">
+      {{ 'planning.backToManuscript' | translate }}
+    </button>
+  </header>
+
+  @for (section of sections(); track section.label) {
+    <section>
+      <h2>{{ section.label | translate }}</h2>
+      <ul class="outline__cards">
+        @for (chapter of section.items; track chapter.id; let first = $first, last = $last) {
+          <li class="outline__card">
+            <div class="outline__card-header">
+              <button class="outline__title" (click)="openChapter(chapter.id)">{{ chapter.title }}</button>
+              <div class="outline__actions">
+                <button type="button" class="sb__opt" [disabled]="first"
+                  [attr.aria-label]="'planning.moveUp' | translate: { title: chapter.title }"
+                  (click)="store.moveChapter(chapter.id, 'up')">
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+                </button>
+                <button type="button" class="sb__opt" [disabled]="last"
+                  [attr.aria-label]="'planning.moveDown' | translate: { title: chapter.title }"
+                  (click)="store.moveChapter(chapter.id, 'down')">
+                  <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+                </button>
+              </div>
+            </div>
+            <div class="outline__metadata">
+              <span>{{ (chapter.status === 'ok' ? 'sidebar.statusOk' :
+                chapter.status === 'outline' ? 'sidebar.statusOutline' : 'sidebar.statusDraft') | translate }}</span>
+              <span>{{ 'sidebar.wordCount' | translate: { count: (chapter.words || 0).toLocaleString(store.personalConfig().language) } }}</span>
+            </div>
+            <label>
+              {{ 'planning.synopsis' | translate }}
+              <textarea class="sb__input" rows="3" [ngModel]="chapter.synopsis ?? ''"
+                (ngModelChange)="store.updateChapterPlanning(chapter.id, { synopsis: $event })"></textarea>
+            </label>
+          </li>
+        }
+      </ul>
+    </section>
+  } @empty {
+    <p>{{ 'sidebar.emptyManuscript' | translate }}</p>
+  }
+</section>

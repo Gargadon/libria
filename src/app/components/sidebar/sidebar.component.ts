@@ -5,33 +5,25 @@ import {
   SidebarMetadataPanelComponent,
   SidebarMetadataState,
 } from './panels/metadata-panel.component';
-import {
-  SidebarSettingsPanelComponent,
-  SidebarSettingsState,
-} from './panels/settings-panel.component';
 import { SidebarProductivityPanelComponent } from './panels/productivity-panel.component';
 import { SidebarExportPanelComponent } from './panels/export-panel.component';
 import { SidebarSearchPanelComponent } from './panels/search-panel.component';
 import { SidebarAttachmentsPanelComponent } from './panels/attachments-panel.component';
 import { SidebarLayoutPanelComponent } from './panels/layout-panel.component';
+import { HeadingImageSettingsComponent } from './panels/heading-image-settings.component';
 import {
   Component,
   inject,
   computed,
   signal,
-  HostListener,
-  ViewChild,
-  ElementRef,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { ChapterKind, ChapterTemplateId } from '../../models/book.models';
+import { ChapterKind } from '../../models/book.models';
 import { FormsModule } from '@angular/forms';
-
-import { ImportService } from '../../services/import.service';
 
 import { InputModalComponent } from '../modals/input-modal.component';
 import { ConfirmModalComponent } from '../modals/confirm-modal.component';
@@ -48,15 +40,15 @@ import { ConfirmModalComponent } from '../modals/confirm-modal.component';
     ConfirmModalComponent,
     SidebarStylesPanelComponent,
     SidebarMetadataPanelComponent,
-    SidebarSettingsPanelComponent,
     SidebarProductivityPanelComponent,
     SidebarExportPanelComponent,
     SidebarSearchPanelComponent,
     SidebarAttachmentsPanelComponent,
     SidebarLayoutPanelComponent,
+    HeadingImageSettingsComponent,
     SidebarDictionaryPanelComponent,
   ],
-  providers: [SidebarFontsState, SidebarStylesState, SidebarMetadataState, SidebarSettingsState, SidebarDictionaryState],
+  providers: [SidebarFontsState, SidebarStylesState, SidebarMetadataState, SidebarDictionaryState],
   templateUrl: './sidebar.component.html',
 })
 export class SidebarComponent {
@@ -66,7 +58,6 @@ export class SidebarComponent {
   constructor() {
     // Keep drafts and font initialization alive across panel navigation.
     inject(SidebarMetadataState);
-    inject(SidebarSettingsState);
     inject(SidebarFontsState);
   }
   readonly store = inject(BookStore);
@@ -83,8 +74,18 @@ export class SidebarComponent {
 
   readonly translate = inject(TranslateService);
 
+  readonly linkedChapters = computed(() => {
+    const ids = this.activeWorldElement()?.chapterIds ?? [];
+    return this.store.chapters().filter(chapter => ids.includes(chapter.id));
+  });
+
+  setSheetLink(chapterId: string, linked: boolean) {
+    const sheet = this.selectedWorldElement();
+    if (sheet) this.store.setSheetChapterLink(sheet.type, sheet.id, chapterId, linked);
+  }
+
   updateGoalWords(value: number) {
-    this.store.setWritingGoals({ ...this.store.writingGoals(), targetWords: Number(value) || 0 });
+    this.store.setWritingGoals({ ...this.store.writingGoals(), targetWords: Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0 });
   }
 
   updateGoalDeadline(value: string) {
@@ -92,57 +93,6 @@ export class SidebarComponent {
   }
 
   showGoalsEditor = signal(false);
-
-  toggleAddMenu(event: Event) {
-    event.stopPropagation();
-    this.showAddMenu.update((v) => !v);
-  }
-
-  toggleFrontSubmenu(event: Event) {
-    event.stopPropagation();
-    this.showFrontSubmenu.update((v) => !v);
-  }
-
-  showFrontSubmenu = signal(false);
-
-  addFromTemplate(templateId: ChapterTemplateId) {
-    this.store.addChapterFromTemplate(templateId);
-    this.showAddMenu.set(false);
-    this.showFrontSubmenu.set(false);
-  }
-
-  add(kind: ChapterKind) {
-    this.store.addChapter(kind);
-    this.showAddMenu.set(false);
-    this.showFrontSubmenu.set(false);
-  }
-
-  triggerImport() {
-    this.importInput.nativeElement.click();
-  }
-
-  readonly importing = signal(false);
-
-  async onImportFile(event: any) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    this.importing.set(true);
-    try {
-      if (file.name.endsWith('.docx')) {
-        await this.importService.importDocx(file);
-      } else if (file.name.endsWith('.txt')) {
-        await this.importService.importTxt(file);
-      }
-    } catch (error) {
-      this.importService.warnings.set([error instanceof Error ? error.message : String(error)]);
-    } finally {
-      this.importing.set(false);
-      event.target.value = '';
-    }
-  }
-
-  readonly importService = inject(ImportService);
 
   saveWorldElement(name: string, content: string) {
     const sel = this.selectedWorldElement();
@@ -340,8 +290,6 @@ export class SidebarComponent {
     this.showConfirmModal.set(true);
   }
 
-  showAddMenu = signal(false);
-
   activeWorldElement = computed(() => {
     const sel = this.selectedWorldElement();
     if (!sel) return null;
@@ -352,17 +300,9 @@ export class SidebarComponent {
     }
   });
 
-  @ViewChild('importInput') importInput!: ElementRef<HTMLInputElement>;
-
   modalTargetId = signal('');
 
   modalAction = signal<'title' | 'number' | 'add-character' | 'add-location'>('title');
 
   confirmTargetId = signal('');
-
-  @HostListener('document:click')
-  onDocumentClick() {
-    this.showAddMenu.set(false);
-    this.showFrontSubmenu.set(false);
-  }
 }

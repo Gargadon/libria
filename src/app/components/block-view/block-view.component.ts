@@ -95,7 +95,7 @@ import { HyphenService } from '../../services/hyphen.service';
         @if (imgSrc) {
           <figure class="kp-image">
             <img [src]="imgSrc" alt=""
-              [style.width.px]="block().width" [style.height.px]="block().height"
+              [style.width.px]="block().width"
               [style.transform]="imgTransform()" style="max-width:100%;height:auto;display:block;margin:0 auto;">
             @if (block().caption) { <figcaption class="kp-image__cap">{{ block().caption }}</figcaption> }
           </figure>

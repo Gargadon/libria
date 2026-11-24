@@ -193,6 +193,9 @@ import { GoogleDriveService } from '../../services/google-drive.service';
     .welcome__recent {
       text-align: left;
     }
+    .welcome__local-files > * + .welcome__recent {
+      margin-top: 1rem;
+    }
     .welcome__drive-help {
       display: flex;
       align-items: center;

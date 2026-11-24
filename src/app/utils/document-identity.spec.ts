@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BookStore } from '../store/book.store';
+import { AssetService } from '../services/asset.service';
+import { localWritingDate } from './writing-date';
 import { FileService } from '../services/file.service';
 import { LIBRIA_SCHEMA_VERSION } from '../models/book.models';
 import { migrateLibriaDocument, validateLibriaDocument } from './document-validator';
@@ -117,6 +119,38 @@ describe('identidad del documento y anclaje de bloques', () => {
     expect(stamped.modifiedAt).toBe('2026-11-01T18:00:00.000Z');
     expect(stamped.modifiedBy).toBe('Ana Correctora');
     expect(() => validateLibriaDocument(stamped)).not.toThrow();
+  });
+
+  it('conserva la planificación y el avance diario al guardar y reabrir', () => {
+    const store = TestBed.inject(BookStore);
+    const files = TestBed.inject(FileService);
+    const assets = TestBed.inject(AssetService);
+    store.createNewProject();
+    const chapterId = store.chapters()[0].id;
+    store.saveSnapshot();
+    store.updateChapterBlock(chapterId, 1, 'La última estación');
+    store.updateChapterPlanning(chapterId, { synopsis: 'Un viaje', writingNotes: 'Verificar fechas' });
+    store.addCharacter('Ana');
+    store.setSheetChapterLink('character', store.characters()[0].id, chapterId, true);
+    store.setWritingGoals({ ...store.writingGoals(), targetWords: 10_000, dailyTargetWords: 250 });
+
+    store.undo();
+    expect(store.chapters()[0].writingNotes).toBe('Verificar fechas');
+    expect(store.writingGoals().dailyProgress?.[localWritingDate()]).toBe(0);
+    store.redo();
+
+    const saved = JSON.parse(files.documentContent());
+    store.loadDocument(saved, assets);
+    expect(store.chapters()[0].synopsis).toBe('Un viaje');
+    expect(store.chapters()[0].writingNotes).toBe('Verificar fechas');
+    expect(store.characters()[0].chapterIds).toEqual([chapterId]);
+    expect(store.writingGoals()).toMatchObject({
+      targetWords: 10_000,
+      dailyTargetWords: 250,
+      dailyProgress: { [localWritingDate()]: 3 },
+    });
+    store.createNewProject();
+    expect(store.writingGoals()).toMatchObject({ targetWords: 0, dailyTargetWords: 0, dailyProgress: {} });
   });
 
   it('avanza la revisión solo cuando el guardado se completa', async () => {

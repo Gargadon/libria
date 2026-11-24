@@ -1,0 +1,106 @@
+.settings {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(760px, calc(100dvh - 32px));
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  font-family: var(--ui);
+  font-size: 13px;
+}
+
+.settings::backdrop {
+  background: rgb(17 16 15 / 55%);
+}
+
+.settings__header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+h2, h3 {
+  margin: 0;
+}
+
+h2 {
+  font: 600 24px var(--ui-display, var(--display));
+}
+
+h3 {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.settings__body {
+  padding: 0 24px;
+}
+
+section {
+  padding: 18px 0;
+}
+
+section + section {
+  border-top: 1px solid var(--rule);
+}
+
+.settings__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+#settings-general + .settings__fields {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
+label, small {
+  display: block;
+}
+
+label > input, label > select, small {
+  margin-top: 5px;
+  max-width: 100%;
+}
+
+small {
+  color: var(--ink-soft);
+}
+
+.settings__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+}
+
+.settings__check input {
+  margin: 0;
+}
+
+.settings__avatar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings__avatar > div {
+  min-width: 0;
+}
+
+img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}

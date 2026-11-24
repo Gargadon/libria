@@ -1,0 +1,105 @@
+<dialog #dialog class="settings" aria-labelledby="settings-title" (keydown)="$event.stopPropagation()">
+  <header class="settings__header">
+    <h2 id="settings-title">{{ 'sidebar.settingsTitle' | translate }}</h2>
+    <button type="button" class="exit-modal__btn" (click)="close()" autofocus>
+      {{ 'sidebar.goalsDone' | translate }}
+    </button>
+  </header>
+
+  <div class="settings__body">
+    <section aria-labelledby="settings-general">
+      <h3 id="settings-general">{{ 'settings.general' | translate }}</h3>
+      <div class="settings__fields">
+        <label>
+          {{ 'sidebar.appLang' | translate }}
+          <select class="sb__select" [ngModel]="store.personalConfig().language" (ngModelChange)="setLanguage($event)">
+            @for (lang of ['es', 'en', 'fr', 'it', 'de', 'pt']; track lang) {
+              <option [value]="lang">{{ ('lang.' + lang) | translate }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          {{ 'settings.colorMode' | translate }}
+          <select class="sb__select" [ngModel]="store.tweaks.mode()" (ngModelChange)="store.setThemeMode($event)">
+            <option value="light">{{ 'sidebar.light' | translate }}</option>
+            <option value="dark">{{ 'sidebar.dark' | translate }}</option>
+          </select>
+        </label>
+        <label>
+          {{ 'settings.interfaceStyle' | translate }}
+          <select class="sb__select" [ngModel]="store.personalConfig().interfaceStyle ?? 'classic'"
+            (ngModelChange)="setInterfaceStyle($event)">
+            <option value="classic">{{ 'themes.classic' | translate }}</option>
+            <option value="modern">{{ 'themes.modern' | translate }}</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section aria-labelledby="settings-profile">
+      <h3 id="settings-profile">{{ 'sidebar.profile' | translate }}</h3>
+      <div class="settings__fields">
+        <label>
+          {{ 'sidebar.authorName' | translate }}
+          <input class="sb__input" type="text" [ngModel]="store.personalConfig().userName"
+            (ngModelChange)="setName($event)" aria-describedby="settings-name-help" />
+          <small id="settings-name-help">{{ 'sidebar.nameHelp' | translate }}</small>
+        </label>
+        <div class="settings__avatar">
+          @if (store.personalConfig().avatar; as avatar) {
+            <img [src]="avatar" [alt]="'sidebar.avatar' | translate" />
+          }
+          <div>
+            <label>
+              {{ 'sidebar.avatar' | translate }}
+              <input #avatarInput type="file" accept="image/*" (change)="uploadAvatar(avatarInput)" />
+            </label>
+            @if (store.personalConfig().avatar) {
+              <button type="button" class="sb__btn-link" (click)="removeAvatar()">
+                {{ 'settings.removeAvatar' | translate }}
+              </button>
+            }
+            @if (avatarError()) {
+              <small role="alert">{{ 'settings.avatarError' | translate }}</small>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="settings-editor">
+      <h3 id="settings-editor">{{ 'settings.editor' | translate }}</h3>
+      <div class="settings__fields">
+        <label>
+          {{ 'sidebar.sidebarLabel' | translate }}
+          <select class="sb__select" [ngModel]="store.tweaks.sidebar()" (ngModelChange)="store.updateTweak('sidebar', $event)">
+            <option value="left">{{ 'sidebar.left' | translate }}</option>
+            <option value="right">{{ 'sidebar.right' | translate }}</option>
+          </select>
+        </label>
+        <label class="settings__check">
+          <input type="checkbox" [ngModel]="store.tweaks.spellcheck()" (ngModelChange)="store.updateTweak('spellcheck', $event)" />
+          {{ 'sidebar.checker' | translate }}
+        </label>
+      </div>
+    </section>
+
+    <section aria-labelledby="settings-storage">
+      <h3 id="settings-storage">{{ 'settings.storage' | translate }}</h3>
+      <div class="settings__fields">
+        @if (drive.available) {
+          <div>
+            <button type="button" class="exit-modal__btn" (click)="openDrive()">{{ 'drive.settingsButton' | translate }}</button>
+            <small>{{ 'drive.settingsDescription' | translate }}</small>
+          </div>
+        }
+        <div>
+          <button type="button" class="exit-modal__btn" [disabled]="clearingCache()" (click)="clearCache()">
+            {{ (clearingCache() ? 'sidebar.clearingCache' : 'sidebar.clearCache') | translate }}
+          </button>
+          <small role="status">{{ cacheMessage() ? (cacheMessage() | translate) : '' }}</small>
+        </div>
+      </div>
+    </section>
+  </div>
+</dialog>

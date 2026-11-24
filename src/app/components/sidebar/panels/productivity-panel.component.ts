@@ -1,4 +1,5 @@
-import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy, DestroyRef, signal } from '@angular/core';
+import { localWritingDate } from '../../../utils/writing-date';
 import { BookStore } from '../../../store/book.store';
 
 import { CommonModule } from '@angular/common';
@@ -44,4 +45,27 @@ export class SidebarProductivityPanelComponent {
   readonly mainChapters = computed(() => this.store.chapters().filter((c) => c.kind === 'chapter'));
 
   readonly store = inject(BookStore);
+
+  private readonly today = signal(localWritingDate());
+  readonly wordsToday = computed(() => this.store.writingGoals().dailyProgress?.[this.today()] ?? 0);
+
+  constructor() {
+    const timer = setInterval(() => this.today.set(localWritingDate()), 30_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
+
+  localDateLabel(date: string): string {
+    return new Date(date + 'T12:00:00').toLocaleDateString(this.store.personalConfig().language, { dateStyle: 'medium' });
+  }
+
+  readonly dailyProgress = computed(() =>
+    Object.entries(this.store.writingGoals().dailyProgress ?? {})
+      .sort(([left], [right]) => right.localeCompare(left))
+      .map(([date, words]) => ({ date, words })),
+  );
+
+  setDailyGoal(value: number | null) {
+    const dailyTargetWords = Number.isFinite(value) ? Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(value ?? 0))) : 0;
+    this.store.setWritingGoals({ ...this.store.writingGoals(), dailyTargetWords });
+  }
 }

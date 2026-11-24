@@ -54,7 +54,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
       align-items: center;
     }
     .modal__title {
-      font-family: var(--display);
+      font-family: var(--ui-display, var(--display));
       font-size: 18px;
       margin: 0;
       color: var(--ink);

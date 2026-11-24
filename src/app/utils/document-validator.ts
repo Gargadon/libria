@@ -128,6 +128,9 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
     if (ch.kind !== undefined && !['front', 'chapter', 'back'].includes(ch.kind)) {
       throw new Error(`El tipo del capítulo "${ch.id}" no es válido.`);
     }
+    if ([ch.synopsis, ch.writingNotes].some(value => value !== undefined && typeof value !== 'string')) {
+      throw new Error(`La sinopsis o las notas del capítulo "${ch.id}" no son válidas.`);
+    }
     for (let j = 0; j < ch.body.length; j++) {
       const block = ch.body[j];
       if (!block || typeof block !== 'object' || typeof block.type !== 'string') {
@@ -147,6 +150,30 @@ export function validateLibriaDocument(doc: any): doc is LibriaDocument {
       }
       if (block.html !== undefined && typeof block.html !== 'string') {
         throw new Error(`El HTML del bloque ${j} del capítulo "${ch.id}" es inválido.`);
+      }
+    }
+  }
+
+  const goals = doc.writingGoals;
+  if (goals?.dailyTargetWords !== undefined &&
+      (!Number.isSafeInteger(goals.dailyTargetWords) || goals.dailyTargetWords < 0)) {
+    throw new Error('La meta diaria de palabras no es válida.');
+  }
+  if (goals?.dailyProgress !== undefined) {
+    const progress = goals.dailyProgress;
+    if (!progress || typeof progress !== 'object' || Array.isArray(progress) ||
+        Object.entries(progress).some(([date, words]) =>
+          !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || !Number.isSafeInteger(words))) {
+      throw new Error('El historial diario de palabras no es válido.');
+    }
+  }
+
+  for (const sheets of [doc.characters, doc.locations]) {
+    if (!Array.isArray(sheets)) continue;
+    for (const sheet of sheets) {
+      const links = sheet?.chapterIds;
+      if (links !== undefined && (!Array.isArray(links) || links.some(id => typeof id !== 'string'))) {
+        throw new Error('Los vínculos a capítulos de una ficha no son válidos.');
       }
     }
   }
