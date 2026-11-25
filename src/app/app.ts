@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BookStore } from './store/book.store';
 import { FileService } from './services/file.service';
-import { PersonalConfigService } from './services/personal-config.service';
 import { AutosaveService } from './services/autosave.service';
 import { TopbarComponent } from './components/topbar/topbar.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -11,6 +10,8 @@ import { EditorComponent } from './components/editor/editor.component';
 import { PreviewComponent } from './components/preview/preview.component';
 import { TweaksPanelComponent } from './components/tweaks-panel/tweaks-panel.component';
 import { WelcomeComponent } from './components/welcome/welcome.component';
+import { SettingsModalComponent } from './components/modals/settings-modal.component';
+import { OutlineComponent } from './components/outline/outline.component';
 import { AboutModalComponent } from './components/modals/about-modal.component';
 import { GoogleDriveModalComponent } from './components/modals/google-drive-modal.component';
 import { RecoveryService } from './services/recovery.service';
@@ -34,6 +35,8 @@ import { environment } from '../environments/environment';
     TweaksPanelComponent,
     WelcomeComponent,
     AboutModalComponent,
+    SettingsModalComponent,
+    OutlineComponent,
     GoogleDriveModalComponent,
     RecoveryModalComponent,
     ReviewModalComponent,
@@ -176,17 +179,6 @@ export class App {
     const savedLang = this.store.personalConfig().language || 'es';
     this.translate.use(savedLang);
 
-    // Apply saved theme mode immediately before first render
-    try {
-      const raw = localStorage.getItem('libria-personal-config');
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved.mode === 'dark') {
-          document.body.classList.add('app--dark');
-        }
-      }
-    } catch {}
-
     effect(() => {
       const lang = this.store.personalConfig().language;
       if (lang) {
@@ -268,8 +260,8 @@ export class App {
     });
 
     effect(() => {
-      const mode = this.store.tweaks().mode;
-      document.body.classList.toggle('app--dark', mode === 'dark');
+      document.body.classList.toggle('app--dark', this.store.tweaks.mode() === 'dark');
+      document.body.classList.toggle('app--modern', this.store.personalConfig().interfaceStyle === 'modern');
     });
   }
 

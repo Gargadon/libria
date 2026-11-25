@@ -285,19 +285,57 @@ describe('App', () => {
     expect(compiled.querySelector('.tb__brandN')?.textContent).toContain('Libria');
   });
 
-  it('disables document actions in the welcome hamburger menu', async () => {
+  it('changes chapter status from the editor toolbar and supports undo', async () => {
+    const fixture = TestBed.createComponent(App);
+    const store = fixture.componentInstance.store;
+    store.createNewProject();
+    if (store.ui.previewOpen()) store.togglePreview();
+    await fixture.whenStable();
+    const chapterId = store.activeChapterId();
+    const toggle = fixture.nativeElement.querySelector('.ed__review-toggle') as HTMLButtonElement;
+    expect(toggle.title).toBe(es['editor.markReviewed']);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(store.activeChapter()).toMatchObject({ id: chapterId, status: 'ok' });
+    expect(toggle.title).toBe(es['editor.markDraft']);
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(store.activeChapter()?.status).toBe('draft');
+
+    store.undo();
+    expect(store.activeChapter()?.status).toBe('ok');
+  });
+
+  it('keeps welcome commands available and disables document actions in the main menu', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
-    root.querySelector<HTMLButtonElement>('.tb__sysmenu--compact > button')!.click();
+    const triggers = [...root.querySelectorAll<HTMLButtonElement>('.tb__menu-trigger')];
+    expect(triggers).toHaveLength(5);
+
+    const open = (index: number) => {
+      const trigger = triggers[index];
+      trigger.click();
+      fixture.detectChanges();
+      const id = trigger.getAttribute('aria-controls');
+      return [...root.querySelectorAll<HTMLButtonElement>(`#${id} button`)];
+    };
+
+    const file = open(0);
+    expect(file.filter(button => !button.disabled)).toHaveLength(3);
+    expect(file.filter(button => button.disabled)).toHaveLength(4);
+
+    const edit = open(1);
+    expect(edit.map(button => button.disabled)).toEqual([true, true, true, false]);
+    expect(triggers[0].getAttribute('aria-expanded')).toBe('false');
+
+    const help = open(4);
+    expect(help).toHaveLength(1);
+    expect(help[0].disabled).toBe(false);
+    help[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
-    const actions = [...root.querySelectorAll<HTMLButtonElement>('.tb__sysmenu--compact .tb__compact-item')];
-    const byIcon = (icon: string) => actions.find(button => button.querySelector('span')?.textContent?.trim() === icon)!;
-    for (const icon of ['save', 'save_as', 'close_fullscreen', 'undo', 'redo', 'search']) {
-      expect(byIcon(icon).disabled, icon).toBe(true);
-    }
-    for (const icon of ['note_add', 'folder_open', 'info']) {
-      expect(byIcon(icon).disabled, icon).toBe(false);
-    }
+    expect(triggers[4].getAttribute('aria-expanded')).toBe('false');
   });
 });

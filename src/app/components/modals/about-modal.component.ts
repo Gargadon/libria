@@ -155,7 +155,7 @@ import packageJson from '../../../../package.json';
     }
 
     .about__name {
-      font-family: var(--display);
+      font-family: "DM Serif Display", "Spectral", Georgia, serif;
       font-size: 32px;
       font-weight: 400;
       letter-spacing: -.01em;

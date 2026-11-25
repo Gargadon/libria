@@ -6,8 +6,29 @@ import { BookStore } from '../store/book.store';
 import { AssetService } from './asset.service';
 
 // Exercise real DOCX -> Mammoth -> blocks, rather than mocking the converter.
-describe('DOCX file import', () => {
+describe('file import', () => {
   afterEach(() => TestBed.resetTestingModule());
+  it('starts a new manuscript only after importing content successfully', async () => {
+    const store = TestBed.inject(BookStore);
+    const importer = TestBed.inject(ImportService);
+    await importer.importFile({ name: 'Vacío.txt', text: async () => ' ' } as File);
+    expect(store.book()).toBeNull();
+    expect(importer.warnings()).toHaveLength(1);
+
+    await importer.importFile({
+      name: 'Ejemplo.TXT',
+      text: async () => 'Capítulo uno\n\nUn texto.',
+    } as File);
+    expect(store.book()?.title).toBe('Ejemplo');
+    expect(store.chapters()).toHaveLength(1);
+    expect(store.activeChapter()?.title).toBe('Capítulo uno');
+    expect(store.activeChapter()?.body.every(block => block.id)).toBe(true);
+
+    await importer.importFile({ name: 'Anexo.txt', text: async () => 'Más texto.' } as File);
+    expect(store.book()?.title).toBe('Ejemplo');
+    expect(store.chapters()).toHaveLength(2);
+  });
+
   it('retains rich text, lists, tables and embedded images from a real archive', async () => {
     const store = TestBed.inject(BookStore);
     store.createNewProject();

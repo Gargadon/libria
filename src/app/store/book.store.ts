@@ -1,5 +1,5 @@
 import { computed, effect, inject } from '@angular/core';
-import { signalStore, withState, withMethods, withComputed, patchState, withHooks } from '@ngrx/signals';
+import { signalStore, withState, withMethods, withComputed, patchState, watchState, withHooks } from '@ngrx/signals';
 import { Book, BookTheme, Block, Chapter, ChapterKind, ChapterTemplateId, Tweaks, LibriaDocument, Note, NoteRole, NoteStatus, Reply, SearchResult, PersonalConfig, WritingGoals, Footnote, CharacterSheet, LocationSheet, ReviewRound, ReviewState } from '../models/book.models';
 import { PersonalConfigService } from '../services/personal-config.service';
 import { SpellCheckService } from '../services/spell-check.service';
@@ -8,6 +8,7 @@ import { CustomThemesService } from '../services/custom-themes.service';
 import { environment } from '../../environments/environment';
 import { migrateLibriaDocument, validateLibriaDocument, withBlockIds } from '../utils/document-validator';
 import { createId } from '../utils/ids';
+import { localWritingDate } from '../utils/writing-date';
 
 export interface BookState {
   documentSession: number;
@@ -29,7 +30,7 @@ export interface BookState {
     sidebarOpen: boolean;
     previewOpen: boolean;
     zenMode: boolean;
-    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'settings' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding';
+    activeNav: 'manuscript' | 'styles' | 'layout' | 'export' | 'metadata' | 'search' | 'outline' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding';
     focusBlockIndex: number | null;
   };
   exportPrefs: {
@@ -118,7 +119,7 @@ const initialState: BookState = {
     sidebarOpen: true,
     previewOpen: true,
     zenMode: false,
-    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'settings' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding',
+    activeNav: 'manuscript' as 'manuscript' | 'styles' | 'layout' | 'metadata' | 'export' | 'search' | 'outline' | 'dictionary' | 'attachments' | 'productivity' | 'worldbuilding',
     focusBlockIndex: null,
   },
   exportPrefs: {
@@ -135,7 +136,7 @@ const initialState: BookState = {
   isSaving: false,
   isExporting: false,
   exportStatus: '',
-  writingGoals: { targetWords: 0, deadline: '' },
+  writingGoals: { targetWords: 0, deadline: '', dailyTargetWords: 0, dailyProgress: {} },
   printPageMap: {},
   customThemes: [],
 };
@@ -310,7 +311,7 @@ export const BookStore = signalStore(
       const migrated = migrateLibriaDocument(doc);
       validateLibriaDocument(migrated);
       assetService.load(migrated.assets || {});
-      const personalMode = store.personalConfig().mode;
+      const { mode, sidebar, spellcheck } = store.personalConfig();
       patchState(store, {
         documentSession: store.documentSession() + 1,
         documentRevision: typeof migrated.revision === 'number' ? migrated.revision : 0,
@@ -325,13 +326,19 @@ export const BookStore = signalStore(
         locations: migrated.locations || [],
         review: migrated.review ?? null,
         activeChapterId: migrated.session?.lastActiveChapterId || migrated.chapters[0]?.id || '',
-        tweaks: { ...store.tweaks(), ...(migrated.preferences || {}), mode: personalMode },
+        tweaks: {
+          ...store.tweaks(),
+          ...migrated.preferences,
+          mode,
+          ...(sidebar !== undefined ? { sidebar } : {}),
+          ...(spellcheck !== undefined ? { spellcheck } : {}),
+        },
         writingGoals: { ...initialState.writingGoals, ...(migrated.writingGoals || {}) },
         isDirty: false,
         ui: initialState.ui
       });
     },
-    createNewProject() {
+    createNewProject(imported?: { title: string; chapters: Chapter[] }) {
       const author = store.personalConfig().userName;
       const lang = store.personalConfig().language;
       const newProjectLabels: Record<string, { title: string; chapter: string; docLang: string }> = {
@@ -343,7 +350,7 @@ export const BookStore = signalStore(
       };
       const labels = newProjectLabels[lang] || { title: 'Nuevo Libro', chapter: 'Capítulo 1', docLang: 'es-MX' };
       const newBook: Book = {
-        title: labels.title,
+        title: imported?.title || labels.title,
         subtitle: '',
         author: author,
         authors: author ? [author] : [],
@@ -367,18 +374,20 @@ export const BookStore = signalStore(
           { id: createId('blk'), type: 'p', text: '' }
         ]
       };
+      const chapters = imported?.chapters.length ? imported.chapters.map(withBlockIds) : [firstChapter];
       patchState(store, {
         documentSession: store.documentSession() + 1,
         documentRevision: 0,
         modifiedAt: '',
         modifiedBy: '',
         book: newBook,
-        chapters: [firstChapter],
+        chapters,
         notes: [],
         characters: [],
         locations: [],
-        activeChapterId: firstChapter.id,
+        activeChapterId: chapters[0].id,
         review: null,
+        writingGoals: initialState.writingGoals,
         isDirty: true,
         past: [],
         future: [],
@@ -488,7 +497,7 @@ export const BookStore = signalStore(
     },
     addCharacter(name: string) {
       const newChar: CharacterSheet = {
-        id: 'char-' + Date.now().toString(36),
+        id: createId('char'),
         name,
         content: ''
       };
@@ -503,6 +512,20 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
+    setSheetChapterLink(type: 'character' | 'location', sheetId: string, chapterId: string, linked: boolean) {
+      const key = type === 'character' ? 'characters' : 'locations';
+      patchState(store, (state) => {
+        const sheet = state[key].find(item => item.id === sheetId);
+        if (!sheet || !state.chapters.some(chapter => chapter.id === chapterId)) return state;
+        const ids = sheet.chapterIds ?? [];
+        if (ids.includes(chapterId) === linked) return state;
+        const chapterIds = linked ? [...ids, chapterId] : ids.filter(id => id !== chapterId);
+        return {
+          [key]: state[key].map(item => item.id === sheetId ? { ...item, chapterIds } : item),
+          isDirty: true,
+        };
+      });
+    },
     deleteCharacter(id: string) {
       patchState(store, (state) => ({
         characters: state.characters.filter(c => c.id !== id),
@@ -511,7 +534,7 @@ export const BookStore = signalStore(
     },
     addLocation(name: string) {
       const newLoc: LocationSheet = {
-        id: 'loc-' + Date.now().toString(36),
+        id: createId('loc'),
         name,
         content: ''
       };
@@ -544,6 +567,7 @@ export const BookStore = signalStore(
         notes: [],
         activeChapterId: '',
         review: null,
+        writingGoals: initialState.writingGoals,
         isDirty: false,
         past: [],
         future: [],
@@ -787,7 +811,7 @@ export const BookStore = signalStore(
         const step = direction === 'up' ? -1 : 1;
         let swapIdx = idx + step;
         while (swapIdx >= 0 && swapIdx < state.chapters.length) {
-          if (state.chapters[swapIdx].kind === chapter.kind) break;
+          if ((state.chapters[swapIdx].kind ?? 'chapter') === (chapter.kind ?? 'chapter')) break;
           swapIdx += step;
         }
         if (swapIdx < 0 || swapIdx >= state.chapters.length) return state;
@@ -802,6 +826,20 @@ export const BookStore = signalStore(
           c.id === chapterId ? { ...c, ...meta } : c
         ),
         isDirty: true
+      }));
+    },
+    updateChapterPlanning(chapterId: string, planning: Partial<Pick<Chapter, 'synopsis' | 'writingNotes' | 'headingImage'>>) {
+      const update = (chapters: Chapter[]) => chapters.map(chapter =>
+        chapter.id === chapterId ? { ...chapter, ...planning } : chapter,
+      );
+      patchState(store, (state) => ({
+        chapters: update(state.chapters),
+        past: state.past.map(snapshot => ({ ...snapshot, chapters: update(snapshot.chapters) })),
+        future: state.future.map(snapshot => ({ ...snapshot, chapters: update(snapshot.chapters) })),
+        review: state.review?.baseline
+          ? { ...state.review, baseline: update(state.review.baseline) }
+          : state.review,
+        isDirty: true,
       }));
     },
     updateChapterBlock(chapterId: string, blockIndex: number, text: string, html?: string, replacement?: {
@@ -955,11 +993,11 @@ export const BookStore = signalStore(
         isDirty: true
       }));
     },
-    setImageSrc(chapterId: string, blockIndex: number, assetKey: string) {
+    setImageSrc(chapterId: string, blockIndex: number, assetKey: string, width: number, height: number) {
       patchState(store, (state) => ({
         chapters: state.chapters.map((c) =>
           c.id === chapterId
-            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, src: assetKey } : b) }
+            ? { ...c, body: c.body.map((b, i) => i === blockIndex ? { ...b, src: assetKey, width, height } : b) }
             : c
         ),
         isDirty: true
@@ -1010,7 +1048,7 @@ export const BookStore = signalStore(
       const dirty = !UI_ONLY_TWEAKS.includes(key);
       patchState(store, (state) => ({
         tweaks: { ...state.tweaks, [key]: value },
-        ...(dirty ? { isDirty: true } : {})
+        ...(dirty ? { isDirty: true } : { personalConfig: { ...state.personalConfig, [key]: value } })
       }));
     },
     applyTheme(theme: BookTheme) {
@@ -1143,16 +1181,51 @@ export const BookStore = signalStore(
         patchState(store, { customThemes: savedThemes });
       }
 
-      // Apply saved theme mode (personal preference overrides book setting)
-      const tweaks = store.tweaks();
-      if (saved.mode && saved.mode !== tweaks.mode) {
-        patchState(store, { tweaks: { ...tweaks, mode: saved.mode } });
-      }
+      patchState(store, {
+        tweaks: {
+          ...store.tweaks(),
+          mode: saved.mode,
+          ...(saved.sidebar !== undefined ? { sidebar: saved.sidebar } : {}),
+          ...(saved.spellcheck !== undefined ? { spellcheck: saved.spellcheck } : {}),
+        },
+      });
 
       // Effect to save personal config whenever it changes
       effect(() => {
         const config = store.personalConfig();
         personalConfigService.save(config);
+      });
+
+      // The session boundary excludes opening, reloading, and closing manuscripts.
+      // Count net change in manuscript words, including cuts and undo.
+      let previousSession = -1;
+      let previousWords = 0;
+      let previousChapters: Chapter[] | undefined;
+      const wordsByBody = new WeakMap<Chapter['body'], number>();
+      watchState(store, (state) => {
+        const sameSession = previousSession === state.documentSession;
+        if (sameSession && previousChapters === state.chapters) return;
+        const words = state.chapters.reduce((sum, { body }) => {
+          const cached = wordsByBody.get(body);
+          if (cached !== undefined) return sum + cached;
+          const count = calculateWords(body);
+          wordsByBody.set(body, count);
+          return sum + count;
+        }, 0);
+        const delta = words - previousWords;
+        previousSession = state.documentSession;
+        previousWords = words;
+        previousChapters = state.chapters;
+        if (!sameSession || !state.book || !delta) return;
+
+        const date = localWritingDate();
+        const progress = state.writingGoals.dailyProgress ?? {};
+        patchState(store, {
+          writingGoals: {
+            ...state.writingGoals,
+            dailyProgress: { ...progress, [date]: (progress[date] ?? 0) + delta },
+          },
+        });
       });
 
       // Sync spell checker language with the desktop WebView

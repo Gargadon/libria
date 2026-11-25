@@ -1,7 +1,7 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { AssetService } from './asset.service';
-import { LibriaDocument, LIBRIA_SCHEMA_VERSION } from '../models/book.models';
+import { Chapter, LibriaDocument, LIBRIA_SCHEMA_VERSION } from '../models/book.models';
 import { RecentProjectsService } from './recent-projects.service';
 import { environment } from '../../environments/environment';
 import { migrateLibriaDocument, validateLibriaDocument } from '../utils/document-validator';
@@ -456,11 +456,11 @@ export class FileService {
     }
   }
 
-  newProject() {
+  newProject(imported?: { title: string; chapters: Chapter[] }) {
     this.detachDrive();
     this.currentPath = null;
     (window as any).__libriaFileHandle = null;
-    this.store.createNewProject();
+    this.store.createNewProject(imported);
   }
 
   closeProject() {

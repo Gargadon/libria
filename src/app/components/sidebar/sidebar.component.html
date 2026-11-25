@@ -17,6 +17,9 @@
           {{ store.book()?.authors?.[0] ?? ('sidebar.noAuthor' | translate) }}
         </div>
 
+        <button class="sb__btn-link" (click)="store.setNav('outline')">
+          {{ 'planning.outline' | translate }}
+        </button>
         <div class="sb__stats">
           <div class="sb__stat">
             <div class="sb__statN">{{ store.totalWords().toLocaleString(currentLang()) }}</div>
@@ -147,6 +150,18 @@
             </div>
           </div>
           <div class="sb__help">{{ 'sidebar.oddPageHelp' | translate }}</div>
+          <details class="sb__planning-notes">
+            <summary>{{ 'planning.notes' | translate }}</summary>
+            <textarea class="sb__input" rows="4" [attr.aria-label]="'planning.notes' | translate"
+              [placeholder]="'planning.notesHint' | translate" [ngModel]="active.writingNotes ?? ''"
+              (ngModelChange)="store.updateChapterPlanning(active.id, { writingNotes: $event })"></textarea>
+          </details>
+          @if (active.kind === 'chapter') {
+            <details class="sb__planning-notes">
+              <summary>{{ 'headingImage.chapter' | translate }}</summary>
+              <app-heading-image-settings [chapter]="active"></app-heading-image-settings>
+            </details>
+          }
         }
       </div>
 
@@ -184,91 +199,6 @@
             {{ 'sidebar.goalsEdit' | translate }}
           </button>
         }
-        <div class="sb__add-wrapper">
-          <button class="sb__add" (click)="toggleAddMenu($event)">
-            {{ 'sidebar.addElement' | translate }}
-          </button>
-          @if (showAddMenu()) {
-            <div class="sb__add-menu">
-              <div class="sb__add-item sb__add-item--group" (click)="toggleFrontSubmenu($event)">
-                <span>{{ 'sidebar.addFront' | translate }}</span>
-                <span class="sb__add-arrow" [class.sb__add-arrow--open]="showFrontSubmenu()"
-                  >›</span
-                >
-              </div>
-              @if (showFrontSubmenu()) {
-                <div class="sb__add-submenu">
-                  <div
-                    class="sb__add-item sb__add-item--sub"
-                    (click)="addFromTemplate('title-page')"
-                  >
-                    {{ 'sidebar.templateTitlePage' | translate }}
-                  </div>
-                  <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('credits')">
-                    {{ 'sidebar.templateCredits' | translate }}
-                  </div>
-                  <div
-                    class="sb__add-item sb__add-item--sub"
-                    (click)="addFromTemplate('dedication')"
-                  >
-                    {{ 'sidebar.templateDedication' | translate }}
-                  </div>
-                  <div
-                    class="sb__add-item sb__add-item--sub"
-                    (click)="addFromTemplate('acknowledgments')"
-                  >
-                    {{ 'sidebar.templateAcknowledgments' | translate }}
-                  </div>
-                  <div class="sb__add-item sb__add-item--sub" (click)="addFromTemplate('toc')">
-                    {{ 'sidebar.templateToc' | translate }}
-                  </div>
-                  <div
-                    class="sb__add-item sb__add-item--sub sb__add-item--sep"
-                    (click)="add('front')"
-                  >
-                    {{ 'sidebar.addFrontBlank' | translate }}
-                  </div>
-                </div>
-              }
-              <div class="sb__add-item" (click)="add('chapter')">
-                {{ 'sidebar.addChapter' | translate }}
-              </div>
-              <div class="sb__add-item" (click)="add('back')">
-                {{ 'sidebar.addBack' | translate }}
-              </div>
-            </div>
-          }
-        </div>
-
-        <button class="sb__action-btn" (click)="triggerImport()" [disabled]="importing()">
-          @if (importing()) {
-            <span class="sb__spinner"></span>
-          } @else {
-            <span class="material-symbols-outlined">publish</span>
-          }
-          {{ 'sidebar.importFile' | translate }}
-        </button>
-        <input
-          type="file"
-          #importInput
-          hidden
-          (change)="onImportFile($event)"
-          accept=".docx,.txt"
-        />
-        @if (importService.warnings().length) {
-          <div role="status" style="padding: 12px; overflow-wrap: anywhere">
-            <strong>{{ 'importReport.title' | translate }}</strong>
-            <ul>
-              @for (warning of importService.warnings(); track $index) {
-                <li>{{ warning }}</li>
-              }
-            </ul>
-            <button (click)="importService.warnings.set([])">
-              {{ 'recovery.close' | translate }}
-            </button>
-          </div>
-        }
-
         <div class="sb__legend">
           <span><i class="lg lg--ok"></i> {{ 'sidebar.reviewed' | translate }}</span>
           <span><i class="lg lg--draft"></i> {{ 'sidebar.draft' | translate }}</span>
@@ -306,9 +236,6 @@
       <app-sidebar-attachments></app-sidebar-attachments>
     }
 
-    @case ('settings') {
-      <app-sidebar-settings></app-sidebar-settings>
-    }
     @case ('dictionary') {
       <app-sidebar-dictionary></app-sidebar-dictionary>
     }
@@ -373,7 +300,7 @@
             class="sb__row sb__row--col"
             style="flex: 1; display: flex; flex-direction: column; min-height: 250px"
           >
-            <label class="sb__label">{{ 'sidebar.goalsDeadlineLabel' | translate }}</label>
+            <label class="sb__label" for="sheet-content">{{ 'planning.sheetContent' | translate }}</label>
             <textarea
               class="sb__input"
               style="
@@ -384,6 +311,7 @@
                 line-height: 1.5;
                 resize: vertical;
               "
+              id="sheet-content"
               [ngModel]="el.content"
               [placeholder]="'sidebar.contentPlaceholder' | translate"
               #contentInput
@@ -391,6 +319,29 @@
             ></textarea>
           </div>
 
+          <div class="sb__sheet-links">
+            <label class="sb__label" for="sheet-chapter">{{ 'planning.linkedChapters' | translate }}</label>
+            @for (chapter of linkedChapters(); track chapter.id) {
+              <div class="sb__sheet-link">
+                <button class="sb__btn-link" (click)="store.setActiveChapter(chapter.id)">
+                  {{ chapter.title }}
+                </button>
+                <button class="sb__opt" (click)="setSheetLink(chapter.id, false)"
+                  [attr.aria-label]="'planning.unlink' | translate: { title: chapter.title }">
+                  <span class="material-symbols-outlined" aria-hidden="true">link_off</span>
+                </button>
+              </div>
+            }
+            <select id="sheet-chapter" class="sb__select" #sheetChapter
+              (change)="setSheetLink(sheetChapter.value, true); sheetChapter.value = ''">
+              <option value="">{{ 'planning.linkChapter' | translate }}</option>
+              @for (chapter of store.chapters(); track chapter.id) {
+                @if (!el.chapterIds?.includes(chapter.id)) {
+                  <option [value]="chapter.id">{{ chapter.title }}</option>
+                }
+              }
+            </select>
+          </div>
           <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px">
             <button
               class="sb__btn-primary"

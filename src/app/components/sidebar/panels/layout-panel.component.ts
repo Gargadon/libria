@@ -1,3 +1,4 @@
+import { HeadingImageSettingsComponent } from './heading-image-settings.component';
 import { FontSelectComponent } from './font-select.component';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BookStore } from '../../../store/book.store';
@@ -10,7 +11,7 @@ import { SidebarFontsState } from './sidebar-fonts.state';
 @Component({
   selector: 'app-sidebar-layout',
   standalone: true,
-  imports: [FormsModule, TranslateModule, FontSelectComponent],
+  imports: [FormsModule, TranslateModule, FontSelectComponent, HeadingImageSettingsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: contents' },
   templateUrl: './layout-panel.component.html',

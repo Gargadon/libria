@@ -198,6 +198,37 @@ describe('export format regression', () => {
     expect(window.desktopAPI!.printFromHTML).toHaveBeenLastCalledWith(expect.stringContaining('<meta name="author" content="Autor antiguo">'), expect.anything());
   });
 
+  it('exports an inherited chapter illustration once and respects explicit opt-outs', async () => {
+    const assets = TestBed.inject(AssetService);
+    assets.set('heading-book', png);
+    store.updateBookMetadata({ headingImage: { assetId: 'heading-book', width: 100, height: 40 } });
+    store.updateChapterPlanning('two', { headingImage: null });
+
+    const html = service.buildPrintHtml(
+      store.book(), store.chapters(), store.tweaks(),
+      store.bookFontFamily(), store.titleFontFamily(), undefined, assets.getAll(),
+    );
+    expect(html.match(/class="chapter-heading-image"/g)).toHaveLength(1);
+    expect(html).toContain('width="100" height="40"');
+    expect(html).toContain('data-libria-block="0:0"');
+
+    await service.exportEpub();
+    const epub = await JSZip.loadAsync(saved.bytes);
+    expect(await epub.file('OEBPS/chapters/one.xhtml')?.async('string')).toContain('../images/img-heading-book.png');
+    expect(await epub.file('OEBPS/chapters/two.xhtml')?.async('string')).not.toContain('chapter-heading-image');
+    expect(await epub.file('OEBPS/content.opf')?.async('string')).toContain('href="images/img-heading-book.png"');
+    expect(epub.file('OEBPS/images/img-heading-book.png')).not.toBeNull();
+
+    await service.exportOdt();
+    const odt = await JSZip.loadAsync(saved.bytes);
+    expect(odt.file('Pictures/heading-book.png')).not.toBeNull();
+    expect(await odt.file('content.xml')?.async('string')).toContain('xlink:href="Pictures/heading-book.png"');
+
+    await service.exportDocx();
+    const docx = await JSZip.loadAsync(saved.bytes);
+    expect(await docx.file('word/document.xml')?.async('string')).toContain('cx="952500" cy="381000"');
+  });
+
   it('honors chapter selection', async () => {
     store.updateExportPrefs({ exportMode: 'selection', selectedChapterIds: ['two'] });
     await service.exportEpub();

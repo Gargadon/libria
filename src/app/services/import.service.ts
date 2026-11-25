@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import { AssetService } from './asset.service';
+import { FileService } from './file.service';
 import { parseDocxHtml } from '../utils/docx-import';
 import { Chapter } from '../models/book.models';
+import { createId } from '../utils/ids';
 @Injectable({
   providedIn: 'root'
 })
@@ -11,29 +13,50 @@ export class ImportService {
   private _mammoth?: typeof import('mammoth');
 
   private readonly assets = inject(AssetService);
+  private readonly files = inject(FileService);
   readonly warnings = signal<string[]>([]);
+  readonly importing = signal(false);
+
+  async importFile(file: File): Promise<void> {
+    const extension = file.name.split('.').at(-1)?.toLowerCase();
+    if (this.importing() || (extension !== 'txt' && extension !== 'docx')) return;
+
+    const session = this.store.documentSession();
+    this.importing.set(true);
+    try {
+      if (extension === 'docx') await this.importDocx(file);
+      else await this.importTxt(file);
+    } catch (error) {
+      if (session === this.store.documentSession()) {
+        this.warnings.set([error instanceof Error ? error.message : String(error)]);
+      }
+    } finally {
+      this.importing.set(false);
+    }
+  }
 
   async importDocx(file: File) {
+    const session = this.store.documentSession();
     this.warnings.set([]);
     if (!this._mammoth) this._mammoth = await import('mammoth/mammoth.browser');
     const result = await this._mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() }, {
       externalFileAccess: false,
       styleMap: ["u => u", "strike => s"],
     });
+    if (session !== this.store.documentSession()) return;
     const parsed = parseDocxHtml(result.value);
     this.warnings.set([...new Set([
       ...result.messages.map(message => message.message),
       ...parsed.warnings,
     ])]);
-    if (!parsed.chapters.length) throw new Error('No se encontró contenido importable en el documento.');
-    this.store.saveSnapshot();
-    for (const [key, data] of Object.entries(parsed.assets)) this.assets.set(key, data);
-    this.updateStoreWithImport(parsed.chapters);
+    this.updateStoreWithImport(file, parsed.chapters, parsed.assets);
   }
 
   async importTxt(file: File) {
+    const session = this.store.documentSession();
     this.warnings.set([]);
     const text = await file.text();
+    if (session !== this.store.documentSession()) return;
     const lines = text.split(/\r?\n/);
     const chapters: Chapter[] = [];
     let currentChapter: Chapter | null = null;
@@ -59,7 +82,7 @@ export class ImportService {
         if (currentChapter) chapters.push(currentChapter);
         
         currentChapter = {
-          id: 'ch-' + Math.random().toString(36).substr(2, 9),
+          id: createId('ch'),
           kind: 'chapter',
           title: trimmed,
           words: 0,
@@ -73,7 +96,7 @@ export class ImportService {
       } else {
         if (!currentChapter) {
           currentChapter = {
-            id: 'ch-initial',
+            id: createId('ch'),
             kind: 'chapter',
             title: 'Inicio',
             words: 0,
@@ -90,13 +113,11 @@ export class ImportService {
     flushParagraph();
     if (currentChapter) chapters.push(currentChapter);
 
-    if (chapters.length > 0) {
-      this.updateStoreWithImport(chapters);
-    }
+    this.updateStoreWithImport(file, chapters);
   }
 
-  private updateStoreWithImport(newChapters: Chapter[]) {
-    // We add words and readMin before updating store
+  private updateStoreWithImport(file: File, newChapters: Chapter[], assets: Record<string, string> = {}) {
+    if (!newChapters.length) throw new Error('No se encontró contenido importable en el documento.');
     const processed = newChapters.map(c => {
       const words = c.body.reduce((s, b) => {
         if (b.text) return s + b.text.split(/\s+/).filter(w => w.length > 0).length;
@@ -109,6 +130,12 @@ export class ImportService {
       };
     });
 
-    this.store.addChapters(processed);
+    if (this.store.book()) {
+      this.store.saveSnapshot();
+      this.store.addChapters(processed);
+    } else {
+      this.files.newProject({ title: file.name.replace(/\.(docx|txt)$/i, '').trim(), chapters: processed });
+    }
+    for (const [key, data] of Object.entries(assets)) this.assets.set(key, data);
   }
 }

@@ -1,4 +1,5 @@
 <div class="app" spellcheck="false"
+     [class.app--modern]="store.personalConfig().interfaceStyle === 'modern'"
      [class.app--dark]="store.tweaks.mode() === 'dark'"
      [class.app--sb-right]="store.tweaks.sidebar() === 'right'"
      [class.app--pv-closed]="!store.ui.previewOpen()"
@@ -15,10 +16,14 @@
   @if (recovery.visible()) { <app-recovery-modal></app-recovery-modal> }
   @if (review.visible()) { <app-review-modal></app-review-modal> }
   @if (recovery.error()) { <p role="alert">{{ 'recovery.error' | translate }}</p> }
-  <app-topbar (aboutRequested)="showAbout.set(true)"></app-topbar>
+  <app-topbar (aboutRequested)="showAbout.set(true)" (settingsRequested)="settings.open()"></app-topbar>
+  <app-settings-modal #settings></app-settings-modal>
   @if (drive.visible()) { <app-google-drive-modal></app-google-drive-modal> }
   
-  <div class="layout" [class.layout--empty]="!store.book()"
+  @if (store.book() && store.ui.activeNav() === 'outline') {
+    <app-outline></app-outline>
+  }
+  <div class="layout" [class.layout--outline-hidden]="store.ui.activeNav() === 'outline'" [class.layout--empty]="!store.book()"
        [class.layout--sb-closed]="!store.ui.sidebarOpen()"
        [style.--pv-width.px]="store.personalConfig().previewWidth">
     @if (store.book()) {

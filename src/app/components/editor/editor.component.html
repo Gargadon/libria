@@ -187,8 +187,11 @@
           <span class="material-symbols-outlined">superscript</span>
         </button>
         <span class="ed__tsep"></span>
-        <button class="ed__t ed__t--text" [attr.title]="'editor.markReviewed' | translate">
-          <i class="ed__statusDot" [class]="'ed__statusDot--' + status()"></i> {{ statusLabel() }}
+        <button type="button" class="ed__t ed__t--text ed__review-toggle"
+          [attr.title]="(status() === 'ok' ? 'editor.markDraft' : 'editor.markReviewed') | translate"
+          (click)="toggleReviewed(chapter.id)">
+          <i class="ed__statusDot" [class]="'ed__statusDot--' + status()" aria-hidden="true"></i>
+          {{ statusLabel() }}
         </button>
       </div>
     </div>
@@ -208,6 +211,10 @@
           [class.ed__doc--hyphen]="store.tweaks.hyphenation()"
           [class.ed__doc--small-caps]="store.tweaks.firstParagraphSmallCaps()"
         >
+          @if (headingImage(); as image) {
+            <img class="chapter-heading-image" [src]="image.src"
+              [width]="image.width" [height]="image.height" alt="" draggable="false" />
+          }
           @if (chapter.templateId === 'toc') {
             <fieldset class="ed__toc-options">
               <legend>{{ 'editor.tocOptions' | translate }}</legend>
@@ -583,15 +590,20 @@
                     <figure class="bk-image" #imageFigure>
                       @if (b.src && assetService.assets()[b.src]) {
                         <div class="bk-image__wrap">
-                          <img
-                            [src]="assetService.assets()[b.src]"
-                            alt=""
-                            class="bk-image__img"
-                            [style.width.px]="b.width"
-                            [style.height.px]="b.height"
-                            [style.transform]="imageTransform(b)"
-                            #imageEl
-                          />
+                          <button type="button" class="bk-image__select" contenteditable="false" aria-keyshortcuts="Delete Backspace"
+                            [attr.aria-label]="'editor.selectImage' | translate"
+                            (click)="selectInlineImage($event)"
+                            (keydown)="onImageKeyDown(chapter.id, $index, $event)">
+                            <img
+                              [src]="assetService.assets()[b.src]"
+                              alt=""
+                              draggable="false"
+                              class="bk-image__img"
+                              [style.width.px]="b.width"
+                              [style.transform]="imageTransform(b)"
+                              #imageEl
+                            />
+                          </button>
                           <div class="bk-image__tools" contenteditable="false" data-editor-control>
                             <button
                               class="bk-image__tool"

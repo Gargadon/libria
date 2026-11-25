@@ -52,6 +52,12 @@ export function tocEntries(chapters: Chapter[], options?: TocOptions): Chapter[]
     && (c.kind !== 'back' || options?.includeBackMatter !== false));
 }
 
+export interface ChapterHeadingImage {
+  assetId: string;
+  width: number;
+  height: number;
+}
+
 export interface Chapter {
   id: string;
   kind: ChapterKind;
@@ -65,6 +71,9 @@ export interface Chapter {
   footnotes?: Footnote[];
   templateId?: ChapterTemplateId;
   tocOptions?: TocOptions;
+  headingImage?: ChapterHeadingImage | null;
+  synopsis?: string;
+  writingNotes?: string;
 }
 
 export interface Book {
@@ -77,6 +86,7 @@ export interface Book {
   year: number;
   isbn: string;
   paperSize: '5x8' | '6x9' | 'A5' | 'A4' | 'A6' | 'Letter';
+  headingImage?: ChapterHeadingImage;
   lang?: string;
 }
 
@@ -161,6 +171,8 @@ export interface Note {
 export interface WritingGoals {
   targetWords: number;
   deadline: string;
+  dailyTargetWords?: number;
+  dailyProgress?: Record<string, number>;
 }
 
 /** Ronda de revisión editorial abierta sobre el documento. */
@@ -217,19 +229,19 @@ export interface PersonalConfig {
   previewWidth: number;
   language: string;
   mode: 'light' | 'dark';
+  interfaceStyle?: 'classic' | 'modern';
+  sidebar?: Tweaks['sidebar'];
+  spellcheck?: boolean;
 }
 
 export interface CharacterSheet {
   id: string;
   name: string;
   content: string;
+  chapterIds?: string[];
 }
 
-export interface LocationSheet {
-  id: string;
-  name: string;
-  content: string;
-}
+export interface LocationSheet extends CharacterSheet {}
 
 export interface LibriaDocument {
   libriaVersion: string;

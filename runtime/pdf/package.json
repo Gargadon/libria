@@ -1,6 +1,6 @@
 {
   "name": "libria-pdf-runtime",
-  "version": "2.3.4",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "dependencies": {

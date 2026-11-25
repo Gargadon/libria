@@ -1,7 +1,7 @@
 {
   "name": "libria",
-  "version": "2.3.4",
-  "edition": "Borges",
+  "version": "2.4.0",
+  "edition": "Woolf",
   "description": "Aplicación para la creación y maquetación de libros",
   "author": {
     "name": "David Kantun",

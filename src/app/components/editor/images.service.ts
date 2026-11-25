@@ -3,6 +3,8 @@ import { BookStore } from '../../store/book.store';
 import { AssetService } from '../../services/asset.service';
 
 import { Block } from '../../models/book.models';
+import { inlineImageSize } from '../../utils/image-sizing';
+import { createId } from '../../utils/ids';
 
 @Injectable()
 export class EditorImageService {
@@ -10,38 +12,49 @@ export class EditorImageService {
   readonly assetService = inject(AssetService);
 
   insertImage(getIndex: () => number) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      this.readImageFile(file).then(({ dataUrl, width, height }) => {
-        const assetKey = 'img-' + Date.now().toString(36);
-        this.assetService.set(assetKey, dataUrl);
-        const chapterId = this.store.activeChapterId();
-        const index = getIndex() >= 0 ? getIndex() : this.store.activeChapter()!.body.length - 1;
-        this.store.saveSnapshot();
-        this.store.insertImageBlock(chapterId, index, assetKey, width, height);
-      });
-    };
-    input.click();
+    const chapter = this.store.activeChapter();
+    if (!chapter) return;
+    const index = getIndex();
+    const anchorId = chapter.body[index]?.id;
+    this.pickImage(({ dataUrl, width, height }) => {
+      const target = this.store.chapters().find(c => c.id === chapter.id);
+      if (!target) return;
+      const anchor = target.body.findIndex(block => anchorId && block.id === anchorId);
+      const assetKey = createId('img');
+      this.assetService.set(assetKey, dataUrl);
+      this.store.saveSnapshot();
+      this.store.insertImageBlock(chapter.id, anchor >= 0 ? anchor : target.body.length - 1, assetKey, width, height);
+    });
   }
 
   pickImageForBlock(chapterId: string, blockIndex: number) {
+    const original = this.store.chapters().find(c => c.id === chapterId)?.body[blockIndex];
+    if (!original) return;
+    this.pickImage(({ dataUrl, width, height }) => {
+      const target = this.store.chapters().find(c => c.id === chapterId);
+      const index = target?.body.findIndex(block => block === original || (!!original.id && block.id === original.id)) ?? -1;
+      if (index < 0) return;
+      const assetKey = createId('img');
+      this.assetService.set(assetKey, dataUrl);
+      this.store.saveSnapshot();
+      this.store.setImageSrc(chapterId, index, assetKey, width, height);
+    });
+  }
+
+  private pickImage(onRead: (image: { dataUrl: string; width: number; height: number }) => void) {
+    const session = this.store.documentSession();
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e: any) => {
-      const file = e.target.files[0];
+    input.onchange = async () => {
+      const file = input.files?.[0];
       if (!file) return;
-      this.readImageFile(file).then(({ dataUrl, width, height }) => {
-        const assetKey = 'img-' + Date.now().toString(36);
-        this.assetService.set(assetKey, dataUrl);
-        this.store.saveSnapshot();
-        this.store.updateImageSize(chapterId, blockIndex, width, height);
-        this.store.setImageSrc(chapterId, blockIndex, assetKey);
-      });
+      try {
+        const image = await this.readImageFile(file);
+        if (this.store.documentSession() === session) onRead(image);
+      } catch (error) {
+        console.warn('Could not read image:', error);
+      }
     };
     input.click();
   }
@@ -56,23 +69,21 @@ export class EditorImageService {
     event.stopPropagation();
     const startX = event.clientX;
     const startW = img.offsetWidth;
-    const startH = img.offsetHeight;
-    const aspect = startW / startH;
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    const aspect = img.naturalWidth / img.naturalHeight;
+    const maxWidth = img.closest('figure')?.clientWidth || startW;
+    const minWidth = Math.min(startW, 80);
+    const widthAt = (e: MouseEvent) => Math.min(maxWidth, Math.max(minWidth, startW + e.clientX - startX));
 
     const onMove = (e: MouseEvent) => {
-      const dx = e.clientX - startX;
-      const newW = Math.max(80, startW + dx);
-      const newH = Math.round(newW / aspect);
-      img.style.width = newW + 'px';
-      img.style.height = newH + 'px';
+      img.style.width = widthAt(e) + 'px';
     };
 
     const onUp = (e: MouseEvent) => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
-      const dx = e.clientX - startX;
-      const newW = Math.max(80, startW + dx);
-      const newH = Math.round(newW / aspect);
+      const newW = widthAt(e);
+      const newH = Math.max(1, Math.round(newW / aspect));
       this.store.saveSnapshot();
       this.store.updateImageSize(chapterId, blockIndex, newW, newH);
     };
@@ -119,8 +130,7 @@ export class EditorImageService {
           ctx.drawImage(img, 0, 0);
           resolve({
             dataUrl: canvas.toDataURL('image/png'),
-            width: img.naturalWidth,
-            height: img.naturalHeight,
+            ...inlineImageSize(img.naturalWidth, img.naturalHeight),
           });
         };
         img.onerror = reject;

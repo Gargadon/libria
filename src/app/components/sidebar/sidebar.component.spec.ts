@@ -141,7 +141,6 @@ describe('sidebar panel navigation', () => {
     for (const nav of [
       'styles',
       'metadata',
-      'settings',
       'dictionary',
       'productivity',
       'export',

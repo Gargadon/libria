@@ -1,3 +1,4 @@
+import { resolveChapterHeadingImage } from '../../utils/chapter-heading-image';
 import { AppCacheService } from '../../services/app-cache.service';
 import { Component, inject, computed, signal, effect, untracked, ElementRef, ViewChild, OnDestroy, AfterViewInit, ChangeDetectionStrategy, Injector, afterNextRender } from '@angular/core';
 import { BookStore } from '../../store/book.store';
@@ -214,16 +215,18 @@ import { TranslateModule } from '@ngx-translate/core';
         </div>
       </div>
 
-      <div class="pv__foot">
-        <div class="pv__metric">
-          <div class="pv__mN">{{ devicePaginationPending() ? '≈' : '' }}{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</div>
-          <div class="pv__mL">páginas</div>
+      @if (mode() === 'print') {
+        <div class="pv__foot">
+          <div class="pv__metric">
+            <div class="pv__mN">{{ paperLoading() && !paperPreview.layout() ? '…' : measuredTotalPages() }}</div>
+            <div class="pv__mL">páginas</div>
+          </div>
+          <div class="pv__metric">
+            <div class="pv__mN">{{ store.book()?.paperSize || '5×8″' }}</div>
+            <div class="pv__mL">formato</div>
+          </div>
         </div>
-        <div class="pv__metric">
-          <div class="pv__mN">{{ store.book()?.paperSize || '5×8″' }}</div>
-          <div class="pv__mL">formato</div>
-        </div>
-      </div>
+      }
 
       <!-- PAGINATED CONTENT TEMPLATE -->
       <ng-template #paginatedTpl>
@@ -272,6 +275,10 @@ import { TranslateModule } from '@ngx-translate/core';
           [class.kp--justify]="store.tweaks.justifyText()"
           [class.kp-content--hyphen]="store.tweaks.hyphenation()">
           
+          @if (headingImage(chapter); as image) {
+            <img class="chapter-heading-image" [src]="image.src"
+              [width]="image.width" [height]="image.height" alt="" />
+          }
           @if (chapter.templateId === 'toc') {
             <div class="kp-toc-wrap">
               <h2 class="kp-toc-heading" [style.font-family]="store.titleFontFamily()">{{ chapter.title }}</h2>
@@ -339,6 +346,10 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
   private readonly editorPosition = inject(EditorPositionService);
   readonly assetService = inject(AssetService);
+
+  headingImage(chapter: Chapter) {
+    return resolveChapterHeadingImage(this.store.book(), chapter, this.assetService.assets());
+  }
   readonly printHtml = inject(PrintHtmlService);
   readonly paperPreview = inject(PaperPreviewService);
   readonly paperReady = signal(false);
@@ -506,6 +517,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     });
 
     effect(() => {
+      this.store.book()?.headingImage;
       this.chapters(); // debounced — not store.chapters() — avoids measureDOM on every keystroke
       this.store.tweaks();
       this.pageSize();
@@ -677,7 +689,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const flow = this.kpFlowEl?.nativeElement;
     if (!flow || flow.clientWidth <= 0 || flow.clientHeight <= 0) return;
     const viewport = `${flow.clientWidth}:${flow.clientHeight}`;
-    const signature = JSON.stringify([this.mode(), viewport, this.store.tweaks(),
+    const signature = JSON.stringify([this.mode(), viewport, this.store.tweaks(), this.store.book()?.headingImage,
       this.store.bookFontFamily(), this.store.titleFontFamily(), this.deviceFontSizeOffset()]);
     if (signature !== this.deviceSignature || this.deviceAssets !== this.assetService.assets()) {
       this.deviceSignature = signature;
