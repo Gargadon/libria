@@ -7,6 +7,7 @@ import nspell from 'nspell';
 import { EditorSpellingComponent } from './editor-spelling.component';
 import { BookStore } from '../../store/book.store';
 import { SpellCheckService } from '../../services/spell-check.service';
+import { PersonalConfigService } from '../../services/personal-config.service';
 import { EditorComponent } from './editor.component';
 
 @Component({ imports: [EditorSpellingComponent], template: `
@@ -18,7 +19,11 @@ import { EditorComponent } from './editor.component';
 class Host {}
 
 describe('editor spelling', () => {
-  afterEach(() => { TestBed.resetTestingModule(); vi.unstubAllGlobals(); });
+  afterEach(() => {
+    TestBed.resetTestingModule();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   async function setup() {
     const engine = nspell('SET UTF-8\n', '2\nhola\nmundo\n');
@@ -29,12 +34,19 @@ describe('editor spelling', () => {
       addWord: vi.fn(async (word: string) => { engine.add(word); return true; }) };
     TestBed.configureTestingModule({ imports: [Host, TranslateModule.forRoot()],
       providers: [{ provide: SpellCheckService, useValue: spelling }] });
+    const preferences = TestBed.inject(PersonalConfigService);
+    vi.spyOn(preferences, 'load').mockReturnValue({ ...preferences.load(), spellcheck: true });
+    vi.spyOn(preferences, 'save').mockImplementation(() => {});
     const store = TestBed.inject(BookStore);
     store.createNewProject();
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();
     const component = fixture.debugElement.query(By.directive(EditorSpellingComponent)).componentInstance as EditorSpellingComponent;
-    component.refresh();
+    // The dictionary is loaded outside Angular's fixture stability checks.
+    await vi.waitFor(() => {
+      component.refresh();
+      expect(highlights.get('libria-spelling')?.size).toBe(2);
+    });
     return { fixture, component, store, spelling, highlights };
   }
 
