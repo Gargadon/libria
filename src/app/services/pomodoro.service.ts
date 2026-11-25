@@ -26,7 +26,7 @@ export class PomodoroService {
       if (untracked(() => !this.isActive())) {
         this.resetTimeForMode();
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   start() {
