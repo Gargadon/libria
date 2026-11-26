@@ -61,6 +61,20 @@ describe('editor spelling', () => {
     expect(highlights.get('libria-spelling')!.size).toBe(0);
   });
 
+  it('updates a changed block without replacing highlights in other blocks', async () => {
+    const { fixture, component, highlights } = await setup();
+    const highlight = highlights.get('libria-spelling')!;
+    const [, untouched] = highlight;
+    const first = fixture.nativeElement.querySelector('p') as HTMLElement;
+    first.textContent = 'hola';
+    component.refresh();
+    expect(highlights.get('libria-spelling')).toBe(highlight);
+    expect([...highlight]).toEqual([untouched]);
+    first.nextElementSibling!.remove();
+    component.refresh();
+    expect(highlight.size).toBe(0);
+  });
+
   it('offers dictionary suggestions on right click and supports ignoring and adding words', async () => {
     const { fixture, component, spelling, highlights } = await setup();
     const [range, otherRange] = highlights.get('libria-spelling')!;

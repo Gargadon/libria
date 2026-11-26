@@ -89,6 +89,26 @@ describe('pending paragraph edits', () => {
     expect(f.chapter.body.map(b => b.text)).toEqual(['Anteriorresto', 'Siguiente']);
   });
 
+  it('uses DOM text directly for a plain paragraph and falls back for collapsible spaces', () => {
+    const f = fixture();
+    f.element.classList.add('bk-p');
+    const innerText = vi.fn(() => 'Uno dos');
+    Object.defineProperty(f.element, 'innerText', { get: innerText });
+    const input = () => f.editor.onInput('chapter', 1, { target: f.element } as unknown as Event);
+
+    f.element.textContent = 'Texto simple';
+    input();
+    vi.advanceTimersByTime(200);
+    expect(innerText).not.toHaveBeenCalled();
+    expect(f.chapter.body[1].text).toBe('Texto simple');
+
+    f.element.textContent = 'Uno  dos';
+    input();
+    vi.advanceTimersByTime(200);
+    expect(innerText).toHaveBeenCalledOnce();
+    expect(f.chapter.body[1].text).toBe('Uno dos');
+  });
+
   it('captures input before the editable DOM is reused', () => {
     const f = fixture();
     f.input('Última edición');

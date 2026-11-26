@@ -192,6 +192,8 @@
   "sidebar.replaceAll": "Tout remplacer",
   "sidebar.resultCount": "{{count}} résultat",
   "sidebar.resultCount_plural": "{{count}} résultats",
+  "sidebar.searchNext": "Suivant",
+  "sidebar.searchPrevious": "Précédent",
   "sidebar.noResults": "Aucun résultat pour « {{query}} ».",
   "sidebar.settingsTitle": "Paramètres",
   "sidebar.settingsDesc": "Préférences de l'application",

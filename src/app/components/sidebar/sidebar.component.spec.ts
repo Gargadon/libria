@@ -23,6 +23,43 @@ describe('sidebar panel navigation', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  it('coalesces search input and replaces matches across all result pages', async () => {
+    const store = TestBed.inject(BookStore);
+    const chapter = store.chapters()[0];
+    store.setChapters([{
+      ...chapter,
+      body: [{ type: 'p', text: 'Café? '.repeat(56) + 'Café solo' }],
+    }]);
+    store.setNav('search');
+    const fixture = TestBed.createComponent(SidebarComponent);
+    await fixture.whenStable();
+
+    const panel = fixture.nativeElement.querySelector('app-sidebar-search') as HTMLElement;
+    const input = panel.querySelector<HTMLInputElement>('[data-search-input]')!;
+    const search = vi.spyOn(store, 'search');
+    for (const query of ['c', 'ca', 'CAFÉ?']) {
+      input.value = query;
+      input.dispatchEvent(new Event('input'));
+    }
+    expect(search).not.toHaveBeenCalled();
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await fixture.whenStable();
+    expect(search).toHaveBeenCalledExactlyOnceWith('CAFÉ?');
+    expect(store.searchResults()).toHaveLength(56);
+    expect(panel.querySelectorAll('.sb__search-item')).toHaveLength(50);
+    expect(panel.querySelector('mark')?.textContent).toBe('Café?');
+
+    panel.querySelector<HTMLButtonElement>('nav button:last-child')!.click();
+    await fixture.whenStable();
+    expect(panel.querySelectorAll('.sb__search-item')).toHaveLength(6);
+
+    store.setReplaceQuery('té');
+    panel.querySelector<HTMLButtonElement>('.sb__search-replace-btn')!.click();
+    expect(store.chapters()[0].body[0].text).toBe('té '.repeat(56) + 'Café solo');
+    expect(store.searchResults()).toHaveLength(0);
+  });
+
   it('moves chapters across all sections and restores their metadata on undo', () => {
     const store = TestBed.inject(BookStore);
     const original = store.chapters().find(c => c.kind === 'chapter')!;

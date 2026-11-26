@@ -7,10 +7,11 @@ import { ChapterPagination } from './chapter-pagination';
 export interface PaperPreviewInput {
   book: Book;
   chapters: Chapter[];
-  tweaks: Tweaks;
+  tweaks: Omit<Tweaks, 'mode' | 'sidebar' | 'spellcheck' | 'pdfxCompliant'>;
   bodyFont: string;
   titleFont: string;
   assets: Record<string, string>;
+  hyphenationContext: string;
 }
 
 export interface PaperPage {
@@ -21,7 +22,7 @@ export interface PaperPage {
 export interface PaperLayout {
   pages: PaperPage[];
   chapters: Record<string, { startPage: number; pages: number; hasBlankBefore: boolean }>;
-  blockPages: Record<string, Record<number, number>>;
+  blockPages: Record<string, { offset: number; pages: Record<number, number> }>;
 }
 
 /** One persistent compositor, immutable cached chapter pages, one visible page.
@@ -32,6 +33,7 @@ export class PaperPreviewService {
   private htmlInput?: PaperPreviewInput;
   private htmlContext?: string;
   private chapterHtml = new WeakMap<Chapter, { index: number; html: string }>();
+  private readonly chapterBlocks = new WeakMap<HTMLElement[], Record<number, number>>();
   private readonly cache = new ChapterPagination<HTMLElement>();
   readonly layout = signal<PaperLayout | null>(null);
   readonly busy = signal(false);
@@ -156,7 +158,7 @@ export class PaperPreviewService {
     const { book, chapters, tweaks, bodyFont, titleFont, assets } = input;
     const fontsHref = new URL('fonts.css', document.baseURI).href;
     const bodyIndex = chapters.findIndex(chapter => chapter.kind === 'chapter');
-    const context = JSON.stringify([bodyIndex, fontsHref, this.fontsStylesheetUrl]);
+    const context = JSON.stringify([bodyIndex, fontsHref, this.fontsStylesheetUrl, input.hyphenationContext]);
     const previous = this.htmlInput;
     if (previous?.book !== book || previous.tweaks !== tweaks || previous.assets !== assets ||
         previous.bodyFont !== bodyFont || previous.titleFont !== titleFont || this.htmlContext !== context) {
@@ -190,10 +192,7 @@ export class PaperPreviewService {
     };
     if (!chapters.length) {
       const pages = await this.render(makeHtml([]), 1);
-      return this.makeLayout(
-        pages.map((source) => ({ chapterId: null, source })),
-        {},
-      );
+      return { pages: pages.map(source => ({ chapterId: null, source })), chapters: {}, blockPages: {} };
     }
     let result;
     try {
@@ -203,7 +202,7 @@ export class PaperPreviewService {
           forceOddPage: index > 0 && chapter.forceOddPage,
           isContents: chapter.templateId === 'toc',
           html: (starts) => {
-            const cacheable = chapter.templateId !== 'toc' && !tweaks.hyphenation;
+            const cacheable = chapter.templateId !== 'toc';
             const cached = cacheable ? this.chapterHtml.get(chapter) : undefined;
             if (cached?.index === index) return cached.html;
             const html = makeHtml(
@@ -237,10 +236,11 @@ export class PaperPreviewService {
           (starts[index + 1]?.[1].startPage ?? pages.length + 1) - placement.startPage;
       });
       this.stats.set({ rendered: 1, reused: 0, fallback: true });
-      return this.makeLayout(pages, placements);
+      return { pages, chapters: placements, blockPages: this.indexWholeBook(pages, chapters) };
     }
     const pages: PaperPage[] = [];
     const placements: PaperLayout['chapters'] = {};
+    const blockPages: PaperLayout['blockPages'] = {};
     for (const chapter of result.chapters) {
       if (!current()) throw new DOMException('Superseded composition', 'AbortError');
       if (chapter.hasBlankBefore) {
@@ -254,22 +254,38 @@ export class PaperPreviewService {
         pages: chapter.pages.length,
         hasBlankBefore: chapter.hasBlankBefore,
       };
+      blockPages[chapter.id] = { offset: chapter.startPage - 1, pages: this.indexChapter(chapter.pages) };
       pages.push(...chapter.pages.map((source) => ({ chapterId: chapter.id, source })));
     }
     this.stats.set({ rendered: result.rendered, reused: result.reused, fallback: false });
-    return this.makeLayout(pages, placements);
+    return { pages, chapters: placements, blockPages };
   }
 
-  private makeLayout(pages: PaperPage[], chapters: PaperLayout['chapters']): PaperLayout {
-    const blockPages: PaperLayout['blockPages'] = {};
-    for (const [page, entry] of pages.entries()) {
-      entry.source.querySelectorAll<HTMLElement>('[data-libria-block]').forEach((block) => {
-        const [chapterIndex, blockIndex] = block.dataset['libriaBlock']!.split(':').map(Number);
-        const id = this.latestInput?.chapters[chapterIndex]?.id;
-        if (id) (blockPages[id] ??= {})[blockIndex] ??= page;
-      });
+  private indexChapter(pages: HTMLElement[]): Record<number, number> {
+    const cached = this.chapterBlocks.get(pages);
+    if (cached) return cached;
+
+    const index: Record<number, number> = {};
+    for (const [page, source] of pages.entries()) {
+      for (const block of source.querySelectorAll<HTMLElement>('[data-libria-block]')) {
+        const blockIndex = Number(block.dataset['libriaBlock']!.split(':')[1]);
+        index[blockIndex] ??= page;
+      }
     }
-    return { pages, chapters, blockPages };
+    this.chapterBlocks.set(pages, index);
+    return index;
+  }
+
+  private indexWholeBook(pages: PaperPage[], chapters: Chapter[]): PaperLayout['blockPages'] {
+    const index: PaperLayout['blockPages'] = {};
+    for (const [page, { source }] of pages.entries()) {
+      for (const block of source.querySelectorAll<HTMLElement>('[data-libria-block]')) {
+        const [chapterIndex, blockIndex] = block.dataset['libriaBlock']!.split(':').map(Number);
+        const id = chapters[chapterIndex]?.id;
+        if (id) (index[id] ??= { offset: 0, pages: {} }).pages[blockIndex] ??= page;
+      }
+    }
+    return index;
   }
 
   private render(html: string, parity: number): Promise<HTMLElement[]> {

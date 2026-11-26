@@ -153,8 +153,16 @@ function untitledLabel(lang: string): string {
 
 const blockWordCounts = new WeakMap<object, { text: string | undefined; count: number }>();
 
-function calculateWords(body: { text?: string }[]): number {
-  return body.reduce((sum, b) => {
+function literalSearchPattern(query: string): RegExp {
+  return new RegExp(query.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&'), 'giu');
+}
+
+const bodyWordCounts = new WeakMap<Chapter['body'], number>();
+
+function calculateWords(body: Chapter['body']): number {
+  const cachedTotal = bodyWordCounts.get(body);
+  if (cachedTotal !== undefined) return cachedTotal;
+  const total = body.reduce((sum, b) => {
     const cached = blockWordCounts.get(b);
     if (cached && cached.text === b.text) return sum + cached.count;
     const text = (b.text || '').trim();
@@ -162,6 +170,8 @@ function calculateWords(body: { text?: string }[]): number {
     blockWordCounts.set(b, { text: b.text, count });
     return sum + count;
   }, 0);
+  bodyWordCounts.set(body, total);
+  return total;
 }
 
 function calculateReadMin(words: number): number {
@@ -314,6 +324,8 @@ export const BookStore = signalStore(
       const { mode, sidebar, spellcheck } = store.personalConfig();
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        searchQuery: '',
+        searchResults: [],
         documentRevision: typeof migrated.revision === 'number' ? migrated.revision : 0,
         modifiedAt: migrated.modifiedAt ?? '',
         modifiedBy: migrated.modifiedBy ?? '',
@@ -377,6 +389,8 @@ export const BookStore = signalStore(
       const chapters = imported?.chapters.length ? imported.chapters.map(withBlockIds) : [firstChapter];
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        searchQuery: '',
+        searchResults: [],
         documentRevision: 0,
         modifiedAt: '',
         modifiedBy: '',
@@ -559,6 +573,8 @@ export const BookStore = signalStore(
       assetService.clear();
       patchState(store, {
         documentSession: store.documentSession() + 1,
+        searchQuery: '',
+        searchResults: [],
         documentRevision: 0,
         modifiedAt: '',
         modifiedBy: '',
@@ -1112,17 +1128,16 @@ export const BookStore = signalStore(
         return;
       }
       const results: SearchResult[] = [];
-      const lowerQuery = query.toLowerCase();
+      const pattern = literalSearchPattern(query);
       for (const chapter of store.chapters()) {
         for (let bi = 0; bi < chapter.body.length; bi++) {
           const block = chapter.body[bi];
           const text = block.text || '';
-          const lowerText = text.toLowerCase();
-          let pos = 0;
-          let mi = 0;
-          while ((pos = lowerText.indexOf(lowerQuery, pos)) !== -1) {
-            const start = Math.max(0, pos - 40);
-            const end = Math.min(text.length, pos + query.length + 40);
+          let match: RegExpExecArray | null;
+          let matchIndex = 0;
+          while ((match = pattern.exec(text)) !== null) {
+            const start = match.index;
+            const end = pattern.lastIndex;
             results.push({
               chapterId: chapter.id,
               chapterTitle: chapter.title,
@@ -1130,31 +1145,41 @@ export const BookStore = signalStore(
               chapterNumber: chapter.number,
               blockIndex: bi,
               blockType: block.type,
-              matchIndex: mi++,
-              before: text.slice(start, pos),
-              match: text.slice(pos, pos + query.length),
-              after: text.slice(pos + query.length, end)
+              matchIndex: matchIndex++,
+              before: text.slice(Math.max(0, start - 40), start),
+              match: match[0],
+              after: text.slice(end, end + 40)
             });
-            pos += query.length;
           }
         }
       }
-      patchState(store, { searchQuery: query, searchResults: results, ui: { ...store.ui(), activeNav: 'search', showStyles: false } });
+      const ui = store.ui();
+      patchState(store, {
+        searchQuery: query,
+        searchResults: results,
+        ui: ui.activeNav === 'search' && !ui.showStyles ? ui : { ...ui, activeNav: 'search', showStyles: false }
+      });
     },
     replaceAll(replaceWith: string) {
       const query = store.searchQuery();
       if (!query.trim() || !store.chapters().length) return;
       
+      const pattern = literalSearchPattern(query);
       const chapters = store.chapters().map(chapter => {
-        const newBody = chapter.body.map(block => {
+        let changed = false;
+        const body = chapter.body.map(block => {
           const text = block.text || '';
-          if (!text.toLowerCase().includes(query.toLowerCase())) return block;
-          const newText = text.replace(new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), replaceWith);
-          return { ...block, text: newText, html: undefined };
+          pattern.lastIndex = 0;
+          if (!pattern.test(text)) return block;
+          changed = true;
+          return { ...block, text: text.replace(pattern, replaceWith), html: undefined };
         });
-        const words = calculateWords(newBody); return { ...chapter, body: newBody, words, readMin: calculateReadMin(words) };
+        if (!changed) return chapter;
+
+        const words = calculateWords(body);
+        return { ...chapter, body, words, readMin: calculateReadMin(words) };
       });
-      
+
       patchState(store, {
         chapters,
         replaceQuery: replaceWith,
@@ -1201,17 +1226,10 @@ export const BookStore = signalStore(
       let previousSession = -1;
       let previousWords = 0;
       let previousChapters: Chapter[] | undefined;
-      const wordsByBody = new WeakMap<Chapter['body'], number>();
       watchState(store, (state) => {
         const sameSession = previousSession === state.documentSession;
         if (sameSession && previousChapters === state.chapters) return;
-        const words = state.chapters.reduce((sum, { body }) => {
-          const cached = wordsByBody.get(body);
-          if (cached !== undefined) return sum + cached;
-          const count = calculateWords(body);
-          wordsByBody.set(body, count);
-          return sum + count;
-        }, 0);
+        const words = state.chapters.reduce((sum, { body }) => sum + calculateWords(body), 0);
         const delta = words - previousWords;
         previousSession = state.documentSession;
         previousWords = words;

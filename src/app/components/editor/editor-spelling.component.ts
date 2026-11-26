@@ -45,6 +45,10 @@ export class EditorSpellingComponent {
   private readonly ignored = signal(new Set<string>());
   private ranges = new WeakMap<HTMLElement, SpellingRange[]>();
   private observer?: MutationObserver;
+  private highlight?: Highlight;
+  private readonly highlighted = new Map<HTMLElement, SpellingRange[]>();
+  private readonly dirty = new Set<HTMLElement>();
+  private refreshAll = true;
   private checkedEngine: NSpell | null = null;
   private checkedIgnored?: Set<string>;
   private timer?: ReturnType<typeof setTimeout>;
@@ -127,20 +131,24 @@ export class EditorSpellingComponent {
   private invalidateTarget(target: EventTarget | null) {
     const element = target instanceof Element ? target : target instanceof Node ? target.parentElement : null;
     const editable = element?.closest<HTMLElement>('[data-libria-spelling]');
-    if (editable) this.ranges.delete(editable);
+    if (editable) this.markDirty(editable);
   }
 
   private invalidate(records: MutationRecord[]) {
     for (const record of records) {
       this.invalidateTarget(record.target);
-      // A detached subtree can later be reinserted with edits made off-DOM.
-      for (const node of record.addedNodes) {
-        if (node instanceof HTMLElement) {
-          this.ranges.delete(node);
-          node.querySelectorAll<HTMLElement>('[data-libria-spelling]').forEach(element => this.ranges.delete(element));
-        }
+      // Reconcile both removals and reinsertion after off-DOM edits.
+      for (const node of [...record.addedNodes, ...record.removedNodes]) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (node.matches('[data-libria-spelling]')) this.markDirty(node);
+        node.querySelectorAll<HTMLElement>('[data-libria-spelling]').forEach(element => this.markDirty(element));
       }
     }
+  }
+
+  private markDirty(element: HTMLElement) {
+    this.ranges.delete(element);
+    this.dirty.add(element);
   }
 
   private schedule() {
@@ -154,6 +162,7 @@ export class EditorSpellingComponent {
     const ignored = this.ignored();
     if (engine !== this.checkedEngine || ignored !== this.checkedIgnored) {
       this.ranges = new WeakMap();
+      this.refreshAll = true;
       this.checkedEngine = engine;
       this.checkedIgnored = ignored;
     }
@@ -174,18 +183,34 @@ export class EditorSpellingComponent {
   refresh() {
     const correct = this.prepare();
     if (typeof Highlight === 'undefined' || !globalThis.CSS?.highlights) return;
-    const highlight = new Highlight();
-    if (correct) {
-      const results = new Map<string, boolean>();
-      const check = (word: string) => {
-        if (!results.has(word)) results.set(word, correct(word));
-        return results.get(word)!;
-      };
-      for (const element of this.root.querySelectorAll<HTMLElement>('[data-libria-spelling]')) {
-        for (const item of this.rangesFor(element, check)) highlight.add(item.range);
+    if (this.refreshAll || !this.highlight || !correct) {
+      this.highlight = new Highlight();
+      CSS.highlights.set('libria-spelling', this.highlight);
+      this.highlighted.clear();
+      this.dirty.clear();
+      if (correct) {
+        for (const element of this.root.querySelectorAll<HTMLElement>('[data-libria-spelling]')) {
+          this.dirty.add(element);
+        }
       }
+      this.refreshAll = false;
     }
-    CSS.highlights.set('libria-spelling', highlight);
+    if (!correct) return;
+
+    const results = new Map<string, boolean>();
+    const check = (word: string) => {
+      if (!results.has(word)) results.set(word, correct(word));
+      return results.get(word)!;
+    };
+    for (const element of this.dirty) {
+      for (const item of this.highlighted.get(element) ?? []) this.highlight.delete(item.range);
+      this.highlighted.delete(element);
+      if (!this.root.contains(element)) continue;
+      const ranges = this.rangesFor(element, check);
+      if (ranges.length) this.highlighted.set(element, ranges);
+      for (const item of ranges) this.highlight.add(item.range);
+    }
+    this.dirty.clear();
   }
 
   readonly contextMenu = (event: MouseEvent) => {
@@ -222,6 +247,7 @@ export class EditorSpellingComponent {
     try {
       if (!await this.spelling.addWord(word)) throw new Error('Dictionary write failed');
       this.ranges = new WeakMap();
+      this.refreshAll = true;
       this.refresh();
     } catch { this.error.set(true); }
   }

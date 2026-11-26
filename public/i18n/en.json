@@ -205,6 +205,8 @@
   "sidebar.replaceAll": "Replace All",
   "sidebar.resultCount": "{{count}} result",
   "sidebar.resultCount_plural": "{{count}} results",
+  "sidebar.searchNext": "Next",
+  "sidebar.searchPrevious": "Previous",
   "sidebar.noResults": "No results for \"{{query}}\".",
   "sidebar.settingsTitle": "Settings",
   "sidebar.settingsDesc": "Application preferences",

@@ -27,14 +27,14 @@
        [class.layout--sb-closed]="!store.ui.sidebarOpen()"
        [style.--pv-width.px]="store.personalConfig().previewWidth">
     @if (store.book()) {
-      @if (store.tweaks.sidebar() === 'left') {
-        <div class="layout__side">
-          <app-sidebar></app-sidebar>
+      <div class="layout__side">
+        <app-sidebar></app-sidebar>
+        @if (store.tweaks.sidebar() === 'left') {
           <button class="sb__close-tab" (click)="store.closeSidebar()" title="Cerrar panel">
             <span class="material-symbols-outlined">close</span>
           </button>
-        </div>
-      }
+        }
+      </div>
 
       <div class="layout__ed">
         <app-editor></app-editor>
@@ -48,11 +48,6 @@
         </div>
       }
 
-      @if (store.tweaks.sidebar() === 'right') {
-        <div class="layout__side">
-          <app-sidebar></app-sidebar>
-        </div>
-      }
     } @else {
       <app-welcome></app-welcome>
     }
