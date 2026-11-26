@@ -27,6 +27,7 @@ import {
   effect,
   untracked,
   ChangeDetectionStrategy,
+  ElementRef,
   OnDestroy,
 } from '@angular/core';
 import { BookStore } from '../../store/book.store';
@@ -86,6 +87,7 @@ export class EditorComponent implements OnDestroy {
       this.focusedBlockIndex.set(-1);
       this._savedSelection = null;
       this.stopDragSelection();
+      this._suppressInput = false;
       this.selectionToolbar.set(null);
     });
   });
@@ -177,6 +179,8 @@ export class EditorComponent implements OnDestroy {
   readonly footnotes = inject(EditorFootnoteService);
   readonly notes = inject(EditorNotesState);
   readonly store = inject(BookStore);
+  private readonly hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+  private destroyed = false;
   readonly shortcutModifier = (window.desktopAPI?.platform === 'darwin' ||
     (!window.desktopAPI && /Mac|iPhone|iPad/.test(navigator.platform))) ? 'Cmd' : 'Ctrl';
   readonly fileService = inject(FileService);
@@ -192,7 +196,7 @@ export class EditorComponent implements OnDestroy {
     if (blockIndex === null) return;
     const chapter = this.store.activeChapter();
     if (!chapter) return;
-    setTimeout(() => {
+    this.afterEditorDelay(() => {
       const el = this._getEditableBlock(blockIndex);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -437,7 +441,7 @@ export class EditorComponent implements OnDestroy {
     this._suppressInput = true;
     const currentIdx = blockIndex + following.length;
 
-    setTimeout(() => {
+    this.afterEditorDelay(() => {
       this._suppressInput = false;
       const lastEl = this._getEditableBlock(currentIdx);
       if (lastEl) {
@@ -523,7 +527,7 @@ export class EditorComponent implements OnDestroy {
 
     const next = this._nextEditableIndex(index - 1);
     const targetIndex = next >= 0 ? next : this._prevEditableIndex(index);
-    setTimeout(() => {
+    this.afterEditorDelay(() => {
       if (this.store.activeChapterId() !== chapterId) return;
       const target = this._getEditableBlock(targetIndex);
       if (target) {
@@ -807,7 +811,7 @@ export class EditorComponent implements OnDestroy {
     start.focus();
     this._placeCursorAt(start, offset + lines[0].length);
     if (parts.length > 1) {
-      setTimeout(() => {
+      this.afterEditorDelay(() => {
         const target = this._getEditableBlock(first + parts.length - 1);
         if (target) {
           target.focus();
@@ -994,7 +998,7 @@ export class EditorComponent implements OnDestroy {
         remainingText.setEnd(el, el.childNodes.length);
         if (sel.isCollapsed && remainingText.toString() === '') {
           this.store.insertBlock(chapterId, blockIndex, 'p');
-          setTimeout(() => {
+          this.afterEditorDelay(() => {
             if (this.store.activeChapterId() !== chapterId || document.activeElement !== el) return;
             const next = this._getEditableBlock(blockIndex + 1);
             next?.focus();
@@ -1027,7 +1031,7 @@ export class EditorComponent implements OnDestroy {
         this._suppressInput = true;
         this.store.splitBlock(chapterId, blockIndex, cursor);
 
-        setTimeout(() => {
+        this.afterEditorDelay(() => {
           this._suppressInput = false;
           const cur = this._getEditableBlock(blockIndex);
           if (cur && cur.textContent !== textBefore) cur.textContent = textBefore;
@@ -1058,7 +1062,7 @@ export class EditorComponent implements OnDestroy {
           // Delete the non-editable block instead of merging into it
           this._suppressInput = true;
           this.store.deleteBlock(chapterId, blockIndex - 1);
-          setTimeout(() => {
+          this.afterEditorDelay(() => {
             this._suppressInput = false;
             // After deletion, current block is now at blockIndex - 1
             const cur = this._getEditableBlock(blockIndex - 1);
@@ -1082,7 +1086,7 @@ export class EditorComponent implements OnDestroy {
           this._suppressInput = true;
           this.store.mergeWithPrevious(chapterId, blockIndex);
 
-          setTimeout(() => {
+          this.afterEditorDelay(() => {
             this._suppressInput = false;
             const merged = this._getEditableBlock(blockIndex - 1);
             if (merged) {
@@ -1115,7 +1119,7 @@ export class EditorComponent implements OnDestroy {
           // Delete the non-editable block
           this._suppressInput = true;
           this.store.deleteBlock(chapterId, blockIndex + 1);
-          setTimeout(() => {
+          this.afterEditorDelay(() => {
             this._suppressInput = false;
             const cur = this._getEditableBlock(blockIndex);
             if (cur) {
@@ -1135,7 +1139,7 @@ export class EditorComponent implements OnDestroy {
           this.store.updateChapterBlock(chapterId, blockIndex, curText);
           this.store.mergeBlockWithNext(chapterId, blockIndex);
 
-          setTimeout(() => {
+          this.afterEditorDelay(() => {
             this._suppressInput = false;
             const cur = this._getEditableBlock(blockIndex);
             if (cur) {
@@ -1190,7 +1194,7 @@ export class EditorComponent implements OnDestroy {
    * Uses the container position so scene-breaks don't shift the index.
    */
   private _getEditableBlock(index: number) {
-    return getEditableBlock(index);
+    return getEditableBlock(index, this.hostElement.nativeElement);
   }
 
   private readonly _nonEditableTypes = new Set(['scene-break', 'image', 'page-break']);
@@ -1322,7 +1326,7 @@ export class EditorComponent implements OnDestroy {
 
   private _focusAfterHistory() {
     const savedOffset = this._savedCaretOffset;
-    setTimeout(() => {
+    this.afterEditorDelay(() => {
       let idx = this.lastFocusedIndex;
       if (idx < 0) idx = 0;
       const el = this._getEditableBlock(idx) || this._getEditableBlock(0);
@@ -1333,7 +1337,15 @@ export class EditorComponent implements OnDestroy {
     }, 50);
   }
 
+  private afterEditorDelay(callback: () => void, delay: number) {
+    const chapterId = this.store.activeChapter()?.id;
+    setTimeout(() => {
+      if (!this.destroyed && this.store.activeChapter()?.id === chapterId) callback();
+    }, delay);
+  }
+
   ngOnDestroy() {
+    this.destroyed = true;
     this.stopDragSelection();
     restoreEditorSelectionSurface();
     clearTimeout(this._inputTimeout);

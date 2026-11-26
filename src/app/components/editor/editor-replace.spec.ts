@@ -136,6 +136,24 @@ describe('reemplazar texto escribiendo', () => {
     expect(body[2].text).toBe(' cruel');
   });
 
+  it('does not apply a queued split to a replacement editor', async () => {
+    vi.useFakeTimers();
+    select(paragraph, 5, 10);
+    paragraph.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', cancelable: true }));
+    fixture.destroy();
+
+    store.createNewProject();
+    const id = store.activeChapterId();
+    store.updateChapterBlock(id, 1, 'Primer párrafo.');
+    store.insertBlock(id, 1, 'p', 'Segundo párrafo.');
+    fixture = TestBed.createComponent(EditorComponent);
+    fixture.detectChanges();
+    await vi.advanceTimersByTimeAsync(16);
+
+    expect(Array.from(fixture.nativeElement.querySelectorAll('.bk-p'),
+      (element: HTMLElement) => element.textContent)).toEqual(['Primer párrafo.', 'Segundo párrafo.']);
+  });
+
   it('keeps the following paragraph visible after cutting a paragraph and pressing Backspace', async () => {
     paragraph.blur();
     window.getSelection()!.removeAllRanges();

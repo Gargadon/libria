@@ -144,6 +144,7 @@ describe('pending paragraph edits', () => {
     };
     const editor = Object.assign(Object.create(EditorComponent.prototype), {
       store, _nativeBlocks: new Set(), _pendingStoreUpdate: null,
+      hostElement: { nativeElement: document.querySelector('.ed__doc') },
     }) as EditorComponent;
     const selection = window.getSelection()!;
     if (backward) selection.setBaseAndExtent(elements[2].firstChild!, 3, elements[0].firstChild!, 6);

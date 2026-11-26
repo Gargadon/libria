@@ -6,8 +6,8 @@ export function contenteditableOf(node: Node): HTMLElement | null {
   return (node as HTMLElement).closest('[contenteditable="true"]');
 }
 
-export function getEditableBlock(i: number): HTMLElement | null {
-  const containers = document.querySelectorAll<HTMLElement>('.ed__block-container');
+export function getEditableBlock(i: number, root: HTMLElement): HTMLElement | null {
+  const containers = root.querySelectorAll<HTMLElement>('.ed__block-container');
   return containers[i]?.querySelector<HTMLElement>('[contenteditable="true"]') ?? null;
 }
 
