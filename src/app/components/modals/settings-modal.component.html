@@ -1,4 +1,5 @@
-<dialog #dialog class="settings" aria-labelledby="settings-title" (keydown)="$event.stopPropagation()">
+<dialog #dialog class="settings" aria-labelledby="settings-title" (keydown)="$event.stopPropagation()"
+  (close)="setName(authorName.value)">
   <header class="settings__header">
     <h2 id="settings-title">{{ 'sidebar.settingsTitle' | translate }}</h2>
     <button type="button" class="exit-modal__btn" (click)="close()" autofocus>
@@ -41,8 +42,8 @@
       <div class="settings__fields">
         <label>
           {{ 'sidebar.authorName' | translate }}
-          <input class="sb__input" type="text" [ngModel]="store.personalConfig().userName"
-            (ngModelChange)="setName($event)" aria-describedby="settings-name-help" />
+          <input #authorName class="sb__input" type="text" [value]="store.personalConfig.userName()"
+            (change)="setName(authorName.value)" aria-describedby="settings-name-help" />
           <small id="settings-name-help">{{ 'sidebar.nameHelp' | translate }}</small>
         </label>
         <div class="settings__avatar">

@@ -70,6 +70,18 @@ describe('isolated device preview pagination', () => {
     expect(component.devicePage()).toBe(0);
   });
 
+  it('keeps device pagination cached after appearance and editor preferences change', async () => {
+    const { fixture, component, store } = await setup();
+    const offsets = component.realPageOffsets();
+    store.setThemeMode(store.tweaks.mode() === 'dark' ? 'light' : 'dark');
+    store.updateTweak('sidebar', store.tweaks.sidebar() === 'left' ? 'right' : 'left');
+    store.updateTweak('spellcheck', !store.tweaks.spellcheck());
+    fixture.detectChanges();
+    component.measureDOM();
+    expect(component.devicePaginationPending()).toBe(false);
+    expect(component.realPageOffsets()).toEqual(offsets);
+  });
+
   it('uses cached block pages for cursor movement without reading layout', async () => {
     const { fixture, component } = await setup();
     const rects = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect'); rects.mockClear();

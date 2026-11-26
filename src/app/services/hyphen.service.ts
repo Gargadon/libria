@@ -1,4 +1,4 @@
-import { Injectable, inject, effect } from '@angular/core';
+import { Injectable, inject, effect, signal } from '@angular/core';
 import { BookStore } from '../store/book.store';
 import hyphen from 'hyphen';
 
@@ -21,6 +21,8 @@ function extractPattern(mod: PatternModule): any {
 
 @Injectable({ providedIn: 'root' })
 export class HyphenService {
+  private readonly patternRevision = signal(0);
+  readonly revision = this.patternRevision.asReadonly();
   private hyphenators = new Map<string, any>();
   private loading = new Set<string>();
   private cache = new Map<string, string>();
@@ -47,6 +49,7 @@ export class HyphenService {
       const pattern = extractPattern(mod);
       if (pattern) {
         this.hyphenators.set(cacheKey, hyphen(pattern, { html: true }));
+        this.patternRevision.update(value => value + 1);
       }
     } catch {
       // pattern loading failed silently

@@ -67,6 +67,27 @@ describe('persistent manuscript recovery', () => {
     expect(records.some(v => v.content.includes('Segunda versión'))).toBe(true);
   });
 
+  it('preserves the serialized manuscript across incremental recovery copies', async () => {
+    const service = TestBed.inject(RecoveryService);
+    const store = TestBed.inject(BookStore);
+    const files = TestBed.inject(FileService);
+    const assets = TestBed.inject(AssetService);
+    store.createNewProject();
+    assets.set('cover', 'data:image/png;base64,AAAA');
+    TestBed.tick();
+    await service.flush();
+
+    store.updateChapterBlock(store.chapters()[0].id, 1, 'Párrafo editado');
+    TestBed.tick();
+    await service.flush();
+    expect(JSON.parse(records[0].content)).toEqual(JSON.parse(files.documentContent()));
+
+    assets.set('cover', 'data:image/png;base64,BBBB');
+    TestBed.tick();
+    await service.flush();
+    expect(JSON.parse(records[0].content)).toEqual(JSON.parse(files.documentContent()));
+  });
+
   it('surfaces storage failures and refuses to replace unprotected current work', async () => {
     const service = TestBed.inject(RecoveryService);
     const store = TestBed.inject(BookStore);

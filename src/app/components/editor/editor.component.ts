@@ -85,6 +85,7 @@ export class EditorComponent implements OnDestroy {
       this.lastFocusedIndex = -1;
       this.focusedBlockIndex.set(-1);
       this._savedSelection = null;
+      this.stopDragSelection();
       this.selectionToolbar.set(null);
     });
   });
@@ -274,7 +275,10 @@ export class EditorComponent implements OnDestroy {
   private _pendingStoreUpdate: (() => void) | null = null;
 
   // ─── Drag selection across blocks ────────────────────────────────────────────
-  private _anchorCaret: { node: Node; offset: number } | null = null;
+  private _anchorCaret: { node: Node; offset: number; bounds: Range | null; body: Block[] | undefined } | null = null;
+  private dragMoved = false;
+  private dragFrame?: number;
+  private dragPoint?: { x: number; y: number };
 
   readonly activeBlockType = computed(() => {
     const chapter = this.store.activeChapter();
@@ -308,11 +312,8 @@ export class EditorComponent implements OnDestroy {
     ) {
       restoreEditorSelectionSurface(true);
     }
+    if (this._anchorCaret) return;
     this._constrainSelection();
-    if (this._anchorCaret) {
-      this.selectionToolbar.set(null);
-      return;
-    }
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
       this.selectionToolbar.set(null);
@@ -460,7 +461,14 @@ export class EditorComponent implements OnDestroy {
 
     clearTimeout(this._storeUpdateTimeout);
     // Capture before a split/merge can clear or reuse this DOM element.
-    const text = element.innerText.replace(/\n$/, '');
+    const child = element.firstChild;
+    const plain = child && !child.nextSibling && child.nodeType === Node.TEXT_NODE &&
+      element.classList.contains('bk-p') ? child.textContent : null;
+    // A simple paragraph needs no layout read. Use the rendered text for
+    // formatting, line breaks and whitespace that CSS can collapse.
+    const text = plain !== null && plain.trim() === plain && !/[\t\r\n\f]| {2}/.test(plain)
+      ? plain
+      : (element.innerText ?? element.textContent ?? '').replace(/\n$/, '');
     const html = element.innerHTML;
     this._pendingStoreUpdate = () => {
       this.store.updateChapterBlock(chapterId, blockIndex, text, html);
@@ -529,7 +537,7 @@ export class EditorComponent implements OnDestroy {
   onEditorMouseDown(event: MouseEvent) {
     const target = event.target as HTMLElement;
     if (target.closest('.ed__selection-toolbar')) return;
-    this._anchorCaret = null;
+    this.stopDragSelection();
     restoreEditorSelectionSurface();
     if (event.button !== 0 || event.detail > 1) return;
     const editor = target.closest('.ed__doc');
@@ -566,7 +574,9 @@ export class EditorComponent implements OnDestroy {
     // on mouseup. Own the gesture from mousedown, not just its intermediate range.
     event.preventDefault();
     editable.focus({ preventScroll: true });
-    this._anchorCaret = anchor;
+    this._anchorCaret = {
+      ...anchor, bounds: selectionRegionRange(anchor.node), body: this.store.activeChapter()?.body,
+    };
     this.selectionToolbar.set(null);
     this.updateDragSelection(event.clientX, event.clientY, range);
   }
@@ -575,11 +585,21 @@ export class EditorComponent implements OnDestroy {
   onEditorMouseMove(event: MouseEvent) {
     if (!this._anchorCaret) return;
     if (event.buttons !== 1) {
-      this._anchorCaret = null;
+      this.stopDragSelection();
       return;
     }
     event.preventDefault();
-    this.updateDragSelection(event.clientX, event.clientY);
+    if (!this.dragMoved) {
+      this.dragMoved = true;
+      this.updateDragSelection(event.clientX, event.clientY);
+      return;
+    }
+    this.dragPoint = { x: event.clientX, y: event.clientY };
+    this.dragFrame ??= requestAnimationFrame(() => {
+      this.dragFrame = undefined;
+      const point = this.dragPoint;
+      if (point) this.updateDragSelection(point.x, point.y);
+    });
   }
 
   private updateDragSelection(clientX: number, clientY: number, caret?: Range) {
@@ -589,7 +609,12 @@ export class EditorComponent implements OnDestroy {
     if (!range) return;
     let node = range.startContainer;
     let offset = range.startOffset;
-    const bounds = selectionRegionRange(anchor.node);
+    const body = this.store.activeChapter()?.body;
+    if (anchor.body !== body) {
+      anchor.body = body;
+      anchor.bounds = selectionRegionRange(anchor.node);
+    }
+    const bounds = anchor.bounds;
     if (bounds) {
       const side = bounds.comparePoint(node, offset);
       if (side !== 0) {
@@ -606,12 +631,20 @@ export class EditorComponent implements OnDestroy {
     event.preventDefault();
     // Commit the release position synchronously; no queued frame can be lost.
     this.updateDragSelection(event.clientX, event.clientY);
-    this._anchorCaret = null;
+    this.stopDragSelection();
     this.onDocumentSelectionChange();
   }
 
   @HostListener('window:blur')
   onEditorWindowBlur() {
+    this.stopDragSelection();
+  }
+
+  private stopDragSelection() {
+    if (this.dragFrame !== undefined) cancelAnimationFrame(this.dragFrame);
+    this.dragFrame = undefined;
+    this.dragPoint = undefined;
+    this.dragMoved = false;
     this._anchorCaret = null;
   }
 
@@ -1301,6 +1334,7 @@ export class EditorComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
+    this.stopDragSelection();
     restoreEditorSelectionSurface();
     clearTimeout(this._inputTimeout);
     clearTimeout(this._storeUpdateTimeout);

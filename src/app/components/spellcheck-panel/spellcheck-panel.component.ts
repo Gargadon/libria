@@ -90,19 +90,31 @@ export class SpellcheckPanelComponent {
   private readonly engine = signal<NSpell | null>(null);
   private readonly ignored = signal(new Set<string>());
   private request = 0;
+  private firstError = new WeakMap<object, string | null>();
+  private readonly wordValidity = new Map<string, boolean>();
   readonly current = computed(() => {
     this.spelling.revision();
     const engine = this.engine();
     const chapter = this.store.activeChapter();
     if (!engine || !chapter) return null;
+    const ignored = this.ignored();
     for (const [blockIndex, block] of chapter.body.entries()) {
       if (block.type === 'code') continue;
-      for (const match of (block.text || '').matchAll(/\p{L}[\p{L}\p{M}]*(?:['’]\p{L}[\p{L}\p{M}]*)*/gu)) {
-        const word = match[0];
-        if (!this.ignored().has(word) && !engine.correct(word)) {
-          return { word, blockIndex, chapterId: chapter.id, context: block.text };
+      let word = this.firstError.get(block);
+      if (word === undefined || (word && ignored.has(word))) {
+        word = null;
+        for (const [candidate] of (block.text || '').matchAll(/\p{L}[\p{L}\p{M}]*(?:['’]\p{L}[\p{L}\p{M}]*)*/gu)) {
+          if (ignored.has(candidate)) continue;
+          let valid = this.wordValidity.get(candidate);
+          if (valid === undefined) {
+            valid = engine.correct(candidate);
+            this.wordValidity.set(candidate, valid);
+          }
+          if (!valid) { word = candidate; break; }
         }
+        this.firstError.set(block, word);
       }
+      if (word) return { word, blockIndex, chapterId: chapter.id, context: block.text };
     }
     return null;
   });
@@ -141,7 +153,11 @@ export class SpellcheckPanelComponent {
     this.engine.set(null);
     try {
       const engine = await this.spelling.loadDictionary(this.store.domLang());
-      if (request === this.request) this.engine.set(engine);
+      if (request === this.request) {
+        this.firstError = new WeakMap();
+        this.wordValidity.clear();
+        this.engine.set(engine);
+      }
     } catch { if (request === this.request) this.error.set(true); }
     finally { if (request === this.request) this.loading.set(false); }
   }

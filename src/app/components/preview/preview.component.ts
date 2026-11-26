@@ -9,6 +9,7 @@ import { PrintHtmlService } from '../../services/export/print-html.service';
 import { BlockViewComponent } from '../block-view/block-view.component';
 import { PaperPreviewService, PaperLayout } from '../../services/preview/paper-preview.service';
 import { EditorPositionService } from '../../services/editor-position.service';
+import { HyphenService } from '../../services/hyphen.service';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -344,6 +345,9 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class PreviewComponent implements AfterViewInit, OnDestroy {
   readonly store = inject(BookStore);
+  private readonly hyphen = inject(HyphenService);
+  private devicePendingChapters: Chapter[] = [];
+  private devicePublishTimer?: ReturnType<typeof setTimeout>;
   private readonly editorPosition = inject(EditorPositionService);
   readonly assetService = inject(AssetService);
 
@@ -479,6 +483,13 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
   resetFontSize() { this.deviceFontSizeOffset.set(0); }
 
   private readonly appCache = inject(AppCacheService);
+  private readonly layoutTweaks = computed(() => {
+    const { mode, sidebar, spellcheck, pdfxCompliant, ...layout } = this.store.tweaks();
+    return layout;
+  }, {
+    equal: (previous, next) =>
+      (Object.keys(next) as (keyof typeof next)[]).every(key => Object.is(previous[key], next[key])),
+  });
 
   constructor() {
     effect(() => {
@@ -519,7 +530,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       this.store.book()?.headingImage;
       this.chapters(); // debounced — not store.chapters() — avoids measureDOM on every keystroke
-      this.store.tweaks();
+      this.layoutTweaks();
       this.pageSize();
       this.mode();
       this.deviceFontSizeOffset();
@@ -571,8 +582,10 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       }
       const ready = this.paperReady();
       const book = this.store.book();
+      const tweaks = this.layoutTweaks();
       const input = book && {
-        book, chapters: this.store.chapters(), tweaks: this.store.tweaks(),
+        book, chapters: this.store.chapters(), tweaks,
+        hyphenationContext: tweaks.hyphenation ? `${this.store.domLang()}:${this.hyphen.revision()}` : '',
         bodyFont: this.store.bookFontFamily(), titleFont: this.store.titleFontFamily(),
         assets: this.assetService.assets(),
       };
@@ -624,6 +637,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.deviceDestroyed = true;
+    clearTimeout(this.devicePublishTimer);
     document.fonts?.removeEventListener('loadingdone', this.deviceFontsLoaded);
     this.deviceGeneration++;
     clearTimeout(this.deviceTask);
@@ -689,7 +703,7 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const flow = this.kpFlowEl?.nativeElement;
     if (!flow || flow.clientWidth <= 0 || flow.clientHeight <= 0) return;
     const viewport = `${flow.clientWidth}:${flow.clientHeight}`;
-    const signature = JSON.stringify([this.mode(), viewport, this.store.tweaks(), this.store.book()?.headingImage,
+    const signature = JSON.stringify([this.mode(), viewport, this.layoutTweaks(), this.store.book()?.headingImage,
       this.store.bookFontFamily(), this.store.titleFontFamily(), this.deviceFontSizeOffset()]);
     if (signature !== this.deviceSignature || this.deviceAssets !== this.assetService.assets()) {
       this.deviceSignature = signature;
@@ -697,10 +711,13 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       this.deviceCache.clear();
     }
     this.deviceViewport = viewport;
-    const chapters = this.chapters();
+    const chapters = new Map(this.chapters().map(chapter => [chapter.id, chapter]));
     for (const [id, entry] of this.deviceCache) {
-      if (chapters.find(chapter => chapter.id === id) !== entry.chapter) this.deviceCache.delete(id);
+      if (chapters.get(id) !== entry.chapter) this.deviceCache.delete(id);
     }
+    this.devicePendingChapters = this.chapters().filter(chapter => !this.deviceCache.has(chapter.id)).reverse();
+    const visible = this.devicePendingChapters.findIndex(chapter => chapter.id === this.deviceChapterId());
+    if (visible >= 0) this.devicePendingChapters.push(...this.devicePendingChapters.splice(visible, 1));
     this.publishDeviceLayout();
     this.measureNextDeviceChapter();
   }
@@ -711,10 +728,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.deviceFrame !== undefined) cancelAnimationFrame(this.deviceFrame);
     const generation = ++this.deviceGeneration;
     if (this.deviceDestroyed || this.mode() === 'print') { this.measuringChapter.set(null); return; }
-    const chapters = this.chapters();
-    const chapter = chapters.find(c => c.id === this.deviceChapterId() && !this.deviceCache.has(c.id))
-      ?? chapters.find(c => !this.deviceCache.has(c.id));
-    if (!chapter) { this.measuringChapter.set(null); return; }
+    const chapter = this.devicePendingChapters.pop();
+    if (!chapter) {
+      this.measuringChapter.set(null);
+      if (this.devicePublishTimer !== undefined) this.publishDeviceLayout();
+      return;
+    }
     // Yield between chapters so input and painting can run, including on low-end machines.
     this.deviceTask = setTimeout(() => {
       this.measuringChapter.set(chapter);
@@ -750,11 +769,16 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     if (this.followDeviceEditor && chapter.id === this.deviceChapterId() && position?.chapterId === chapter.id) {
       this.devicePage.set(blocks[position.blockIndex] ?? 0);
     }
-    this.publishDeviceLayout();
+    // Publish the visible chapter promptly and group background measurements.
+    if (chapter.id === this.deviceChapterId()) this.publishDeviceLayout();
+    else this.devicePublishTimer ??= setTimeout(() => this.publishDeviceLayout(), 250);
     this.measureNextDeviceChapter();
   }
 
   private publishDeviceLayout() {
+    clearTimeout(this.devicePublishTimer);
+    this.devicePublishTimer = undefined;
+    if (this.mode() === 'print') return;
     const offsets: Record<string, number> = {}, counts: Record<string, number> = {};
     let total = 0;
     for (const chapter of this.chapters()) {
@@ -778,8 +802,11 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
     const isPrint = this.mode() === 'print';
     if (isPrint) {
       const layout = this.paperPreview.layout();
-      const target = layout?.blockPages[chapterId]?.[blockIndex]
-        ?? ((layout?.chapters[chapterId]?.startPage ?? 1) - 1);
+      const index = layout?.blockPages[chapterId];
+      const page = index?.pages[blockIndex];
+      const target = index && page !== undefined
+        ? index.offset + page
+        : (layout?.chapters[chapterId]?.startPage ?? 1) - 1;
       this.globalPage.set(target);
       this.setPrintPage(target);
       return;
@@ -790,11 +817,12 @@ export class PreviewComponent implements AfterViewInit, OnDestroy {
       ? this.pendingDevicePage : undefined;
     if (!pending) this.pendingDevicePage = undefined;
     this.followDeviceEditor = !pending;
+    const chapterChanged = this.deviceChapterId() !== chapterId;
     this.deviceChapterId.set(chapterId);
     this.devicePage.set(pending?.id === chapterId ? pending.page
       : this.deviceCache.get(chapterId)?.blocks[blockIndex] ?? 0);
-    this.publishDeviceLayout();
-    this.scheduleMeasure();
+    this.globalPage.set((this.realPageOffsets()[chapterId] ?? 0) + this.devicePage());
+    if (chapterChanged && !this.deviceCache.has(chapterId)) this.scheduleMeasure();
   }
 
   isEvenPage() { return (this.globalPage() + 1) % 2 === 0; }

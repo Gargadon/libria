@@ -47,7 +47,8 @@ export class SettingsModalComponent {
   }
 
   setName(userName: string) {
-    this.store.setPersonalConfig({ ...this.store.personalConfig(), userName });
+    const config = this.store.personalConfig();
+    if (config.userName !== userName) this.store.setPersonalConfig({ ...config, userName });
   }
 
   removeAvatar() {

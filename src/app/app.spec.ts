@@ -308,6 +308,22 @@ describe('App', () => {
     expect(store.activeChapter()?.status).toBe('ok');
   });
 
+  it('removes the Edit menu before opening the native settings dialog', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const dialog = root.querySelector('dialog.settings')!;
+    const showModal = vi.fn(() => expect(root.querySelector('#menu-edit')).toBeNull());
+    Object.defineProperty(dialog, 'showModal', { value: showModal });
+
+    root.querySelector<HTMLButtonElement>('.tb__menu:nth-child(2) .tb__menu-trigger')!.click();
+    fixture.detectChanges();
+    root.querySelector<HTMLButtonElement>('#menu-edit button:last-of-type')!.click();
+    await fixture.whenStable();
+
+    await vi.waitFor(() => expect(showModal).toHaveBeenCalledOnce());
+  });
+
   it('keeps welcome commands available and disables document actions in the main menu', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();

@@ -4,6 +4,7 @@ import { FileService } from './file.service';
 import { RecoveryStorageService, RecoveryVersion, RecoveryMetadata } from './recovery-storage.service';
 import { resolveChapterHeadingImage } from '../utils/chapter-heading-image';
 import { AssetService } from './asset.service';
+import { LibriaDocument } from '../models/book.models';
 
 @Injectable({ providedIn: 'root' })
 export class RecoveryService {
@@ -20,6 +21,7 @@ export class RecoveryService {
   private pending?: Omit<RecoveryVersion, 'content'> & { document: ReturnType<FileService['buildDoc']> };
   private lastProjectId = '';
   private lastContent = '';
+  private readonly serializedParts = new WeakMap<object, string>();
   private checkpointId = '';
   private checkpointStarted = 0;
   private timer?: ReturnType<typeof setTimeout>;
@@ -75,7 +77,7 @@ export class RecoveryService {
     this.queue = this.queue.then(async () => {
       try {
         const { document, ...metadata } = version;
-        const content = JSON.stringify(document);
+        const content = this.serialize(document);
         if (metadata.projectId === this.lastProjectId && content === this.lastContent) return;
         await this.storage.put({ ...metadata, content }, document.chapters.map(({ id, title }) => ({ id, title })));
         this.lastProjectId = metadata.projectId;
@@ -89,6 +91,23 @@ export class RecoveryService {
       }
     });
     return this.queue;
+  }
+
+  private serialize(document: LibriaDocument): string {
+    // Store snapshots replace edited chapters and asset maps. Reuse the JSON
+    // for the untouched ones and keep recovery files as ordinary .libria JSON.
+    const encode = (value: object) => {
+      let json = this.serializedParts.get(value);
+      if (json === undefined) {
+        json = JSON.stringify(value);
+        this.serializedParts.set(value, json);
+      }
+      return json;
+    };
+    const { chapters, assets, ...metadata } = document;
+    const header = JSON.stringify(metadata).slice(0, -1);
+    const images = assets ? `,"assets":${encode(assets)}` : '';
+    return `${header},"chapters":[${chapters.map(encode).join(',')}]${images}}`;
   }
 
   async show(): Promise<void> {

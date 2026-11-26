@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy, output, NgZone, Injector, afterNextRender } from '@angular/core';
+import { Component, inject, signal, computed, HostListener, ChangeDetectionStrategy, DestroyRef, output, NgZone, Injector, afterNextRender } from '@angular/core';
 import { BookStore } from '../../store/book.store';
 import { FileService } from '../../services/file.service';
 import { CommonModule, DOCUMENT } from '@angular/common';
@@ -108,7 +108,7 @@ type TopbarMenu = 'file' | 'edit' | 'view' | 'tools' | 'help';
                         <span>{{ 'electron.menu.viewSearch' | translate }}</span>
                       </button>
                       <hr />
-                      <button type="button" class="tb__menu-action" (click)="trigger.focus(); settingsRequested.emit()">
+                      <button type="button" class="tb__menu-action" (click)="openSettings(trigger)">
                         <span class="material-symbols-outlined" aria-hidden="true">settings</span>
                         <span>{{ 'topbar.settings' | translate }}</span>
                       </button>
@@ -417,6 +417,7 @@ export class TopbarComponent {
 
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   @HostListener('document:keydown', ['$event'])
   onSearchShortcut(event: KeyboardEvent) {
@@ -588,6 +589,17 @@ export class TopbarComponent {
   closeMenu() {
     this.openMenu.set(null);
     this.setAddOptions(false);
+  }
+
+  openSettings(trigger: HTMLButtonElement) {
+    this.closeMenu();
+    trigger.focus({ preventScroll: true });
+    // WebKit needs a paint between dismissing the menu and opening a top-layer dialog.
+    afterNextRender(() => {
+      requestAnimationFrame(() => setTimeout(() => {
+        if (!this.destroyRef.destroyed) this.settingsRequested.emit();
+      }, 0));
+    }, { injector: this.injector });
   }
 
   completeMenu(trigger: HTMLButtonElement) {

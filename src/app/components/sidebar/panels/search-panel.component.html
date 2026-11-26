@@ -11,9 +11,9 @@
       class="sb__input"
       type="text"
       [attr.placeholder]="'sidebar.searchPlaceholder' | translate"
-      [ngModel]="store.searchQuery()"
-      (ngModelChange)="store.search($event)"
-      (keydown.enter)="store.search($any($event.target).value)"
+      [ngModel]="draft() ?? store.searchQuery()"
+      (ngModelChange)="queueSearch($event)"
+      (keydown.enter)="submitSearch($any($event))"
       data-search-input
     />
   </div>
@@ -29,42 +29,55 @@
       />
       <button
         class="sb__btn-primary sb__search-replace-btn"
-        (click)="store.replaceAll(store.replaceQuery())"
-        [disabled]="!store.searchResults().length"
+        (click)="replaceAll()"
+        [disabled]="draft() !== null || !count()"
       >
         {{ 'sidebar.replaceAll' | translate }}
       </button>
     </div>
   </div>
 
-  <div class="sb__section">
-    {{
-      store.searchResults().length === 1
-        ? ('sidebar.resultCount' | translate: { count: 1 })
-        : ('sidebar.resultCount_plural' | translate: { count: store.searchResults().length })
-    }}
-  </div>
+  @if (draft() === null) {
+    <div class="sb__section" aria-live="polite">
+      {{
+        count() === 1
+          ? ('sidebar.resultCount' | translate: { count: 1 })
+          : ('sidebar.resultCount_plural' | translate: { count: count() })
+      }}
+    </div>
 
-  @if (store.searchResults().length > 0) {
-    <div class="sb__search-results">
-      @for (
-        r of store.searchResults();
-        track r.chapterId + '-' + r.blockIndex + '-' + r.matchIndex
-      ) {
-        <button class="sb__search-item" (click)="goToResult(r)">
-          <div class="sb__search-meta">
-            <span class="sb__search-chapter">{{ r.chapterTitle }}</span>
-            <span class="sb__search-par">¶ {{ r.blockIndex + 1 }}</span>
-          </div>
-          <div class="sb__search-frag" [innerHTML]="searchFrag(r)"></div>
-        </button>
+    @if (count() > 0) {
+      @if (count() > end() || page() > 0) {
+        <nav class="sb__search-pagination" [attr.aria-label]="'sidebar.searchTitle' | translate">
+          <button type="button" class="sb__opt" [disabled]="page() === 0" (click)="page.set(page() - 1)">
+            {{ 'sidebar.searchPrevious' | translate }}
+          </button>
+          <span>{{ start() + 1 }}–{{ end() }}</span>
+          <button type="button" class="sb__opt" [disabled]="end() === count()" (click)="page.set(page() + 1)">
+            {{ 'sidebar.searchNext' | translate }}
+          </button>
+        </nav>
       }
-    </div>
-  }
+      <div class="sb__search-results">
+        @for (
+          r of visibleResults();
+          track r.chapterId + '-' + r.blockIndex + '-' + r.matchIndex
+        ) {
+          <button class="sb__search-item" (click)="goToResult(r)">
+            <div class="sb__search-meta">
+              <span class="sb__search-chapter">{{ r.chapterTitle }}</span>
+              <span class="sb__search-par">¶ {{ r.blockIndex + 1 }}</span>
+            </div>
+            <div class="sb__search-frag">{{ r.before ? '…' : '' }}{{ r.before }}<mark>{{ r.match }}</mark>{{ r.after }}{{ r.after.length >= 40 ? '…' : '' }}</div>
+          </button>
+        }
+      </div>
+    }
 
-  @if (store.searchQuery() && !store.searchResults().length) {
-    <div class="sb__help">
-      {{ 'sidebar.noResults' | translate: { query: store.searchQuery() } }}
-    </div>
+    @if (store.searchQuery() && !count()) {
+      <div class="sb__help">
+        {{ 'sidebar.noResults' | translate: { query: store.searchQuery() } }}
+      </div>
+    }
   }
 </div>
